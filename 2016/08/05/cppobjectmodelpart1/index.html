@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>C&#43;&#43;对象模型的那些事儿之一：对象模型（上）</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="C&#43;&#43;对象模型的那些事儿之一：对象模型（上）" />
+<meta property="og:description" content="前言
+
+很早以前就听人推荐了《深入理解C&#43;&#43;对象模型》这本书，从年初买来到现在也只是偶尔翻了翻，总觉得晦涩难懂，放在实验室上吃灰吃了好久。近期由于找工作对C&#43;&#43;的知识做了一个全面系统的学习，基础相对扎实了不少，于是，又重新拿起这本书，突然觉得里面的知识也不那么难懂，而且越看越有意思，不愧是C&#43;&#43;高阶教程啊！耐着性子，抓着头皮花了两个多月，总算对其中的知识有了一些理解，部分章节反反复复的看，每次都有新的收获。所谓好记性不如烂笔头，本系列博文就对我所学到的知识和我所遇到的困惑做一个整理。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2016/08/05/cppobjectmodelpart1/" /><meta property="article:published_time" content="2016-08-05T19:01:53&#43;08:00"/>
+<meta property="article:modified_time" content="2018-08-09T21:03:39&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="C&#43;&#43;对象模型的那些事儿之一：对象模型（上）"/>
+<meta name="twitter:description" content="前言
+
+很早以前就听人推荐了《深入理解C&#43;&#43;对象模型》这本书，从年初买来到现在也只是偶尔翻了翻，总觉得晦涩难懂，放在实验室上吃灰吃了好久。近期由于找工作对C&#43;&#43;的知识做了一个全面系统的学习，基础相对扎实了不少，于是，又重新拿起这本书，突然觉得里面的知识也不那么难懂，而且越看越有意思，不愧是C&#43;&#43;高阶教程啊！耐着性子，抓着头皮花了两个多月，总算对其中的知识有了一些理解，部分章节反反复复的看，每次都有新的收获。所谓好记性不如烂笔头，本系列博文就对我所学到的知识和我所遇到的困惑做一个整理。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">C&#43;&#43;对象模型的那些事儿之一：对象模型（上）</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-08-05T19:01:53">August 05, 2016</time>
+	<time class="meta__text" datetime="2018-08-09T21:03:39"> (Last Modified: August 09, 2018)</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#前言">前言</a></li>
+<li><a href="#引例">引例</a></li>
+<li><a href="#常见对象模型">常见对象模型</a>
+<ul>
+<li><a href="#c-的成员">C++的成员</a></li>
+<li><a href="#简单对象模型">简单对象模型</a></li>
+<li><a href="#表格驱动对象模型">表格驱动对象模型</a></li>
+<li><a href="#c-对象模型">C++对象模型</a></li>
+<li><a href="#内存布局">内存布局</a></li>
+</ul></li>
+<li><a href="#测试小结">测试小结</a></li>
+<li><a href="#结束语">结束语</a></li>
+<li><a href="#about-me">About Me</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<h1 id="前言">前言</h1>
+
+<p>很早以前就听人推荐了《深入理解C++对象模型》这本书，从年初买来到现在也只是偶尔翻了翻，总觉得晦涩难懂，放在实验室上吃灰吃了好久。近期由于找工作对C++的知识做了一个全面系统的学习，基础相对扎实了不少，于是，又重新拿起这本书，突然觉得里面的知识也不那么难懂，而且越看越有意思，不愧是C++高阶教程啊！耐着性子，抓着头皮花了两个多月，总算对其中的知识有了一些理解，部分章节反反复复的看，每次都有新的收获。所谓好记性不如烂笔头，本系列博文就对我所学到的知识和我所遇到的困惑做一个整理。</p>
+
+<h1 id="引例">引例</h1>
+
+<p>我以一个简单的例子来开始本篇博文，这个例子也会贯穿整篇博文，让大家一步一步对C++对象模型有一个全面的了解。</p>
+
+<p>假设此时需要设计一个Animal类，包含动物名，体重和一些常见行为，设计如下：</p>
+
+<pre><code class="language-cpp">class Animal{
+	Animal(){}
+	~Animal(){}
+	char name[10];//动物名字
+	int weight;//体重
+	virtual void eat(){};//动物都需要吃，所以将eat设为虚函数，方便后面继承
+	virtual void sleep(){};//同上
+}
+</code></pre>
+
+<p>设计者很关注的一个问题就是，封装的布局成本，也就是这个类会占有多大的空间。于是，我很自然的运行了如下程序。</p>
+
+<pre><code class="language-cpp">Animal animal;
+cout&lt;&lt;sizeof(animal)&lt;&lt;endl;//输出24(注：本测试机为ubuntu15.10,64位操作系统)
+</code></pre>
+
+<p>那么，为什么会输出24呢？下面就一一为大家分析和讲解。</p>
+
+<h1 id="常见对象模型">常见对象模型</h1>
+
+<h2 id="c-的成员">C++的成员</h2>
+
+<p>在C++中，主要有两类成员，分别是数据成员和成员函数。</p>
+
+<p>数据成员有静态和非静态之分；成员函数有静态，非静态和虚函数之分。</p>
+
+<p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkf6srflej30ks06o3z2.jpg" alt="C++成员" /></center></p>
+
+<p>那么，这些成员在内存中时怎么布局的呢？为了考虑布局成本，C++底层进行了哪些优化措施呢？下面就一探究竟吧！</p>
+
+<h2 id="简单对象模型">简单对象模型</h2>
+
+<p>顾名思义，简单对象模型相当简单。在这个模型里面，一个object是一系列的slots，每一个slot指向一个members，members按其声明顺序，各被指定一个slot。每一个data member和member function都有自己的slot。</p>
+
+<p>这么设计的原因可能时为了尽量降低C++编译器的设计复杂度而开发出来的，但是在空间和执行器的效率就大打折扣了！在这个对象模型中，members本身不放在object中，只有”指向member的指针“采访在object中，避免不同类型拥有不同存储空间而招致的差异，而且也有利于计算每个class的内存占用大小。</p>
+
+<p><center><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkf6rr0byj30fz0cot9k.jpg" alt="简单对象模型" /></center></p>
+
+<h2 id="表格驱动对象模型">表格驱动对象模型</h2>
+
+<p>本节开始就讲到C++的成员包括了数据成员和成员函数，表格驱动模型就是以此来划分，在这个模型中，object内含指向两个表格的指针，Members funtion table是一系列的slots，每一个slots指向一个成员函数；Data member table则直接持有data本身。</p>
+
+<p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkf6pwgscj30m707mjs8.jpg" alt="表格驱动对象模型" /></center></p>
+
+<h2 id="c-对象模型">C++对象模型</h2>
+
+<p>在简单对象模型中提到了”指向成员的指针“的观念，在表格驱动对象模型中提到了member function table的观念，上述两个模型都没有用到实际的C++编译器中，但是这两个观念却被用到了C++对象模型中。</p>
+
+<p>在此模型中，对于data members处理如下：</p>
+
+<ul>
+<li>nonstatic data members：被配置于class object中</li>
+<li>static data members：存放在class object之外</li>
+</ul>
+
+<p>对function members处理如下：</p>
+
+<ul>
+<li>static和nonstatic function members：存放在class object之外</li>
+<li>virtual function members： 首先对class里的每个虚函数产生一个指针，放在一个virtual table(vtbl)中，然后在class object里面安置一个指针，指向上述的virtual table，这个指针称为vptr。vptr的设定和重置都有每个类的构造函数，析构函数和拷贝构造函数自动完成。</li>
+</ul>
+
+<p><center><img src="http://obd5s81mp.bkt.clouddn.com/C++%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B.png" alt="C++对象模型" /></center></p>
+
+<h2 id="内存布局">内存布局</h2>
+
+<p>下面我们来看看引例中留下的问题。依据上图给出的C++对象模型，可以推算出animal类所占用的内存</p>
+
+<ul>
+<li>指向虚表的指针vptr占用8个字节</li>
+<li>非静态数据成员name占用10个字节</li>
+<li>非静态数据成员weight占用4个字节</li>
+</ul>
+
+<p>这样，算出的结果是22个字节，为什么正确结果是24个字节呢？</p>
+
+<p>于是又引出了一个问题，C++ class object需要多少内存才能表现出来呢？</p>
+
+<ul>
+<li>其nonstatic data members的总和大小</li>
+<li>加上任何由于alignment的需求而填补上去的空间</li>
+<li>加上为了支持virtual而由内部产生的任何额外负担</li>
+</ul>
+
+<p>对比一下animal的各个成员的内存消耗，可以看出，忽略了内存对齐而带来的内存消耗。由于是64位操作系统，所以以8字节对齐，于是可以很容易的算出最后整个animal类占用的内存为24个字节。</p>
+
+<h1 id="测试小结">测试小结</h1>
+
+<p>讲到这里，似乎还是不能理解C++对象底层的布局。这一切都是以概念为主，没有深究到底层。</p>
+
+<p>于是，我写了如下的测试代码，让我们一起去探究一下整个C++对象的底层布局。</p>
+
+<pre><code class="language-cpp">#include &lt;stdio.h&gt;
+#include &lt;iostream&gt;
+#include &lt;string.h&gt;
+using namespace std;
+
+typedef void(*Fun)(void);
+
+class Animal{
+public:
+	char name[10];//动物名字
+	int weight;//体重
+	virtual void eat();
+	virtual void sleep();
+};
+
+void Animal::eat(){//eat函数的实现
+	cout&lt;&lt;&quot;Please let me eat&quot;&lt;&lt;endl;
+}
+
+void Animal::sleep(){//sleep函数的实现
+	cout&lt;&lt;&quot;Please let me sleep&quot;&lt;&lt;endl;
+}
+
+int main(){
+    Animal animal;
+    strcpy(animal.name,&quot;hello&quot;);
+    animal.weight = 10;
+    cout&lt;&lt;&quot;虚指针vptr的地址:&quot;&lt;&lt;&amp;animal&lt;&lt;endl;//虚指针vptr的地址
+    for (int i = 0; i &lt; 10; ++i)
+    {
+    	cout&lt;&lt;&quot;name[&quot;&lt;&lt;i&lt;&lt;&quot;]的地址为：&quot;&lt;&lt;(long long *)&amp;(animal.name[i])&lt;&lt;endl;//name每个参数的地址
+    }
+    cout&lt;&lt;&quot;weight的地址为：&quot;&lt;&lt;&amp;(animal.weight)&lt;&lt;endl;//weight的地址
+
+    cout&lt;&lt;&quot;虚表的地址：&quot;&lt;&lt;(long long *)(*((long long*)&amp;animal))&lt;&lt;endl;
+
+    Fun pfun1 = NULL;
+    Fun pfun2 = NULL;
+    pfun1 = (Fun)*((long long*)*(long long*)(&amp;animal));//通过强制转换，验证虚函数的地址是否正确
+    pfun1();
+    pfun2 = (Fun)*((long long*)*(long long*)(&amp;animal)+1);//通过强制转换，验证虚函数的地址是否正确
+    pfun2();
+    return 0;
+}
+</code></pre>
+
+<blockquote>
+<p>由于我的测试机为64位操作系统，所以指针类型必须强制转换为long long*，各位如果是32位或者VS上32位程序的，记得将此改为int*。</p>
+</blockquote>
+
+<p>上述测试案例输出结果如下：</p>
+
+<pre><code class="language-cpp">虚指针vptr的地址:0x7ffe378125e0
+name[0]的地址为：0x7ffe378125e8
+name[1]的地址为：0x7ffe378125e9
+name[2]的地址为：0x7ffe378125ea
+name[3]的地址为：0x7ffe378125eb
+name[4]的地址为：0x7ffe378125ec
+name[5]的地址为：0x7ffe378125ed
+name[6]的地址为：0x7ffe378125ee
+name[7]的地址为：0x7ffe378125ef
+name[8]的地址为：0x7ffe378125f0
+name[9]的地址为：0x7ffe378125f1
+weight的地址为：0x7ffe378125f4
+虚表的地址：0x400d58
+Please let me eat
+Please let me sleep
+</code></pre>
+
+<p>分析结果之前，先解释一下为什么64位操作系统的指针是48位，因为现在的硬件还用不到完整的64位寻址，所以硬件也没必要支持那么多位的地址。（也有可能时我的机子太老了，囧！）</p>
+
+<p>上述问题不影响我们分析结果，从输出的地址可以看出</p>
+
+<ul>
+<li>虚指针在animal object内存布局的最前面，占用8个字节</li>
+<li>往下依次是name数组的十个元素，为了内存对齐，这里填补了2个字节的空隙</li>
+<li>最后就是weight占用的8个字节</li>
+</ul>
+
+<p>为了验证虚表一定存在在对象布局的最前面，我首先利用<code>(long long *)(*((long long*)&amp;animal))</code>强制内存转换取出了虚表的地址，然后定义一个函数指针<code>typedef void(*Fun)(void)</code>，指向虚表的第一位，再调用<code>pfun()</code>来验证输出<code>Please let me eat</code>，结果也如预料的一样。</p>
+
+<p>接下来，又以同样的方式验证了<code>sleep()</code>函数，同样输出<code>Please let me sleep</code>，结果符合预期！</p>
+
+<h1 id="结束语">结束语</h1>
+
+<p>本篇博客简单得带大家了解了一下C++的内存布局，以一个小的例子来剖析和验证了此模型的正确性。</p>
+
+<p>下篇博客将带大家继续深入剖析C++的内存布局，主要讲解引入继承关系后的C++内存布局，以及C++多态的底层实现原理，敬请期待！</p>
+
+<h1 id="about-me">About Me</h1>
+
+<p>由于本人也是初学，在写作过程中，难免有错误的地方，读者如果发现，请在下面留言指出。</p>
+
+<p>最后，如有疑惑或需要讨论的地方，可以联系我，联系方式见我的个人博客about页面，地址：<a href="http://zcheng.ren/about/">About Me</a>。</p>
+
+<p>另外，本人的第一本gitbook书已整理完，关于leetcode刷题题解的，<a href="https://www.gitbook.com/book/zeecoders/one-day-one-leetcode/details">点此进入One day One Leetcode</a></p>
+
+<p>欢迎持续关注！Thx！</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/c&#43;&#43;/" rel="tag">C&#43;&#43;</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2016/08/03/unixnetworkprogrammingpart6/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">UNIX网络编程之六：基本UDP套接字</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2016/08/06/cppobjectmodelpart2/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">C&#43;&#43;对象模型的那些事儿之二：对象模型（下）</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Sourcecode on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/sourcecode/</link>
+    <description>Recent content in Sourcecode on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 29 Jan 2018 14:19:10 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/sourcecode/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Nginx快速上手</title>
+      <link>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</link>
+      <pubDate>Mon, 29 Jan 2018 14:19:10 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</guid>
+      <description>&lt;p&gt;入职半年来，一直在Nginx的基础上做模块开发，学到了很多东西，也碰到了很多坑。在业务开发的同时，由于对Nginx本身也是一知半解，造成了很多不必要的Bug。痛定思痛，很早以前就想系统的学习一下Nginx，迟迟没有抽出时间下定决心，我知道和以前浅析Redis一样，那是一个一旦开始了就停不下来的旅程。好勒，别立flag了，一篇一篇写下去吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--事件ae</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceae/</link>
+      <pubDate>Fri, 13 Jan 2017 15:12:13 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceae/</guid>
+      <description>&lt;p&gt;Redis源码剖析搁浅了一段时间，由于自己对事件驱动以及Reactor模式的理解不够深，源码看起来比较吃力，思来想去，所幸自己去实现一个简单的事件驱动模型。于是，采用python的select和queue模块开发了一个简易聊天服务器，实践中学习到的东西很多，回头再来看Redis的ae事件源码，明显轻松多了。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--事务Multi</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcemulti/</link>
+      <pubDate>Mon, 02 Jan 2017 10:20:14 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcemulti/</guid>
+      <description>&lt;p&gt;数据库事务，是指作为单个逻辑工作单元执行的一系列操作，这些操作要么全部执行，要么全部不执行。事务处理可以确保除非事务性单元内的所有操作都成功完成，否则不会永久更新面向数据的资源，这样可以简化错误恢复并使应用程序更加可靠。事务包括ACID特性，分别是Atomic（原子性）、Consistency（一致性）、Isolation（隔离性）和Durablity（持久性）。Redis作为一个key-value数据库，当然也必须拥有事务处理功能，下面就一起去看看它是怎么实现的吧？&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--AOF持久化</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceaof/</link>
+      <pubDate>Sun, 01 Jan 2017 10:34:48 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceaof/</guid>
+      <description>&lt;p&gt;在前一篇博客&lt;a href=&#34;http://zcheng.ren/2016/12/30/TheAnnotatedRedisSourceRdb/&#34;&gt;Redis源码剖析&amp;ndash;RDB持久化&lt;/a&gt;中，我们分析了RDB持久化就是按照特定的格式将服务器中数据库里面的数据写入到RDB文件中，在服务器下一次开启的时候，再按照该格式读取上来，从而保证了数据的持久化。今天，我们来看看另一种持久化操作&amp;mdash;-AOF持久化。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--RDB持久化</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcerdb/</link>
+      <pubDate>Fri, 30 Dec 2016 10:30:33 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcerdb/</guid>
+      <description>&lt;p&gt;众所周知，Reids是一个高效的内存数据库，所有的数据都存放在内存中。这种模式的缺点就是一旦服务器关闭后会立刻丢失所有存储的数据，Redis当然要避免这种情况的发生，于是其提供了两种持久化机制：RDB和AOF。它们的功能都是将内存中存放的数据保存到磁盘文件上，等到服务器下次开启时能重载数据，以免数据丢失。今天，我们先来剖析一下RDB持久化机制。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--发布与订阅Pubsub</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcepubsub/</link>
+      <pubDate>Thu, 29 Dec 2016 13:34:48 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcepubsub/</guid>
+      <description>&lt;p&gt;在分析Notify通知功能的时候讲到，Notify是用过订阅和发布功能来发送通知的。本来按计划是要分析持久化的代码的，可是对这个pubsub实在是有点感兴趣，所以先分析这方面的代码。订阅和发布，顾名思义，就是客户端可以订阅某个频道，也可以向某个频道发布消息，有点像收音机的功能一样。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--通知Notify</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcenotify/</link>
+      <pubDate>Tue, 27 Dec 2016 15:13:09 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcenotify/</guid>
+      <description>&lt;p&gt;Redis在2.8版本以后，增加了键空间（Keyspace Notifications future）通知功能，此特性允许客户端可以以订阅/发布的模式，接收那些对数据库中的键和值有影响的操作事件。Redis关于通知的源代码均在notify.c文件中实现，源码中只有三个功能函数，相对较为简单，但是要想理解其功能，就需要配合server.c和pubsub.c里面的部分代码。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--数据库db</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcedb/</link>
+      <pubDate>Sun, 25 Dec 2016 11:24:49 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcedb/</guid>
+      <description>&lt;p&gt;按照&lt;a href=&#34;http://zcheng.ren/2016/11/25/TheAnnotatedRedisSource1/&#34;&gt;Redis源码剖析&amp;ndash;源码结构解析&lt;/a&gt;一文中给自己规定的六个阶段来学习Redis。目前前三个阶段的学习以及完成了，这些都是和系统的耦合性比较小的部分，所以看起来也比较轻松。从这篇博客开始，就进入到第四阶段的源码剖析了。Redis的各个功能的实现将会顺着我们的逐步深入而变得清晰明了，如果读者跟着我的步伐一起学习，到了这一刻，想必也是兴奋的。废话也不多说了，前面所有的数据结构都是为后面的功能实现做铺垫。那么今天，就来啃掉数据库实现这块硬骨头。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--有序集合t_zset</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcezset/</link>
+      <pubDate>Sat, 24 Dec 2016 11:01:31 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcezset/</guid>
+      <description>&lt;p&gt;今天来剖析一个比较有意思的数据类型—— 有序集合zset，说实话，它的源码真的是多，而且繁琐，不过，其中的一部分在&lt;a href=&#34;http://zcheng.ren/2016/12/06/TheAnnotatedRedisSourceZskiplist/&#34;&gt;Redis源码剖析&amp;ndash;跳跃表zskiplist&lt;/a&gt;中分析过了。有序集合到底是什么呢？有序集合里面存放的元素都自带一个分值，根据这个分值来对元素进行排序，从而使其成为一个有序的集合。接下来，枯燥的Read Code时间到了。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--哈希t_hash</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcehash/</link>
+      <pubDate>Fri, 23 Dec 2016 11:02:58 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcehash/</guid>
+      <description>&lt;p&gt;不知不觉，从第一篇写Redis源码分析开始，已经过了快一个月了，想想自己的进度，简直慢的吓人啊，这样下去不行，后面得加快脚步了。今天分析的是Redis的又一个数据类型—哈希，哈希键的底层编码形式有OBJ_ENCODING_ZIPLIST和OBJ_ENCODING_HT两种，其中，前者的底层数据结构为&lt;a href=&#34;http://zcheng.ren/2016/12/13/TheAnnotatedRedisSourceZiplist/&#34;&gt;压缩列表&lt;/a&gt;，后者的底层数据结构为&lt;a href=&#34;http://zcheng.ren/2016/12/04/TheAnnotatedRedisSourceDict/&#34;&gt;字典&lt;/a&gt;。如有对这两个结构不清楚的，可以点击跳转去温故复习一下。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--集合t_set</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceset/</link>
+      <pubDate>Wed, 21 Dec 2016 16:01:05 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceset/</guid>
+      <description>&lt;p&gt;今天来看看Redis的另一个数据类型—集合set。在&lt;a href=&#34;http://zcheng.ren/2016/12/14/TheAnnotatedRedisSourceObject/&#34;&gt;RedisObject&lt;/a&gt;一篇中，有介绍到集合对象的底层有两种编码形式，分别是OBJ_ENCODING_INTSET（底层数据结构为整数集合）和OBJ_ENCODING_HT（底层数据结构为字典），如果对&lt;a href=&#34;http://zcheng.ren/2016/12/09/TheAnnotatedRedisSourceIntset/&#34;&gt;整数集合Intset&lt;/a&gt;和&lt;a href=&#34;http://zcheng.ren/2016/12/04/TheAnnotatedRedisSourceDict/&#34;&gt;字典dict&lt;/a&gt;不熟悉的，可以点击跳转去复习一下。下面，就一起去剖析一下set的实现源码吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--列表t_list</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcelist/</link>
+      <pubDate>Mon, 19 Dec 2016 10:19:58 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcelist/</guid>
+      <description>&lt;p&gt;上一篇博客&lt;a href=&#34;http://zcheng.ren/2016/12/19/TheAnnotatedRedisSourceQuicklist/&#34;&gt;Redis源码剖析&amp;ndash;快速列表&lt;/a&gt; 带大家一起剖析了quicklist这个底层数据结构的实现原理。Redis对外开放的列表list结构就是采用quicklist作为底层实现（在新版本的Redis源码中，不再采用ziplist和sdlist两种结构，而是统一采用quicklist）。有关列表键的实现源码在t_list.c文件中，大家可以边看源码边看这篇博客，一起来理解。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--快速列表quicklist</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcequicklist/</link>
+      <pubDate>Mon, 19 Dec 2016 08:40:43 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcequicklist/</guid>
+      <description>&lt;p&gt;在&lt;a href=&#34;http://zcheng.ren/2016/12/14/TheAnnotatedRedisSourceObject/&#34;&gt;RedisObject&lt;/a&gt;这一篇博客中，有介绍到list结构的底层编码类型有OBJ_ENCODING_QUICKLIST，当时就发现这个底层数据结构被我遗漏了。昨天花了点时间补了补这个知识，看完发现这货就跟STL中的deque的思想一样，顿时觉得又是一个实现超级繁琐但很实用的数据结构。今天就带大家一起来看看这个“二合一”的数据结构。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--字符串t_string</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcestring/</link>
+      <pubDate>Thu, 15 Dec 2016 16:11:49 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcestring/</guid>
+      <description>&lt;p&gt;前面一直在分析Redis的底层数据结构，Redis利用这些底层结构设计了它面向用户可见的五种数据结构，字符串、哈希，链表，集合和有序集合，然后用redisObject对这五种结构进行了封装。从这篇博客开始，带你一点点分析五种数据类型常见命令对应的源码实现，慢慢地解开Redis的面纱。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--对象object</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceobject/</link>
+      <pubDate>Wed, 14 Dec 2016 09:58:40 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceobject/</guid>
+      <description>&lt;p&gt;前面一系列的博客分析了Redis的基本数据结构，有&lt;a href=&#34;http://zcheng.ren/2016/12/02/TheAnnotatedRedisSourceSDS/&#34;&gt;动态字符串sds&lt;/a&gt;、&lt;a href=&#34;http://zcheng.ren/2016/12/03/TheAnnotatedRedisSourceSdlist/&#34;&gt;双端链表sdlist&lt;/a&gt;、&lt;a href=&#34;http://zcheng.ren/2016/12/04/TheAnnotatedRedisSourceDict/&#34;&gt;字典dict&lt;/a&gt;、&lt;a href=&#34;http://zcheng.ren/2016/12/06/TheAnnotatedRedisSourceZskiplist/&#34;&gt;跳跃表skiplist&lt;/a&gt;、&lt;a href=&#34;http://zcheng.ren/2016/12/09/TheAnnotatedRedisSourceIntset/&#34;&gt;整数集合intset&lt;/a&gt;和&lt;a href=&#34;http://zcheng.ren/2016/12/13/TheAnnotatedRedisSourceZiplist/&#34;&gt;压缩列表ziplist&lt;/a&gt;等，这些数据结构对于用户来说是不可见的。&lt;/p&gt;
+
+&lt;p&gt;Redis在这些数据结构的基础上构建了对用户可见的五种类型，分别是string、hash、list、set和zset，为了更方便的使用这五种数据类型，Redis定义了RedisObject结构体来表示它们。今天，我们就一起来看看RedisObject是如何构建的！（如果底层结构不熟悉的，可以点击上述）&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--压缩列表ziplist</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceziplist/</link>
+      <pubDate>Mon, 12 Dec 2016 17:33:02 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceziplist/</guid>
+      <description>&lt;p&gt;压缩列表（ziplist）是由 一系列特殊编码的内存块构成的列表，其是Redis的列表建和哈希键的底层实现之一。和整数集合一样，二者都是为Redis节省内存而开发的数据结构。&lt;/p&gt;
+
+&lt;p&gt;ziplist可以用来存放字符串或者整数，其存储数据的特点是：比较小的整数或比较短的字符串。Redis的列表建，哈希键，有序集合的底层实现都用到了ziplist。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--整数集合Intset</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceintset/</link>
+      <pubDate>Fri, 09 Dec 2016 14:21:56 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceintset/</guid>
+      <description>&lt;p&gt;本系列博客文章已经分析了Redis的大部分数据结构，包括动态字符串，双端链表，字典，跳跃表等，这些数据结构都非常强大实用，但是在内存消耗方面也非常“巨大”。Redis的数据都是存放在内存上面的，所以对内存的使用要求及其苛刻，Redis会想方设法的来节省内存。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--基数统计hyperloglog</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcehyperloglog/</link>
+      <pubDate>Thu, 08 Dec 2016 11:48:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcehyperloglog/</guid>
+      <description>&lt;p&gt;Redis中hyperloglog是用来做基数统计的，其优点是：在输入元素的数量或者体积非常非常大的时候，计算基数所需的空间总是固定的，并且是很小的。在Redis里面，每个Hyperloglog键只需要12Kb的大小就能计算接近2^64个不同元素的基数，但是hyperloglog只会根据输入元素来计算基数，而不会存储元素本身，所以不能像集合那样返回各个元素本身。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--跳跃表zskiplist</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcezskiplist/</link>
+      <pubDate>Tue, 06 Dec 2016 14:35:07 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcezskiplist/</guid>
+      <description>&lt;p&gt;跳跃表是一种有序的数据结构，它通过在每个节点中维持多个指向其他节点的指针，从而达到快速访问的目的。跳跃表在插入、删除和查找操作上的平均复杂度为O（logN），最坏为O（N），可以和红黑树相媲美，但是在实现起来，比红黑树简单很多。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--字典dict</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcedict/</link>
+      <pubDate>Sun, 04 Dec 2016 15:55:05 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcedict/</guid>
+      <description>&lt;p&gt;字典是Redis中的一个非常重要的底层数据结构，其应用相当广泛。Redis的数据库就是使用字典作为底层实现的，对数据库的增、删、查、改都是建立在对字典的操作上。此外，字典还是Redis中哈希键的底层实现，当一个哈希键包含的键值对比较多，或者键值对中的元素都是比较长的字符串时，Redis就会使用字典作为哈希键的底层实现。&lt;/p&gt;
+
+&lt;p&gt;Redis中的字典采用哈希表作为底层实现，在Redis源码文件中，字典的实现代码在dict.c和dict.h文件中。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--双端链表sdlist</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcesdlist/</link>
+      <pubDate>Fri, 02 Dec 2016 19:18:58 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcesdlist/</guid>
+      <description>&lt;p&gt;今天来分析Redis的一个基本数据结构&amp;ndash;双端链表，其定义和实现主要在sdlist.h和sdlist.c文件中。其主要用在实现列表键、事务模块保存输入命令和服务器模块，订阅模块保存多个客户端等。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--动态字符串sds</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcesds/</link>
+      <pubDate>Fri, 02 Dec 2016 10:32:55 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcesds/</guid>
+      <description>&lt;p&gt;Redis没有使用C语言的字符串结构，而是自己设计了一个简单的动态字符串结构sds。它的特点是：可动态扩展内存、二进制安全和与传统的C语言字符串类型兼容。下面就从源码的角度来分析一下Redis中sds的实现。（sds的源码实现主要在sds.c和sds.h两个文件中）&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--内存分配</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcemalloc/</link>
+      <pubDate>Sat, 26 Nov 2016 14:19:23 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcemalloc/</guid>
+      <description>&lt;p&gt;深受侯捷老师的《STL源码剖析》一书的影响，在该书中开篇就对STL的空间配置器进行了一个详尽的介绍。以应用的角度而言，空间配置器是最不需要介绍的，它总是隐藏在一切组件的背后；可是，就源码分析而言，空间配置是最为关键的，也是分析源码之路的第一步！Redis在内存分配方面，仅仅是对系统的malloc/free做了一层简单的封装，然后加上了异常处理功能和内存统计功能。其实现主要在zmalloc.c和zmalloc.h文件中。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--源码结构解析</title>
+      <link>https://zcheng.ren/redis/theannotatedredissource/</link>
+      <pubDate>Fri, 25 Nov 2016 15:12:25 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissource/</guid>
+      <description>&lt;p&gt;找工作那会儿，看了黄建宏老师的《Redis设计与实现》，对redis的部分实现有了一个简明的认识。在面试过程中，redis确实成为了面试官考核我的一个亮点，恰好以后的工作又与redis有着千丝万缕的联系，于是就想趁着毕业前的这段时间把redis的源代码研究一下，为以后的工作打个良好的基础。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

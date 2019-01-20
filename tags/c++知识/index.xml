@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>C&#43;&#43;知识 on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/c&#43;&#43;%E7%9F%A5%E8%AF%86/</link>
+    <description>Recent content in C&#43;&#43;知识 on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 22 Aug 2016 16:18:53 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/c++%E7%9F%A5%E8%AF%86/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>带你深入理解STL之迭代器和Traits技法</title>
+      <link>https://zcheng.ren/2016/08/22/stliterator/</link>
+      <pubDate>Mon, 22 Aug 2016 16:18:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/22/stliterator/</guid>
+      <description>&lt;p&gt;在开始讲迭代器之前，先列举几个例子，由浅入深的来理解一下为什么要设计迭代器。&lt;/p&gt;
+
+&lt;p&gt;针对下面两个函数，我们来谈谈这种设计的缺陷所在：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;遍历int数组和单链表listNode时，需要设计两份不一样的sum求和函数，对于STL这样含有大量容器的代码库，针对每一种容器都设计sum的话，过于冗杂&lt;/li&gt;
+&lt;li&gt;在sum函数中暴露了太多设计细节，如ListNode的节点值类型int，和指向下一个节点的指针next&lt;/li&gt;
+&lt;li&gt;对于int数组来说，还必须知道数组的大小，以免越界访问&lt;/li&gt;
+&lt;li&gt;算法的设计过多的依赖容器，容器的改动会造成大量算法函数的随之改动&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>读书笔记 on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/</link>
+    <description>Recent content in 读书笔记 on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 25 Jul 2018 11:45:08 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Go实战--基础知识</title>
+      <link>https://zcheng.ren/2018/07/25/goinaction/</link>
+      <pubDate>Wed, 25 Jul 2018 11:45:08 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/07/25/goinaction/</guid>
+      <description>&lt;p&gt;最近为了学习Go语言，选择了从《Go In Action》这本书入手。书里的知识简单易懂，适合新手学习，这里大致记录一下阅读笔记，内容也大多取自于该书。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之六：成员函数调用方式</title>
+      <link>https://zcheng.ren/2016/08/10/cppobjectmodelpart6/</link>
+      <pubDate>Wed, 10 Aug 2016 16:34:55 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/10/cppobjectmodelpart6/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;C++的成员函数分为静态函数、非静态函数和虚函数三种，在本系列文章中，多处提到static和non-static不影响对象占用的内存，而虚函数需要引入虚指针，所以需要调整对象的内存布局。既然已经解决了数据，函数等在内存中的布局问题，下一个需要考虑的就是如何调用，上述提到的三种函数的调用机制都不一样，其间的差异正是本篇博客需要讨论的。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之五：NRV优化和初始化列表</title>
+      <link>https://zcheng.ren/2016/08/10/cppobjectmodelpart5/</link>
+      <pubDate>Wed, 10 Aug 2016 07:52:02 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/10/cppobjectmodelpart5/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;在&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之四：拷贝构造函数&lt;/a&gt;中提到如果将一个对象作为函数参数或者返回值的时候，会调用拷贝构造函数，编译器是如何处理这些步骤，又会对其做哪些优化呢？本篇博客就为他家介绍一个编译器的优化操作：NRV，以及关于初始化列表的一些容易踩的“坑”！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之四：拷贝构造函数</title>
+      <link>https://zcheng.ren/2016/08/08/cppobjectmodelpart4/</link>
+      <pubDate>Mon, 08 Aug 2016 14:46:47 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/08/cppobjectmodelpart4/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;对于一个没有实例化的空类，编译器不会给它默认生成任何函数，当实例化一个空类后，编译器会根据需要生成相应的函数。这类函数包括一下几个:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;构造函数&lt;/li&gt;
+&lt;li&gt;拷贝构造函数&lt;/li&gt;
+&lt;li&gt;析构函数&lt;/li&gt;
+&lt;li&gt;赋值运算符&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;在上一篇博文&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之三：默认构造函数&lt;/a&gt;中讲到，编译器在需要的时候会合成一个空构造函数。本篇博文中就重点来介绍一下第二主角：拷贝构造函数。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之三：默认构造函数</title>
+      <link>https://zcheng.ren/2016/08/07/cppobjectmodelpart3/</link>
+      <pubDate>Sun, 07 Aug 2016 09:12:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/07/cppobjectmodelpart3/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;继前两篇总结了C++对象模型及其内存布局后，我们继续来探索一下C++对象的默认构造函数。对于C++的初学者来说，有如下两个误解：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;任何class如果没有定义default constructor，就会被合成出来&lt;/li&gt;
+&lt;li&gt;编译器合成出来的default constructor会显示设定“class内每一个data member的默认值“&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;如果读者对这两句话理解颇深，了解里面的陷阱，那么可以不必阅读下去；倘若你有一点点疑惑，那非常好，跟着我一起继续下去！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之二：对象模型（下）</title>
+      <link>https://zcheng.ren/2016/08/06/cppobjectmodelpart2/</link>
+      <pubDate>Sat, 06 Aug 2016 18:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/06/cppobjectmodelpart2/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;上一篇博客&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之一&lt;/a&gt;为大家讲解了C++对象模型的一些基本知识，可是C++的继承，多态这些特性如何体现在对象模型上呢？单继承、多重继承和虚继承后内存布局上又有哪些变化呢？多态真正的底层又是如何实现呢？本篇博客就带大家全面理解一下C++对象模型，从而理解上述疑惑。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之一：对象模型（上）</title>
+      <link>https://zcheng.ren/2016/08/05/cppobjectmodelpart1/</link>
+      <pubDate>Fri, 05 Aug 2016 19:01:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/05/cppobjectmodelpart1/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;很早以前就听人推荐了《深入理解C++对象模型》这本书，从年初买来到现在也只是偶尔翻了翻，总觉得晦涩难懂，放在实验室上吃灰吃了好久。近期由于找工作对C++的知识做了一个全面系统的学习，基础相对扎实了不少，于是，又重新拿起这本书，突然觉得里面的知识也不那么难懂，而且越看越有意思，不愧是C++高阶教程啊！耐着性子，抓着头皮花了两个多月，总算对其中的知识有了一些理解，部分章节反反复复的看，每次都有新的收获。所谓好记性不如烂笔头，本系列博文就对我所学到的知识和我所遇到的困惑做一个整理。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之六：基本UDP套接字</title>
+      <link>https://zcheng.ren/2016/08/03/unixnetworkprogrammingpart6/</link>
+      <pubDate>Wed, 03 Aug 2016 10:21:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/03/unixnetworkprogrammingpart6/</guid>
+      <description>&lt;p&gt;UDP是无连接不可靠的数据报协议，不同于TCP提供的面向连接的可靠字节流。常见的使用UDP的应用程序有：DNS，NFS和SNMP。&lt;/p&gt;
+
+&lt;h1 id=&#34;一-概述&#34;&gt;&lt;strong&gt;一、概述&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;UDP的主要特点如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;UDP是面向无连接的，不需要建立连接就可以传输数据&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP尽最大可能交付，不保证可靠交付&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP是面向报文，对应用层传输的报文添加首部后就直接发送，不合并不拆分&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP没有拥塞控制&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP支持一对一，一对多，多对一，多对多&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP首部八个字节，开销小&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;基于UDP的套接字编程比基于TCP的相对较为简单。客户不与服务器建立连接，而是只管使用sendto函数给服务器发送数据报，其中必须指定目的地，的地址作为参数。类似的，服务器不接受来自客户端的连接，而是只管调用recvfrom函数，等待来自某个客户的数据到达。recvform将所接收的数据报一道返回客户的协议地址，因此服务器可以把响应发送给正确的客户。下图给出了典型的UDP客户/服务器程序的函数调用。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之五：select和poll函数</title>
+      <link>https://zcheng.ren/2016/07/14/unixnetworkprogrammingpart5/</link>
+      <pubDate>Thu, 14 Jul 2016 10:21:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/14/unixnetworkprogrammingpart5/</guid>
+      <description>&lt;h1 id=&#34;一-i-o复用技术&#34;&gt;&lt;strong&gt;一、I/O复用技术&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条件准备就绪，它就通知该进程。I/O复用适用于以下场合：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;当客户处理多个描述符（一般是交互式输入或网络套接字），必须适用I/O复用&lt;/li&gt;
+&lt;li&gt;当一个客户处理多个套接字时，这种情况很少见，但也可能出现&lt;/li&gt;
+&lt;li&gt;当一个TCP服务器既要处理监听套接字，又要处理已连接套接字，一般就要使用I/O复用&lt;/li&gt;
+&lt;li&gt;如果一个服务器既要适用TCP，又要适用UDP，一般就要使用I/O复用&lt;/li&gt;
+&lt;li&gt;如果一个服务器要处理多个服务或者多个协议，一般就要使用I/O复用&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;与多线程和多进程技术相比，I/O复用技术的最大优势就是系统开销小，系统不必创建进程/线程，也不必维护这些进程/进程，从而大大减小了系统的开销。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之四：TCP客户-服务器示例</title>
+      <link>https://zcheng.ren/2016/07/11/unixnetworkprogrammingpart4/</link>
+      <pubDate>Mon, 11 Jul 2016 16:10:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/11/unixnetworkprogrammingpart4/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;本篇博客主要记录一个完整的TCP客户/服务器实例的编写，以及从这个实例中引发的对僵死进程的处理等问题。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-tcp客户-服务器功能需求&#34;&gt;一、TCP客户/服务器功能需求&lt;/h1&gt;
+
+&lt;p&gt;本实例完成以下功能：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;客户从标准输入读入一行文本，并写给服务器&lt;/li&gt;
+&lt;li&gt;服务器从网络输入中读入这行文本，并回射给客户&lt;/li&gt;
+&lt;li&gt;客户从网路输入读入这行回射文本，并显示在标准输入&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;需要用到的函数：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;套接字编程基本函数(socket,bind,listen,accept,connect,close等)，完成套接字编程&lt;/li&gt;
+&lt;li&gt;标准I/O库函数fputs和fgets，完成输入和输出&lt;/li&gt;
+&lt;li&gt;read，writen，readline函数，完成数据的传输&lt;/li&gt;
+&lt;li&gt;fork函数，完成并行服务器的编写&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之三：基本套接字编程</title>
+      <link>https://zcheng.ren/2016/07/06/unixnetworkprogrammingpart2/</link>
+      <pubDate>Wed, 06 Jul 2016 16:30:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/06/unixnetworkprogrammingpart2/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bind(),connect(),accept(),listen()等。
+本博文也直接进入正题，对这几个函数进行剖析和讲解。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-基本套接字函数&#34;&gt;&lt;strong&gt;一、基本套接字函数&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;在《计算机网络》和《TCP/IP详解》中，我们经常讨论TCP/IP的工作流程，连接建立的三次握手和连接断开的四次挥手等，那么这些如何体现在程序中呢？我们如何来运用这些理论知识于实践之中呢？下面我们来看看套接字编程中客户和服务器进程之间的一些典型事件的时间表。&lt;/p&gt;
+
+&lt;p&gt;如图，服务器首先启动，稍后客户进程启动，它通过connect()函数试图连接服务器，这个阶段完成三次握手，然后read()和write()完成客户和服务器之间的数据传输，之后客户进程调用close()来请求断开连接，服务器收到后读取EOF，接着关闭连接，这时完成四次挥手的过程。下面就图中的每个函数，细细剖析他们的用途。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之二：套接字编程简介</title>
+      <link>https://zcheng.ren/2016/07/03/unixnetworkprogrammingpart3/</link>
+      <pubDate>Sun, 03 Jul 2016 20:41:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/03/unixnetworkprogrammingpart3/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;unp第二章&lt;/strong&gt;主要将了TCP和UDP的简介，这些在《TCP/IP详解》和《计算机网络》等书中有很多细致的讲解，可以参考本人的这篇博客&lt;a href=&#34;http://blog.csdn.net/terence1212/article/details/51567833&#34;&gt;【计算机网络 第五版】阅读笔记之五：运输层&lt;/a&gt;，这篇博客就不再赘述。&lt;/p&gt;
+
+&lt;p&gt;本篇博客主要记录套接字编程API，从一些基本的API来一步一步了解套接字网络编程。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-套接字地址结构&#34;&gt;一、套接字地址结构&lt;/h1&gt;
+
+&lt;p&gt;大多数的套接字函数都以一个指向套接字地址结构的指针作为参数。每个协议簇都定义了自己的套接字地址结构。
+套接字地址结构均以sockaddr_开头，并以对应每个协议簇的唯一后缀结尾。&lt;/p&gt;
+
+&lt;h2 id=&#34;ipv4套接字地址结构&#34;&gt;ipv4套接字地址结构&lt;/h2&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之一：代码环境搭建</title>
+      <link>https://zcheng.ren/2016/07/01/unixnetworkprogrammingpart1/</link>
+      <pubDate>Fri, 01 Jul 2016 17:28:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/01/unixnetworkprogrammingpart1/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;粗略的阅读过《TCP/IP详解》和《计算机网络（第五版）》后，开始啃这本《UNIX网络编程卷一：套接字联网API》，目前linux下的编程不算太了解，在阅读的过程中也会有很多障碍，希望自己坚持下去。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-源代码的下载和编译&#34;&gt;一、源代码的下载和编译&lt;/h1&gt;
+
+&lt;p&gt;源代码下载地址：&lt;a href=&#34;http://www.unpbook.com/&#34;&gt;http://www.unpbook.com/&lt;/a&gt; ， 下载下来得到unpv13e.tar.gz文件&lt;/p&gt;
+
+&lt;p&gt;编译步骤：
+解压缩zxvf unpv13e.tar.gz&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;tar zxvf unpv13e.tar.gz
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;进入unpv13e文件夹中&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;cd /unpv13e
+./configure//如果权限不够可以chmod改权限
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;编译lib文件&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;cd lib
+make
+cd ../libfree
+make
+cd ../libgai
+make
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

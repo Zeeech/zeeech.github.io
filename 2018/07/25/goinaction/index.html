@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Go实战--基础知识</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Go实战--基础知识" />
+<meta property="og:description" content="最近为了学习Go语言，选择了从《Go In Action》这本书入手。书里的知识简单易懂，适合新手学习，这里大致记录一下阅读笔记，内容也大多取自于该书。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2018/07/25/goinaction/" /><meta property="article:published_time" content="2018-07-25T11:45:08&#43;08:00"/>
+<meta property="article:modified_time" content="2018-07-25T11:45:08&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go实战--基础知识"/>
+<meta name="twitter:description" content="最近为了学习Go语言，选择了从《Go In Action》这本书入手。书里的知识简单易懂，适合新手学习，这里大致记录一下阅读笔记，内容也大多取自于该书。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Go实战--基础知识</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2018-07-25T11:45:08">July 25, 2018</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#1-打包和工具链">1. 打包和工具链</a>
+<ul>
+<li><a href="#1-1-包">1.1 包</a></li>
+<li><a href="#1-2-import">1.2 import</a></li>
+<li><a href="#1-3-init函数">1.3 init函数</a></li>
+<li><a href="#1-4-go-tools">1.4 Go tools</a></li>
+<li><a href="#1-5-依赖管理">1.5 依赖管理</a></li>
+</ul></li>
+<li><a href="#2-数组-切片和映射">2. 数组、切片和映射</a>
+<ul>
+<li><a href="#2-1-数组">2.1 数组</a></li>
+<li><a href="#2-2-切片">2.2 切片</a></li>
+<li><a href="#2-3-映射">2.3 映射</a></li>
+</ul></li>
+<li><a href="#3-go语言的类型系统">3. Go语言的类型系统</a>
+<ul>
+<li><a href="#3-1-用户自定义的类型">3.1 用户自定义的类型</a></li>
+<li><a href="#3-2-方法">3.2 方法</a></li>
+<li><a href="#3-3-类型的本质">3.3 类型的本质</a></li>
+<li><a href="#3-4-接口">3.4 接口</a></li>
+<li><a href="#3-5-嵌入类型-type-embedding">3.5 嵌入类型 type embedding</a></li>
+<li><a href="#3-6-公开和未公开的标志符">3.6 公开和未公开的标志符</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>最近为了学习Go语言，选择了从《Go In Action》这本书入手。书里的知识简单易懂，适合新手学习，这里大致记录一下阅读笔记，内容也大多取自于该书。</p>
+
+<h2 id="1-打包和工具链">1. 打包和工具链</h2>
+
+<h3 id="1-1-包">1.1 包</h3>
+
+<p>Go语言本身就有很好的代码复用性。所有的Go工程都会组织若干组文件，每组文件被称为一个包。包就是一个很小的复用单元。</p>
+
+<p>包命名惯例：使用包所在目录的名字。如net/http</p>
+
+<p>和所有语言一样，main()函数是go程序的入口。所有的Go语言编译的可执行程序都必须有一个名叫main的包。</p>
+
+<h3 id="1-2-import">1.2 import</h3>
+
+<p>导入包的关键字：import。如下：</p>
+
+<pre><code class="language-go">import (
+	&quot;fmt&quot;
+    &quot;strings&quot;
+)
+</code></pre>
+
+<p>go查找包的顺序，由GOROOT和GOPATH决定。如</p>
+
+<pre><code class="language-go">/usr/local/go/src/pkg/net/http    -- GOROOT
+/home/workspace/go/src/net/http   -- GOPATH
+/home/myproject/src/net/http	  -- GOPATH
+</code></pre>
+
+<p>一旦编译器找到一个满足import语句的包，就停止进一步查找。</p>
+
+<p>**远程导入 ** ： 迎合分布式版本控制系统，使用<code>go get</code>获取包，如下：</p>
+
+<pre><code class="language-go">// 项目里面导入包
+import &quot;github.com/alecthomas/log4go&quot;
+// 使用goget来导入包
+go get &quot;github.com/alecthomas/log4go&quot;
+</code></pre>
+
+<p><strong>命名导入</strong>:  在import语句给出的包路径的左侧定义一个名字，将导入的包命名为新名字。主要是为了解决包重名的问题。如下：</p>
+
+<pre><code class="language-go">package main 
+import (
+	&quot;fmt&quot;
+    myfmt &quot;mylib/fmt&quot;
+)
+func main() {
+    fmt.Println(&quot;hello, Go!&quot;)
+    myfmt.Println(&quot;hello, Go!&quot;)
+}
+</code></pre>
+
+<p>另外，有时候需要导入一个包，但是不需要引用这个包的标志符。这种情况可以使用空白标识符<code>_</code>来重命名这个导入。如下：</p>
+
+<pre><code class="language-go">import (
+	_ &quot;fmt&quot;
+)
+</code></pre>
+
+<h3 id="1-3-init函数">1.3 init函数</h3>
+
+<p>初始化函数，每个包可以包含任意多个init函数，在程序执行开始的时候被调用。</p>
+
+<h3 id="1-4-go-tools">1.4 Go tools</h3>
+
+<p>go命令行工具—— <code>go</code>。go这个指令提供了很多功能，如下：</p>
+
+<pre><code class="language-go">Go is a tool for managing Go source code.
+
+Usage:
+
+	go command [arguments]
+
+The commands are:
+
+	build       compile packages and dependencies
+	clean       remove object files and cached files
+	doc         show documentation for package or symbol
+	env         print Go environment information
+	bug         start a bug report
+	fix         update packages to use new APIs
+	fmt         gofmt (reformat) package sources
+	generate    generate Go files by processing source
+	get         download and install packages and dependencies
+	install     compile and install packages and dependencies
+	list        list packages
+	run         compile and run Go program
+	test        test packages
+	tool        run specified go tool
+	version     print Go version
+	vet         report likely mistakes in packages
+
+Use &quot;go help [command]&quot; for more information about a command.
+
+Additional help topics:
+
+	c           calling between Go and C
+	buildmode   build modes
+	cache       build and test caching
+	filetype    file types
+	gopath      GOPATH environment variable
+	environment environment variables
+	importpath  import path syntax
+	packages    package lists
+	testflag    testing flags
+	testfunc    testing functions
+
+Use &quot;go help [topic]&quot; for more information about that topic.
+</code></pre>
+
+<p><strong>Go buile 和 run</strong>是最常见的操作，分别是编译和运行go项目。可以以最简单的helloword为例，来练习这些操作。</p>
+
+<pre><code class="language-go">// 代码清单
+package main
+import &quot;fmt&quot;
+func main() {
+	fmt.Println(&quot;hello, Go!&quot;)
+}
+
+// 以下为终端命令
+➜  go go build helloworld.go
+➜  go ./helloworld
+hello, Go!
+</code></pre>
+
+<p><strong>go vet</strong> 帮助开发人员检测代码的常见错误。通常，能捕获的错误类型如下：</p>
+
+<ul>
+<li>Printf类函数调用时，类型匹配错误的参数</li>
+<li>定义常用的方法时，方法签名的错误</li>
+<li>错误的结构标签</li>
+<li>没有指定字段名的结构字面量</li>
+</ul>
+
+<p>如下所示，如果变量没有指定类型，go vet可以找出错误。</p>
+
+<pre><code class="language-go">str = fmt.Println(&quot;hello, Go!&quot;)
+// 以下为终端命令
+➜  go go vet helloworld.go
+# command-line-arguments
+./helloworld.go:7:2: undefined: str
+./helloworld.go:7:19: multiple-value fmt.Println() in single-value context
+</code></pre>
+
+<p><strong>go fmt</strong>格式化代码。fmt工具会将开发人员的代码布局成和Go源代码类似的风格，不用再为了大括号是不是要放到行尾，或者用tab还是空格来做缩进而纠结。</p>
+
+<p><strong>go doc</strong> 获取go帮助文档，直接指定包来获取tar包的帮助文档</p>
+
+<pre><code class="language-go">➜  go go doc tar
+package tar // import &quot;archive/tar&quot;
+
+Package tar implements access to tar archives.
+
+Tape archives (tar) are a file format for storing a sequence of files that
+can be read and written in a streaming manner. This package aims to cover
+most variations of the format, including those produced by GNU and BSD tar
+tools.
+
+const TypeReg = '0' ...
+var ErrHeader = errors.New(&quot;archive/tar: invalid tar header&quot;) ...
+type Format int
+    const FormatUnknown Format ...
+type Header struct{ ... }
+    func FileInfoHeader(fi os.FileInfo, link string) (*Header, error)
+type Reader struct{ ... }
+    func NewReader(r io.Reader) *Reader
+type Writer struct{ ... }
+    func NewWriter(w io.Writer) *Writer
+</code></pre>
+
+<p>或者从浏览器查看go的文档。</p>
+
+<pre><code class="language-shell">godoc -http=:6060
+</code></pre>
+
+<p>然后在浏览器键入localhost:6060。</p>
+
+<p><img src="https://ws1.sinaimg.cn/large/73a1af36ly1ftlyr6ndrqj22l61h2wys.jpg" alt="" /></p>
+
+<h3 id="1-5-依赖管理">1.5 依赖管理</h3>
+
+<p>管理工具：</p>
+
+<ul>
+<li>godep</li>
+<li>vender</li>
+<li>Gopkg.in</li>
+<li>gb  Go社区成员开发的全新构建工具。</li>
+</ul>
+
+<p>这里额外补充一下使用gb来管理go工程依赖的相关知识。</p>
+
+<pre><code class="language-shell">// 安装gb工具
+go get github.com/constabulary/gb/...
+// 以下可以放在.bash_profile中
+unalias gb // 于git branch的简写冲突
+export PATH=$PATH:$GOPATH/bin
+</code></pre>
+
+<p>这样就可以使用gb命令了，如下：</p>
+
+<pre><code class="language-go">➜  bin gb
+gb, a project based build tool for the Go programming language.
+
+Usage:
+
+        gb command [arguments]
+
+The commands are:
+
+        build       build a package
+        doc         show documentation for a package or symbol
+        env         print project environment variables
+        generate    generate Go files by processing source
+        info        info returns information about this project
+        list        list the packages named by the importpaths
+        test        test packages
+
+Use &quot;gb help [command]&quot; for more information about a command.
+
+Additional help topics:
+
+        plugin      plugin information
+        project     gb project layout
+
+Use &quot;gb help [topic]&quot; for more information about that topic.
+</code></pre>
+
+<p>这里我们简要的搭建一个工程来试一试gb。参考(<a href="http://tabalt.net/blog/golang-package-dependency-management-tool-gb/">Golang包依赖管理工具gb</a>)：</p>
+
+<ol>
+<li>创建gb项目目录结构</li>
+</ol>
+
+<pre><code class="language-go">   cd ~/helloworld
+   mkdir -p src/helloworld
+   mkdir -p vendor/src
+   vim src/helloworld/main.go
+   // 编写helloworld代码
+   package main
+   
+   import (
+       &quot;fmt&quot;
+       &quot;net/http&quot;
+   
+       &quot;github.com/tabalt/gracehttp&quot;
+   )
+   
+   func main() {
+       http.HandleFunc(&quot;/&quot;, func(w http.ResponseWriter, r *http.Request) {
+           fmt.Fprintf(w, &quot;hello world&quot;)
+       })
+   
+       err := gracehttp.ListenAndServe(&quot;:8080&quot;, nil)
+       if err != nil {
+           fmt.Println(err)
+       }
+   }
+</code></pre>
+
+<ol>
+<li>添加第三方依赖包：使用gb vendor</li>
+</ol>
+
+<pre><code class="language-shell">   gb vendor fetch github.com/tabalt/gracehttp
+   // 目前为止，整个目录的架构如下
+   ├── src
+   │   └── helloworld
+   │       └── main.go
+   └── vendor
+       ├── manifest
+       └── src
+           └── github.com
+               └── tabalt
+                   └── gracehttp
+                       ├── README.md
+                       ├── gracehttp.go
+                       ├── gracehttpdemo
+                       │   └── main.go
+                       └── server.go
+</code></pre>
+
+<ol>
+<li>编译可执行程序</li>
+</ol>
+
+<pre><code class="language-go">   gb build helloworld
+   ./bin/helloworld
+   // 此时打开一个终端，并执行curl http://127.0.0.1:8000/,会得到如下输出
+   hello world
+</code></pre>
+
+<p>gb还有其他的一直指令，如下：</p>
+
+<pre><code class="language-shell">        build       build a package 编译包
+        doc         show documentation for a package or symbol  显示文档
+        env         print project environment variables 打印项目的环境变量
+        generate    generate Go files by processing source 处理源代码生成go文件
+        info        info returns information about this project 显示项目信息
+        list        list the packages named by the importpaths 显示项目下的所有包
+        test        test packages 执行测试
+</code></pre>
+
+<p>gb vendor获取依赖，其功能列表如下</p>
+
+<pre><code class="language-shell">        fetch       fetch a remote dependency 获取一个远程依赖
+        update      update a local dependency 更新一个本地依赖
+        list        lists dependencies, one per line 每行一个列出所有依赖
+        delete      deletes a local dependency 删除一个本地依赖
+        purge       purges all unreferenced dependencies 清除所有未引用的依赖
+        restore     restore dependencies from the manifest 从manifest清单文件还原依赖
+</code></pre>
+
+<h2 id="2-数组-切片和映射">2. 数组、切片和映射</h2>
+
+<p>数组是切片和映射的基础数据结构。</p>
+
+<h3 id="2-1-数组">2.1 数组</h3>
+
+<p>在 Go 语言里，数组是一个长度固定的数据类型，用于存储一段具有相同的类型的元素的连 续块。数组存储的类型可以是内置类型，如整型或者字符串，也可以是某种结构类型。</p>
+
+<blockquote>
+<p>所以说，GO内置数组长度固定，内存连续分配，更容易计算索引，快速迭代数组。</p>
+</blockquote>
+
+<p>声明一个数组后，数据类型和数组长度就不能改变了。声明后就会初始化，数组也是，数组内每个元素都初始化为对应类型的零值。</p>
+
+<pre><code class="language-go">var array [5]int
+// Go自动计算声明数组的长度
+array := [...]int{10,20,30,40,50}
+// 声明数组，并给其中特定索引的元素赋值，其余保持零值
+// 如下，索引为1和3的元素赋值为10，20
+array := [5]int{1:10, 3:20}
+</code></pre>
+
+<p>使用数组的方法</p>
+
+<pre><code class="language-go">array := [5]int(10,20,30)
+array[2]=20 // 修改索引为2的元素的值
+// 声明数组指针
+array := [5]*int{1: new(int), 1: new(int)}
+// 为索引为0和1的元素赋值
+*array[0] = 10
+// 索引为0的元素是一个指针，该指针指向整数10
+</code></pre>
+
+<p><strong>只有数组类型相同（长度和每个元素的类型均相同）的两个数组才能相互赋值。</strong></p>
+
+<p><strong>多维数组</strong>：组合多个数组来创建多维数组。</p>
+
+<pre><code class="language-shell">// 声明一个二维整形数组
+var array [4][2]int
+// 初始化与一个二维数组
+array := [4][2]int{{1,2},{2,3},{3,4},{4,5}}
+// 使用二维数组
+array[0][0] // 值为1
+</code></pre>
+
+<p>在函数间传递数组时，最好使用指针，避免用值得方式传递。</p>
+
+<h3 id="2-2-切片">2.2 切片</h3>
+
+<p><strong>切片</strong>：动态数组，可以按需自动增长和缩小。便于使用和管理数据集合。</p>
+
+<p>切片的底层内存也是在连续块中分配，所以切片可以获得索引、迭代以及为垃圾回收优化的好处</p>
+
+<blockquote>
+<p>咦，和STL的vector有点类似，后面继续看看具体实现。</p>
+</blockquote>
+
+<p>切片的数据结构有三个字段，分别如下：</p>
+
+<ul>
+<li>指向底层数组的指针</li>
+<li>切片访问的元素格式，即长度</li>
+<li>切片允许增长到的元素个数，即容量</li>
+</ul>
+
+<p><strong>创建和初始化</strong>：内置的make函数可以创建和初始化切片。</p>
+
+<pre><code class="language-go">// 创建一个字符串切片
+slice := make([]string, 5) // 长度和容量都是5个元素，类型为字符串
+// 指定长度和容量
+slice := make([]int, 3, 5) // 长度为3，容量为5
+</code></pre>
+
+<p>需要注意如下几点：</p>
+
+<ul>
+<li>声明切片的长度不能超过容量</li>
+<li>访问切片的索引不能超过其长度，否则会报错，index out of range</li>
+</ul>
+
+<p>声明数组和声明切片的不同：</p>
+
+<pre><code class="language-go">// 创建有三个元素的整形数组
+array := [3]int{10,20,30}
+// 创建长度和容量都是3的整形切片
+slice := []int{10,20,30}
+// []运算符里指定了值就是创建数组，反之为创建切片
+</code></pre>
+
+<p>创建nil和空切片</p>
+
+<pre><code class="language-go">var slice []int // 底层数组的指针为nil，长度和容量均为0
+// 空切片
+slice := make([]int,0) // 使用make创建空的整型切片，地址针织不为nil，长度和容量均为0
+// 使用切片字面量创建空的整型切片
+slice := []int{}
+</code></pre>
+
+<p><strong>切片的使用</strong>：基本使用和数组类似，可以使用索引。这里关注一下，使用切片来创建切片。</p>
+
+<pre><code class="language-go">// 创建切片
+slice := []int{1,2,3,4,5}
+// 创建新切片
+newslice := slice[1:3]
+// newslice和slice共享一段底层数组，slice的指针指向1，newslice的指针指向2
+// slice 指针 长度5 容量5
+//   	  ↓ 
+// 		| 1 | 2 | 3 | 4 | 5 |
+// 			  ↑
+// newslice  指针 长度2，容量4
+// 切片长度和容量计算方式:
+// 对底层数组容量是k的切片slice[i:j]来说
+// 长度: j - i
+// 容量: k - i
+</code></pre>
+
+<blockquote>
+<p>Warning：由于是指针，修改newsclice的元素值会导致slice中的值也相应被修改。</p>
+</blockquote>
+
+<p><strong>切片动态增长</strong>：append函数。</p>
+
+<ul>
+<li>当容量足够时，添加到数组后面，</li>
+<li>当容量不足时，当切片容量小于1000个元素时，总是增长为原来的两倍；一旦元素个数超过1000，容量的增长因子会设为1.25，每次以25%增长。</li>
+</ul>
+
+<blockquote>
+<p>两倍增长和STL:VECTOR相似，具体增长方式可能会随着语言的演化有所改变。</p>
+</blockquote>
+
+<p><strong>创建切片时限制容量</strong> ： 创建切片时，可以限制容量，如下：</p>
+
+<pre><code class="language-go">slice := []int{1,2,3,4,5,6}
+newsclie := slice[1,3,4]
+// newslice长度为2，容量为4，{2,3,4}
+// 计算方式：i:j为前闭后开区间
+// 对于 slice[i:j:k]
+// 长度: j – i
+// 容量: k – i
+</code></pre>
+
+<p><strong>迭代切片</strong>：关键字range，和for配合来迭代切片</p>
+
+<pre><code class="language-go">slice := []int{1,2,3,4}
+// 迭代每一个元素，
+for index, value := range slice {
+    fmt.Printf(&quot;Index: %d Value: %d\n&quot;,index, value)
+}
+// Output:
+// Index: 0 Value: 1
+// Index: 1 Value: 2
+// Index: 2 Value: 3
+// Index: 3 Value: 4
+</code></pre>
+
+<p><strong>多维切片</strong> ：和数组一样，组合多个切片形成多维切片。</p>
+
+<pre><code class="language-go">// 创建一个整型切片的切片
+slice := [][]int{{10}, {100, 200}}
+// 为第一个切片追加值为 20 的元素 
+slice[0] = append(slice[0], 20)	
+</code></pre>
+
+<p><strong>在函数间传递切片</strong>：切片尺寸很小，可以看成是指针的传递。</p>
+
+<h3 id="2-3-映射">2.3 映射</h3>
+
+<p>映射是一种数据结构，用于存储一系列无序的键值对。映射的底层实现采用了散列表。有机会去看看Go map的实现，这里就不再赘述了。</p>
+
+<blockquote>
+<p>翻译真的是醉了，这货明明就是一个hashmap，翻译成中文看着真难受。</p>
+</blockquote>
+
+<p><strong>创建和初始化</strong>：主要是make和直接声明。</p>
+
+<pre><code class="language-go">dict := make(map[string]int) // 键是string，值是int
+// 使用键值对直接初始化
+dict := map[string]string{&quot;Red&quot;:&quot;#da1337&quot;, &quot;Orange&quot;:&quot;#e95a22&quot;}
+</code></pre>
+
+<p>字符串切片不能作为map的键，但是可以作为map的值。</p>
+
+<pre><code class="language-go">dict := map[[]string]int{}
+// 会报错Compiler Exception: invalid map key type []string
+dict := map[int][]string{}
+// 正常使用
+</code></pre>
+
+<p><strong>使用映射</strong>：直接当做键值对使用。</p>
+
+<pre><code class="language-go">// 创建map
+colors := map[string]string{}
+colors[&quot;Red&quot;] = “#da1337”
+// 创建一个值为nil的map
+colors :=map[string]string
+colors[&quot;Red&quot;] = “#da1337” // 报错panic: runtime error: assignment to entry in nil map
+// 判断键存在
+value, exists := colors[&quot;Blue&quot;]
+if exists {}  // exists返回键存在与否
+value := colors[&quot;Blue&quot;]
+if value != &quot;&quot; {} // 值为空代表不存在
+// 删除
+delete(colors, &quot;Red&quot;)
+</code></pre>
+
+<p><strong>函数间传递映射</strong>：函数中传递mao也是相当于指针的方式，并不会复制底层的数据结构。因此<strong>在函数内做的修改在函数外也有效</strong>，这个要值得注意一下。</p>
+
+<h2 id="3-go语言的类型系统">3. Go语言的类型系统</h2>
+
+<p>Go语言是一种静态类型的编程语言。变量类型不能动态获取，编译时就需要知道每个值的类型。</p>
+
+<h3 id="3-1-用户自定义的类型">3.1 用户自定义的类型</h3>
+
+<p>使用struct关键字来创建一个结构类型</p>
+
+<pre><code class="language-go">// 新建一个结构类型
+type user struct {
+    name string 
+    email string
+    ext   int
+}
+// 声明一个user类型的变量
+var bill user
+// 初始化一个user类型的变量
+lisa := user {
+    name : &quot;Lisa&quot;,
+    email : &quot;lisa@email&quot;, 
+    // 未指定的变量按照类型的默认值给定
+}
+// 类型允许嵌套
+type admin struct {
+    person user
+    age int
+}
+// 初始化的时候可以直接在内部用字面量进行初始化
+fred := admin {
+    person: user {
+        name : &quot;fred&quot;,
+    	email : &quot;fred@email&quot;
+    },
+    age: 20
+}
+// 类型不同的变量之间不能赋值，下面这种特殊情况也不行
+type Duration int64
+var dur Duration
+dur = int64(1000) // 编译会报错。cannot use int64(1000) (type int64) as type Duration in assignment
+</code></pre>
+
+<h3 id="3-2-方法">3.2 方法</h3>
+
+<p>方法即函数，只是在声明时，在关键字func和方法名之间增加了一个参数。</p>
+
+<pre><code class="language-go">package main 
+import &quot;fmt&quot;
+type user struct {
+    name string 
+    email string
+}
+// notify使用值接收的方式，实现了一个方法
+func (u user) notify {
+    fmt.Printf(&quot;sending User Email To %s&lt;%s&gt;\n&quot;, u.name, u.email)
+    u.name = &quot;jasper&quot; // 值传递的话改变值只在当前函数有效，函数外部无效
+}
+// notify使用指针接收的方式，实现了一个方法
+func (u *user) changeEmail(name string) {
+    u.email = email
+}
+func main {
+	// Values of type user can be used to call methods
+	// declared with a value receiver.
+	bill := user{&quot;Bill&quot;, &quot;bill@email.com&quot;}
+	bill.notify()
+
+	// Pointers of type user can also be used to call methods
+	// declared with a value receiver.
+	lisa := &amp;user{&quot;Lisa&quot;, &quot;lisa@email.com&quot;}
+    lisa.notify() // (*lisa).notify() Go底层做了优化
+
+	// Values of type user can be used to call methods
+	// declared with a pointer receiver.
+	bill.changeEmail(&quot;bill@newdomain.com&quot;) 
+    // Go背后调用如下：
+    // (&amp;bill).changEmail()
+	bill.notify()
+
+	// Pointers of type user can be used to call methods
+	// declared with a pointer receiver.
+	lisa.changeEmail(&quot;lisa@newdomain.com&quot;)
+	lisa.notify()
+}
+// 输出
+// Sending User Email To Bill&lt;bill@email.com&gt;
+// Sending User Email To Lisa&lt;lisa@email.com&gt;
+// Sending User Email To Bill&lt;bill@newdomain.com&gt;
+// Sending User Email To Lisa&lt;lisa@newdomain.com&gt;
+</code></pre>
+
+<p><strong>Go语言既允许使用值，也允许使用指针来调用方法，不必严格符合接受者的类型。</strong> 对这个抱有怀疑，这样会不会造成混淆？</p>
+
+<h3 id="3-3-类型的本质">3.3 类型的本质</h3>
+
+<p>内置类型：int, string ,bool，本质是原始的类型</p>
+
+<p>引用类型：切片。映射、通道和函数类型，本质是在共享底层数据结构</p>
+
+<p>结构类型：struct关键字定义的，本质可以是原始的也可以是非原始的</p>
+
+<blockquote>
+<p>反正这里噼里啪啦说了一大堆，最后还是被绕晕了。</p>
+</blockquote>
+
+<h3 id="3-4-接口">3.4 接口</h3>
+
+<p>多态是指代码可以根据类型的具体实现采取不同行为的能力。</p>
+
+<p>接口是用来定义行为的类型，接口不实现具体的方法，而是通过方法由用户定义的类型实现。</p>
+
+<p>接口使用interface关键字实现。</p>
+
+<pre><code class="language-go">// Go实现简单的多态
+package main
+
+import (
+	&quot;fmt&quot;
+)
+
+// 定义接口，包含一个接口函数notify
+type notifier interface {
+	notify()
+}
+
+// user defines a user in the program.
+type user struct {
+	name  string
+	email string
+}
+
+// 使用指针传递的方式实现notifier接口
+func (u *user) notify() {
+	fmt.Printf(&quot;Sending user email to %s&lt;%s&gt;\n&quot;,
+		u.name,
+		u.email)
+}
+
+// admin defines a admin in the program.
+type admin struct {
+	name  string
+	email string
+}
+
+// 使用指针传递的方式实现notifier接口
+func (a *admin) notify() {
+	fmt.Printf(&quot;Sending admin email to %s&lt;%s&gt;\n&quot;,
+		a.name,
+		a.email)
+}
+
+// main is the entry point for the application.
+func main() {
+	// Create a user value and pass it to sendNotification.
+	bill := user{&quot;Bill&quot;, &quot;bill@email.com&quot;}
+	sendNotification(&amp;bill)
+
+	// Create an admin value and pass it to sendNotification.
+	lisa := admin{&quot;Lisa&quot;, &quot;lisa@email.com&quot;}
+	sendNotification(&amp;lisa)
+}
+
+// sendNotification accepts values that implement the notifier
+// interface and sends notifications.
+func sendNotification(n notifier) {
+	n.notify()
+}
+</code></pre>
+
+<h3 id="3-5-嵌入类型-type-embedding">3.5 嵌入类型 type embedding</h3>
+
+<p>Go支持类型嵌套。</p>
+
+<p>外层的接口会覆盖内层的接口，但是可以通过直接访问内层接口来调用内层接口。这里来个简单的代码吧。</p>
+
+<pre><code class="language-go">// user 实现了notify接口
+// admain 实现了notify接口
+type admin struct{
+    u user
+    age int
+}
+// admin中嵌套了user类型。
+// 初始化一个admin 记为ad吧
+ad.notify()  // 会调用admin实现的notify接口
+ad.u.notify() // 会调用user实现的notify接口
+// 就是这么理解，和C++的继承差不多。
+</code></pre>
+
+<h3 id="3-6-公开和未公开的标志符">3.6 公开和未公开的标志符</h3>
+
+<p>这个在刚接触go的时候就发现了。</p>
+
+<p>当声明一个标志符以小写字母开头时，这个标志符是未公开的，private！</p>
+
+<p>当声明一个标志符以大写字母开头时，这个标志符是公开的，public！</p>
+
+<p>不得不说，go在这方面还是很优雅的，省的每次写public 和private。</p>
+
+<p>—— 未完待续</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/go/" rel="tag">Go</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2018/01/29/nginxsourcequickstart/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Nginx快速上手</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2018/07/27/spacevimtutorial/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">SpaceVim Tutorial On Mac</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

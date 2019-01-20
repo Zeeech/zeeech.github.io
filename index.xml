@@ -1,0 +1,755 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/</link>
+    <description>Recent content on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sun, 20 Aug 2017 21:38:52 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>关于我</title>
+      <link>https://zcheng.ren/about/</link>
+      <pubDate>Sun, 20 Aug 2017 21:38:52 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/about/</guid>
+      <description>一个在职场中的迷茫者。</description>
+    </item>
+    
+    <item>
+      <title>机器学习学习笔记--逻辑回归</title>
+      <link>https://zcheng.ren/machinelearning/machinelearninglogisticregression/</link>
+      <pubDate>Sun, 20 Jan 2019 09:26:47 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/machinelearning/machinelearninglogisticregression/</guid>
+      <description>&lt;p&gt;Andrew NG&#39;s Machine Learning.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>机器学习学习笔记--线性回归</title>
+      <link>https://zcheng.ren/machinelearning/machinelearninglinearregression/</link>
+      <pubDate>Sat, 19 Jan 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://zcheng.ren/machinelearning/machinelearninglinearregression/</guid>
+      <description>&lt;p&gt;Andrew NG&#39;s Machine Learning.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>机器学习学习笔记--简介</title>
+      <link>https://zcheng.ren/machinelearning/machinelearningintro/</link>
+      <pubDate>Thu, 17 Jan 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://zcheng.ren/machinelearning/machinelearningintro/</guid>
+      <description>&lt;p&gt;Andrew NG&amp;rsquo;s Machine Learning.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Python时区问题</title>
+      <link>https://zcheng.ren/2018/08/09/pythondatetimezone/</link>
+      <pubDate>Thu, 09 Aug 2018 21:03:39 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/08/09/pythondatetimezone/</guid>
+      <description>&lt;p&gt;今天接到一个需求，要求从数据库中统计出当月的一些指标，想想这需求如此简单，就说没问题，半小时搞定。可是，最后却拖了大半天时间，真是令人心塞。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>三分钟学会cocoapods</title>
+      <link>https://zcheng.ren/2018/07/30/learncocoapods/</link>
+      <pubDate>Mon, 30 Jul 2018 18:06:46 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/07/30/learncocoapods/</guid>
+      <description>&lt;p&gt;最近要接手项目的ios sdk，于是，抽时间学习一个cocoapods，用来管理Xcode项目的依赖的工具。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>SpaceVim Tutorial On Mac</title>
+      <link>https://zcheng.ren/2018/07/27/spacevimtutorial/</link>
+      <pubDate>Fri, 27 Jul 2018 22:42:05 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/07/27/spacevimtutorial/</guid>
+      <description>&lt;p&gt;最近试用了&lt;a href=&#34;https://spacevim.org/&#34;&gt;SpaceVim&lt;/a&gt;，虽然官网说out of the box.但是，我觉得还是有一些地方不符合我个人的设置，这里简要的记录一下，如果你也有用着别扭的地方，可以拿这篇博客做个参考。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Go实战--基础知识</title>
+      <link>https://zcheng.ren/2018/07/25/goinaction/</link>
+      <pubDate>Wed, 25 Jul 2018 11:45:08 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/07/25/goinaction/</guid>
+      <description>&lt;p&gt;最近为了学习Go语言，选择了从《Go In Action》这本书入手。书里的知识简单易懂，适合新手学习，这里大致记录一下阅读笔记，内容也大多取自于该书。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Nginx快速上手</title>
+      <link>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</link>
+      <pubDate>Mon, 29 Jan 2018 14:19:10 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</guid>
+      <description>&lt;p&gt;入职半年来，一直在Nginx的基础上做模块开发，学到了很多东西，也碰到了很多坑。在业务开发的同时，由于对Nginx本身也是一知半解，造成了很多不必要的Bug。痛定思痛，很早以前就想系统的学习一下Nginx，迟迟没有抽出时间下定决心，我知道和以前浅析Redis一样，那是一个一旦开始了就停不下来的旅程。好勒，别立flag了，一篇一篇写下去吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>iterm2下管理ssh的几点经验</title>
+      <link>https://zcheng.ren/2017/11/24/sshforwardagent/</link>
+      <pubDate>Fri, 24 Nov 2017 20:03:55 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2017/11/24/sshforwardagent/</guid>
+      <description>&lt;p&gt;工作了之后经常和服务器打交道，自己也搭了好几个虚拟机用于开发。那么，问题来了：如何有效地管理ssh呢？&lt;/p&gt;
+
+&lt;p&gt;一开始，我秉承着“好记性不如烂笔头的”的执念，把每个虚拟机的登录方式记在笔记上，每次登录的时候都要先去印象笔记中搜一下，然后复制粘贴。可想而知这样的效率有多低。为了更好地投身工作，节约ssh浪费的时间，我开始搜寻更有效率的方法。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--事件ae</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceae/</link>
+      <pubDate>Fri, 13 Jan 2017 15:12:13 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceae/</guid>
+      <description>&lt;p&gt;Redis源码剖析搁浅了一段时间，由于自己对事件驱动以及Reactor模式的理解不够深，源码看起来比较吃力，思来想去，所幸自己去实现一个简单的事件驱动模型。于是，采用python的select和queue模块开发了一个简易聊天服务器，实践中学习到的东西很多，回头再来看Redis的ae事件源码，明显轻松多了。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>2016已过去，2017请努力</title>
+      <link>https://zcheng.ren/2017/01/07/my2016/</link>
+      <pubDate>Sat, 07 Jan 2017 14:10:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2017/01/07/my2016/</guid>
+      <description>&lt;p&gt;过着2017年的日子，思考着2016年人生的变化，或许，最大的变化是懂得记录学习，记录生活吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--事务Multi</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcemulti/</link>
+      <pubDate>Mon, 02 Jan 2017 10:20:14 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcemulti/</guid>
+      <description>&lt;p&gt;数据库事务，是指作为单个逻辑工作单元执行的一系列操作，这些操作要么全部执行，要么全部不执行。事务处理可以确保除非事务性单元内的所有操作都成功完成，否则不会永久更新面向数据的资源，这样可以简化错误恢复并使应用程序更加可靠。事务包括ACID特性，分别是Atomic（原子性）、Consistency（一致性）、Isolation（隔离性）和Durablity（持久性）。Redis作为一个key-value数据库，当然也必须拥有事务处理功能，下面就一起去看看它是怎么实现的吧？&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--AOF持久化</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceaof/</link>
+      <pubDate>Sun, 01 Jan 2017 10:34:48 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceaof/</guid>
+      <description>&lt;p&gt;在前一篇博客&lt;a href=&#34;http://zcheng.ren/2016/12/30/TheAnnotatedRedisSourceRdb/&#34;&gt;Redis源码剖析&amp;ndash;RDB持久化&lt;/a&gt;中，我们分析了RDB持久化就是按照特定的格式将服务器中数据库里面的数据写入到RDB文件中，在服务器下一次开启的时候，再按照该格式读取上来，从而保证了数据的持久化。今天，我们来看看另一种持久化操作&amp;mdash;-AOF持久化。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--RDB持久化</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcerdb/</link>
+      <pubDate>Fri, 30 Dec 2016 10:30:33 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcerdb/</guid>
+      <description>&lt;p&gt;众所周知，Reids是一个高效的内存数据库，所有的数据都存放在内存中。这种模式的缺点就是一旦服务器关闭后会立刻丢失所有存储的数据，Redis当然要避免这种情况的发生，于是其提供了两种持久化机制：RDB和AOF。它们的功能都是将内存中存放的数据保存到磁盘文件上，等到服务器下次开启时能重载数据，以免数据丢失。今天，我们先来剖析一下RDB持久化机制。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--发布与订阅Pubsub</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcepubsub/</link>
+      <pubDate>Thu, 29 Dec 2016 13:34:48 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcepubsub/</guid>
+      <description>&lt;p&gt;在分析Notify通知功能的时候讲到，Notify是用过订阅和发布功能来发送通知的。本来按计划是要分析持久化的代码的，可是对这个pubsub实在是有点感兴趣，所以先分析这方面的代码。订阅和发布，顾名思义，就是客户端可以订阅某个频道，也可以向某个频道发布消息，有点像收音机的功能一样。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Mac下打造vim&#43;Python开发环境</title>
+      <link>https://zcheng.ren/2016/12/28/vimandzshinmacterminal/</link>
+      <pubDate>Wed, 28 Dec 2016 16:35:40 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/12/28/vimandzshinmacterminal/</guid>
+      <description>&lt;p&gt;记得刚装ubuntu那会，对vim和terminal爱不释手，装各种插件DIY。换到mac上后接触到SublimeText和VScode，就再也没有去理会vim了。前几天看了点《程序员修炼之道》，里面说『最好精通一种编辑器，并将其用于所有编辑任务。如果不坚持使用一种编辑器，可能会面临现代的巴别特大混乱』&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--通知Notify</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcenotify/</link>
+      <pubDate>Tue, 27 Dec 2016 15:13:09 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcenotify/</guid>
+      <description>&lt;p&gt;Redis在2.8版本以后，增加了键空间（Keyspace Notifications future）通知功能，此特性允许客户端可以以订阅/发布的模式，接收那些对数据库中的键和值有影响的操作事件。Redis关于通知的源代码均在notify.c文件中实现，源码中只有三个功能函数，相对较为简单，但是要想理解其功能，就需要配合server.c和pubsub.c里面的部分代码。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--数据库db</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcedb/</link>
+      <pubDate>Sun, 25 Dec 2016 11:24:49 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcedb/</guid>
+      <description>&lt;p&gt;按照&lt;a href=&#34;http://zcheng.ren/2016/11/25/TheAnnotatedRedisSource1/&#34;&gt;Redis源码剖析&amp;ndash;源码结构解析&lt;/a&gt;一文中给自己规定的六个阶段来学习Redis。目前前三个阶段的学习以及完成了，这些都是和系统的耦合性比较小的部分，所以看起来也比较轻松。从这篇博客开始，就进入到第四阶段的源码剖析了。Redis的各个功能的实现将会顺着我们的逐步深入而变得清晰明了，如果读者跟着我的步伐一起学习，到了这一刻，想必也是兴奋的。废话也不多说了，前面所有的数据结构都是为后面的功能实现做铺垫。那么今天，就来啃掉数据库实现这块硬骨头。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--有序集合t_zset</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcezset/</link>
+      <pubDate>Sat, 24 Dec 2016 11:01:31 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcezset/</guid>
+      <description>&lt;p&gt;今天来剖析一个比较有意思的数据类型—— 有序集合zset，说实话，它的源码真的是多，而且繁琐，不过，其中的一部分在&lt;a href=&#34;http://zcheng.ren/2016/12/06/TheAnnotatedRedisSourceZskiplist/&#34;&gt;Redis源码剖析&amp;ndash;跳跃表zskiplist&lt;/a&gt;中分析过了。有序集合到底是什么呢？有序集合里面存放的元素都自带一个分值，根据这个分值来对元素进行排序，从而使其成为一个有序的集合。接下来，枯燥的Read Code时间到了。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Mac下安装Redis以及配置python的Redis库</title>
+      <link>https://zcheng.ren/2016/12/23/macinstallredisandpythonredis/</link>
+      <pubDate>Fri, 23 Dec 2016 20:13:14 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/12/23/macinstallredisandpythonredis/</guid>
+      <description>&lt;p&gt;之前由于是学习Redis的源码风格，一直都没有对它进行较多的使用和实践，以至于源码分析的过程中，总是会带来一些疑惑和不解。于是，结合最近学得python，打算用python和redis来干点什么，虽然说现在还不知道这个「什么」究竟是什么。但是，工欲善其事必先利其器，先把它安装好，跑起来再说吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--哈希t_hash</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcehash/</link>
+      <pubDate>Fri, 23 Dec 2016 11:02:58 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcehash/</guid>
+      <description>&lt;p&gt;不知不觉，从第一篇写Redis源码分析开始，已经过了快一个月了，想想自己的进度，简直慢的吓人啊，这样下去不行，后面得加快脚步了。今天分析的是Redis的又一个数据类型—哈希，哈希键的底层编码形式有OBJ_ENCODING_ZIPLIST和OBJ_ENCODING_HT两种，其中，前者的底层数据结构为&lt;a href=&#34;http://zcheng.ren/2016/12/13/TheAnnotatedRedisSourceZiplist/&#34;&gt;压缩列表&lt;/a&gt;，后者的底层数据结构为&lt;a href=&#34;http://zcheng.ren/2016/12/04/TheAnnotatedRedisSourceDict/&#34;&gt;字典&lt;/a&gt;。如有对这两个结构不清楚的，可以点击跳转去温故复习一下。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--集合t_set</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceset/</link>
+      <pubDate>Wed, 21 Dec 2016 16:01:05 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceset/</guid>
+      <description>&lt;p&gt;今天来看看Redis的另一个数据类型—集合set。在&lt;a href=&#34;http://zcheng.ren/2016/12/14/TheAnnotatedRedisSourceObject/&#34;&gt;RedisObject&lt;/a&gt;一篇中，有介绍到集合对象的底层有两种编码形式，分别是OBJ_ENCODING_INTSET（底层数据结构为整数集合）和OBJ_ENCODING_HT（底层数据结构为字典），如果对&lt;a href=&#34;http://zcheng.ren/2016/12/09/TheAnnotatedRedisSourceIntset/&#34;&gt;整数集合Intset&lt;/a&gt;和&lt;a href=&#34;http://zcheng.ren/2016/12/04/TheAnnotatedRedisSourceDict/&#34;&gt;字典dict&lt;/a&gt;不熟悉的，可以点击跳转去复习一下。下面，就一起去剖析一下set的实现源码吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--列表t_list</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcelist/</link>
+      <pubDate>Mon, 19 Dec 2016 10:19:58 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcelist/</guid>
+      <description>&lt;p&gt;上一篇博客&lt;a href=&#34;http://zcheng.ren/2016/12/19/TheAnnotatedRedisSourceQuicklist/&#34;&gt;Redis源码剖析&amp;ndash;快速列表&lt;/a&gt; 带大家一起剖析了quicklist这个底层数据结构的实现原理。Redis对外开放的列表list结构就是采用quicklist作为底层实现（在新版本的Redis源码中，不再采用ziplist和sdlist两种结构，而是统一采用quicklist）。有关列表键的实现源码在t_list.c文件中，大家可以边看源码边看这篇博客，一起来理解。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--快速列表quicklist</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcequicklist/</link>
+      <pubDate>Mon, 19 Dec 2016 08:40:43 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcequicklist/</guid>
+      <description>&lt;p&gt;在&lt;a href=&#34;http://zcheng.ren/2016/12/14/TheAnnotatedRedisSourceObject/&#34;&gt;RedisObject&lt;/a&gt;这一篇博客中，有介绍到list结构的底层编码类型有OBJ_ENCODING_QUICKLIST，当时就发现这个底层数据结构被我遗漏了。昨天花了点时间补了补这个知识，看完发现这货就跟STL中的deque的思想一样，顿时觉得又是一个实现超级繁琐但很实用的数据结构。今天就带大家一起来看看这个“二合一”的数据结构。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--字符串t_string</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcestring/</link>
+      <pubDate>Thu, 15 Dec 2016 16:11:49 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcestring/</guid>
+      <description>&lt;p&gt;前面一直在分析Redis的底层数据结构，Redis利用这些底层结构设计了它面向用户可见的五种数据结构，字符串、哈希，链表，集合和有序集合，然后用redisObject对这五种结构进行了封装。从这篇博客开始，带你一点点分析五种数据类型常见命令对应的源码实现，慢慢地解开Redis的面纱。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--对象object</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceobject/</link>
+      <pubDate>Wed, 14 Dec 2016 09:58:40 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceobject/</guid>
+      <description>&lt;p&gt;前面一系列的博客分析了Redis的基本数据结构，有&lt;a href=&#34;http://zcheng.ren/2016/12/02/TheAnnotatedRedisSourceSDS/&#34;&gt;动态字符串sds&lt;/a&gt;、&lt;a href=&#34;http://zcheng.ren/2016/12/03/TheAnnotatedRedisSourceSdlist/&#34;&gt;双端链表sdlist&lt;/a&gt;、&lt;a href=&#34;http://zcheng.ren/2016/12/04/TheAnnotatedRedisSourceDict/&#34;&gt;字典dict&lt;/a&gt;、&lt;a href=&#34;http://zcheng.ren/2016/12/06/TheAnnotatedRedisSourceZskiplist/&#34;&gt;跳跃表skiplist&lt;/a&gt;、&lt;a href=&#34;http://zcheng.ren/2016/12/09/TheAnnotatedRedisSourceIntset/&#34;&gt;整数集合intset&lt;/a&gt;和&lt;a href=&#34;http://zcheng.ren/2016/12/13/TheAnnotatedRedisSourceZiplist/&#34;&gt;压缩列表ziplist&lt;/a&gt;等，这些数据结构对于用户来说是不可见的。&lt;/p&gt;
+
+&lt;p&gt;Redis在这些数据结构的基础上构建了对用户可见的五种类型，分别是string、hash、list、set和zset，为了更方便的使用这五种数据类型，Redis定义了RedisObject结构体来表示它们。今天，我们就一起来看看RedisObject是如何构建的！（如果底层结构不熟悉的，可以点击上述）&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--压缩列表ziplist</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceziplist/</link>
+      <pubDate>Mon, 12 Dec 2016 17:33:02 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceziplist/</guid>
+      <description>&lt;p&gt;压缩列表（ziplist）是由 一系列特殊编码的内存块构成的列表，其是Redis的列表建和哈希键的底层实现之一。和整数集合一样，二者都是为Redis节省内存而开发的数据结构。&lt;/p&gt;
+
+&lt;p&gt;ziplist可以用来存放字符串或者整数，其存储数据的特点是：比较小的整数或比较短的字符串。Redis的列表建，哈希键，有序集合的底层实现都用到了ziplist。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--整数集合Intset</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourceintset/</link>
+      <pubDate>Fri, 09 Dec 2016 14:21:56 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourceintset/</guid>
+      <description>&lt;p&gt;本系列博客文章已经分析了Redis的大部分数据结构，包括动态字符串，双端链表，字典，跳跃表等，这些数据结构都非常强大实用，但是在内存消耗方面也非常“巨大”。Redis的数据都是存放在内存上面的，所以对内存的使用要求及其苛刻，Redis会想方设法的来节省内存。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--基数统计hyperloglog</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcehyperloglog/</link>
+      <pubDate>Thu, 08 Dec 2016 11:48:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcehyperloglog/</guid>
+      <description>&lt;p&gt;Redis中hyperloglog是用来做基数统计的，其优点是：在输入元素的数量或者体积非常非常大的时候，计算基数所需的空间总是固定的，并且是很小的。在Redis里面，每个Hyperloglog键只需要12Kb的大小就能计算接近2^64个不同元素的基数，但是hyperloglog只会根据输入元素来计算基数，而不会存储元素本身，所以不能像集合那样返回各个元素本身。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--跳跃表zskiplist</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcezskiplist/</link>
+      <pubDate>Tue, 06 Dec 2016 14:35:07 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcezskiplist/</guid>
+      <description>&lt;p&gt;跳跃表是一种有序的数据结构，它通过在每个节点中维持多个指向其他节点的指针，从而达到快速访问的目的。跳跃表在插入、删除和查找操作上的平均复杂度为O（logN），最坏为O（N），可以和红黑树相媲美，但是在实现起来，比红黑树简单很多。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--字典dict</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcedict/</link>
+      <pubDate>Sun, 04 Dec 2016 15:55:05 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcedict/</guid>
+      <description>&lt;p&gt;字典是Redis中的一个非常重要的底层数据结构，其应用相当广泛。Redis的数据库就是使用字典作为底层实现的，对数据库的增、删、查、改都是建立在对字典的操作上。此外，字典还是Redis中哈希键的底层实现，当一个哈希键包含的键值对比较多，或者键值对中的元素都是比较长的字符串时，Redis就会使用字典作为哈希键的底层实现。&lt;/p&gt;
+
+&lt;p&gt;Redis中的字典采用哈希表作为底层实现，在Redis源码文件中，字典的实现代码在dict.c和dict.h文件中。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--双端链表sdlist</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcesdlist/</link>
+      <pubDate>Fri, 02 Dec 2016 19:18:58 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcesdlist/</guid>
+      <description>&lt;p&gt;今天来分析Redis的一个基本数据结构&amp;ndash;双端链表，其定义和实现主要在sdlist.h和sdlist.c文件中。其主要用在实现列表键、事务模块保存输入命令和服务器模块，订阅模块保存多个客户端等。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--动态字符串sds</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcesds/</link>
+      <pubDate>Fri, 02 Dec 2016 10:32:55 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcesds/</guid>
+      <description>&lt;p&gt;Redis没有使用C语言的字符串结构，而是自己设计了一个简单的动态字符串结构sds。它的特点是：可动态扩展内存、二进制安全和与传统的C语言字符串类型兼容。下面就从源码的角度来分析一下Redis中sds的实现。（sds的源码实现主要在sds.c和sds.h两个文件中）&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--内存分配</title>
+      <link>https://zcheng.ren/redis/theannotatedredissourcemalloc/</link>
+      <pubDate>Sat, 26 Nov 2016 14:19:23 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissourcemalloc/</guid>
+      <description>&lt;p&gt;深受侯捷老师的《STL源码剖析》一书的影响，在该书中开篇就对STL的空间配置器进行了一个详尽的介绍。以应用的角度而言，空间配置器是最不需要介绍的，它总是隐藏在一切组件的背后；可是，就源码分析而言，空间配置是最为关键的，也是分析源码之路的第一步！Redis在内存分配方面，仅仅是对系统的malloc/free做了一层简单的封装，然后加上了异常处理功能和内存统计功能。其实现主要在zmalloc.c和zmalloc.h文件中。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Redis源码剖析--源码结构解析</title>
+      <link>https://zcheng.ren/redis/theannotatedredissource/</link>
+      <pubDate>Fri, 25 Nov 2016 15:12:25 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/redis/theannotatedredissource/</guid>
+      <description>&lt;p&gt;找工作那会儿，看了黄建宏老师的《Redis设计与实现》，对redis的部分实现有了一个简明的认识。在面试过程中，redis确实成为了面试官考核我的一个亮点，恰好以后的工作又与redis有着千丝万缕的联系，于是就想趁着毕业前的这段时间把redis的源代码研究一下，为以后的工作打个良好的基础。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>博客折腾故事</title>
+      <link>https://zcheng.ren/2016/11/23/changedblogthemes/</link>
+      <pubDate>Wed, 23 Nov 2016 21:16:14 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/11/23/changedblogthemes/</guid>
+      <description>&lt;p&gt;自从搭建个人博客之后，一直使用的nexT主题。今天看到一款更加简洁的主题：Maupassant，果断的更换之&amp;hellip;.(折腾ing)&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Maupassant最初是由Cho大神为Typecho平台设计开发的一套响应式模板，体积只有20KB，在各种尺寸的设备上表现出色。
+主题地址：&lt;a href=&#34;https://github.com/tufu9441/maupassant-hexo&#34;&gt;https://github.com/tufu9441/maupassant-hexo&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之Set和Map</title>
+      <link>https://zcheng.ren/2016/09/09/stlsetandmap/</link>
+      <pubDate>Fri, 09 Sep 2016 15:47:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/09/09/stlsetandmap/</guid>
+      <description>&lt;p&gt;在上一篇博客中，讲到了STL中关于红黑树的实现，理解起来比较复杂，正所谓前人种树，后人乘凉，RBTree把树都种好了，接下来就该set和map这类关联式容器来“乘凉”了。&lt;/p&gt;
+
+&lt;p&gt;STL的set和map都是基于红黑树实现的，和stack和queue都是基于deque一样，它们仅仅是调用了RBTree提供的接口函数，然后进行外层封装即可。本篇博客理解起来比较轻松，set和map的源代码也不多，大家可以慢慢“品味”。另外，还会介绍multiset和multimap这两个容器，并给出它们的区别和应用等。还等什么呢？走吧，带你理解理解set和map吧！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之RBTree</title>
+      <link>https://zcheng.ren/2016/09/02/stlrbtree/</link>
+      <pubDate>Fri, 02 Sep 2016 20:47:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/09/02/stlrbtree/</guid>
+      <description>&lt;p&gt;最近一直忙于校招的笔试，STL的深入理解系列也耽搁了好几天，再加上！红黑树真的是超级超级难理解，超级超级复杂，参考了好多博客上的大神的理解才稍微明白一点，勉强入个门，下面请以一个菜鸟的角度跟着我一起学习STL的红黑树吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之Stack和Queue</title>
+      <link>https://zcheng.ren/2016/08/26/stlstackandqueue/</link>
+      <pubDate>Fri, 26 Aug 2016 20:47:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/26/stlstackandqueue/</guid>
+      <description>&lt;p&gt;上一篇博客，&lt;a href=&#34;http://zcheng.ren/2016/08/26/STLDeque/&#34;&gt;带你深入理解STL之Deque容器&lt;/a&gt;中详细介绍了deque容器的源码实现方式。结合前面介绍的两个容器vector和list，在使用的过程中，我们确实要知道在什么情况下需要选择恰当的容器来满足需求和提升效率。一般选择的准则有如下几条：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;如果需要随机访问一个容器，vector比list要好&lt;/li&gt;
+&lt;li&gt;如果需要经常插入和删除操作的话，list比vector要好&lt;/li&gt;
+&lt;li&gt;如果既要随机存取，又要关心两端数据的插入和删除，则选择deque&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;好了，复习完前面的知识后，开始介绍今天的两个容器stack和queue。由于stack和queue都是基于deque来实现的，所以相应的代码会比较简单，也是比较轻松易实现的，下面一起去看看吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之Deque容器</title>
+      <link>https://zcheng.ren/2016/08/26/stldeque/</link>
+      <pubDate>Fri, 26 Aug 2016 11:34:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/26/stldeque/</guid>
+      <description>&lt;p&gt;在介绍STL的deque的容器之前，我们先来总结一下vector和list的优缺点。vector在内存中是分配一段连续的内存空间进行存储，其迭代器采用原生指针即可，因此其支持随机访问和存储，支持下标操作符，节省空间。但是其在分配的内存不够的情况下，需要对容器整体进行重新分配、拷贝和释放等操作，而且在vector中间插入或删除元素效率很低。&lt;/p&gt;
+
+&lt;p&gt;而list是以节点形式来存放数据，使用的是非连续的内存空间来存放数据，因此，在其内部插入和删除元素的时间复杂度都是O(1),但是其不支持随机访问和存取，不支持下标，而且比vector占用的内存要多。&lt;/p&gt;
+
+&lt;p&gt;综合上述的优缺点，我们貌似需要一个支持随机访问和存取，支持下标访问，而且插入和删除的效率高的容器。于是，STL的deque诞生了，下面就跟着我一起去看看deque的设计和源码实现吧！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之List容器</title>
+      <link>https://zcheng.ren/2016/08/24/stllist/</link>
+      <pubDate>Wed, 24 Aug 2016 17:07:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/24/stllist/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;http://zcheng.ren/2016/08/24/STLVector/&#34;&gt;上一篇博客&lt;/a&gt;中介绍的vector和数组类似，它拥有一段连续的内存空间，并且起始地址不变，很好的支持了随机存取，但由于是连续空间，所以在中间进行插入、删除等操作时都造成了内存块的拷贝和移动，另外在内存空间不足时还需要重新申请一块大内存来进行内存的拷贝。为了克服这些缺陷，STL定义了另一种容器List，它对于数据插入和删除的时间复杂度均为O(1)，而且再内存方面不用频繁的拷贝转移。下面，就一起来看看List的源码实现吧！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之Vector容器</title>
+      <link>https://zcheng.ren/2016/08/23/stlvector/</link>
+      <pubDate>Tue, 23 Aug 2016 17:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/23/stlvector/</guid>
+      <description>&lt;p&gt;C++内置了数组的类型，在使用数组的时候，必须指定数组的长度，一旦配置了就不能改变了，通常我们的做法是：尽量配置一个大的空间，以免不够用，这样做的缺点是比较浪费空间，预估空间不当会引起很多不便。&lt;/p&gt;
+
+&lt;p&gt;STL实现了一个Vector容器，该容器就是来改善数组的缺点。vector是一个动态空间，随着元素的加入，它的内部机制会自行扩充以容纳新元素。因此，vector的运用对于内存的合理利用与运用的灵活性有很大的帮助，再也不必因为害怕空间不足而一开始就配置一个大容量数组了，vector是用多少就分配多少。&lt;/p&gt;
+
+&lt;p&gt;要想实现动态分配数组，Vector内部就需要对空间控制做到有效率的掌控，这些机制要如何运作才能高效地实现动态分配呢？本篇博客就从源代码的角度带你领略一下Vector容器内部的构造艺术。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之迭代器和Traits技法</title>
+      <link>https://zcheng.ren/2016/08/22/stliterator/</link>
+      <pubDate>Mon, 22 Aug 2016 16:18:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/22/stliterator/</guid>
+      <description>&lt;p&gt;在开始讲迭代器之前，先列举几个例子，由浅入深的来理解一下为什么要设计迭代器。&lt;/p&gt;
+
+&lt;p&gt;针对下面两个函数，我们来谈谈这种设计的缺陷所在：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;遍历int数组和单链表listNode时，需要设计两份不一样的sum求和函数，对于STL这样含有大量容器的代码库，针对每一种容器都设计sum的话，过于冗杂&lt;/li&gt;
+&lt;li&gt;在sum函数中暴露了太多设计细节，如ListNode的节点值类型int，和指向下一个节点的指针next&lt;/li&gt;
+&lt;li&gt;对于int数组来说，还必须知道数组的大小，以免越界访问&lt;/li&gt;
+&lt;li&gt;算法的设计过多的依赖容器，容器的改动会造成大量算法函数的随之改动&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+    <item>
+      <title>ubuntu16.04主题美化和软件推荐</title>
+      <link>https://zcheng.ren/2016/08/21/ubuntusoftware/</link>
+      <pubDate>Sun, 21 Aug 2016 13:20:19 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/21/ubuntusoftware/</guid>
+      <description>&lt;p&gt;前几天把ubuntu从15.10更新到了16.10，在网上看到有很多直接更新出问题的，正好赶上换SSD，于是采用全新安装，之前用ubuntu的时候装软件最让人头疼了，这回又得头疼一次了！！
+索性把他记录下来，既能方便以后重装，又能与大家分享一下！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之空间配置器(思维导图&#43;源码)</title>
+      <link>https://zcheng.ren/2016/08/16/stlallocater/</link>
+      <pubDate>Tue, 16 Aug 2016 19:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/16/stlallocater/</guid>
+      <description>&lt;p&gt;前不久把STL细看了一遍，由于看得太“认真”，忘了做笔记，归纳和总结这步漏掉了。于是为了加深印象，打算重看一遍，并记录下来里面的一些实现细节。方便以后能较好的复习它。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>GDB调试工具入门</title>
+      <link>https://zcheng.ren/2016/08/15/gdbdebug/</link>
+      <pubDate>Mon, 15 Aug 2016 11:20:19 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/15/gdbdebug/</guid>
+      <description>&lt;p&gt;从windows转到linux下已经有一段时间了，每次刷算法题碰到问题需要调试的时候，就分分钟想关机，切换到windows上调试。于是，花了一点时间来搜索一下linux下常见的调试工具，这不搜不知道，一搜吓一跳，居然差点错过了这么好的调试利器GDB。上手十分简单，几分钟就可以开开心心调试你的代码了。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C/C&#43;&#43;的mem函数和strcpy函数的区别和应用</title>
+      <link>https://zcheng.ren/2016/08/14/memcpyseries/</link>
+      <pubDate>Sun, 14 Aug 2016 21:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/14/memcpyseries/</guid>
+      <description>&lt;p&gt;mem系列函数是面试的时候常考的知识点，我们需要熟练掌握这三个函数的原理和代码实现，要能准确无误的写出代码。&lt;/p&gt;
+
+&lt;p&gt;memcpy、memset和memset三个函数在使用过程中，均需包含以下头文件：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;//在C中
+#include &amp;lt;string.h&amp;gt;
+//在C++中
+#include &amp;lt;cstring&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之六：成员函数调用方式</title>
+      <link>https://zcheng.ren/2016/08/10/cppobjectmodelpart6/</link>
+      <pubDate>Wed, 10 Aug 2016 16:34:55 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/10/cppobjectmodelpart6/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;C++的成员函数分为静态函数、非静态函数和虚函数三种，在本系列文章中，多处提到static和non-static不影响对象占用的内存，而虚函数需要引入虚指针，所以需要调整对象的内存布局。既然已经解决了数据，函数等在内存中的布局问题，下一个需要考虑的就是如何调用，上述提到的三种函数的调用机制都不一样，其间的差异正是本篇博客需要讨论的。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之五：NRV优化和初始化列表</title>
+      <link>https://zcheng.ren/2016/08/10/cppobjectmodelpart5/</link>
+      <pubDate>Wed, 10 Aug 2016 07:52:02 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/10/cppobjectmodelpart5/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;在&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之四：拷贝构造函数&lt;/a&gt;中提到如果将一个对象作为函数参数或者返回值的时候，会调用拷贝构造函数，编译器是如何处理这些步骤，又会对其做哪些优化呢？本篇博客就为他家介绍一个编译器的优化操作：NRV，以及关于初始化列表的一些容易踩的“坑”！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之四：拷贝构造函数</title>
+      <link>https://zcheng.ren/2016/08/08/cppobjectmodelpart4/</link>
+      <pubDate>Mon, 08 Aug 2016 14:46:47 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/08/cppobjectmodelpart4/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;对于一个没有实例化的空类，编译器不会给它默认生成任何函数，当实例化一个空类后，编译器会根据需要生成相应的函数。这类函数包括一下几个:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;构造函数&lt;/li&gt;
+&lt;li&gt;拷贝构造函数&lt;/li&gt;
+&lt;li&gt;析构函数&lt;/li&gt;
+&lt;li&gt;赋值运算符&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;在上一篇博文&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之三：默认构造函数&lt;/a&gt;中讲到，编译器在需要的时候会合成一个空构造函数。本篇博文中就重点来介绍一下第二主角：拷贝构造函数。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之三：默认构造函数</title>
+      <link>https://zcheng.ren/2016/08/07/cppobjectmodelpart3/</link>
+      <pubDate>Sun, 07 Aug 2016 09:12:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/07/cppobjectmodelpart3/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;继前两篇总结了C++对象模型及其内存布局后，我们继续来探索一下C++对象的默认构造函数。对于C++的初学者来说，有如下两个误解：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;任何class如果没有定义default constructor，就会被合成出来&lt;/li&gt;
+&lt;li&gt;编译器合成出来的default constructor会显示设定“class内每一个data member的默认值“&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;如果读者对这两句话理解颇深，了解里面的陷阱，那么可以不必阅读下去；倘若你有一点点疑惑，那非常好，跟着我一起继续下去！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之二：对象模型（下）</title>
+      <link>https://zcheng.ren/2016/08/06/cppobjectmodelpart2/</link>
+      <pubDate>Sat, 06 Aug 2016 18:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/06/cppobjectmodelpart2/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;上一篇博客&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之一&lt;/a&gt;为大家讲解了C++对象模型的一些基本知识，可是C++的继承，多态这些特性如何体现在对象模型上呢？单继承、多重继承和虚继承后内存布局上又有哪些变化呢？多态真正的底层又是如何实现呢？本篇博客就带大家全面理解一下C++对象模型，从而理解上述疑惑。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之一：对象模型（上）</title>
+      <link>https://zcheng.ren/2016/08/05/cppobjectmodelpart1/</link>
+      <pubDate>Fri, 05 Aug 2016 19:01:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/05/cppobjectmodelpart1/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;很早以前就听人推荐了《深入理解C++对象模型》这本书，从年初买来到现在也只是偶尔翻了翻，总觉得晦涩难懂，放在实验室上吃灰吃了好久。近期由于找工作对C++的知识做了一个全面系统的学习，基础相对扎实了不少，于是，又重新拿起这本书，突然觉得里面的知识也不那么难懂，而且越看越有意思，不愧是C++高阶教程啊！耐着性子，抓着头皮花了两个多月，总算对其中的知识有了一些理解，部分章节反反复复的看，每次都有新的收获。所谓好记性不如烂笔头，本系列博文就对我所学到的知识和我所遇到的困惑做一个整理。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之六：基本UDP套接字</title>
+      <link>https://zcheng.ren/2016/08/03/unixnetworkprogrammingpart6/</link>
+      <pubDate>Wed, 03 Aug 2016 10:21:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/03/unixnetworkprogrammingpart6/</guid>
+      <description>&lt;p&gt;UDP是无连接不可靠的数据报协议，不同于TCP提供的面向连接的可靠字节流。常见的使用UDP的应用程序有：DNS，NFS和SNMP。&lt;/p&gt;
+
+&lt;h1 id=&#34;一-概述&#34;&gt;&lt;strong&gt;一、概述&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;UDP的主要特点如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;UDP是面向无连接的，不需要建立连接就可以传输数据&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP尽最大可能交付，不保证可靠交付&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP是面向报文，对应用层传输的报文添加首部后就直接发送，不合并不拆分&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP没有拥塞控制&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP支持一对一，一对多，多对一，多对多&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP首部八个字节，开销小&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;基于UDP的套接字编程比基于TCP的相对较为简单。客户不与服务器建立连接，而是只管使用sendto函数给服务器发送数据报，其中必须指定目的地，的地址作为参数。类似的，服务器不接受来自客户端的连接，而是只管调用recvfrom函数，等待来自某个客户的数据到达。recvform将所接收的数据报一道返回客户的协议地址，因此服务器可以把响应发送给正确的客户。下图给出了典型的UDP客户/服务器程序的函数调用。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>全面剖析树的各类遍历方法</title>
+      <link>https://zcheng.ren/2016/07/31/treetraversalmethod/</link>
+      <pubDate>Sun, 31 Jul 2016 20:36:27 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/31/treetraversalmethod/</guid>
+      <description>&lt;p&gt;面试中常考到树的前序，中序，后序和层序遍历，这篇博文就带你深度剖析一下二叉树的各类遍历算法的实现&lt;/p&gt;
+
+&lt;p&gt;二叉树的遍历主要有四种，前序、中序、后序和层序&lt;/p&gt;
+
+&lt;p&gt;遍历的实现方式主要是：递归和非递归&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之五：select和poll函数</title>
+      <link>https://zcheng.ren/2016/07/14/unixnetworkprogrammingpart5/</link>
+      <pubDate>Thu, 14 Jul 2016 10:21:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/14/unixnetworkprogrammingpart5/</guid>
+      <description>&lt;h1 id=&#34;一-i-o复用技术&#34;&gt;&lt;strong&gt;一、I/O复用技术&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条件准备就绪，它就通知该进程。I/O复用适用于以下场合：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;当客户处理多个描述符（一般是交互式输入或网络套接字），必须适用I/O复用&lt;/li&gt;
+&lt;li&gt;当一个客户处理多个套接字时，这种情况很少见，但也可能出现&lt;/li&gt;
+&lt;li&gt;当一个TCP服务器既要处理监听套接字，又要处理已连接套接字，一般就要使用I/O复用&lt;/li&gt;
+&lt;li&gt;如果一个服务器既要适用TCP，又要适用UDP，一般就要使用I/O复用&lt;/li&gt;
+&lt;li&gt;如果一个服务器要处理多个服务或者多个协议，一般就要使用I/O复用&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;与多线程和多进程技术相比，I/O复用技术的最大优势就是系统开销小，系统不必创建进程/线程，也不必维护这些进程/进程，从而大大减小了系统的开销。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之四：TCP客户-服务器示例</title>
+      <link>https://zcheng.ren/2016/07/11/unixnetworkprogrammingpart4/</link>
+      <pubDate>Mon, 11 Jul 2016 16:10:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/11/unixnetworkprogrammingpart4/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;本篇博客主要记录一个完整的TCP客户/服务器实例的编写，以及从这个实例中引发的对僵死进程的处理等问题。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-tcp客户-服务器功能需求&#34;&gt;一、TCP客户/服务器功能需求&lt;/h1&gt;
+
+&lt;p&gt;本实例完成以下功能：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;客户从标准输入读入一行文本，并写给服务器&lt;/li&gt;
+&lt;li&gt;服务器从网络输入中读入这行文本，并回射给客户&lt;/li&gt;
+&lt;li&gt;客户从网路输入读入这行回射文本，并显示在标准输入&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;需要用到的函数：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;套接字编程基本函数(socket,bind,listen,accept,connect,close等)，完成套接字编程&lt;/li&gt;
+&lt;li&gt;标准I/O库函数fputs和fgets，完成输入和输出&lt;/li&gt;
+&lt;li&gt;read，writen，readline函数，完成数据的传输&lt;/li&gt;
+&lt;li&gt;fork函数，完成并行服务器的编写&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之三：基本套接字编程</title>
+      <link>https://zcheng.ren/2016/07/06/unixnetworkprogrammingpart2/</link>
+      <pubDate>Wed, 06 Jul 2016 16:30:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/06/unixnetworkprogrammingpart2/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bind(),connect(),accept(),listen()等。
+本博文也直接进入正题，对这几个函数进行剖析和讲解。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-基本套接字函数&#34;&gt;&lt;strong&gt;一、基本套接字函数&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;在《计算机网络》和《TCP/IP详解》中，我们经常讨论TCP/IP的工作流程，连接建立的三次握手和连接断开的四次挥手等，那么这些如何体现在程序中呢？我们如何来运用这些理论知识于实践之中呢？下面我们来看看套接字编程中客户和服务器进程之间的一些典型事件的时间表。&lt;/p&gt;
+
+&lt;p&gt;如图，服务器首先启动，稍后客户进程启动，它通过connect()函数试图连接服务器，这个阶段完成三次握手，然后read()和write()完成客户和服务器之间的数据传输，之后客户进程调用close()来请求断开连接，服务器收到后读取EOF，接着关闭连接，这时完成四次挥手的过程。下面就图中的每个函数，细细剖析他们的用途。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之二：套接字编程简介</title>
+      <link>https://zcheng.ren/2016/07/03/unixnetworkprogrammingpart3/</link>
+      <pubDate>Sun, 03 Jul 2016 20:41:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/03/unixnetworkprogrammingpart3/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;unp第二章&lt;/strong&gt;主要将了TCP和UDP的简介，这些在《TCP/IP详解》和《计算机网络》等书中有很多细致的讲解，可以参考本人的这篇博客&lt;a href=&#34;http://blog.csdn.net/terence1212/article/details/51567833&#34;&gt;【计算机网络 第五版】阅读笔记之五：运输层&lt;/a&gt;，这篇博客就不再赘述。&lt;/p&gt;
+
+&lt;p&gt;本篇博客主要记录套接字编程API，从一些基本的API来一步一步了解套接字网络编程。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-套接字地址结构&#34;&gt;一、套接字地址结构&lt;/h1&gt;
+
+&lt;p&gt;大多数的套接字函数都以一个指向套接字地址结构的指针作为参数。每个协议簇都定义了自己的套接字地址结构。
+套接字地址结构均以sockaddr_开头，并以对应每个协议簇的唯一后缀结尾。&lt;/p&gt;
+
+&lt;h2 id=&#34;ipv4套接字地址结构&#34;&gt;ipv4套接字地址结构&lt;/h2&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之一：代码环境搭建</title>
+      <link>https://zcheng.ren/2016/07/01/unixnetworkprogrammingpart1/</link>
+      <pubDate>Fri, 01 Jul 2016 17:28:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/01/unixnetworkprogrammingpart1/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;粗略的阅读过《TCP/IP详解》和《计算机网络（第五版）》后，开始啃这本《UNIX网络编程卷一：套接字联网API》，目前linux下的编程不算太了解，在阅读的过程中也会有很多障碍，希望自己坚持下去。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-源代码的下载和编译&#34;&gt;一、源代码的下载和编译&lt;/h1&gt;
+
+&lt;p&gt;源代码下载地址：&lt;a href=&#34;http://www.unpbook.com/&#34;&gt;http://www.unpbook.com/&lt;/a&gt; ， 下载下来得到unpv13e.tar.gz文件&lt;/p&gt;
+
+&lt;p&gt;编译步骤：
+解压缩zxvf unpv13e.tar.gz&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;tar zxvf unpv13e.tar.gz
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;进入unpv13e文件夹中&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;cd /unpv13e
+./configure//如果权限不够可以chmod改权限
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;编译lib文件&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;cd lib
+make
+cd ../libfree
+make
+cd ../libgai
+make
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://zcheng.ren/archives/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://zcheng.ren/archives/</guid>
+      <description>title: &amp;ldquo;归档&amp;rdquo; description: type: archives</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>UNIX网络编程之三：基本套接字编程</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="UNIX网络编程之三：基本套接字编程" />
+<meta property="og:description" content="
+unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bind(),connect(),accept(),listen()等。
+本博文也直接进入正题，对这几个函数进行剖析和讲解。
+
+
+一、基本套接字函数
+
+在《计算机网络》和《TCP/IP详解》中，我们经常讨论TCP/IP的工作流程，连接建立的三次握手和连接断开的四次挥手等，那么这些如何体现在程序中呢？我们如何来运用这些理论知识于实践之中呢？下面我们来看看套接字编程中客户和服务器进程之间的一些典型事件的时间表。
+
+如图，服务器首先启动，稍后客户进程启动，它通过connect()函数试图连接服务器，这个阶段完成三次握手，然后read()和write()完成客户和服务器之间的数据传输，之后客户进程调用close()来请求断开连接，服务器收到后读取EOF，接着关闭连接，这时完成四次挥手的过程。下面就图中的每个函数，细细剖析他们的用途。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2016/07/06/unixnetworkprogrammingpart2/" /><meta property="article:published_time" content="2016-07-06T16:30:59&#43;08:00"/>
+<meta property="article:modified_time" content="2016-07-06T16:30:59&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="UNIX网络编程之三：基本套接字编程"/>
+<meta name="twitter:description" content="
+unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bind(),connect(),accept(),listen()等。
+本博文也直接进入正题，对这几个函数进行剖析和讲解。
+
+
+一、基本套接字函数
+
+在《计算机网络》和《TCP/IP详解》中，我们经常讨论TCP/IP的工作流程，连接建立的三次握手和连接断开的四次挥手等，那么这些如何体现在程序中呢？我们如何来运用这些理论知识于实践之中呢？下面我们来看看套接字编程中客户和服务器进程之间的一些典型事件的时间表。
+
+如图，服务器首先启动，稍后客户进程启动，它通过connect()函数试图连接服务器，这个阶段完成三次握手，然后read()和write()完成客户和服务器之间的数据传输，之后客户进程调用close()来请求断开连接，服务器收到后读取EOF，接着关闭连接，这时完成四次挥手的过程。下面就图中的每个函数，细细剖析他们的用途。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">UNIX网络编程之三：基本套接字编程</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-07-06T16:30:59">July 06, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#一-基本套接字函数"><strong>一、基本套接字函数</strong></a></li>
+<li><a href="#二-socket函数">二、socket函数</a></li>
+<li><a href="#三-connect函数">三、connect函数</a></li>
+<li><a href="#四-bind函数">四、bind函数</a></li>
+<li><a href="#五-listen函数">五、listen函数</a></li>
+<li><a href="#六-accept函数">六、accept函数</a></li>
+<li><a href="#七-一个简单的值-结果例子">七、一个简单的值-结果例子</a></li>
+<li><a href="#八-fork和exec函数">八、fork和exec函数</a></li>
+<li><a href="#九-并发服务器">九、并发服务器</a></li>
+<li><a href="#十-close函数">十、close函数</a></li>
+<li><a href="#十一-getsockname和getpeername函数">十一、getsockname和getpeername函数</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<blockquote>
+<p>unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bind(),connect(),accept(),listen()等。
+本博文也直接进入正题，对这几个函数进行剖析和讲解。</p>
+</blockquote>
+
+<h1 id="一-基本套接字函数"><strong>一、基本套接字函数</strong></h1>
+
+<p>在《计算机网络》和《TCP/IP详解》中，我们经常讨论TCP/IP的工作流程，连接建立的三次握手和连接断开的四次挥手等，那么这些如何体现在程序中呢？我们如何来运用这些理论知识于实践之中呢？下面我们来看看套接字编程中客户和服务器进程之间的一些典型事件的时间表。</p>
+
+<p>如图，服务器首先启动，稍后客户进程启动，它通过connect()函数试图连接服务器，这个阶段完成三次握手，然后read()和write()完成客户和服务器之间的数据传输，之后客户进程调用close()来请求断开连接，服务器收到后读取EOF，接着关闭连接，这时完成四次挥手的过程。下面就图中的每个函数，细细剖析他们的用途。</p>
+
+<p><img src="http://img.blog.csdn.net/20160706162911287" alt="这里写图片描述" /></p>
+
+<h1 id="二-socket函数">二、socket函数</h1>
+
+<p>为了执行网路I/O，进程做的第一件事情就是调用socket()函数，指定期望的通信协议类型。</p>
+
+<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
+/*  family --指明协议簇  */
+/*  type --指明套接字类型  */
+/*  protocol --指明使用那个协议(当此项为0时，则根据family和type组合的系统默认值)  */
+int socket (int family, int type, int protocol);//若成功则返回非负描述符sockfd，若出错则返回-1
+</code></pre>
+
+<p>下表为他们的一些取值：</p>
+
+<p>|family|说明| |type|说明||protocol|说明|
+|:&ndash;:|:&ndash;:||:&ndash;:|:&ndash;:||:&ndash;:|:&ndash;:|
+|AF_INET|IPv4协议||SOCK_STREAM|字节流套接字||IPPROTO_TCP|TCP传输协议|
+|AF_INET6|IPv6协议||SOCK_DGRAM|数据报套接字||IPPROTO_UDP|UDP传输协议|
+|AF_LOCAL|Unix域协议||SOCK_SEQPACKET|有序数组套接字||IPPROTO_SCTP|SCTP传输协议|
+|AF_ROUTE|路由套接字||SOCK_RAW|原始套接字|
+|AF_KEY|密钥套接字||||||</p>
+
+<p>当然，这些参数不能随便设置的，下表给出了一些有效的组合和对应真正的协议</p>
+
+<table>
+<thead>
+<tr>
+<th align="center">Protocol</th>
+<th align="center">AF_INET</th>
+<th align="center">AF_INET6</th>
+<th align="center">AF_LOCAL</th>
+<th align="center">AF_ROUTE</th>
+<th align="center">AF_KEY</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="center">SOCK_STREAM</td>
+<td align="center">TCP/SCTP</td>
+<td align="center">TCP/SCTP</td>
+<td align="center">是</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+
+<tr>
+<td align="center">SOCK_DGRAM</td>
+<td align="center">UDP</td>
+<td align="center">UDP</td>
+<td align="center">是</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+
+<tr>
+<td align="center">SOCK_SEQPACKET</td>
+<td align="center">SCTP</td>
+<td align="center">SCTP</td>
+<td align="center">是</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+
+<tr>
+<td align="center">SOCK_RAW</td>
+<td align="center">IPv4</td>
+<td align="center">IPv6</td>
+<td align="center"></td>
+<td align="center">是</td>
+<td align="center">是</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="三-connect函数">三、connect函数</h1>
+
+<p>client客户进程调用此函数来建立与服务器间的连接。</p>
+
+<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
+/*  sockfd --socket()函数返回的套接字描述符  */
+/*  servaddr --指向套接字地址结构的指针  */
+/*  addrlen --该结构的大小  */
+int connect (int sockfd, const struct sockaddr *servaddr, socklen_t addrlen);//若成功返回0，反之返回-1
+</code></pre>
+
+<p>客户在调用connect()时没必要调用bind()，因为如果需要的话，内核会确定源IP地址，并选择一个临时端口作为源端口。</p>
+
+<p>调用connect()函数，出错的情况有如下几种：</p>
+
+<ul>
+<li><p>若TCP客户没有接收到SYN分节的响应，则返回ETIMEOUT错误。</p></li>
+
+<li><p>若对客户的响应时RST(复位)，则表明该服务器主机在我们制定的端口上没有进程在等待与其连接，会返回ECONNREFUSED。如服务器进程也许没有运行的情况。(硬错误)</p></li>
+</ul>
+
+<blockquote>
+<p>RST是TCP在发生错误时发送的一个TCP分节。产生RST的三个条件：目的地为某端口的SYN到达，然而在该端口没有正在监听的服务器；TCP想取消一个已有连接；TCP接收到一个根本不存在的连接上的分节。</p>
+</blockquote>
+
+<ul>
+<li>若客户发出的SYN在中间某个路由器上引发“目的地不可达的ICMP错误”，则认为时一种“软错误”，按照TCP协议的规定，客户会按照一定的时间间隔重发SYN，若在某个规定时间内仍未收到响应，则返回EHOSTUNREACH和ENETUNREACH错误。</li>
+</ul>
+
+<h1 id="四-bind函数">四、bind函数</h1>
+
+<p>用于把一个本地协议地址赋予一个套接字。对于网际网协议，协议地址时32位的IPv4地址或者128位IPv6地址与16位的TCP或UDP端口号的组合。调用bind可以制定IP地址或端口，也可以两者都指定，也可以都不指定。</p>
+
+<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
+/*  sockfd --socket()函数返回的套接字描述符  */
+/*  servaddr --指向套接字地址结构的指针  */
+/*  addrlen --该结构的大小  */
+int bind(int sockfd, const struct sockaddr *myaddr, socklen_t addrlen);//若成功返回0，反之返回-1
+</code></pre>
+
+<h1 id="五-listen函数">五、listen函数</h1>
+
+<p>该函数主要干两件事情
+(1) 当socket函数创建一个套接字时，它被假设为一个主动套接字（将调用connect发起连接的客户套接字）
+listen函数把一个未连接的套接字转换成一个被动套接字，指示内核应接受指向该套接字的连接请求。
+(2) 本函数的第二个参数规定了内核应该为相应套接字排队的最大连接个数</p>
+
+<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
+/*  sockfd --socket()函数返回的套接字描述符  */
+/*  backlog --内核为相应套接字排队的最大连接个数  */
+int listen(int sockfd, int backlog);//若成功返回0，反之返回-1
+</code></pre>
+
+<h1 id="六-accept函数">六、accept函数</h1>
+
+<p>此函数由TCP服务器调用，用于已完成连接队列对头返回下一个已完成连接。如果已完成连接队列为空，那么进程被投入睡眠。</p>
+
+<pre><code class="language-cpp">/*  sockfd --socket()函数返回的套接字描述符  */
+/*  cliaddr --用来返回已连接的对端进程的协议地址  */
+/*  addrlen --调用前：为cliaddr所指的套接字地址结构大小  */
+/*          --调用后：为由内核存放在该套接字地址结构内的确切字节数  */
+int accept(int sockfd, struct sockaddr *cliaddr , socklen_t *addrlen);//若成功返回非负描述符，若出错，则返回-1
+</code></pre>
+
+<p>如果accept调用成功，则返回一个由内核自动生成的全新描述符，代表与所返回客户的TCP连接。</p>
+
+<p>accept的参数socket通常被称为监听套接字描述符，而其返回值为连接套接字描述符。一个服务器通常只创建一个监听套接字描述符，内核为每个由服务器进程接受的客户创建一个已连接套接字（三次握手已完成）。</p>
+
+<h1 id="七-一个简单的值-结果例子">七、一个简单的值-结果例子</h1>
+
+<pre><code class="language-cpp">#include	&quot;unp.h&quot;
+#include	&lt;time.h&gt;
+int
+main(int argc, char **argv)
+{
+	int					listenfd, connfd;
+	socklen_t			len;
+	struct sockaddr_in	servaddr, cliaddr;
+	char				buff[MAXLINE];
+	time_t				ticks;
+	//创建套接字
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+	//初始化套接字
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;//IPv4协议
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);//通配地址，一般为0
+	servaddr.sin_port        = htons(13);//时间服务端口
+	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+	Listen(listenfd, LISTENQ);
+	for ( ; ; ) {
+		len = sizeof(cliaddr);
+		connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;len);
+		printf(&quot;connection from %s, port %d\n&quot;,
+			Inet_ntop(AF_INET, &amp;cliaddr.sin_addr, buff, sizeof(buff)),
+			ntohs(cliaddr.sin_port));
+        ticks = time(NULL);
+        snprintf(buff, sizeof(buff), &quot;%.24s\r\n&quot;, ctime(&amp;ticks));
+        Write(connfd, buff, strlen(buff));
+		Close(connfd);
+	}
+}
+</code></pre>
+
+<p>编译执行上述代码，即可运行服务器端程序，那么我们开启客户端程序连接服务器，就会输出客户IP地址和端口号。</p>
+
+<blockquote>
+<p>注意：此处如果出现bind error：Address already in use！，可参考：<a href="http://blog.csdn.net/terence1212/article/details/51834177">【unix网络编程第三版】ubuntu端口占用问题</a></p>
+</blockquote>
+
+<pre><code class="language-cpp"># ./daytimes
+connection from 127.0.0.1, port 53458
+connection from 192.168.191.2, port 54358
+</code></pre>
+
+<h1 id="八-fork和exec函数">八、fork和exec函数</h1>
+
+<p>fork函数是Unix中派生新进程的唯一方法。</p>
+
+<pre><code class="language-cpp">#include&lt;unistd.h&gt;
+pid_t fork(void);/* 在子进程中返回0，在父进程中为子进程ID，若出错则返回-1
+</code></pre>
+
+<p>任何子进程只有一个父进程，而且父进程通过getppid取得父进程ID，而父进程可以有许多子进程，而且无法获取各个子进程的进程ID，如果父进程想要知道子进程的ID，只能通过记录每次调用fork的返回值。</p>
+
+<p>fork的两个典型用法：</p>
+
+<p>(1) 一个进程创建一个自身的副本，这样每个副本都可以在另一个副本执行其他任务的同时处理各自的某个操作。</p>
+
+<p>(2) 一个进程想要执行另一个进程。fork函数创建一个副本，然后通过调用exec把其中一个副本替换成新的程序。</p>
+
+<p>存放在硬盘你上的可执行程序文件能够被Unix执行的唯一方法：由一个现有的进程调用六个exec函数中的某一个。</p>
+
+<pre><code class="language-cpp">#include &lt;unistd.h&gt;
+int execl(const char *path, const char *arg, ...);
+int execlp(const char *file, const char *arg, ...);
+int execle(const char *path, const char *arg,..., char * const envp[]);
+int execv(const char *path, char *const argv[]);
+int execvp(const char *file, char *const argv[]);
+int execve(int fd,char *const argv[],char *const envp[]);
+</code></pre>
+
+<h1 id="九-并发服务器">九、并发服务器</h1>
+
+<p>像上面提到的时间获取服务器，属于迭代服务器。这种服务器都被一个单一客户占用，如果客户请求时间长，则该服务器被长期占用，这显然会影响效率。所以，我们希望服务器能尽可能同时服务多个用户。这种服务器称为并发服务器。</p>
+
+<p>并发服务器利用fork函数创建一个子进程来服务客户。</p>
+
+<pre><code class="language-cpp">int
+﻿main(int argc, char **argv)
+{
+	pid_t 		pid;
+	int		listenfd, connfd;
+	socklen_t	len;
+	struct sockaddr_in	servaddr;
+	time_t		ticks;
+	//创建套接字
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+	//初始化套接字
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;//IPv4协议
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);//通配地址，一般为0
+	servaddr.sin_port        = htons(13);//时间服务端口
+	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+	Listen(listenfd, LISTENQ);
+	for ( ; ; ) {
+		connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;len);
+		if((pid = fork())==0)
+		{
+			close(listenfd);
+			doit(connfd);
+			close(connfd);
+			exit();
+		}
+		Close(connfd);
+	}
+}
+</code></pre>
+
+<p>分析以上程序：
+父进程：pid为子进程ID，不为0，则将connfd的引用套接字减1，父进程继续等待下一个客户连接</p>
+
+<p>子进程：fork函数之后，监听套接字和已连接套接字的引用技术都加1，pid==0，首先监听套接字listenfd的引用计数减1(不会关闭监听套接字)，然后执行客户所需的操作（doit），再关闭connfd(引用计数减1，此时为0)。子进程处理客户需求结束，exit关闭进程。</p>
+
+<h1 id="十-close函数">十、close函数</h1>
+
+<p>用来关闭套接字，并中止TCP连接。</p>
+
+<pre><code class="language-cpp">#include &lt;unistd.h&gt;
+int close(int sockfd);/* 若成功则返回0，出错则返回-1*/
+</code></pre>
+
+<p>close函数调用后只是将引用计数减1，只有当引用技术为0时，才会测地关闭该套接字，清理和资源释放。</p>
+
+<h1 id="十一-getsockname和getpeername函数">十一、getsockname和getpeername函数</h1>
+
+<p>getsockname函数返回与某个套接字关联的本地协议地址，getpeername函数返回与某个套接字关联的外地协议地址。</p>
+
+<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
+int getsockname(int sockfd,struct sockaddr *localaddr,socklen_t *addrlen);
+int getpeername(int sockfd,struct sockaddr *peeraddr,socklen_t *addrlen);
+</code></pre>
+
+<p>需要使用上述函数的情况如下：
+(1) 在一个没有调用bind的TCP客户上，connect成功返回后，getsockname用于返回由内核赋予该连接的本地IP地址和本地端口号
+(2) 在以端口0调用bind后，getsockname用于返回由内核赋予的本地端口号
+(3) getsockname用于获取某个套接字的地址族
+(4) 以通配IP地址调用bind的服务器上，与客户一旦建立连接，getsockname可用于返回由内核赋予该连接的本地IP地址
+(5) 在一个服务器是由调用过accept的某个进程通过调用exec执行程序时，它只能通过getpeername来获取客户的IP和端口号</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">Unix网络编程</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2016/07/03/unixnetworkprogrammingpart3/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">UNIX网络编程之二：套接字编程简介</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2016/07/11/unixnetworkprogrammingpart4/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">UNIX网络编程之四：TCP客户-服务器示例</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

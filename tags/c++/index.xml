@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>C&#43;&#43; on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/c&#43;&#43;/</link>
+    <description>Recent content in C&#43;&#43; on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Fri, 09 Sep 2016 15:47:53 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/c++/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>带你深入理解STL之Set和Map</title>
+      <link>https://zcheng.ren/2016/09/09/stlsetandmap/</link>
+      <pubDate>Fri, 09 Sep 2016 15:47:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/09/09/stlsetandmap/</guid>
+      <description>&lt;p&gt;在上一篇博客中，讲到了STL中关于红黑树的实现，理解起来比较复杂，正所谓前人种树，后人乘凉，RBTree把树都种好了，接下来就该set和map这类关联式容器来“乘凉”了。&lt;/p&gt;
+
+&lt;p&gt;STL的set和map都是基于红黑树实现的，和stack和queue都是基于deque一样，它们仅仅是调用了RBTree提供的接口函数，然后进行外层封装即可。本篇博客理解起来比较轻松，set和map的源代码也不多，大家可以慢慢“品味”。另外，还会介绍multiset和multimap这两个容器，并给出它们的区别和应用等。还等什么呢？走吧，带你理解理解set和map吧！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之RBTree</title>
+      <link>https://zcheng.ren/2016/09/02/stlrbtree/</link>
+      <pubDate>Fri, 02 Sep 2016 20:47:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/09/02/stlrbtree/</guid>
+      <description>&lt;p&gt;最近一直忙于校招的笔试，STL的深入理解系列也耽搁了好几天，再加上！红黑树真的是超级超级难理解，超级超级复杂，参考了好多博客上的大神的理解才稍微明白一点，勉强入个门，下面请以一个菜鸟的角度跟着我一起学习STL的红黑树吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之Stack和Queue</title>
+      <link>https://zcheng.ren/2016/08/26/stlstackandqueue/</link>
+      <pubDate>Fri, 26 Aug 2016 20:47:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/26/stlstackandqueue/</guid>
+      <description>&lt;p&gt;上一篇博客，&lt;a href=&#34;http://zcheng.ren/2016/08/26/STLDeque/&#34;&gt;带你深入理解STL之Deque容器&lt;/a&gt;中详细介绍了deque容器的源码实现方式。结合前面介绍的两个容器vector和list，在使用的过程中，我们确实要知道在什么情况下需要选择恰当的容器来满足需求和提升效率。一般选择的准则有如下几条：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;如果需要随机访问一个容器，vector比list要好&lt;/li&gt;
+&lt;li&gt;如果需要经常插入和删除操作的话，list比vector要好&lt;/li&gt;
+&lt;li&gt;如果既要随机存取，又要关心两端数据的插入和删除，则选择deque&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;好了，复习完前面的知识后，开始介绍今天的两个容器stack和queue。由于stack和queue都是基于deque来实现的，所以相应的代码会比较简单，也是比较轻松易实现的，下面一起去看看吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之Deque容器</title>
+      <link>https://zcheng.ren/2016/08/26/stldeque/</link>
+      <pubDate>Fri, 26 Aug 2016 11:34:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/26/stldeque/</guid>
+      <description>&lt;p&gt;在介绍STL的deque的容器之前，我们先来总结一下vector和list的优缺点。vector在内存中是分配一段连续的内存空间进行存储，其迭代器采用原生指针即可，因此其支持随机访问和存储，支持下标操作符，节省空间。但是其在分配的内存不够的情况下，需要对容器整体进行重新分配、拷贝和释放等操作，而且在vector中间插入或删除元素效率很低。&lt;/p&gt;
+
+&lt;p&gt;而list是以节点形式来存放数据，使用的是非连续的内存空间来存放数据，因此，在其内部插入和删除元素的时间复杂度都是O(1),但是其不支持随机访问和存取，不支持下标，而且比vector占用的内存要多。&lt;/p&gt;
+
+&lt;p&gt;综合上述的优缺点，我们貌似需要一个支持随机访问和存取，支持下标访问，而且插入和删除的效率高的容器。于是，STL的deque诞生了，下面就跟着我一起去看看deque的设计和源码实现吧！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之List容器</title>
+      <link>https://zcheng.ren/2016/08/24/stllist/</link>
+      <pubDate>Wed, 24 Aug 2016 17:07:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/24/stllist/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;http://zcheng.ren/2016/08/24/STLVector/&#34;&gt;上一篇博客&lt;/a&gt;中介绍的vector和数组类似，它拥有一段连续的内存空间，并且起始地址不变，很好的支持了随机存取，但由于是连续空间，所以在中间进行插入、删除等操作时都造成了内存块的拷贝和移动，另外在内存空间不足时还需要重新申请一块大内存来进行内存的拷贝。为了克服这些缺陷，STL定义了另一种容器List，它对于数据插入和删除的时间复杂度均为O(1)，而且再内存方面不用频繁的拷贝转移。下面，就一起来看看List的源码实现吧！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之Vector容器</title>
+      <link>https://zcheng.ren/2016/08/23/stlvector/</link>
+      <pubDate>Tue, 23 Aug 2016 17:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/23/stlvector/</guid>
+      <description>&lt;p&gt;C++内置了数组的类型，在使用数组的时候，必须指定数组的长度，一旦配置了就不能改变了，通常我们的做法是：尽量配置一个大的空间，以免不够用，这样做的缺点是比较浪费空间，预估空间不当会引起很多不便。&lt;/p&gt;
+
+&lt;p&gt;STL实现了一个Vector容器，该容器就是来改善数组的缺点。vector是一个动态空间，随着元素的加入，它的内部机制会自行扩充以容纳新元素。因此，vector的运用对于内存的合理利用与运用的灵活性有很大的帮助，再也不必因为害怕空间不足而一开始就配置一个大容量数组了，vector是用多少就分配多少。&lt;/p&gt;
+
+&lt;p&gt;要想实现动态分配数组，Vector内部就需要对空间控制做到有效率的掌控，这些机制要如何运作才能高效地实现动态分配呢？本篇博客就从源代码的角度带你领略一下Vector容器内部的构造艺术。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>带你深入理解STL之空间配置器(思维导图&#43;源码)</title>
+      <link>https://zcheng.ren/2016/08/16/stlallocater/</link>
+      <pubDate>Tue, 16 Aug 2016 19:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/16/stlallocater/</guid>
+      <description>&lt;p&gt;前不久把STL细看了一遍，由于看得太“认真”，忘了做笔记，归纳和总结这步漏掉了。于是为了加深印象，打算重看一遍，并记录下来里面的一些实现细节。方便以后能较好的复习它。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C/C&#43;&#43;的mem函数和strcpy函数的区别和应用</title>
+      <link>https://zcheng.ren/2016/08/14/memcpyseries/</link>
+      <pubDate>Sun, 14 Aug 2016 21:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/14/memcpyseries/</guid>
+      <description>&lt;p&gt;mem系列函数是面试的时候常考的知识点，我们需要熟练掌握这三个函数的原理和代码实现，要能准确无误的写出代码。&lt;/p&gt;
+
+&lt;p&gt;memcpy、memset和memset三个函数在使用过程中，均需包含以下头文件：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;//在C中
+#include &amp;lt;string.h&amp;gt;
+//在C++中
+#include &amp;lt;cstring&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之六：成员函数调用方式</title>
+      <link>https://zcheng.ren/2016/08/10/cppobjectmodelpart6/</link>
+      <pubDate>Wed, 10 Aug 2016 16:34:55 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/10/cppobjectmodelpart6/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;C++的成员函数分为静态函数、非静态函数和虚函数三种，在本系列文章中，多处提到static和non-static不影响对象占用的内存，而虚函数需要引入虚指针，所以需要调整对象的内存布局。既然已经解决了数据，函数等在内存中的布局问题，下一个需要考虑的就是如何调用，上述提到的三种函数的调用机制都不一样，其间的差异正是本篇博客需要讨论的。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之五：NRV优化和初始化列表</title>
+      <link>https://zcheng.ren/2016/08/10/cppobjectmodelpart5/</link>
+      <pubDate>Wed, 10 Aug 2016 07:52:02 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/10/cppobjectmodelpart5/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;在&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之四：拷贝构造函数&lt;/a&gt;中提到如果将一个对象作为函数参数或者返回值的时候，会调用拷贝构造函数，编译器是如何处理这些步骤，又会对其做哪些优化呢？本篇博客就为他家介绍一个编译器的优化操作：NRV，以及关于初始化列表的一些容易踩的“坑”！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之四：拷贝构造函数</title>
+      <link>https://zcheng.ren/2016/08/08/cppobjectmodelpart4/</link>
+      <pubDate>Mon, 08 Aug 2016 14:46:47 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/08/cppobjectmodelpart4/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;对于一个没有实例化的空类，编译器不会给它默认生成任何函数，当实例化一个空类后，编译器会根据需要生成相应的函数。这类函数包括一下几个:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;构造函数&lt;/li&gt;
+&lt;li&gt;拷贝构造函数&lt;/li&gt;
+&lt;li&gt;析构函数&lt;/li&gt;
+&lt;li&gt;赋值运算符&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;在上一篇博文&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之三：默认构造函数&lt;/a&gt;中讲到，编译器在需要的时候会合成一个空构造函数。本篇博文中就重点来介绍一下第二主角：拷贝构造函数。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之三：默认构造函数</title>
+      <link>https://zcheng.ren/2016/08/07/cppobjectmodelpart3/</link>
+      <pubDate>Sun, 07 Aug 2016 09:12:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/07/cppobjectmodelpart3/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;继前两篇总结了C++对象模型及其内存布局后，我们继续来探索一下C++对象的默认构造函数。对于C++的初学者来说，有如下两个误解：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;任何class如果没有定义default constructor，就会被合成出来&lt;/li&gt;
+&lt;li&gt;编译器合成出来的default constructor会显示设定“class内每一个data member的默认值“&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;如果读者对这两句话理解颇深，了解里面的陷阱，那么可以不必阅读下去；倘若你有一点点疑惑，那非常好，跟着我一起继续下去！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之二：对象模型（下）</title>
+      <link>https://zcheng.ren/2016/08/06/cppobjectmodelpart2/</link>
+      <pubDate>Sat, 06 Aug 2016 18:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/06/cppobjectmodelpart2/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;上一篇博客&lt;a href=&#34;http://zcheng.ren/categories/C-%E7%9F%A5%E8%AF%86/&#34;&gt;C++对象模型的那些事儿之一&lt;/a&gt;为大家讲解了C++对象模型的一些基本知识，可是C++的继承，多态这些特性如何体现在对象模型上呢？单继承、多重继承和虚继承后内存布局上又有哪些变化呢？多态真正的底层又是如何实现呢？本篇博客就带大家全面理解一下C++对象模型，从而理解上述疑惑。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C&#43;&#43;对象模型的那些事儿之一：对象模型（上）</title>
+      <link>https://zcheng.ren/2016/08/05/cppobjectmodelpart1/</link>
+      <pubDate>Fri, 05 Aug 2016 19:01:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/05/cppobjectmodelpart1/</guid>
+      <description>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;很早以前就听人推荐了《深入理解C++对象模型》这本书，从年初买来到现在也只是偶尔翻了翻，总觉得晦涩难懂，放在实验室上吃灰吃了好久。近期由于找工作对C++的知识做了一个全面系统的学习，基础相对扎实了不少，于是，又重新拿起这本书，突然觉得里面的知识也不那么难懂，而且越看越有意思，不愧是C++高阶教程啊！耐着性子，抓着头皮花了两个多月，总算对其中的知识有了一些理解，部分章节反反复复的看，每次都有新的收获。所谓好记性不如烂笔头，本系列博文就对我所学到的知识和我所遇到的困惑做一个整理。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

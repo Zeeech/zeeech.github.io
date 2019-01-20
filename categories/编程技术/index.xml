@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>编程技术 on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/</link>
+    <description>Recent content in 编程技术 on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Thu, 09 Aug 2018 21:03:39 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Python时区问题</title>
+      <link>https://zcheng.ren/2018/08/09/pythondatetimezone/</link>
+      <pubDate>Thu, 09 Aug 2018 21:03:39 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/08/09/pythondatetimezone/</guid>
+      <description>&lt;p&gt;今天接到一个需求，要求从数据库中统计出当月的一些指标，想想这需求如此简单，就说没问题，半小时搞定。可是，最后却拖了大半天时间，真是令人心塞。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>三分钟学会cocoapods</title>
+      <link>https://zcheng.ren/2018/07/30/learncocoapods/</link>
+      <pubDate>Mon, 30 Jul 2018 18:06:46 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/07/30/learncocoapods/</guid>
+      <description>&lt;p&gt;最近要接手项目的ios sdk，于是，抽时间学习一个cocoapods，用来管理Xcode项目的依赖的工具。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Nginx快速上手</title>
+      <link>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</link>
+      <pubDate>Mon, 29 Jan 2018 14:19:10 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</guid>
+      <description>&lt;p&gt;入职半年来，一直在Nginx的基础上做模块开发，学到了很多东西，也碰到了很多坑。在业务开发的同时，由于对Nginx本身也是一知半解，造成了很多不必要的Bug。痛定思痛，很早以前就想系统的学习一下Nginx，迟迟没有抽出时间下定决心，我知道和以前浅析Redis一样，那是一个一旦开始了就停不下来的旅程。好勒，别立flag了，一篇一篇写下去吧。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>C/C&#43;&#43;的mem函数和strcpy函数的区别和应用</title>
+      <link>https://zcheng.ren/2016/08/14/memcpyseries/</link>
+      <pubDate>Sun, 14 Aug 2016 21:46:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/14/memcpyseries/</guid>
+      <description>&lt;p&gt;mem系列函数是面试的时候常考的知识点，我们需要熟练掌握这三个函数的原理和代码实现，要能准确无误的写出代码。&lt;/p&gt;
+
+&lt;p&gt;memcpy、memset和memset三个函数在使用过程中，均需包含以下头文件：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;//在C中
+#include &amp;lt;string.h&amp;gt;
+//在C++中
+#include &amp;lt;cstring&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>全面剖析树的各类遍历方法</title>
+      <link>https://zcheng.ren/2016/07/31/treetraversalmethod/</link>
+      <pubDate>Sun, 31 Jul 2016 20:36:27 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/31/treetraversalmethod/</guid>
+      <description>&lt;p&gt;面试中常考到树的前序，中序，后序和层序遍历，这篇博文就带你深度剖析一下二叉树的各类遍历算法的实现&lt;/p&gt;
+
+&lt;p&gt;二叉树的遍历主要有四种，前序、中序、后序和层序&lt;/p&gt;
+
+&lt;p&gt;遍历的实现方式主要是：递归和非递归&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Machinelearning on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/machinelearning/</link>
+    <description>Recent content in Machinelearning on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sun, 20 Jan 2019 09:26:47 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/machinelearning/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>机器学习学习笔记--逻辑回归</title>
+      <link>https://zcheng.ren/machinelearning/machinelearninglogisticregression/</link>
+      <pubDate>Sun, 20 Jan 2019 09:26:47 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/machinelearning/machinelearninglogisticregression/</guid>
+      <description>&lt;p&gt;Andrew NG&#39;s Machine Learning.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>机器学习学习笔记--线性回归</title>
+      <link>https://zcheng.ren/machinelearning/machinelearninglinearregression/</link>
+      <pubDate>Sat, 19 Jan 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://zcheng.ren/machinelearning/machinelearninglinearregression/</guid>
+      <description>&lt;p&gt;Andrew NG&#39;s Machine Learning.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>机器学习学习笔记--简介</title>
+      <link>https://zcheng.ren/machinelearning/machinelearningintro/</link>
+      <pubDate>Thu, 17 Jan 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://zcheng.ren/machinelearning/machinelearningintro/</guid>
+      <description>&lt;p&gt;Andrew NG&amp;rsquo;s Machine Learning.&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>C&#43;&#43;对象模型的那些事儿之三：默认构造函数</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="C&#43;&#43;对象模型的那些事儿之三：默认构造函数" />
+<meta property="og:description" content="前言
+
+继前两篇总结了C&#43;&#43;对象模型及其内存布局后，我们继续来探索一下C&#43;&#43;对象的默认构造函数。对于C&#43;&#43;的初学者来说，有如下两个误解：
+
+
+任何class如果没有定义default constructor，就会被合成出来
+编译器合成出来的default constructor会显示设定“class内每一个data member的默认值“
+
+
+如果读者对这两句话理解颇深，了解里面的陷阱，那么可以不必阅读下去；倘若你有一点点疑惑，那非常好，跟着我一起继续下去！" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2016/08/07/cppobjectmodelpart3/" /><meta property="article:published_time" content="2016-08-07T09:12:53&#43;08:00"/>
+<meta property="article:modified_time" content="2016-08-07T09:12:53&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="C&#43;&#43;对象模型的那些事儿之三：默认构造函数"/>
+<meta name="twitter:description" content="前言
+
+继前两篇总结了C&#43;&#43;对象模型及其内存布局后，我们继续来探索一下C&#43;&#43;对象的默认构造函数。对于C&#43;&#43;的初学者来说，有如下两个误解：
+
+
+任何class如果没有定义default constructor，就会被合成出来
+编译器合成出来的default constructor会显示设定“class内每一个data member的默认值“
+
+
+如果读者对这两句话理解颇深，了解里面的陷阱，那么可以不必阅读下去；倘若你有一点点疑惑，那非常好，跟着我一起继续下去！"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">C&#43;&#43;对象模型的那些事儿之三：默认构造函数</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-08-07T09:12:53">August 07, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#前言">前言</a></li>
+<li><a href="#无用-trivial-的构造函数">无用(trivial)的构造函数</a></li>
+<li><a href="#有用-non-trivial-的构造函数">有用(non-trivial)的构造函数</a>
+<ul>
+<li><a href="#带有默认构造函数的成员类对象">带有默认构造函数的成员类对象</a></li>
+<li><a href="#带有默认构造函数的基类">带有默认构造函数的基类</a></li>
+<li><a href="#带有一个虚函数的类">带有一个虚函数的类</a></li>
+<li><a href="#带有一个虚基类的子类">带有一个虚基类的子类</a></li>
+</ul></li>
+<li><a href="#总结-结束语">总结&amp;结束语</a></li>
+<li><a href="#about-me">About Me</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<h1 id="前言">前言</h1>
+
+<p>继前两篇总结了C++对象模型及其内存布局后，我们继续来探索一下C++对象的默认构造函数。对于C++的初学者来说，有如下两个误解：</p>
+
+<ul>
+<li>任何class如果没有定义default constructor，就会被合成出来</li>
+<li>编译器合成出来的default constructor会显示设定“class内每一个data member的默认值“</li>
+</ul>
+
+<p>如果读者对这两句话理解颇深，了解里面的陷阱，那么可以不必阅读下去；倘若你有一点点疑惑，那非常好，跟着我一起继续下去！</p>
+
+<h1 id="无用-trivial-的构造函数">无用(trivial)的构造函数</h1>
+
+<p>一如前两篇的风格，先以一个例子来抛出一些疑惑，让读者带着问题来阅读，想来会事半功倍。如下面的程序代码，我定义了一个Cat类，里面包含两个参数，一个int型变量age和一个char型指针name。</p>
+
+<pre><code class="language-cpp">class Cat{
+public:
+	int age;
+	char* name;
+};
+</code></pre>
+
+<p>然后，在运行如下的测试代码：</p>
+
+<pre><code class="language-cpp">int main(){
+	Cat cat;
+	cout&lt;&lt;“age=”&lt;&lt;cat.age&lt;&lt;endl;
+	cout&lt;&lt;&quot;name=&quot;&lt;&lt;(long long*)cat.name&lt;&lt;endl;
+}
+</code></pre>
+
+<p>上述测试代码输出如下：</p>
+
+<pre><code class="language-cpp">age=4196864		
+name=0x400800
+</code></pre>
+
+<p>我们来看看输出，age和name输出的都是一些随机值。在分析输出之前，先理解如下两个概念</p>
+
+<ul>
+<li>”程序员的需要“：程序员希望默认的构造函数能初始化类实例中所有的data members</li>
+<li>“编译器的需要”：保证在创建类的实例的时候，存在一个构造函数，使得实例能创建，程序能正常运行。</li>
+</ul>
+
+<p>如果按照程序员的需要，age和name会被初始化，可是编译器并没有那么智能，猜不透程序员的想法，它给定的输出就是一堆随机值。</p>
+
+<p>类似于这种编译器并没有按照”程序员的需要“对每个成员变量进行初始化，而是仅仅满足了”编译器的需要“，而默认生成的构造函数就被称为trivial constructor。</p>
+
+<p>那么，编译器会在什么时候能按照”程序员的需要“，对类里面的data members初始化呢？请继续往下看。</p>
+
+<h1 id="有用-non-trivial-的构造函数">有用(non-trivial)的构造函数</h1>
+
+<p>所谓的non-trivial constructor就是：编译器在合成构造函数的时候会对类中的data mambers初始化，从而满足&rdquo;程序员的需求&rdquo;。还是那个疑问，什么时候编译器会自动合成一个这样的构造函数呢？下面分四种情况来一一说明。</p>
+
+<h2 id="带有默认构造函数的成员类对象">带有默认构造函数的成员类对象</h2>
+
+<p>如果一个类没有任何constructor，但它内含一个member object，后者还有一个default constructor，那么，编译器就会自动合成一个non-trivial constructor函数，不过这个合成操作只有在构造函数真正需要被调用的时候才合成。观察以下代码：</p>
+
+<pre><code class="language-cpp">class Cat{
+public:
+	Cat():age(0){
+		cout&lt;&lt;&quot;Cat has been initialized&quot;&lt;&lt;endl;
+	}
+    int age;
+};
+class Animal{
+public:
+	Cat cat;
+};
+int main(){
+	Animal animal;
+}
+</code></pre>
+
+<p>在Animal类中声明了一个Cat实例，Cat类中有自己的空构造函数。接着我们可以运行一下这段代码，输出如下：</p>
+
+<pre><code class="language-cpp">Cat has been initialized //cat类对象被构造
+</code></pre>
+
+<p>从输出中可以看出，我们在main函数中声明了一个animal实例，然后animal类构造出了cat实例。可见，如果类的成员有其默认的构造函数，编译器就会合成一个non-trivial constructor，合成的空构造函数应该如下所示：</p>
+
+<pre><code class="language-cpp">Animal(){
+	Cat::Cat();
+}
+</code></pre>
+
+<p>如果一个类内含一个或多个成员类对象，那么编译器为这个类合成的默认构造函数会一次调用成员类的空构造函数，其调用顺序是声明顺序决定的。那么，如果类自己定义了空的构造函数怎么办？很简单，编译器会将这些成员类的构造代码安插在空构造函数里面，其摆放顺序也是按照声明顺序。</p>
+
+<p>如以下测试代码：</p>
+
+<pre><code class="language-cpp">class Dog{
+public:
+	Dog(){
+		cout&lt;&lt;&quot;Dog has been initialized&quot;&lt;&lt;endl;
+	}
+};
+class Cat{
+public:
+	Cat():age(0){
+		cout&lt;&lt;&quot;Cat has been initialized&quot;&lt;&lt;endl;
+	}
+    int age;
+};
+class Animal{
+public:
+	Animal(){weight=0;}//按照声明顺序，cat和dog的构造会在weight之前
+	Cat cat;
+	Dog dog;
+	int weight;
+};
+int main(){
+	Animal animal;
+}
+</code></pre>
+
+<p>该测试代码的输出如下：</p>
+
+<pre><code class="language-cpp">Cat has been initialized //先构造cat类对象，因为声明顺序在前
+Dog has been initialized //再构造dog类对象
+</code></pre>
+
+<h2 id="带有默认构造函数的基类">带有默认构造函数的基类</h2>
+
+<p>如果一个派生类没有任何自定义构造函数，但它的基类有默认的构造函数，那么派生类中默认合成的构造函数中会安插基类的构造函数代码（按照声明顺序）。</p>
+
+<p>如下例所示：</p>
+
+<pre><code class="language-cpp">class Animal{
+public:
+	Animal(){
+		cout&lt;&lt;&quot;Animal has been initialized&quot;&lt;&lt;endl;
+	}
+};
+
+class Cat : public Animal{
+public:
+	
+};
+int main(){
+	Cat cat;
+}
+</code></pre>
+
+<p>输出如下：</p>
+
+<pre><code class="language-cpp">Animal has been initialized //父类构造函数的输出
+</code></pre>
+
+<p>输出结果显示子类合成的构造函数调用了父类的空构造函数。在继承关系中，我们知道构造顺序是先构造父类，如果有多个父类就按照声明的继承顺序依次构造，然后在构造子类。编译器在父类拥有空构造函数的情况下，会合成一个non-trivial constructor并在里面按顺序安插父类的空构造函数调用代码。</p>
+
+<p>那如果子类声明了多个构造函数，唯独没有空构造函数怎么办呢？编译器会合成一个空的构造函数吗？答案是否定的，编译器不会为它合成空构造函数，而是将父类的构造函数或者类对象的空构造函数依次安插在每个声明的构造函数内。</p>
+
+<p>上面一堆话可能比较绕口，举个小例子就很好理解了，请看下面的代码：</p>
+
+<pre><code class="language-cpp">class Dog{
+public:
+	Dog(){
+		cout&lt;&lt;&quot;Dog has been initialized&quot;&lt;&lt;endl;
+	}
+};
+
+class Animal{
+public:
+	Animal(){
+		cout&lt;&lt;&quot;Animal has been initialized&quot;&lt;&lt;endl;
+	}
+};
+
+class Cat : public Animal{//Cat类继承于Animal类，并在类里面声明了dog类的实例
+public:
+	Dog dog;
+	Cat(int a){//Cat类里面没有空构造函数
+		age = a;
+	}
+private:
+	int age;
+};
+
+int main(){
+	//Cat cat;	//如果这样写的话，编译器会报错，因为编译器根本没有为Cat类合成空构造函数
+	Cat cat(1);
+}
+</code></pre>
+
+<p>上述代码的输出如下：</p>
+
+<pre><code class="language-cpp">Animal has been initialized  //先构造基类
+Dog has been initialized	//再构造类中声明的类对象
+</code></pre>
+
+<p>所以，我们可以理一下编译器安插的构造函数的顺序：</p>
+
+<ul>
+<li>如果有基类，且基类有空构造函数，就按照基类的继承顺序依次构造</li>
+<li>如果声明的成员变量有空构造函数，就按照声明顺序依次构造</li>
+</ul>
+
+<h2 id="带有一个虚函数的类">带有一个虚函数的类</h2>
+
+<p>在<a href="http://zcheng.ren/2016/08/06/%E3%80%90C++%E5%AD%A6%E4%B9%A0%E3%80%91C++%E5%AF%B9%E8%B1%A1%E6%A8%A1%E5%9E%8B%E7%9A%84%E9%82%A3%E4%BA%9B%E4%BA%8B%E5%84%BF%EF%BC%88%E4%B8%80%EF%BC%89/">C++对象模型的那些事儿(一)</a>中讲到，如果类含有虚函数，那么编译器会生成一个虚指针，虚指针指向含有虚函数地址的虚表。因此，如果一个类还有虚函数的话，那么编译器自然会生成一个空的构造函数，用来初始化虚指针。</p>
+
+<p>于是，下面两个扩张行动就会在编译期间发生：</p>
+
+<ul>
+<li>一个虚函数表会被编译器产生出来，里面存放这虚函数的地址</li>
+<li>在每一个类对象中，一个额外的虚表指针会被编译器合成出来，其指向上述生成的虚表</li>
+</ul>
+
+<pre><code class="language-cpp">typedef void(*Func)(void);
+class Animal{
+public:
+	virtual void eat(){
+		cout&lt;&lt;&quot;Animal eat&quot;&lt;&lt;endl;
+	}
+};
+
+int main(){
+	Animal animal;//调用空构造函数
+	Fun pfun1 = (Fun)*((long long*)*(long long*)(&amp;animal));
+	pfun1();//执行函数，输出Animal eat
+}
+</code></pre>
+
+<p>在上例中，main函数中定义一个Animal类的对象animal，调用了编译器合成的空构造函数，接下来我们通过强制类型转换，首先提取虚表指针的地址，然后提取虚表的地址，将虚表的第一个函数赋给一个函数指针，最后运行该函数，输出Animal eat。因此，编译器确实按照上述两个步骤合成了一个non-trivial的空构造函数。</p>
+
+<h2 id="带有一个虚基类的子类">带有一个虚基类的子类</h2>
+
+<p>虚基类的实现方法有点复杂，我们首先来看看下面这个例子：</p>
+
+<pre><code class="language-cpp">class Animal{ 
+public:
+	int weight;
+};
+
+class Livestock : public virtual Animal{
+public: 
+	int color;
+};
+
+class Canidae : public virtual Animal{
+public:
+	int age;
+};
+class WatchDog :  public  Canidae , public  Livestock{
+public:
+	int breed;	
+};
+</code></pre>
+
+<p>其中，Animal是一个基类，Livestock和Candiae类虚继承于Animal类，WatchDog类继承于Livestock和Candiae类。基于上述继承关系，我们执行一下测试代码；</p>
+
+<pre><code class="language-cpp">void setWeight(const Animal* a){//运行时绑定。在编译期间无法决定a-&gt;Animal::weight的位置
+	a-&gt;weight = 100;
+}
+int main(){
+	setWeight(new Livestock);
+	setWeight(new WatchDog);
+}
+</code></pre>
+
+<p>针对上述测试代码，编译器无法固定setWeight()中的a-&gt;weight的实际偏移位置，因为a的真正类型都没有确定，所以必须是在确定传入的指针类型之后才能确定，也称为运行时绑定。</p>
+
+<p>所有经由引用或者指针来存取一个虚基类的操作都可以通过指针来完成，那么，这个虚基类中weight变量的位置是如何确定的呢？想必你心里已有答案，没错</p>
+
+<ul>
+<li>对于类中所有定义的每一个构造函数，编译器会安插那些“允许每一个虚基类的执行器存取操作”（如上述的a-&gt;weight）的代码</li>
+<li>如果类没有任何构造函数，编译器必须为其合成一个空构造函数</li>
+</ul>
+
+<h1 id="总结-结束语">总结&amp;结束语</h1>
+
+<p>本文通过测试代码一一测试了编译器在什么时候会产生trivial和non-trivial构造函数。现做如下整理。</p>
+
+<p>生成non-trivial构造函数的情况：</p>
+
+<ul>
+<li>带有默认构造函数的成员类对象</li>
+<li>带有默认构造函数的基类</li>
+<li>带由虚函数的类</li>
+<li>带有虚基类的类</li>
+</ul>
+
+<p>除这四种情况外，并且没有声明任何构造函数的类，编译器会在“需要的时候”为其构造一个隐式的trivial构造函数，它们实际上并不会被合成出来。</p>
+
+<blockquote>
+<p>这里的“需要的时候”只需要用到空构造函数的时候，如调用空构造函数构造一个类对象。如果没有用到空构造函数的时候，是不会被合成出来的</p>
+</blockquote>
+
+<p>在合成的空构造函数中，只有基类子对象和成员类对象会被初始化。所有其他的nonstatic data member（如int,int*,int数组等）都不会被初始化。这些初始化虽然对程序而言或许有需要，但对编译器则非必要。</p>
+
+<p>所以，请注意！如果你需要把某指针初始化为null这类操作，最好老老实实自己写构造函数来初始化，不要指向编译器能帮你干这些事！</p>
+
+<p>现在！请回过头去看前言中的两句话，是不是突然就意识到没有一个是对的。</p>
+
+<h1 id="about-me">About Me</h1>
+
+<p>由于本人也是初学，在写作过程中，难免有错误的地方，读者如果发现，请在下面留言指出。</p>
+
+<p>最后，如有疑惑或需要讨论的地方，可以联系我，联系方式见我的个人博客about页面，地址：<a href="http://zcheng.ren/about/">About Me</a>。</p>
+
+<p>另外，本人的第一本gitbook书已整理完，关于leetcode刷题题解的，<a href="https://www.gitbook.com/book/zeecoders/one-day-one-leetcode/details">点此进入One day One Leetcode</a></p>
+
+<p>欢迎持续关注！Thx！</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/c&#43;&#43;/" rel="tag">C&#43;&#43;</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2016/08/06/cppobjectmodelpart2/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">C&#43;&#43;对象模型的那些事儿之二：对象模型（下）</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2016/08/08/cppobjectmodelpart4/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">C&#43;&#43;对象模型的那些事儿之四：拷贝构造函数</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

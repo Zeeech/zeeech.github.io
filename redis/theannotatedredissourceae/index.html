@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--事件ae</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--事件ae" />
+<meta property="og:description" content="Redis源码剖析搁浅了一段时间，由于自己对事件驱动以及Reactor模式的理解不够深，源码看起来比较吃力，思来想去，所幸自己去实现一个简单的事件驱动模型。于是，采用python的select和queue模块开发了一个简易聊天服务器，实践中学习到的东西很多，回头再来看Redis的ae事件源码，明显轻松多了。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/redis/theannotatedredissourceae/" /><meta property="article:published_time" content="2017-01-13T15:12:13&#43;08:00"/>
+<meta property="article:modified_time" content="2017-01-13T15:12:13&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--事件ae"/>
+<meta name="twitter:description" content="Redis源码剖析搁浅了一段时间，由于自己对事件驱动以及Reactor模式的理解不够深，源码看起来比较吃力，思来想去，所幸自己去实现一个简单的事件驱动模型。于是，采用python的select和queue模块开发了一个简易聊天服务器，实践中学习到的东西很多，回头再来看Redis的ae事件源码，明显轻松多了。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--事件ae</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2017-01-13T15:12:13">January 13, 2017</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#事件概述">事件概述</a></li>
+<li><a href="#事件数据结构">事件数据结构</a></li>
+<li><a href="#事件创建和删除">事件创建和删除</a></li>
+<li><a href="#i-o多路复用">I/O多路复用</a></li>
+<li><a href="#事件循环">事件循环</a></li>
+<li><a href="#事件处理函数">事件处理函数</a>
+<ul>
+<li><a href="#时间事件处理">时间事件处理</a></li>
+<li><a href="#文件事件处理">文件事件处理</a></li>
+</ul></li>
+<li><a href="#小结">小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>Redis源码剖析搁浅了一段时间，由于自己对事件驱动以及Reactor模式的理解不够深，源码看起来比较吃力，思来想去，所幸自己去实现一个简单的事件驱动模型。于是，采用python的select和queue模块开发了一个简易聊天服务器，实践中学习到的东西很多，回头再来看Redis的ae事件源码，明显轻松多了。</p>
+
+<h1 id="事件概述">事件概述</h1>
+
+<p>Redis采用Reactor模式来处理事件，简单点来说，Redis会将所有待处理的事件放入事件池，然后挨个取出其中的事件，调用该事件的回调函数对其进行处理，这样的模式就称为Reactor模式，其处理事件的态度就是：「不要来找我，安静的取号排队，我会依次叫号的」。</p>
+
+<p>Redis的事件分为文件事件和时间事件两种。其中，文件事件采用I/O多路复用技术，监听感兴趣的I/O事件，例如读、写事件等，当事件的描述符变为可读或可写时，就将该事件放入待处理事件池，Redis在事件循环的时候会对其进行一一处理。</p>
+
+<p>而时间事件则是维护一个定时器，每当满足预设的时间要求，就将该时间事件标记为待处理，然后在Redis的事件循环中进行处理。Redis对于这两种事件的处理优先级是：文件事件优先于时间事件。</p>
+
+<h1 id="事件数据结构">事件数据结构</h1>
+
+<p>在上述的概述中，我们可以获得几个关键池：文件事件，时间事件，待处理事件池和事件循环，Redis为这几个关键词都定义了各自的结构体。下面，依次来看一看：</p>
+
+<pre><code class="language-cpp">/* 文件事件结构体 */
+typedef struct aeFileEvent {
+    int mask; // 事件标记，读or写
+    aeFileProc *rfileProc;  // 读事件处理函数
+    aeFileProc *wfileProc;  // 写事件处理函数
+    void *clientData;  // 事件中包含的待处理数据
+} aeFileEvent;
+</code></pre>
+
+<p>很明显，文件事件在处理过程中，需要根据mask来判断调用读或者写函数来处理该事件，这个很好理解。</p>
+
+<pre><code class="language-cpp">/* 时间事件结构体 */
+typedef struct aeTimeEvent {
+    long long id; // 时间事件标识符，用于唯一标记该时间事件
+    long when_sec; // 时间事件触发时间 秒
+    long when_ms; // 时间事件触发时间 微秒
+    aeTimeProc *timeProc;  // 该事件对应的处理函数
+    aeEventFinalizerProc *finalizerProc;   // 时间事件的最后一次处理程序，若已设置，则删除该事件的时候会调用
+    void *clientData; // 数据
+    struct aeTimeEvent *next; // 下一个时间事件
+} aeTimeEvent;
+</code></pre>
+
+<p>在上述结构体中，该时间事件的标识符包括，时间事件id和触发时间when，每次时间循环的时候判断是否到了触发时间，如到了，则调用对应的处理函数进行处理，该时间事件中还定义了该时间事件最后一次的处理函数。另外，next指针指向下一个时间事件，有些时间事件比如隔多少秒执行一次的，这时候next指针就派上用场了。</p>
+
+<pre><code class="language-cpp">/* 触发时间结构体 */
+typedef struct aeFiredEvent {
+    int fd;  // 文件事件描述符
+    int mask;  // 读写标记
+} aeFiredEvent;
+</code></pre>
+
+<p>每次调用I/O复用程序之后，会返回已经准备好的文件事件描述符，这时候就会以该结构体的形式存放下来。Redis在事件循环的时候，会对这些已准备好待处理的事件一一进行处理，也就是上面说的待处理事件池。</p>
+
+<pre><code class="language-cpp">/* 事件循环结构体 */
+typedef struct aeEventLoop {
+    int maxfd;   // 当前注册的最大描述符
+    int setsize; // 需要监听的描述符个数
+    long long timeEventNextId; // 下一个时间事件的id，用于生成时间事件的唯一标识
+    time_t lastTime;     // 上一次事件循环的时间，用于检测系统时间是否变更
+    aeFileEvent *events; // 注册要使用的文件事件
+    aeFiredEvent *fired; // 已准备好，待处理的时间
+    aeTimeEvent *timeEventHead; // 时间事件头，因为事件时间其实是一个链表
+    int stop; //  停止标识，1表示停止
+    void *apidata; // 用于处理底层特定的API数据，对于epoll来说，其包括epoll_fd和epoll_event
+    aeBeforeSleepProc *beforesleep; // 没有待处理事件时调用
+} aeEventLoop;
+</code></pre>
+
+<p>时间循坏结构中，存放着所有文件事件和时间事件，以及已准备好的事件，还有以下标识参数等。这些使得事件循环能够安全，高效的运行。</p>
+
+<h1 id="事件创建和删除">事件创建和删除</h1>
+
+<p>我们知道，Redis的事件分为文件事件和时间事件，上述也给出了其分别对应的结构体。首先，我们去看看如何创建和删除事件。</p>
+
+<pre><code class="language-cpp">/* 创建文件事件 */
+int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
+        aeFileProc *proc, void *clientData);
+/* 删除文件事件 */
+void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask);
+/* 根据文件描述符获取文件事件 */
+int aeGetFileEvents(aeEventLoop *eventLoop, int fd);
+/* 创建时间事件 */
+long long aeCreateTimeEvent(aeEventLoop *eventLoop, long long milliseconds,
+        aeTimeProc *proc, void *clientData,
+        aeEventFinalizerProc *finalizerProc);
+/* 删除时间事件 */
+int aeDeleteTimeEvent(aeEventLoop *eventLoop, long long id);
+</code></pre>
+
+<p>这些函数都非常简单，就是对其结构体进行一些初始化操作，我们主要来了解一下在什么时候创建事件，继续跟踪代码的话，这些就一目了然。</p>
+
+<p>关于文件事件，有两个地方需要创建它：</p>
+
+<ul>
+<li>初始化服务器的时候，需要监听新的客户连接</li>
+</ul>
+
+<pre><code class="language-c">/* 截取至server.c/initServer函数 */
+/* 服务器可能有多个文件描述符，根据每个文件描述符来创建监听事件，监听新客户的连接 */
+for (j = 0; j &lt; server.ipfd_count; j++) { 
+	if (aeCreateFileEvent(server.el, server.ipfd[j], AE_READABLE,
+		acceptTcpHandler,NULL) == AE_ERR)
+	{
+		serverPanic(&quot;Unrecoverable error creating server.ipfd file event.&quot;);
+	}
+}
+if (server.sofd &gt; 0 &amp;&amp; aeCreateFileEvent(server.el,server.sofd,AE_READABLE,
+    acceptUnixHandler,NULL) == AE_ERR) serverPanic(&quot;Unrecoverable error creating server.sofd file event.&quot;);
+</code></pre>
+
+<ul>
+<li>在客户连接服务器之后，需要监听该客户的读写事件</li>
+</ul>
+
+<pre><code class="language-cpp">/* 代码截取至netWorking.c/createClient函数 */
+/* 新用户连接的时候需要创建client结构体，此时就需要创建文件事件，用来监听其读写操作 */
+if (aeCreateFileEvent(server.el,fd,AE_READABLE, readQueryFromClient, c) == AE_ERR)
+{
+  close(fd);
+  zfree(c);
+  return NULL;
+}
+</code></pre>
+
+<p>关于时间事件，Redis在初始化服务器的时候就会创建，前面我们提到的AOF和RDB持久化以及过期键的处理等操作中，都设计到定时操作，时间事件就是为了这些定时操作而设定的，在特定的时间触发时间事件，并进行相应的处理。</p>
+
+<pre><code class="language-cpp">/* 截取至server.c/initServer函数 */
+/* 创建时间事件，用于处理定时任务 */
+if(aeCreateTimeEvent(server.el, 1, serverCron, NULL, NULL) == AE_ERR) {
+        serverPanic(&quot;Can't create the serverCron time event.&quot;);
+        exit(1);
+    }
+</code></pre>
+
+<h1 id="i-o多路复用">I/O多路复用</h1>
+
+<p>在进行文件事件处理前，需要调用I/O多路复用来获得已经准备就绪的文件描述符，关于I/O多路复用，有以下四种函数可以使用。</p>
+
+<ul>
+<li>select</li>
+<li>evport（libevent）</li>
+<li>epoll</li>
+<li>kqueue</li>
+</ul>
+
+<p>其中，不同的系统支持不同的多路复用函数，linux下可以使用select和epoll，macos下可以使用select和kqueue，如果安装有libevent，则可以使用evport。对于I/O多路复用，不懂的可以参考我的这篇学习笔记：<a href="http://zcheng.ren/2016/07/14/%E3%80%90unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E7%AC%AC%E4%B8%89%E7%89%88%E3%80%91%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%94%EF%BC%89%EF%BC%9AI-O%E5%A4%8D%E7%94%A8%EF%BC%9Aselect%E5%92%8Cpoll%E5%87%BD%E6%95%B0/">UNIX网络编程之五：select和poll函数</a></p>
+
+<p>Redis为了适用于不同的操作系统，同时也要达到最高的效率，定义了如下库选择宏，用于根据当前操作系统的环境来选择最高效的I/O多路复用函数。</p>
+
+<pre><code class="language-cpp">#ifdef HAVE_EVPORT
+#include &quot;ae_evport.c&quot;
+#else
+    #ifdef HAVE_EPOLL
+    #include &quot;ae_epoll.c&quot;
+    #else
+        #ifdef HAVE_KQUEUE
+        #include &quot;ae_kqueue.c&quot;
+        #else
+        #include &quot;ae_select.c&quot;
+        #endif
+    #endif
+#endif
+</code></pre>
+
+<p>另外，为了统一的使用这些I/O复用函数，Redis对其进行了特定的封装，使得对外的接口得到了统一，操作起来也很方便。</p>
+
+<pre><code class="language-cpp">/* 添加需要监听的事件 */
+static int aeApiAddEvent(aeEventLoop *eventLoop, int fd, int mask)
+/* 初始化I/O多路复用库所需的参数 */
+static int aeApiCreate(aeEventLoop *eventLoop)
+/* 删除不需要监听的事件 */
+static void aeApiDelEvent(aeEventLoop *eventLoop, int fd, int mask)
+/* 清空 */
+static void aeApiFree(aeEventLoop *eventLoop)
+/* 返回当前使用的库的名字 */
+static int aeApiName(void)
+/* 取出已准备好的文件描述符 */
+static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp)
+</code></pre>
+
+<p>我们以select为例，其可以监听读或写类型的文件描述符，所以，需要定义一个结构体来存放需要监听的读写类型的文件描述符集合。</p>
+
+<pre><code class="language-cpp">typedef struct aeApiState {
+    fd_set rfds, wfds;  // 读写文件描述符集合
+    /* We need to have a copy of the fd sets as it's not safe to reuse
+     * FD sets after select(). */
+    fd_set _rfds, _wfds;
+} aeApiState;
+</code></pre>
+
+<p>在eventloop结构体中，<code>apidata</code>字段保存的数据类型就是<code>aeApiState</code>。增加，删除，清空等操作都是对这两个文件描述符集进行操作，没什么好讲的，主要是<code>aeApiPoll</code>函数，其调用底层的I/O复用函数，获取已经准备好的描述符集。</p>
+
+<pre><code class="language-cpp">/* 调用select函数，获取已经准备好的描述符集 */
+static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
+    aeApiState *state = eventLoop-&gt;apidata;
+    int retval, j, numevents = 0;
+
+    memcpy(&amp;state-&gt;_rfds,&amp;state-&gt;rfds,sizeof(fd_set));
+    memcpy(&amp;state-&gt;_wfds,&amp;state-&gt;wfds,sizeof(fd_set));
+	// 调用select函数
+    retval = select(eventLoop-&gt;maxfd+1,
+                &amp;state-&gt;_rfds,&amp;state-&gt;_wfds,NULL,tvp);
+    if (retval &gt; 0) {
+        for (j = 0; j &lt;= eventLoop-&gt;maxfd; j++) {
+            int mask = 0;
+            // 找到该描述符对应的事件
+          	aeFileEvent *fe = &amp;eventLoop-&gt;events[j];
+			// 根据mask判断读或写事件，并在需要监听的描述符中确定存在该描述符
+            if (fe-&gt;mask == AE_NONE) continue;
+            if (fe-&gt;mask &amp; AE_READABLE &amp;&amp; FD_ISSET(j,&amp;state-&gt;_rfds))
+                mask |= AE_READABLE;
+            if (fe-&gt;mask &amp; AE_WRITABLE &amp;&amp; FD_ISSET(j,&amp;state-&gt;_wfds))
+                mask |= AE_WRITABLE;
+            // 加入到已经准备好的事件中，等待处理
+            eventLoop-&gt;fired[numevents].fd = j;
+            eventLoop-&gt;fired[numevents].mask = mask;
+            numevents++;
+        }
+    }
+    // 返回已经准备好的事件个数
+    return numevents;
+}
+</code></pre>
+
+<p>简单点来说，I/O多路复用函数的作用就是，将给定的需要监听的描述符集作为输入，该函数轮询这些描述符集，然后找出其中已经准备好的文件描述符集。</p>
+
+<h1 id="事件循环">事件循环</h1>
+
+<p>上面调用I/O多路复用程序已经获取了准备好的事件，接下来就需要对这些事件进行处理。在<code>server.c</code>文件里，Redis的入口函数<code>main</code>函数中，就调用了<code>aeMain()</code>函数，用于执行事件循环。</p>
+
+<pre><code class="language-cpp">/* 事件循环主函数 */
+void aeMain(aeEventLoop *eventLoop) {
+    eventLoop-&gt;stop = 0;  // 开启事件循环
+    while (!eventLoop-&gt;stop) {
+        if (eventLoop-&gt;beforesleep != NULL)
+            eventLoop-&gt;beforesleep(eventLoop);
+        aeProcessEvents(eventLoop, AE_ALL_EVENTS);  // 事件处理函数
+    }
+}
+</code></pre>
+
+<p>我们可以看到，基本上事件循环自服务器运行开始，就一直不停的执行，不停地处理各类事件。关于事件处理的具体函数如下：</p>
+
+<pre><code class="language-cpp">/* 事件处理函数 */
+int aeProcessEvents(aeEventLoop *eventLoop, int flags)
+{
+    int processed = 0, numevents;
+
+    // 没有需要处理的事件就直接返回
+    if (!(flags &amp; AE_TIME_EVENTS) &amp;&amp; !(flags &amp; AE_FILE_EVENTS)) return 0;
+
+    // 即使没有要处理的文件事件，只要我们想处理时间事件就需要调用select()函数
+    // 这是为了睡眠直到下一个时间事件准备好。
+    if (eventLoop-&gt;maxfd != -1 ||
+        ((flags &amp; AE_TIME_EVENTS) &amp;&amp; !(flags &amp; AE_DONT_WAIT))) {
+        int j;
+        aeTimeEvent *shortest = NULL;
+        struct timeval tv, *tvp;
+		// 获取最近的时间事件
+        if (flags &amp; AE_TIME_EVENTS &amp;&amp; !(flags &amp; AE_DONT_WAIT))
+            shortest = aeSearchNearestTimer(eventLoop);
+        if (shortest) {
+            // 运行到这里说明时间事件存在，则根据最近可执行时间事件和现在的时间的时间差
+            // 来决定文件事件的阻塞事件
+            long now_sec, now_ms;
+
+            aeGetTime(&amp;now_sec, &amp;now_ms);
+            tvp = &amp;tv;
+
+            // 计算下一次时间事件准备好的时间
+            long long ms =
+                (shortest-&gt;when_sec - now_sec)*1000 +
+                shortest-&gt;when_ms - now_ms;
+            if (ms &gt; 0) {
+                tvp-&gt;tv_sec = ms/1000;
+                tvp-&gt;tv_usec = (ms % 1000)*1000;
+            } else {
+                // 时间差小于0，代表可以处理了
+                tvp-&gt;tv_sec = 0;
+                tvp-&gt;tv_usec = 0;
+            }
+        } else {
+            // 执行到这里，说明没有待处理的时间事件
+            // 此时根据AE_DONT_WAIT参数来决定是否设置阻塞和阻塞的时间
+            if (flags &amp; AE_DONT_WAIT) {
+                tv.tv_sec = tv.tv_usec = 0;
+                tvp = &amp;tv;
+            } else {
+                /* Otherwise we can block */
+                tvp = NULL; /* wait forever */
+            }
+        }
+		// 调用I/O复用函数获取已准备好的事件
+        numevents = aeApiPoll(eventLoop, tvp);
+        for (j = 0; j &lt; numevents; j++) {
+            // 从已就绪事件中获取事件
+            aeFileEvent *fe = &amp;eventLoop-&gt;events[eventLoop-&gt;fired[j].fd];
+            int mask = eventLoop-&gt;fired[j].mask;
+            int fd = eventLoop-&gt;fired[j].fd;
+            int rfired = 0;
+
+            // 如果为读事件则调用读事件处理函数
+            if (fe-&gt;mask &amp; mask &amp; AE_READABLE) {
+                rfired = 1;
+                fe-&gt;rfileProc(eventLoop,fd,fe-&gt;clientData,mask);
+            }
+            // 如果为写事件则调用写事件处理函数
+            if (fe-&gt;mask &amp; mask &amp; AE_WRITABLE) {
+                if (!rfired || fe-&gt;wfileProc != fe-&gt;rfileProc)
+                    fe-&gt;wfileProc(eventLoop,fd,fe-&gt;clientData,mask);
+            }
+            processed++;
+        }
+    }
+    // 处理时间事件，记住，此处说明Redis的文件事件优先于时间事件
+    if (flags &amp; AE_TIME_EVENTS)
+        processed += processTimeEvents(eventLoop);
+	// 返回处理的事件个数
+    return processed;
+}
+</code></pre>
+
+<p>简而言之，事件的处理步骤就是：</p>
+
+<ul>
+<li>查找最早的时间事件，判断是否需要执行，如需要，就标记下来，等待处理</li>
+<li>获取已准备好的文件事件描述符集</li>
+<li>优先处理读事件</li>
+<li>处理写事件</li>
+<li>如有时间事件，就处理时间事件</li>
+</ul>
+
+<h1 id="事件处理函数">事件处理函数</h1>
+
+<p>前面几小节中，分析了创建事件，事件循环，那么对于待处理的事件，Redis对这些事件都进行哪些处理呢？</p>
+
+<h2 id="时间事件处理">时间事件处理</h2>
+
+<p>在创建时间事件的函数中，传入了时间事件的真正处理函数<code>serverCron</code>，该函数在之前的源码分析中已多次提到，由于源码过长，这里只简要总结一下该函数中执行哪些操作。</p>
+
+<ul>
+<li>更新服务器的各类统计信息，比如时间、内存占用、数据库占用等</li>
+<li>清理数据库中的过期键值对</li>
+<li>关闭和清理连接失效的客户端</li>
+<li>尝试进行AOF和RDB持久化操作</li>
+<li>如果是主服务器，就对从服务器进行定期同步</li>
+<li>如果是集群模式，对集群进行定期同步和连接测试</li>
+</ul>
+
+<h2 id="文件事件处理">文件事件处理</h2>
+
+<p>在注册文件事件的时候，给定的文件处理函数是<code>acceptTcpHandler</code>和<code>readQueryFromClient</code>。我们先来看看前者。</p>
+
+<p>很显然，前者对应的事件是为了监听新客户的连接，其事件处理应该是：处理客户的连接，并创建新客户结构体，初始化等</p>
+
+<pre><code class="language-cpp">/* 监听新客户连接事件的处理函数*/
+void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
+    int cport, cfd, max = MAX_ACCEPTS_PER_CALL;
+    char cip[NET_IP_STR_LEN];
+    UNUSED(el);
+    UNUSED(mask);
+    UNUSED(privdata);
+	// TCP连接，接受客户的连接
+    while(max--) {
+        cfd = anetTcpAccept(server.neterr, fd, cip, sizeof(cip), &amp;cport);
+        // 连接出错
+      	if (cfd == ANET_ERR) {
+            if (errno != EWOULDBLOCK)
+                serverLog(LL_WARNING,
+                    &quot;Accepting client connection: %s&quot;, server.neterr);
+            return;
+        }
+        // 记录日志
+        serverLog(LL_VERBOSE,&quot;Accepted %s:%d&quot;, cip, cport);
+        // 初始化客户操作
+      	acceptCommonHandler(cfd,0,cip);
+    }
+}
+</code></pre>
+
+<p>上述函数只是接受了该客户的连接，真正创建客户结构体的操作由<code>acceptCommonHandler</code>函数完成。该函数的源码就不列出来了，这里主要说一下它的主要工作：</p>
+
+<ul>
+<li>创建redisClient结构体，并建立和保存服务器和客户端的连接信息</li>
+<li>为该客户端的套接字注册读事件，相应的回调函数为<code>readQueryFromClient</code>（这个在下面介绍）</li>
+</ul>
+
+<p>后者则是创建了客户端结构体之后，需要监听客户端的读操作的事件处理函数，用于读取客户端穿来的命令，并执行相关操作，再回复给客户端。</p>
+
+<p>所以，针对文件事件的处理就是：监听新客户的连接，如连接就创建新客户，然后继续监听该客户的读事件，如客户发送命令，就解析命令，执行相应的处理，然后回复客户端。</p>
+
+<h1 id="小结">小结</h1>
+
+<p>本篇博客分析了事件的创建，循环和处理过程，到此，结合以前的分析，我们基本上可以理解客户端传来命令之后，服务器进行相应处理，然后回复客户端，这整个大循环过程了。对于时间事件和文件事件，想用下面的比特图来总结一下。</p>
+
+<pre><code>time -------------------------------------------------------------------------------&gt;
+    |&lt;------10ms-------&gt;|&lt;------10ms-------&gt;|&lt;------10ms-------&gt;|&lt;------10ms-------&gt;|
+    | fileEvent1  | fileEvent2 |   block   | fileEvent3  | fileEvent4 |   block   |
+    |                          | timeEvent1|                          | timeEvent2|
+</code></pre>
+
+<p>这张图告诉我们，在时间事件执行的时候，文件事件是处于阻塞状态的，所以，再一次印证了Redis是单线程的，整个事件循环是串行的。</p>
+
+<p>由于本人是边看源码边写剖析，所以很多没有注意到或者理解有误的地方，请您在留言区指出，也希望各位学习Redis的同学能联系我，一起探讨和学习Redis！</p>
+
+<p><p style="text-align:right">张程，于湖北·武汉 <p></p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/redis/theannotatedredissourcemulti/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--事务Multi</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

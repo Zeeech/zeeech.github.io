@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>带你深入理解STL之空间配置器(思维导图&#43;源码)</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="带你深入理解STL之空间配置器(思维导图&#43;源码)" />
+<meta property="og:description" content="前不久把STL细看了一遍，由于看得太“认真”，忘了做笔记，归纳和总结这步漏掉了。于是为了加深印象，打算重看一遍，并记录下来里面的一些实现细节。方便以后能较好的复习它。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2016/08/16/stlallocater/" /><meta property="article:published_time" content="2016-08-16T19:46:53&#43;08:00"/>
+<meta property="article:modified_time" content="2016-08-16T19:46:53&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="带你深入理解STL之空间配置器(思维导图&#43;源码)"/>
+<meta name="twitter:description" content="前不久把STL细看了一遍，由于看得太“认真”，忘了做笔记，归纳和总结这步漏掉了。于是为了加深印象，打算重看一遍，并记录下来里面的一些实现细节。方便以后能较好的复习它。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">带你深入理解STL之空间配置器(思维导图&#43;源码)</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-08-16T19:46:53">August 16, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb" rel="category">源码阅读</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#空间配置器概述">空间配置器概述</a></li>
+<li><a href="#对象的构造和析构">对象的构造和析构</a></li>
+<li><a href="#内存的配置和释放">内存的配置和释放</a>
+<ul>
+<li><a href="#第一级配置器">第一级配置器</a></li>
+<li><a href="#第二级配置器">第二级配置器</a>
+<ul>
+<li><a href="#空间配置函数allocate">空间配置函数allocate()</a></li>
+<li><a href="#重新填充函数refill">重新填充函数refill()</a></li>
+<li><a href="#内存池函数chunk-alloc">内存池函数chunk_alloc()</a></li>
+<li><a href="#内存释放函数deallocate">内存释放函数deallocate()</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#配置器的使用">配置器的使用</a></li>
+<li><a href="#about-me">About Me</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>前不久把STL细看了一遍，由于看得太“认真”，忘了做笔记，归纳和总结这步漏掉了。于是为了加深印象，打算重看一遍，并记录下来里面的一些实现细节。方便以后能较好的复习它。</p>
+
+<h1 id="空间配置器概述">空间配置器概述</h1>
+
+<p>以前在项目中运用STL一般都不会涉及到空间配置器，可是，在STL的实现中，空间配置器是重中之重，因为整个STL的操作对象都存放在容器之内，而容器一定需要配置空间以置放资料。所以，在阅读STL源码时，最先需要掌握的就是空间配置器，没了它，容器，算法怎么存在？</p>
+
+<p>C++ STL的空间配置器将内存的配置、释放和对象的构造和析构分开，内存配置操作由alloc::allocate()负责，内存释放由alloc::deallocate()负责；对象构造操作由::construct()负责，对象的析构操作由::destroy()负责。首先放一张思维导图来概述一下STL的整个空间配置器概览。</p>
+
+<p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkfode4zyj30qs0agq3y.jpg" alt="空间配置器" /></center></p>
+
+<h1 id="对象的构造和析构">对象的构造和析构</h1>
+
+<p>个人觉得看源码只需要图和代码注释即可，所以本篇博客图片较多！对着图来看代码效率会高很多！</p>
+
+<p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfo9n8psj30ql08z3zm.jpg" alt="构造和析构" /></center></p>
+
+<p>下面是源代码：</p>
+
+<pre><code class="language-cpp">#include &lt;new.h&gt;        // 需要placement new的原型
+// -----------------构造函数---------------------------------//
+// 使用placement new在已经分配的内存上构造对象
+template &lt;class T1, class T2&gt;
+inline void construct(T1* p, const T2&amp; value)
+{
+  new (p) T1(value);//将value设定到指针p所指的空间上
+}
+
+// -----------------析构函数---------------------------------//
+// -----------第一个版本：接受一个指针--------------------------//
+// 调用成员的析构函数, 需要类型具有non-trivial destructor
+template &lt;class T&gt;
+inline void destroy(T* pointer)
+{
+    pointer-&gt;~T();
+}
+
+// -----------第二个版本：接受两个迭代器------------------------//
+template &lt;class ForwardIterator&gt;
+inline void destroy(ForwardIterator first, ForwardIterator last)
+{
+  __destroy(first, last, value_type(first));
+}
+// 首先是两个特化版本
+inline void destroy(char*, char*) {}
+inline void destroy(wchar_t*, wchar_t*) {}
+
+// 析构一组对象, 用于具有non-trivial destructor
+template &lt;class ForwardIterator&gt;
+inline void
+__destroy_aux(ForwardIterator first, ForwardIterator last, __false_type)
+{
+  for ( ; first &lt; last; ++first)
+    destroy(&amp;*first);
+}
+
+// 如果没有类型non-trivial destructor, 则使用此函数
+template &lt;class ForwardIterator&gt;
+inline void __destroy_aux(ForwardIterator, ForwardIterator, __true_type) {}
+
+// 使用traits技术, 判断类型是否就有non-trivial destructor, 然后调用不同的函数
+template &lt;class ForwardIterator, class T&gt;
+inline void __destroy(ForwardIterator first, ForwardIterator last, T*)
+{
+  typedef typename __type_traits&lt;T&gt;::has_trivial_destructor trivial_destructor;
+  __destroy_aux(first, last, trivial_destructor());
+}
+</code></pre>
+
+<h1 id="内存的配置和释放">内存的配置和释放</h1>
+
+<p>在内存配置方面，STL分为两级配置器，当请求的内存大于128b的时候调用第一级配置器，当请求的内存小于等于128b的时候调用第二级配置器。先来看看下面这张表，大概就能知道第一级和第二级配置器主要干了些什么，其他的一些细节如内存池是怎么工作的，下面会给出具体解释。</p>
+
+<p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkfoeivm3j30q3078t9m.jpg" alt="内存配置" /></center></p>
+
+<h2 id="第一级配置器">第一级配置器</h2>
+
+<p>首先我们来看第一级配置器的源码：</p>
+
+<pre><code class="language-cpp">template &lt;int inst&gt;  
+class __malloc_alloc_template  
+{  
+private:
+	//调用malloc函数不成功后调用
+	static void *oom_malloc(size_t);
+
+	//调用realloc函数不成功后调用 
+	static void *oom_realloc(void *, size_t);
+
+	//类似于C++的set_new_handle错误处理函数一样，如果不设置，在内存不足时，返回THROW_BAD_ALLOC
+	#ifndef __STL_STATIC_TEMPLATE_MEMBER_BUG  
+		static void (* __malloc_alloc_oom_handler)();  
+	#endif  
+
+	public:  
+	//直接调用malloc来分配内存
+	static void * allocate(size_t n)  
+	{  
+	 void *result = malloc(n);  
+	 if (0 == result) result = oom_malloc(n);  //如果分配失败，则调用oom_malloc()
+	 return result;  
+	}  
+ 	//第一级配置器直接调用free来释放内存
+	static void deallocate(void *p, size_t /* n */)  
+	{ 
+		free(p); 
+	}  
+	//直接调用reallloc来分配内存
+	static void * reallocate(void *p, size_t /* old_sz */, size_t new_sz)  
+	{  
+	 void * result = realloc(p, new_sz);  
+	 if (0 == result) result = oom_realloc(p, new_sz);  //如果realloc分配不成功，调用oom_realloc()
+	 return result;  
+	}  
+
+	//异常处理函数，即内存分配失败后的处理
+	static void (* set_malloc_handler(void (*f)()))()  
+	{  
+	 void (* old)() = __malloc_alloc_oom_handler;  
+	 __malloc_alloc_oom_handler = f;  
+	 return(old);  
+	}  
+};   
+</code></pre>
+
+<p>从上述源码中可以看到，STL的第一级配置器仅仅是调用了malloc，free等函数，然后增加了内存分配错误下的异常处理函数，下面我们就通过源码来看看在内存分配失败后，STL是怎么处理的。</p>
+
+<pre><code class="language-cpp">// 以下是针对内存分配失败后的处理
+//首先，将__malloc_alloc_oom_handler的默认值设为0
+template &lt;int inst&gt;  
+void (* __malloc_alloc_template&lt;inst&gt;::__malloc_alloc_oom_handler)() = 0;  
+#endif  
+
+template &lt;int inst&gt;  
+void * __malloc_alloc_template&lt;inst&gt;::oom_malloc(size_t n)  
+{  
+	void (* my_malloc_handler)();  
+	void *result;  
+
+	for (;;) {  // 不断地尝试释放、再配置、再释放、再配置
+		my_malloc_handler = __malloc_alloc_oom_handler;  
+		if (0 == my_malloc_handler) { __THROW_BAD_ALLOC; }  //这里是当没有设置处理函数的时候，直接抛出异常
+		(*my_malloc_handler)();   // 调用处理例程，尝试释放内存
+		result = malloc(n);  	  // 再重新分配内存
+		if (result) return(result);  // 如果分配成功则返回指针
+	}  
+}  
+
+template &lt;int inst&gt;  
+void * __malloc_alloc_template&lt;inst&gt;::oom_realloc(void *p, size_t n)  
+{  
+	void (* my_malloc_handler)();  
+	void *result;  
+
+	for (;;) {  //不断地尝试释放、再配置、再释放、再配置
+		my_malloc_handler = __malloc_alloc_oom_handler;  
+		if (0 == my_malloc_handler) { __THROW_BAD_ALLOC; } //这里是当没有设置处理函数的时候，直接抛出异常 
+		(*my_malloc_handler)();  // 调用处理例程，尝试释放内存
+		result = realloc(p, n);  // 再重新分配内存
+		if (result) return(result);  // 如果分配成功则返回指针
+	}  
+}  
+</code></pre>
+
+<h2 id="第二级配置器">第二级配置器</h2>
+
+<p>当申请内存小于128b的时候，会调用第二级配置器。第二级配置器有一个内存池和一个对应的自由链表，其定义如下：</p>
+
+<pre><code class="language-cpp">union obj  
+{  
+	union obj * free_list_link;  
+	char client_data[1];
+};  
+</code></pre>
+
+<p>这里有一个技巧，如果使用union的第一个成员，则指向另一个相同的union obj；而如果使用第二个成员，则指向实际的内存区域，这样一来，既实现了链表结点只用一个指针的大小空间，却能同时做索引和指向内存区域。</p>
+
+<blockquote>
+<p>这里的这个技巧我觉得有必要解释一下，首先client_data是一个常量指针，指向client_data[0]，然后client_data[0]和free_list_link共用同一段内存，我们在使用这个union的时候，先让client_data指向实际的内存区域，然后将free_list_link(也就是client_data[0])赋值为下一个结点的地址，注意这里我只是修改了client_data[0]，client_data并没有修改，而是始终指向实际内存。</p>
+</blockquote>
+
+<p>我们先来看看第二级配置器的部分源码，然后再去分析其中每个函数的功能。</p>
+
+<pre><code class="language-cpp">enum {__ALIGN = 8};   //小型区块的上调边界
+enum {__MAX_BYTES = 128};  //小型区块的上限
+enum {__NFREELISTS = __MAX_BYTES/__ALIGN};   //free-lists个数
+
+//第一参数用于多线程，这里不做讨论。
+template &lt;bool threads, int inst&gt;  
+class __default_alloc_template  
+{  
+private:
+	// 此函数将bytes的边界上调至8的倍数
+	static size_t ROUND_UP(size_t bytes)  
+	{  
+	return (((bytes) + __ALIGN-1) &amp; ~(__ALIGN - 1));  
+	}  
+private:    
+	// 此union结构体上面已经解释过了
+	union obj  
+	{  
+	union obj * free_list_link;  
+	char client_data[1];
+	};  
+private: 
+	//16个free-lists
+	static obj * __VOLATILE free_list[__NFREELISTS];
+	// 根据待待分配的空间大小, 在free_list中选择合适的大小  
+	static  size_t FREELIST_INDEX(size_t bytes)  
+	{  
+	return (((bytes) + __ALIGN-1)/__ALIGN - 1);  
+	}
+	// 返回一个大小为n的对象，并可能加入大小为n的其它区块到free-lists
+	static void *refill(size_t n);  
+	// 配置一大块空间，可容纳nobjs个大小为“size”的区块
+	// 如果配置nobjs个区块有所不便，nobjs可能会降低，所以需要用引用传递
+	static char *chunk_alloc(size_t size, int &amp;nobjs);  
+	// 内存池  
+	static char *start_free;      // 内存池起始点，只在chunk_alloc()中变化 
+	static char *end_free;        // 内存池结束点，只在chunk_alloc()中变化 
+	static size_t heap_size;      // 已经在堆上分配的空间大小
+public:
+	static void* allocate(size_t n);// 空间配置函数
+	static void deallocate(void *p, size_t n); // 空间释放函数
+	static void* reallocate(void* p, size_t old_sz , size_t new_sz); //空间重新配置函数
+}
+
+// 一些静态成员变量的初始化
+// 内存池起始位置  
+template &lt;bool threads, int inst&gt;  
+char *__default_alloc_template&lt;threads, inst&gt;::start_free = 0;  
+// 内存池结束位置  
+template &lt;bool threads, int inst&gt;  
+char *__default_alloc_template&lt;threads, inst&gt;::end_free = 0;  
+// 已经在堆上分配的空间大小
+template &lt;bool threads, int inst&gt;  
+size_t __default_alloc_template&lt;threads, inst&gt;::heap_size = 0;  
+// 内存池容量索引数组  
+template &lt;bool threads, int inst&gt;  
+__default_alloc_template&lt;threads, inst&gt;::obj * __VOLATILE  
+__default_alloc_template&lt;threads, inst&gt; ::free_list[__NFREELISTS ] = 
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };  
+</code></pre>
+
+<p>看完上面这一堆源码，你可能早就头晕眼花，一脸懵逼了，没事，我再来用一张思维导图来帮你理一理思绪：</p>
+
+<p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkfocm8q6j30ri0dl40t.jpg" alt="二级配置器1" /></center></p>
+
+<p>接下来又是枯燥的源码时间！相信有上面这张图，看源码的思路就比较清晰了。</p>
+
+<h3 id="空间配置函数allocate">空间配置函数allocate()</h3>
+
+<p>借用《STL源码剖析》里面的一张图，来说明空间配置函数的调用过程：(看图放松，放松完继续看源码！别偷懒)</p>
+
+<p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfobir1sj30mz0fw402.jpg" alt="空间配置函数" /></center></p>
+
+<pre><code class="language-cpp">static void * allocate(size_t n)  
+{  
+	obj * volatile * my_free_list;  
+	obj * result;  
+	// 大于128就调用第一级配置器
+	if (n &gt; (size_t) __MAX_BYTES) {  
+	 return(malloc_alloc::allocate(n));  
+	}  
+	// 寻找16个free_lists中适当的一个
+	my_free_list = free_list + FREELIST_INDEX(n);  
+	result = *my_free_list;  
+	if (result == 0) {  
+		// 如果没有可用的free list，准备重新填充free_list
+		void *r = refill(ROUND_UP(n));  
+		return r;  
+	}
+	// 调整free list
+	*my_free_list = result -&gt; free_list_link;  
+	return (result);  
+};  
+</code></pre>
+
+<h3 id="重新填充函数refill">重新填充函数refill()</h3>
+
+<pre><code class="language-cpp">template &lt;bool threads, int inst&gt;  
+void* __default_alloc_template&lt;threads, inst&gt;::refill(size_t n)  
+{  
+	int nobjs = 20;  //	默认获取20个
+	char * chunk = chunk_alloc(n, nobjs);  //找内存池要空间
+	obj * volatile * my_free_list;  
+	obj * result;  
+	obj * current_obj, * next_obj;  
+	int i;  
+	// 如果内存池仅仅只够分配一个对象的空间, 直接返回即可  
+	if(1 == nobjs) return(chunk);  
+	// 内存池能分配更多的空间，调整free_list纳入新节点
+	my_free_list = free_list + FREELIST_INDEX(n);
+
+	// 在chunk的空间中建立free_list  
+	result = (obj *)chunk;
+	*my_free_list = next_obj = (obj *)(chunk + n); //导引free_list指向新配置的空间(取自内存池)
+
+	for(i = 1; ; i++) {	//从1开始，因为第0个返回给客端
+		current_obj = next_obj;  
+		next_obj = (obj *)((char *)next_obj + n);  
+		if(nobjs - 1 == i) {  
+			current_obj -&gt; free_list_link = 0;  
+			break;  
+		} 
+		else {  
+			current_obj -&gt; free_list_link = next_obj;  
+		}  
+	}  
+	return(result);//返回头指针
+}  
+</code></pre>
+
+<h3 id="内存池函数chunk-alloc">内存池函数chunk_alloc()</h3>
+
+<pre><code class="language-cpp">template &lt;bool threads, int inst&gt;  
+char*  
+__default_alloc_template&lt;threads, inst&gt;::chunk_alloc(size_t size, int&amp; nobjs)  
+{  
+    char * result;  
+    size_t total_bytes = size * nobjs;  
+    size_t bytes_left = end_free - start_free;  // 计算内存池剩余容量  
+   
+    //内存池中的剩余空间满足需求 
+    if (bytes_left &gt;= total_bytes) {  
+        result = start_free;
+        start_free += total_bytes;
+        return(result);//返回起始地址
+    }  
+    // 如果内存池中剩余的容量不够分配, 但是能至少分配一个节点时,  
+    // 返回所能分配的最多的节点, 返回start_free指向的内存块  
+    // 并且重新设置内存池起始点  
+    else if(bytes_left &gt;= size) {
+        nobjs = bytes_left/size;  
+        total_bytes = size * nobjs;  
+        result = start_free;  
+        start_free += total_bytes;  
+        return(result);  
+    }  
+    // 内存池剩余内存连一个节点也不够分配  
+    else {  
+        size_t bytes_to_get = 2 * total_bytes + ROUND_UP(heap_size &gt;&gt; 4);  
+        // 将剩余的内存分配给指定的free_list[FREELIST_INDEX(bytes_left)]  
+        if (bytes_left &gt; 0) {  
+        	//内存池内还有一些零头，先分给适当的free_list
+        	//寻找适当的free_list
+            obj * __VOLATILE * my_free_list =  
+                   	free_list + FREELIST_INDEX(bytes_left);
+            // 调整free_list，将内存池中的残余空间编入 
+            ((obj *)start_free) -&gt; free_list_link = *my_free_list;  
+            *my_free_list = (obj *)start_free;  
+        }  
+        start_free = (char *)malloc(bytes_to_get);  
+        // 分配失败, 搜索原来已经分配的内存块, 看是否有大于等于当前请求的内存块  
+        if (0 == start_free) {// heap里面空间不足，malloc失败
+            int i;  
+            obj * __VOLATILE * my_free_list, *p;  
+            // 试着检查检查free_list中的可用空间，即尚有未用的空间，且区块够大  
+            for (i = size; i &lt;= __MAX_BYTES; i += __ALIGN) {  
+                my_free_list = free_list + FREELIST_INDEX(i);  
+                p = *my_free_list;  
+                // 找到了一个, 将其加入内存池中  
+                if (0 != p) {  
+                    *my_free_list = p -&gt; free_list_link;  
+                    start_free = (char *)p;  
+                    end_free = start_free + i;  
+                    // 内存池更新完毕, 重新分配需要的内存  
+                    return(chunk_alloc(size, nobjs));  
+                    //任何剩余零头将被编入适当的free_list以留备用 
+               }  
+            }  
+ 
+        // 再次失败, 直接调用一级配置器分配, 期待异常处理函数能提供帮助  
+        // 不过在我看来, 内存分配失败进行其它尝试已经没什么意义了,  
+        // 最好直接log, 然后让程序崩溃  
+        end_free = 0;
+        	//调用第一级配置器，看看out-of-memory机制能不能起点作用
+            start_free = (char *)malloc_alloc::allocate(bytes_to_get);  
+        }
+        heap_size += bytes_to_get;  
+        end_free = start_free + bytes_to_get;  
+        // 内存池更新完毕, 重新分配需要的内存  
+        return(chunk_alloc(size, nobjs));  
+    }  
+}
+</code></pre>
+
+<h3 id="内存释放函数deallocate">内存释放函数deallocate()</h3>
+
+<p>内存释放函数会将释放的空间交还给free_list以留备用。其过程如下图所示：</p>
+
+<p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfoariykj30mp0gitai.jpg" alt="空间释放函数" /></center></p>
+
+<p>其实就是一个简单的单链表插入的过程。其源代码如下：</p>
+
+<pre><code class="language-cpp">static void deallocate(void *p, size_t n)  
+{  
+	obj *q = (obj *)p;  
+	obj * volatile * my_free_list;  
+
+	// 大于128的直接交由第一级配置器释放  
+	if (n &gt; (size_t) __MAX_BYTES) {  
+		malloc_alloc::deallocate(p, n);  
+		return;  
+	}
+	// 寻找适当的free_list  
+	my_free_list = free_list + FREELIST_INDEX(n);  
+	// 调整free_list，回收区块
+	q -&gt; free_list_link = *my_free_list;  
+	*my_free_list = q;  
+}
+</code></pre>
+
+<h1 id="配置器的使用">配置器的使用</h1>
+
+<p>通过以上的图和源代码，基本上将STL的两层配置器讲完了，接下来就来熟悉一下怎么使用配置器。</p>
+
+<p>STL将上述配置器封装在类simple_alloc中，提供了四个用于内存操作的借口函数，分别如下：</p>
+
+<pre><code class="language-cpp">template&lt;class T, class Alloc&gt;
+class simple_alloc {
+public:
+    static T *allocate(size_t n)
+                { return 0 == n? 0 : (T*) Alloc::allocate(n * sizeof (T)); }
+    static T *allocate(void)	
+                { return (T*) Alloc::allocate(sizeof (T)); }
+    static void deallocate(T *p, size_t n) 
+                { if (0 != n) Alloc::deallocate(p, n * sizeof (T)); }
+    static void deallocate(T *p)
+                { Alloc::deallocate(p, sizeof (T)); }
+};
+</code></pre>
+
+<p>接下来就示范在vector中是怎么使用它的。</p>
+
+<pre><code class="language-cpp">template &lt;class T, class Alloc = alloc&gt;  //alloc被默认为第二级配置器
+class vector {
+public:
+	typedef T value_type;
+  	//...
+protected:
+	// 专属的空间配置器，每次只分配一个元素的大小
+	typedef simple_alloc&lt;value_type, Alloc&gt; data_allocator;
+
+	// 在释放内存的时候直接调用借口函数即可
+	void deallocate(){
+		if(...){
+			data_allocator::deallocate(start , end_of_storage - start);
+		}
+	}
+};
+</code></pre>
+
+<p>至此，STL的空间配置器的原理和使用都已讲述完毕，读者们是否懂了呢？ 没懂就戳下方的联系方式或者留言说出你的疑惑吧！</p>
+
+<h1 id="about-me">About Me</h1>
+
+<p>由于本人也是初学，在写作过程中，难免有错误的地方，读者如果发现，请在下面留言指出。</p>
+
+<p>最后，如有疑惑或需要讨论的地方，可以联系我，联系方式见我的个人博客about页面，地址：<a href="http://zcheng.ren/about/">About Me</a>。</p>
+
+<p>另外，本人的第一本gitbook书已整理完，关于leetcode刷题题解的，<a href="https://www.gitbook.com/book/zeecoders/one-day-one-leetcode/details">点此进入One day One Leetcode</a></p>
+
+<p>欢迎持续关注！Thx！</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/c&#43;&#43;/" rel="tag">C&#43;&#43;</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/stl/" rel="tag">STL</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2016/08/15/gdbdebug/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">GDB调试工具入门</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2016/08/21/ubuntusoftware/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">ubuntu16.04主题美化和软件推荐</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

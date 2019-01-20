@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Categories on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/categories/</link>
+    <description>Recent content in Categories on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    
+	<atom:link href="https://zcheng.ren/categories/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Redis</title>
+      <link>https://zcheng.ren/categories/redis/</link>
+      <pubDate>Fri, 13 Jan 2017 15:12:13 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/categories/redis/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>开发工具</title>
+      <link>https://zcheng.ren/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/</link>
+      <pubDate>Fri, 27 Jul 2018 22:42:05 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>机器学习</title>
+      <link>https://zcheng.ren/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/</link>
+      <pubDate>Sun, 20 Jan 2019 09:26:47 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>源码阅读</title>
+      <link>https://zcheng.ren/categories/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/</link>
+      <pubDate>Fri, 09 Sep 2016 15:47:53 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/categories/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>生活思考</title>
+      <link>https://zcheng.ren/categories/%E7%94%9F%E6%B4%BB%E6%80%9D%E8%80%83/</link>
+      <pubDate>Sat, 07 Jan 2017 14:10:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/categories/%E7%94%9F%E6%B4%BB%E6%80%9D%E8%80%83/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>编程技术</title>
+      <link>https://zcheng.ren/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/</link>
+      <pubDate>Thu, 09 Aug 2018 21:03:39 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>读书笔记</title>
+      <link>https://zcheng.ren/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/</link>
+      <pubDate>Wed, 25 Jul 2018 11:45:08 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

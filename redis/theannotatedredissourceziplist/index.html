@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--压缩列表ziplist</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--压缩列表ziplist" />
+<meta property="og:description" content="压缩列表（ziplist）是由 一系列特殊编码的内存块构成的列表，其是Redis的列表建和哈希键的底层实现之一。和整数集合一样，二者都是为Redis节省内存而开发的数据结构。
+
+ziplist可以用来存放字符串或者整数，其存储数据的特点是：比较小的整数或比较短的字符串。Redis的列表建，哈希键，有序集合的底层实现都用到了ziplist。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/redis/theannotatedredissourceziplist/" /><meta property="article:published_time" content="2016-12-12T17:33:02&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-12T17:33:02&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--压缩列表ziplist"/>
+<meta name="twitter:description" content="压缩列表（ziplist）是由 一系列特殊编码的内存块构成的列表，其是Redis的列表建和哈希键的底层实现之一。和整数集合一样，二者都是为Redis节省内存而开发的数据结构。
+
+ziplist可以用来存放字符串或者整数，其存储数据的特点是：比较小的整数或比较短的字符串。Redis的列表建，哈希键，有序集合的底层实现都用到了ziplist。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--压缩列表ziplist</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-12T17:33:02">December 12, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#ziplist结构">ziplist结构</a>
+<ul>
+<li><a href="#头尾结构">头尾结构</a></li>
+<li><a href="#节点结构">节点结构</a>
+<ul>
+<li><a href="#prev-entry-length">prev_entry_length</a></li>
+<li><a href="#encoding">encoding</a></li>
+</ul></li>
+<li><a href="#编码和解码">编码和解码</a></li>
+</ul></li>
+<li><a href="#ziplist基本操作">ziplist基本操作</a>
+<ul>
+<li><a href="#创建空ziplist">创建空ziplist</a></li>
+<li><a href="#插入节点">插入节点</a></li>
+<li><a href="#获取指定索引上的节点">获取指定索引上的节点</a></li>
+<li><a href="#删除给定节点">删除给定节点</a></li>
+</ul></li>
+<li><a href="#ziplist小结">ziplist小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>压缩列表（ziplist）是由 一系列特殊编码的内存块构成的列表，其是Redis的列表建和哈希键的底层实现之一。和整数集合一样，二者都是为Redis节省内存而开发的数据结构。</p>
+
+<p>ziplist可以用来存放字符串或者整数，其存储数据的特点是：比较小的整数或比较短的字符串。Redis的列表建，哈希键，有序集合的底层实现都用到了ziplist。</p>
+
+<h1 id="ziplist结构">ziplist结构</h1>
+
+<p>Redis的ziplist结构由三大部分组成，其分别是列表头（ziplist Header），数据节点（Entries）和列表尾（ziplist tail）,它们在内存上的布局如下：</p>
+
+<p><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkgdwzhbwj30g504v0ta.jpg" alt="" /></p>
+
+<h2 id="头尾结构">头尾结构</h2>
+
+<p>ziplist的头部包含如下三个信息：</p>
+
+<ul>
+<li>zlbytes：表示压缩列表占总内存的字节数</li>
+<li>zltail：表示压缩列表头和尾之间的偏移量</li>
+<li>zllen：表示压缩列表中节点的数量</li>
+</ul>
+
+<p>ziplist尾部的zlend则表示压缩列表结束，其值固定为0xFF。Redis提供了一个宏定义来表示ziplist header的大小。</p>
+
+<pre><code class="language-cpp">// 总共10个字节
+#define ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t))
+</code></pre>
+
+<h2 id="节点结构">节点结构</h2>
+
+<p>数据节点部分由若干个节点紧密排列构成，每个节点也由三部分构成，分别是：</p>
+
+<ul>
+<li>prev_entry_length：编码前置节点的长度，用于从后往前遍历</li>
+<li>encoding：编码属性</li>
+<li>contents：负责保存节点的值</li>
+</ul>
+
+<h3 id="prev-entry-length">prev_entry_length</h3>
+
+<p>ziplist在编码前置节点长度的时候，采用以下规则：</p>
+
+<ul>
+<li>如果前置节点的长度小于254字节，那么采用1个字节来保存这个长度值</li>
+<li>如果前置节点的长度大于254字节，则采用5个字节来保存这个长度值，其中，第一个字节被设置为0xFE(254)，用于表示该长度大于254字节，后面四个字节则用来存储前置节点的长度值。</li>
+</ul>
+
+<h3 id="encoding">encoding</h3>
+
+<p>ziplist的节点可以保存字符串值和整数值，二者的编码属性下面一一道来。</p>
+
+<ul>
+<li><strong>（一）节点保存字符串值</strong></li>
+</ul>
+
+<p>如果节点保存的是字符串值，那么该编码大小可能为1字节，2字节或5字节，这与字符串的长度有关。编码部分前两位为00，01或者10，分别对应上述的三种大小，后面的位表示长度大小值。</p>
+
+<table>
+<thead>
+<tr>
+<th align="center">字符串大小</th>
+<th align="center">编码长度</th>
+<th align="center">编码</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="center">&lt;= 63 bytes</td>
+<td align="center">1 bytes</td>
+<td align="center">00bbbbbb</td>
+</tr>
+
+<tr>
+<td align="center">&lt;= 16383 bytes</td>
+<td align="center">2 bytes</td>
+<td align="center">01bbbbbb xxxxxxxx</td>
+</tr>
+
+<tr>
+<td align="center">&lt;= 4294967295 bytes</td>
+<td align="center">5 bytes</td>
+<td align="center">10________ aaaaaaaa bbbbbbbb cccccccc dddddddd</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><strong>（二）节点保存整数值</strong></li>
+</ul>
+
+<p>如果节点保存的是整数值，那么其编码长度固定为1个字节，该字节的前两位固定为11，用于表示节点保存的是整数值。这里也用一个表来说明。</p>
+
+<table>
+<thead>
+<tr>
+<th align="center">整数类型</th>
+<th align="center">编码长度</th>
+<th align="center">编码</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="center">int16_t（2 bytes）</td>
+<td align="center">1</td>
+<td align="center">11000000</td>
+</tr>
+
+<tr>
+<td align="center">int32_t（4 bytes）</td>
+<td align="center">1</td>
+<td align="center">11010000</td>
+</tr>
+
+<tr>
+<td align="center">int64_t（8 bytes）</td>
+<td align="center">1</td>
+<td align="center">11100000</td>
+</tr>
+
+<tr>
+<td align="center">24位有符整数</td>
+<td align="center">1</td>
+<td align="center">11110000</td>
+</tr>
+
+<tr>
+<td align="center">8位有符整数</td>
+<td align="center">1</td>
+<td align="center">11111110</td>
+</tr>
+
+<tr>
+<td align="center">0~12</td>
+<td align="center">1</td>
+<td align="center">1111xxxx</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p>上表中，当编码为1111xxxx时，表示没有内容部分，xxxx已经存放了当前的整数值，包括整数0~12，即xxxx可以表示0000~1101。编码为11111111代表ziplist的结尾。</p>
+</blockquote>
+
+<p>Redis提供了如下的宏定义用于定义不同的encoding和计算encoding类型。</p>
+
+<pre><code class="language-cpp">// 定义不同的encoding
+// 字符串
+#define ZIP_STR_06B (0 &lt;&lt; 6)
+#define ZIP_STR_14B (1 &lt;&lt; 6)
+#define ZIP_STR_32B (2 &lt;&lt; 6)
+// 整数
+#define ZIP_INT_16B (0xc0 | 0&lt;&lt;4) // '|'按位或，1&amp;0=1，0&amp;0=0
+#define ZIP_INT_32B (0xc0 | 1&lt;&lt;4)
+#define ZIP_INT_64B (0xc0 | 2&lt;&lt;4)
+
+// 计算encoding类型，true或者false
+#define ZIP_IS_STR(enc) (((enc) &amp; 0xc0) &lt; 0xc0) //'&amp;'按位与，1&amp;1=1，1&amp;0=0
+#define ZIP_IS_INT(enc) (!ZIP_IS_STR(enc) &amp;&amp; ((enc) &amp; 0x30) &lt; 0x30)
+</code></pre>
+
+<h2 id="编码和解码">编码和解码</h2>
+
+<p>在ziplist中，节点的数据结构定义如下：</p>
+
+<pre><code class="language-cpp">typedef struct zlentry {
+    unsigned int prevrawlensize, prevrawlen; // 前置节点长度和编码所需长度
+    unsigned int lensize, len; // 当前节点长度和编码所需长度
+    unsigned int headersize; // 头的大小
+    unsigned char encoding; // 编码类型
+    unsigned char *p; // 数据部分
+} zlentry;
+</code></pre>
+
+<p>很显然，内存上不能直接存放结构体，于是，Redis提供了一系列的编码和解码操作函数。这里以编码前置节点长度和解码前置节点长度的源码为例来讲解这一过程：</p>
+
+<pre><code class="language-cpp">/****************************** 编码前置节点长度信息 *******************************/
+// 将长度信息len写入起止地址为p的内存
+static unsigned int zipPrevEncodeLength(unsigned char *p, unsigned int len) {
+    if (p == NULL) {
+        return (len &lt; ZIP_BIGLEN) ? 1 : sizeof(len)+1;
+    } else {
+        // 如果长度小于254字节
+        if (len &lt; ZIP_BIGLEN) {
+            // 采用1字节编码，该字节存放长度信息
+            p[0] = len;
+            return 1;
+        } else {
+            // 长度大于254字节
+            // 第一个字节固定为0xFE
+            p[0] = ZIP_BIGLEN;
+            // 后四个字节用来存放长度值
+            memcpy(p+1,&amp;len,sizeof(len));
+            memrev32ifbe(p+1);
+            return 1+sizeof(len);
+        }
+    }
+}
+/****************************** 解码前置节点长度信息 ******************************/
+// 解压prevlensize编码所需长度
+#define ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do {                          \
+    // 如果第一个字节的值小于254字节
+    if ((ptr)[0] &lt; ZIP_BIGLEN) {                                               \
+        (prevlensize) = 1;                                                     \
+    } else {                                                                   \
+        (prevlensize) = 5;                                                     \
+    }                                                                          \
+} while(0);
+// 解码前置节点长度信息
+#define ZIP_DECODE_PREVLEN(ptr, prevlensize, prevlen) do {                     \
+    // 先判断编码类型，1字节或者5字节
+    ZIP_DECODE_PREVLENSIZE(ptr, prevlensize);                                  \
+    // 1字节的话直接读取长度值
+    if ((prevlensize) == 1) {                                                  \
+        (prevlen) = (ptr)[0];                                                  \
+    // 5字节的话，读取后四个字节的值作为长度值
+    } else if ((prevlensize) == 5) {                                           \
+        assert(sizeof((prevlensize)) == 4);                                    \
+        memcpy(&amp;(prevlen), ((char*)(ptr)) + 1, 4);                             \
+        memrev32ifbe(&amp;prevlen);                                                \
+    }                                                                          \
+} while(0);
+</code></pre>
+
+<p>在编码解码当前节点的长度，ziplist提供了zipEncodeLength和ZIP_DECODE_LENGTH这两个配套函数来完成。这里就不加赘述了。</p>
+
+<h1 id="ziplist基本操作">ziplist基本操作</h1>
+
+<h2 id="创建空ziplist">创建空ziplist</h2>
+
+<pre><code class="language-cpp">// 创建一个空的ziplist
+unsigned char *ziplistNew(void) {
+    // 空ziplist的大小为11个字节，头部10字节，尾部1字节
+    unsigned int bytes = ZIPLIST_HEADER_SIZE+1;
+    // 分配内存
+    unsigned char *zl = zmalloc(bytes);
+    // 设定ziplist的属性
+    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes); // 设定ziplist所占的字节数，如有必要进行大小端转换
+    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE); // 设定尾节点相对头部的偏移量
+    ZIPLIST_LENGTH(zl) = 0; // 设定ziplist内的节点数
+    // 设定尾部一个字节位0xFF
+    zl[bytes-1] = ZIP_END;
+    return zl;
+}
+</code></pre>
+
+<h2 id="插入节点">插入节点</h2>
+
+<p>ziplist中插入节点操作由ziplistPush函数完成。</p>
+
+<pre><code class="language-cpp">// ziplist插入节点只能往头或者尾部插入
+// zl: 待插入的ziplist
+// s，slen: 待插入节点和其长度
+// where: 带插入的位置，0代表头部插入，1代表尾部插入
+unsigned char *ziplistPush(unsigned char *zl, unsigned char *s, unsigned int slen, int where) {
+    unsigned char *p;
+    // 获取待插入位置的指针
+    p = (where == ZIPLIST_HEAD) ? ZIPLIST_ENTRY_HEAD(zl) : ZIPLIST_ENTRY_END(zl);
+    return __ziplistInsert(zl,p,s,slen);
+}
+</code></pre>
+
+<p>真正的插入操作由__ziplistInsert完成。</p>
+
+<pre><code class="language-cpp">static unsigned char *__ziplistInsert(unsigned char *zl, unsigned char *p, unsigned char *s, unsigned int slen) {
+    size_t curlen = intrev32ifbe(ZIPLIST_BYTES(zl)), reqlen; // 当前长度和插入节点后需要的长度
+    unsigned int prevlensize, prevlen = 0; // 前置节点长度和编码该长度值所需的长度
+    size_t offset;
+    int nextdiff = 0;
+    unsigned char encoding = 0;
+    long long value = 123456789; // 为了避免警告，初始化其值
+    zlentry tail;
+
+    // 找出待插入节点的前置节点长度
+    // 如果p[0]不指向列表末端，说明列表非空，并且p指向其中一个节点
+    if (p[0] != ZIP_END) {
+        // 解码前置节点p的长度和编码该长度需要的字节
+        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
+    } else {
+        // 如果p指向列表末端，表示列表为空
+        unsigned char *ptail = ZIPLIST_ENTRY_TAIL(zl);
+        
+        if (ptail[0] != ZIP_END) {
+            // 计算尾节点的长度
+            prevlen = zipRawEntryLength(ptail);
+        }
+
+    }
+
+    // 判断是否能够编码为整数
+    if (zipTryEncoding(s,slen,&amp;value,&amp;encoding)) {
+        // 该节点已经编码为整数，通过encoding来获取编码长度
+        reqlen = zipIntSize(encoding);
+    } else {
+        // 采用字符串来编码该节点
+        reqlen = slen;
+    }
+    // 获取前置节点的编码长度
+    reqlen += zipPrevEncodeLength(NULL,prevlen);
+    // 获取当前节点的编码长度
+    reqlen += zipEncodeLength(NULL,encoding,slen);
+
+    // 只要不是插入到列表的末端，都需要判断当前p所指向的节点header是否能存放新节点的长度编码
+    // nextdiff保存新旧编码之间的字节大小差，如果这个值大于0
+    // 那就说明当前p指向的节点的header进行扩展
+    nextdiff = (p[0] != ZIP_END) ? zipPrevLenByteDiff(p,reqlen) : 0;
+
+    // 存储p相对于列表zl的偏移地址
+    offset = p-zl;
+    // 重新分配空间，curlen当前列表的长度
+    // reqlen 新节点的全部长度
+    // nextdiff 新节点的后继节点扩展header的长度
+    zl = ziplistResize(zl,curlen+reqlen+nextdiff);
+    // 重新获取p的值
+    p = zl+offset;
+
+    // 非表尾插入，需要重新计算表尾的偏移量
+    if (p[0] != ZIP_END) {
+        // 移动现有元素，为新元素的插入提供空间
+        memmove(p+reqlen,p-nextdiff,curlen-offset-1+nextdiff);
+
+        // p+reqlen为新节点前置节点移动后的位置，将新节点的长度编码至前置节点
+        zipPrevEncodeLength(p+reqlen,reqlen);
+
+        // 更新列表尾相对于表头的偏移量，将新节点的长度算上
+        ZIPLIST_TAIL_OFFSET(zl) =
+            intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))+reqlen);
+
+        // 如果新节点后面有多个节点，那么表尾的偏移量需要算上nextdiff的值
+        zipEntry(p+reqlen, &amp;tail);
+        if (p[reqlen+tail.headersize+tail.len] != ZIP_END) {
+            ZIPLIST_TAIL_OFFSET(zl) =
+                intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))+nextdiff);
+        }
+    } else {
+        // 表尾插入，直接计算偏移量
+        ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(p-zl);
+    }
+
+    // 当nextdiff不为0时，表示需要新节点的后继节点对头部进行扩展
+    if (nextdiff != 0) {
+        offset = p-zl;
+        // 需要对p所指向的机电header进行扩展更新
+        // 有可能会引起连锁更新
+        zl = __ziplistCascadeUpdate(zl,p+reqlen);
+        p = zl+offset;
+    }
+
+    // 将新节点前置节点的长度写入新节点的header
+    p += zipPrevEncodeLength(p,prevlen);
+    // 将新节点的值长度写入新节点的header
+    p += zipEncodeLength(p,encoding,slen);
+    // 写入节点值
+    if (ZIP_IS_STR(encoding)) {
+        memcpy(p,s,slen);
+    } else {
+        zipSaveInteger(p,value,encoding);
+    }
+    // 更新列表节点计数
+    ZIPLIST_INCR_LENGTH(zl,1);
+    return zl;
+}
+</code></pre>
+
+<ul>
+<li>什么是连锁更新？</li>
+</ul>
+
+<p>插入节点的时候，有时会引起连锁更新。我们知道，当新节点插入后，需要改变新节点后继节点的header信息中的保存前置节点长度的部分，如果这个pre_entry_length原存放的长度小于254字节，也就是只用了一个字节，现在新节点的长度大于254字节，需要用5个字节保存，这样就要对这个pre_entry_length进行扩展。试想一下，如果扩展之后该节点的整体长度大于254字节了，那么该节点的后继节点是不是也需要更新header信息呢？答案是肯定的，这样就引发了连锁更新，导致新节点后面的一连串节点都需要对header进行扩容。这就是连锁更新。</p>
+
+<p>连锁更新的实现由如下函数完成。</p>
+
+<pre><code class="language-cpp">// 检查并修复后续节点的空间问题
+static unsigned char *__ziplistCascadeUpdate(unsigned char *zl, unsigned char *p) {
+    size_t curlen = intrev32ifbe(ZIPLIST_BYTES(zl)), rawlen, rawlensize;
+    size_t offset, noffset, extra;
+    unsigned char *np;
+    zlentry cur, next;
+    
+    while (p[0] != ZIP_END) {
+        // 将p所指向节点的信息保存到cur结构体中
+        zipEntry(p, &amp;cur);
+
+        // 当前节点的长度
+        rawlen = cur.headersize + cur.len;
+        // 编码当前节点的长度所需的字节数
+        rawlensize = zipPrevEncodeLength(NULL,rawlen);
+
+        // 如果没有后续节点需要更新了，就退出
+        if (p[rawlen] == ZIP_END) break;
+        // 去除后续节点的信息保存到next结构体中
+        zipEntry(p+rawlen, &amp;next);
+
+        // 当后续节点的空间已经足够了，就直接退出
+        if (next.prevrawlen == rawlen) break;
+
+        // 当后续节点的空间不足够，则需要进行扩容操作
+        if (next.prevrawlensize &lt; rawlensize) {
+            // 记录p的偏移值
+            offset = p-zl;
+            // 记录需要增加的长度
+            extra = rawlensize-next.prevrawlensize;
+            // 扩展zl的大小
+            zl = ziplistResize(zl,curlen+extra);
+            // 获取p相对于新的zl的值
+            p = zl+offset;
+
+            //记录下一个节点的偏移量
+            np = p+rawlen;
+            noffset = np-zl;
+
+            // 当 next 节点不是表尾节点时，更新列表到表尾节点的偏移量
+            if ((zl+intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))) != np) {
+                ZIPLIST_TAIL_OFFSET(zl) =
+                    intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))+extra);
+            }
+
+            // 向后移动cur节点之后的数据，为新的header腾出空间
+            memmove(np+rawlensize,
+                np+next.prevrawlensize,
+                curlen-noffset-next.prevrawlensize-1);
+            zipPrevEncodeLength(np,rawlen);
+
+            // 移动指针，继续处理下一个节点
+            p += rawlen;
+            curlen += extra;
+        } else {
+            if (next.prevrawlensize &gt; rawlensize) {
+                // 执行到这里，next节点编码前置节点的header空间有5个字节
+                // 但是此时只需要一个字节
+                // Redis不提供缩小操作，而是直接将长度强制性写入五个字节中
+                zipPrevEncodeLengthForceLarge(p+rawlen,rawlen);
+            } else {
+                // 运行到这里，说明刚好可以存放
+                zipPrevEncodeLength(p+rawlen,rawlen);
+            }
+
+            // 退出，代表空间足够，后续空间不需要更改
+            break;
+        }
+    }
+    return zl;
+}
+</code></pre>
+
+<h2 id="获取指定索引上的节点">获取指定索引上的节点</h2>
+
+<pre><code class="language-cpp">// 根据index的值，获取压缩列表第index个节点
+unsigned char *ziplistIndex(unsigned char *zl, int index) {
+    unsigned char *p;
+    unsigned int prevlensize, prevlen = 0;
+    // index为负，从尾部开始遍历
+    if (index &lt; 0) {
+        index = (-index)-1;
+        // 获取尾指针
+        p = ZIPLIST_ENTRY_TAIL(zl);
+        if (p[0] != ZIP_END) {
+            // 解码前置节点长度
+            ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
+            while (prevlen &gt; 0 &amp;&amp; index--) {
+                p -= prevlen;
+                // 解码前置节点长度
+                ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
+            }
+        }
+    } else {        // index为正，从头部开始遍历
+        p = ZIPLIST_ENTRY_HEAD(zl);
+        while (p[0] != ZIP_END &amp;&amp; index--) {
+            // 获取当前节点的整体长度，包括pre_entry_length，encoding，contents三部分
+            p += zipRawEntryLength(p);
+        }
+    }
+    return (p[0] == ZIP_END || index &gt; 0) ? NULL : p;
+}
+</code></pre>
+
+<h2 id="删除给定节点">删除给定节点</h2>
+
+<pre><code class="language-cpp">// 删除给定节点，输入压缩列表zl和指向删除节点的指针p
+unsigned char *ziplistDelete(unsigned char *zl, unsigned char **p) {
+    size_t offset = *p-zl;
+    // 调用底层函数__ziplistDelete进行删除操作
+    zl = __ziplistDelete(zl,*p,1);
+
+    // 删除操作可能会改变zl，因为会重新分配内存
+    *p = zl+offset;
+    return zl;
+}
+</code></pre>
+
+<p>删除操作的底层实现由__ziplistDelete函数实现。</p>
+
+<pre><code class="language-cpp">// 删除压缩列表zl中以p起始的num个节点
+static unsigned char *__ziplistDelete(unsigned char *zl, unsigned char *p, unsigned int num) {
+    unsigned int i, totlen, deleted = 0;
+    size_t offset;
+    int nextdiff = 0;
+    zlentry first, tail;
+    // 获取p指向的节点信息
+    zipEntry(p, &amp;first);
+    // 计算num个节点占用的内存
+    for (i = 0; p[0] != ZIP_END &amp;&amp; i &lt; num; i++) {
+        p += zipRawEntryLength(p);
+        deleted++;
+    }
+
+    totlen = p-first.p;
+    if (totlen &gt; 0) {
+        if (p[0] != ZIP_END) {
+            // 执行到这里，表示被删除节点后面还存在节点
+            
+            // 判断最后一个被删除的节点的后继节点的header中的存放前置节点长度的空间
+            // 能不能容纳第一个被删除节点的前置节点的长度
+            nextdiff = zipPrevLenByteDiff(p,first.prevrawlen);
+            p -= nextdiff;
+            zipPrevEncodeLength(p,first.prevrawlen);
+
+            // 更新尾部相对于头部的便宜
+            ZIPLIST_TAIL_OFFSET(zl) =
+                intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))-totlen);
+
+            // 如果被删除节点后面还存在节点，就需要将nextdiff计算在内
+            zipEntry(p, &amp;tail);
+            if (p[tail.headersize+tail.len] != ZIP_END) {
+                ZIPLIST_TAIL_OFFSET(zl) =
+                   intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))+nextdiff);
+            }
+
+            // 将被删除节点后面的内存空间移动到删除的节点之后
+            memmove(first.p,p,
+                intrev32ifbe(ZIPLIST_BYTES(zl))-(p-zl)-1);
+        } else {
+            // 执行到这里，表示被删除节点后面没有节点了
+            ZIPLIST_TAIL_OFFSET(zl) =
+                intrev32ifbe((first.p-zl)-first.prevrawlen);
+        }
+
+        // 缩小内存并更新ziplist的长度
+        offset = first.p-zl;
+        zl = ziplistResize(zl, intrev32ifbe(ZIPLIST_BYTES(zl))-totlen+nextdiff);
+        ZIPLIST_INCR_LENGTH(zl,-deleted);
+        p = zl+offset;
+
+        // 如果nextdiff不等于0，说明被删除节点后面节点的header信息还需要更改
+        if (nextdiff != 0)
+            // 连锁更新
+            zl = __ziplistCascadeUpdate(zl,p);
+    }
+    return zl;
+}
+</code></pre>
+
+<h1 id="ziplist小结">ziplist小结</h1>
+
+<p>ziplist实际上就可以理解为一个存放在连续内存空间上的双向列表，其每一个节点都包含了前置指针和后置指针，只是经过了特殊的编码步骤了的。连锁更新是ziplist的一大特点，为了节省内存，ziplist需要存放在一段连续的内存空间上，所以必然会引起节点空间不足的问题。但是，连锁更新发生的概率比较小，不会影响其效率！</p>
+
+<blockquote>
+<p>到此，Redis的基本数据结构已经全部分析完了，按照预先指定的计划，下一阶段主要剖析Redis各种键的实现，这一部分和Redis的交互相关。</p>
+</blockquote>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/redis/theannotatedredissourceintset/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--整数集合Intset</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/redis/theannotatedredissourceobject/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--对象object</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

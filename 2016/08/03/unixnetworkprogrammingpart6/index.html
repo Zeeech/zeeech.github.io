@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>UNIX网络编程之六：基本UDP套接字</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="UNIX网络编程之六：基本UDP套接字" />
+<meta property="og:description" content="UDP是无连接不可靠的数据报协议，不同于TCP提供的面向连接的可靠字节流。常见的使用UDP的应用程序有：DNS，NFS和SNMP。
+
+一、概述
+
+UDP的主要特点如下：
+
+
+UDP是面向无连接的，不需要建立连接就可以传输数据
+
+UDP尽最大可能交付，不保证可靠交付
+
+UDP是面向报文，对应用层传输的报文添加首部后就直接发送，不合并不拆分
+
+UDP没有拥塞控制
+
+UDP支持一对一，一对多，多对一，多对多
+
+UDP首部八个字节，开销小
+
+
+基于UDP的套接字编程比基于TCP的相对较为简单。客户不与服务器建立连接，而是只管使用sendto函数给服务器发送数据报，其中必须指定目的地，的地址作为参数。类似的，服务器不接受来自客户端的连接，而是只管调用recvfrom函数，等待来自某个客户的数据到达。recvform将所接收的数据报一道返回客户的协议地址，因此服务器可以把响应发送给正确的客户。下图给出了典型的UDP客户/服务器程序的函数调用。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2016/08/03/unixnetworkprogrammingpart6/" /><meta property="article:published_time" content="2016-08-03T10:21:59&#43;08:00"/>
+<meta property="article:modified_time" content="2016-08-03T10:21:59&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="UNIX网络编程之六：基本UDP套接字"/>
+<meta name="twitter:description" content="UDP是无连接不可靠的数据报协议，不同于TCP提供的面向连接的可靠字节流。常见的使用UDP的应用程序有：DNS，NFS和SNMP。
+
+一、概述
+
+UDP的主要特点如下：
+
+
+UDP是面向无连接的，不需要建立连接就可以传输数据
+
+UDP尽最大可能交付，不保证可靠交付
+
+UDP是面向报文，对应用层传输的报文添加首部后就直接发送，不合并不拆分
+
+UDP没有拥塞控制
+
+UDP支持一对一，一对多，多对一，多对多
+
+UDP首部八个字节，开销小
+
+
+基于UDP的套接字编程比基于TCP的相对较为简单。客户不与服务器建立连接，而是只管使用sendto函数给服务器发送数据报，其中必须指定目的地，的地址作为参数。类似的，服务器不接受来自客户端的连接，而是只管调用recvfrom函数，等待来自某个客户的数据到达。recvform将所接收的数据报一道返回客户的协议地址，因此服务器可以把响应发送给正确的客户。下图给出了典型的UDP客户/服务器程序的函数调用。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">UNIX网络编程之六：基本UDP套接字</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-08-03T10:21:59">August 03, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#一-概述"><strong>一、概述</strong></a></li>
+<li><a href="#二-recvform和sendto函数">二、recvform和sendto函数</a></li>
+<li><a href="#三-udp回射服务器程序">三、UDP回射服务器程序</a></li>
+<li><a href="#四-udp回射客户程序">四、UDP回射客户程序</a>
+<ul>
+<li><a href="#测试小结">测试小结</a></li>
+</ul></li>
+<li><a href="#五-数据报丢失">五、数据报丢失</a></li>
+<li><a href="#六-验证接收到的响应">六、验证接收到的响应</a></li>
+<li><a href="#七-服务器未运行">七、服务器未运行</a></li>
+<li><a href="#八-udp的connect函数">八、UDP的connect函数</a>
+<ul>
+<li><a href="#给一个udp套接字多次调用connect">给一个UDP套接字多次调用connect</a></li>
+<li><a href="#性能">性能</a></li>
+</ul></li>
+<li><a href="#九-使用connect改进客户程序">九、使用connect改进客户程序</a></li>
+<li><a href="#十-udp缺乏流量控制">十、UDP缺乏流量控制</a>
+<ul>
+<li><a href="#客户端程序">客户端程序</a></li>
+<li><a href="#测试小结-1">测试小结</a></li>
+<li><a href="#udp套接字接收缓存区">UDP套接字接收缓存区</a></li>
+</ul></li>
+<li><a href="#十一-udp中的外出接口的确定">十一、UDP中的外出接口的确定</a></li>
+<li><a href="#十二-使用select函数的tcp和udp回射服务器程序">十二、使用select函数的TCP和UDP回射服务器程序</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>UDP是无连接不可靠的数据报协议，不同于TCP提供的面向连接的可靠字节流。常见的使用UDP的应用程序有：DNS，NFS和SNMP。</p>
+
+<h1 id="一-概述"><strong>一、概述</strong></h1>
+
+<p>UDP的主要特点如下：</p>
+
+<ul>
+<li><p>UDP是面向无连接的，不需要建立连接就可以传输数据</p></li>
+
+<li><p>UDP尽最大可能交付，不保证可靠交付</p></li>
+
+<li><p>UDP是面向报文，对应用层传输的报文添加首部后就直接发送，不合并不拆分</p></li>
+
+<li><p>UDP没有拥塞控制</p></li>
+
+<li><p>UDP支持一对一，一对多，多对一，多对多</p></li>
+
+<li><p>UDP首部八个字节，开销小</p></li>
+</ul>
+
+<p>基于UDP的套接字编程比基于TCP的相对较为简单。客户不与服务器建立连接，而是只管使用sendto函数给服务器发送数据报，其中必须指定目的地，的地址作为参数。类似的，服务器不接受来自客户端的连接，而是只管调用recvfrom函数，等待来自某个客户的数据到达。recvform将所接收的数据报一道返回客户的协议地址，因此服务器可以把响应发送给正确的客户。下图给出了典型的UDP客户/服务器程序的函数调用。</p>
+
+<p><img src="https://ww3.sinaimg.cn/large/006tNbRwgw1fbpyey0k1mj30ov0eb3zk.jpg" alt="UDP编程" /></p>
+
+<h1 id="二-recvform和sendto函数">二、recvform和sendto函数</h1>
+
+<p>类似与TCP里面的read和write函数，UDP套接字编程中使用recvform和sendto函数来传输数据，其函数原型如下：</p>
+
+<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
+
+ssize_t recvform(int sockfd, void *buff , size_t nbytes, int flags , 
+struct sockaddr *from , socklen_t *addrlen);
+
+ssize_t sendto(int sockfd, const void *buff , size_t nbytes, int flags , 
+struct sockaddr *to , socklen_t addrlen);//若成功则返回读或写的字节大小，若出错返回-1
+
+</code></pre>
+
+<p>前三个参数分别为：描述符、指向读入或写出缓冲区的指针和读写字节数。flags暂时设为0。</p>
+
+<p>recvfrom的from参数指向一个将由该函数在返回时填写数据报发送者的协议地址的套接字地址结构（从哪里接收），其大小由addrlen指定；</p>
+
+<p>sendto的to参数指向一个含有数据报接收者的协议地址的套接字地址结构（发到哪里去），其大小由addrlen指定。</p>
+
+<p>注意：sendto的最后一个参数是一个整型值，而recvfrom则是一个指向整数值的指针。</p>
+
+<p>不同于TCP在read返回0时表示对端关闭连接，UDP可以写一个长度为0的数据报，接受的数据报也可以长度为0，UDP没有关闭一个连接的概念。</p>
+
+<p>如果recvfrom的from参数是一个空指针，那么相应的长度参数也必须是一个空指针，表示我们并不关心数据发送者的协议地址。</p>
+
+<h1 id="三-udp回射服务器程序">三、UDP回射服务器程序</h1>
+
+<p>下面用UDP来重写<a href="http://zcheng.ren/2016/07/12/%E3%80%90unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E7%AC%AC%E4%B8%89%E7%89%88%E3%80%91%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%EF%BC%88%E5%9B%9B%EF%BC%89%EF%BC%9ATCP%E5%AE%A2%E6%88%B7-%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%AE%9E%E4%BE%8B/">TCP回射服务器</a>,其函数调用流程图如下：
+<center><img src="https://ww2.sinaimg.cn/large/006tNbRwgw1fbpyeyt0ooj30h602e0st.jpg" alt="UDP回射服务器流程" /></center>
+服务器程序清单如下：</p>
+
+<pre><code class="language-cpp">#include	&quot;unp.h&quot;
+int main(int argc, char **argv)
+{
+	int					sockfd;
+	struct sockaddr_in	servaddr, cliaddr;
+
+	sockfd = Socket(AF_INET, SOCK_DGRAM, 0);//UDP面向数据报，SOCK_DGRAM为数据报套接字
+
+	bzero(&amp;servaddr, sizeof(servaddr));//初始化套接字
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+
+	Bind(sockfd, (SA *) &amp;servaddr, sizeof(servaddr));//将本地协议地址赋值给套接字
+
+	dg_echo(sockfd, (SA *) &amp;cliaddr, sizeof(cliaddr));//调用回射程序
+}
+void dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
+{
+	int			n;
+	socklen_t	len;
+	char		mesg[MAXLINE];
+
+	for ( ; ; ) {
+		len = clilen;
+		n = Recvfrom(sockfd, mesg, MAXLINE, 0, pcliaddr, &amp;len);//接受客户的消息
+
+		Sendto(sockfd, mesg, n, 0, pcliaddr, len);//回射给客户端
+	}
+}
+</code></pre>
+
+<h1 id="四-udp回射客户程序">四、UDP回射客户程序</h1>
+
+<pre><code class="language-cpp">#include	&quot;unp.h&quot;
+
+int main(int argc, char **argv)
+{
+	int					sockfd;
+	struct sockaddr_in	servaddr;
+
+	if (argc != 2)
+		err_quit(&quot;usage: udpcli &lt;IPaddress&gt;&quot;);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(7);
+	Inet_pton(AF_INET, argv[1], &amp;servaddr.sin_addr);//将点分十进制地址转换成二进制地址
+
+	sockfd = Socket(AF_INET, SOCK_DGRAM, 0);//建立套接字
+
+	dg_cli(stdin, sockfd, (SA *) &amp;servaddr, sizeof(servaddr));//调用回射程序
+
+	exit(0);
+}
+void dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+{
+	int	n;
+	char	sendline[MAXLINE], recvline[MAXLINE + 1];
+
+	while (Fgets(sendline, MAXLINE, fp) != NULL) {//从标准输入读入数据
+
+		Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);//将文本发送给服务器
+
+		n = Recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL);//读取回射后的文本
+
+		recvline[n] = 0;	/* null terminate */
+		Fputs(recvline, stdout);//标准输出
+	}
+}
+</code></pre>
+
+<h2 id="测试小结">测试小结</h2>
+
+<p>在ubuntu15.10环境下，测试上述代码：</p>
+
+<pre><code class="language-cpp">@Inspiron-N4010:~/unp$ ./udpcli 127.0.0.1
+hello
+hello
+</code></pre>
+
+<p>回射服务器正确返回客户端发送的数据</p>
+
+<h1 id="五-数据报丢失">五、数据报丢失</h1>
+
+<p>UDP传输本身就不可靠，如果一个客户数据报丢失，客户将永远阻塞于recvfrom调用，等待一个永远不会到达的服务器应答。
+我们一般采用设置超时来防止永久阻塞，但仅仅采用超时并不是一个好的解决方案，客户无法判断超时原因是数据报没有到达服务器还是服务器的应答没有回到客户。这就需要在UDP传输的可靠性上下功夫了，后面的笔记中会讲到。</p>
+
+<h1 id="六-验证接收到的响应">六、验证接收到的响应</h1>
+
+<p>由于UDP只管收发数据报，知道客户临时端口号的任何进程都可往客户发送数据报，而且这些数据报会与正常的服务器应答混杂，此时，可以修改客户程序的recvfrom调用以返回数据报发送者的IP地址和端口号，保留来自数据报所发往服务器的应答，而忽略任何其他的数据报。</p>
+
+<p>修改后的客户回射程序如下：</p>
+
+<pre><code class="language-cpp">void
+dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+{
+	int				n;
+	char			sendline[MAXLINE], recvline[MAXLINE + 1];
+	socklen_t		len;
+	struct sockaddr	*preply_addr;
+
+	preply_addr = Malloc(servlen);
+
+	while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+		Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);//返回发送者的IP地址和端口号
+
+		len = servlen;
+		n = Recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &amp;len);
+		if (len != servlen || memcmp(pservaddr, preply_addr, len) != 0) {//验证ip地址和端口号
+			printf(&quot;reply from %s (ignored)\n&quot;,
+					Sock_ntop(preply_addr, len));
+			continue;
+		}
+
+		recvline[n] = 0;	/* null terminate */
+		Fputs(recvline, stdout);
+	}
+}
+</code></pre>
+
+<p>这种做法还是有缺陷的，如果一个主机只有单个IP，那么程序可以非常完美的运行；但是，如果运行在多宿主机（多个IP地址）上，该程序则可能失败。</p>
+
+<p>举个例子，假设服务器的IP有172.24.37.94和172.24,37.100，客户连接服务器172.24,37.100，但是响应的是172.24.37.94，这样程序就出了问题了。</p>
+
+<p>解决上述冲突有两个可行的方法：</p>
+
+<ul>
+<li>得到服务器的IP地址后，客户通过DNS查找服务器主机的名字来验证该主机的域名</li>
+<li>UDP服务器给服务器主机上配置的每个IP创建一个套接字，用bind捆绑每个IP地址到各自的套接字，然后在所有的套接字上使用select，等待其中的一个变得可读，再从可读的套接字给出应答，这就保证了应答的源地址和请求的目的地址相同。</li>
+</ul>
+
+<h1 id="七-服务器未运行">七、服务器未运行</h1>
+
+<p>如果服务器未运行的情况下启动了客户程序，那么在客户键入一行文本后，会永远阻塞于它的recvfrom调用，等待一个永远不会出现的应答。</p>
+
+<p>通过tcpdump发现，服务器主机响应的是一个“port unreachedable”(端口不可达)ICMP消息。</p>
+
+<p>这个ICMP端口不可达错误属于异步错误，因为sendto成功返回（接口队列中存放所形成IP数据报的空间即成功返回）后，ICMP错误才会返回。</p>
+
+<p>所以，这个ICMP错误并不会返回给客户进程，导致客户永远阻塞与recvfrom调用。</p>
+
+<p>一个基本规则：对于一个UDP套接字，由它引发的异步错误却并不返回给它，除非它已连接。</p>
+
+<p>注：只要SO_BSDCOMPAT 套接字选项没有开启，linux甚至对未连接的套接字也返回大多数ICMP（目的地不可达）错误。</p>
+
+<h1 id="八-udp的connect函数">八、UDP的connect函数</h1>
+
+<p>上一小节提到，由于ICMP异步错误，导致在服务器未运行的情况下，客户程序会一直阻塞在recvfrom调用上。</p>
+
+<p>在TCP客户/服务器中，我们采用connect函数，让客户和服务器完成三次握手，可以判断服务器程序运行与否。确实，在UDP中，我们也可以调用connect函数，但是，并不会完成三次握手，内核只是检查是否存在立即可知的错误（例如一个显然不可达的目的地），记录对端的IP地址和端口号，然后立即返回到调用进程。</p>
+
+<p>那么，在使用connect函数的UDP套接字程序中，我们必须区分以下两个概念：</p>
+
+<ul>
+<li>未连接的UDP套接字，新创建UDP套接字默认如此</li>
+<li>已连接的UDP套接字，对UDP套接字调用connect的结果</li>
+</ul>
+
+<p>对于已连接的UDP套接字，相对于未连接的套接字有三个方面的变化：</p>
+
+<ul>
+<li>不能给输出操作指定目的IP地址和端口号，不适用sendto改用write和read，写到已连接套接字上的任何内容都自动发送到connect指定的协议地址。</li>
+<li>不必使用recvfrom以获得数据报的发送者，而改用read，recv和recvmsg</li>
+<li>由已连接UDP套接字引发的异步错误会返回给他们所在的进程，而未连接UDP套接字不接收任何异步错误</li>
+</ul>
+
+<p><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfhgxdygj30mp081gm8.jpg" alt="已连接套接字" /></p>
+
+<h2 id="给一个udp套接字多次调用connect">给一个UDP套接字多次调用connect</h2>
+
+<p>有以下两个目的：</p>
+
+<ul>
+<li>指定新的IP地址和端口号</li>
+<li>断开套接字：将sin_family设置为AF_UNSPEC。</li>
+</ul>
+
+<h2 id="性能">性能</h2>
+
+<p>对于一个未连接的套接字，调用sendto函数后，内核执行以下步骤：</p>
+
+<p>连接套接字-&gt;输出第一个数据报-&gt;断开套接字-&gt;连接套接字-&gt;&hellip;&hellip;</p>
+
+<p>而采用connect函数后，发送两次数据报，内核执行步骤：</p>
+
+<p>连接套接字-&gt;输出第一个数据报-&gt;输出第二个数据报&hellip;</p>
+
+<p>可见，显示连接套接字的效率要高很多。</p>
+
+<h1 id="九-使用connect改进客户程序">九、使用connect改进客户程序</h1>
+
+<pre><code class="language-cpp">void dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+{
+	int		n;
+	char	sendline[MAXLINE], recvline[MAXLINE + 1];
+
+	Connect(sockfd, (SA *) pservaddr, servlen);//连接套接字
+
+	while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+		Write(sockfd, sendline, strlen(sendline));
+
+		n = Read(sockfd, recvline, MAXLINE);
+
+		recvline[n] = 0;	/* null terminate */
+		Fputs(recvline, stdout);
+	}
+}
+</code></pre>
+
+<p>运行此客户端程序，结果如下：</p>
+
+<pre><code class="language-cpp">@Inspiron-N4010:~/unp$ ./udpcli 127.0.0.1
+hello
+read error: Connection refused
+</code></pre>
+
+<p>解释一下为什么在键入一行文本后返回connection refused，而不是调用connect函数的时候？</p>
+
+<p>在UDP套接字上，调用connect并不给对端主机发送任何消息，它完全是一个本地操作，知识保存对端的IP地址和端口号，然后因为发送该数据引发了来自服务器主机的ICMP错误。</p>
+
+<h1 id="十-udp缺乏流量控制">十、UDP缺乏流量控制</h1>
+
+<p>通过改进客户和服务器端程序，来观察缺乏流量控制的情况下，udp的传输效率。</p>
+
+<h2 id="客户端程序">客户端程序</h2>
+
+<pre><code class="language-cpp">
+#define	NDG		2000	//数据的个数
+#define	DGLEN	1400	//每个数据的长度
+
+void
+dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+{
+	int		i;
+	char	sendline[DGLEN];
+
+	for (i = 0; i &lt; NDG; i++) {//发送200个包
+		Sendto(sockfd, sendline, DGLEN, 0, pservaddr, servlen);
+	}
+}
+</code></pre>
+
+<p>##服务器程序</p>
+
+<pre><code class="language-cpp">static void	recvfrom_int(int);
+static int	count;
+
+void
+dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
+{
+	socklen_t	len;
+	char		mesg[MAXLINE];
+
+	Signal(SIGINT, recvfrom_int);
+
+	for ( ; ; ) {
+		len = clilen;
+		Recvfrom(sockfd, mesg, MAXLINE, 0, pcliaddr, &amp;len);
+
+		count++;//计算接受到的包个数
+	}
+}
+
+static void
+recvfrom_int(int signo)
+{
+	printf(&quot;\nreceived %d datagrams\n&quot;, count);
+	exit(0);
+}
+</code></pre>
+
+<h2 id="测试小结-1">测试小结</h2>
+
+<p>在我的主机上同时运行客户和服务器程序，基本上没有丢失</p>
+
+<pre><code class="language-cpp">@Inspiron-N4010:~/unp$ sudo ./udpserv 
+//客户运行完毕后敲ctrl+c
+received 2000 datagrams
+</code></pre>
+
+<h2 id="udp套接字接收缓存区">UDP套接字接收缓存区</h2>
+
+<p>由UDP给某个特定套接字排队的UDP数据报数目受限于该套接字缓冲区的大小。可以使用SO_REVBUF套接字选项来修改该值。</p>
+
+<p>在UDP第七章讲了常用的套接字选项，可以利用setsockopt函数来修改。</p>
+
+<p>具体修改调用如下：</p>
+
+<pre><code class="language-cpp">n=220*1024;//新的套接字接受缓冲区
+setsockopt(sockfd,SOL_SOCKET,SO_REVBUF,&amp;n,sizeof(n));//修改SO_REVBUF为n
+</code></pre>
+
+<h1 id="十一-udp中的外出接口的确定">十一、UDP中的外出接口的确定</h1>
+
+<p>已连接的套接字还可以用来确定用于某个特定目的地的外出接口。</p>
+
+<p>通过调用getsockname得到本地IP地址和端口号并显示输出，即可获得外出接口。</p>
+
+<pre><code class="language-cpp">Connect(sockfd, (SA *) servaddr, servlen);//连接套接字
+
+len= sizeof(cliaddr);
+Getsockname(sockfd,(SA *)cliaddr,&amp;len);//通过描述符获得本地端口和描述符
+printf(&quot;local address %s\n&quot;,Sock_ntop((SA*) &amp;cliaddr , len));
+</code></pre>
+
+<h1 id="十二-使用select函数的tcp和udp回射服务器程序">十二、使用select函数的TCP和UDP回射服务器程序</h1>
+
+<p>在<a href="http://zcheng.ren/2016/07/14/%E3%80%90unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E7%AC%AC%E4%B8%89%E7%89%88%E3%80%91%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%94%EF%BC%89%EF%BC%9AI-O%E5%A4%8D%E7%94%A8%EF%BC%9Aselect%E5%92%8Cpoll%E5%87%BD%E6%95%B0/">【UNIX网络编程第三版】阅读笔记（五）：select和poll函数</a>一文中，利用select函数达到IO复用的目的。</p>
+
+<p>本章的最后，利用select来完成TCP和UDP的复用效果。</p>
+
+<pre><code class="language-cpp">#include	&quot;unp.h&quot;
+int main(int argc, char **argv)
+{
+	int					listenfd, connfd, udpfd, nready, maxfdp1;
+	char				mesg[MAXLINE];
+	pid_t				childpid;
+	fd_set				rset;
+	ssize_t				n;
+	socklen_t			len;
+	const int			on = 1;
+	struct sockaddr_in	cliaddr, servaddr;
+	void				sig_chld(int);
+
+	//创建TCP监听套接字
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+
+	Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &amp;on, sizeof(on));
+	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+
+	Listen(listenfd, LISTENQ);
+
+	//创建UDP套接字
+	udpfd = Socket(AF_INET, SOCK_DGRAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+
+	Bind(udpfd, (SA *) &amp;servaddr, sizeof(servaddr));
+
+	Signal(SIGCHLD, sig_chld);	//建立信号处理函数，必须调用waitpid
+
+	FD_ZERO(&amp;rset);
+	maxfdp1 = max(listenfd, udpfd) + 1;//最大描述符+1
+	for ( ; ; ) {
+		FD_SET(listenfd, &amp;rset);
+		FD_SET(udpfd, &amp;rset);
+		if ( (nready = select(maxfdp1, &amp;rset, NULL, NULL, NULL)) &lt; 0) {
+			if (errno == EINTR)
+				continue;		
+			else
+				err_sys(&quot;select error&quot;);
+		}
+
+		if (FD_ISSET(listenfd, &amp;rset)) {
+			len = sizeof(cliaddr);
+			connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;len);
+	
+			if ( (childpid = Fork()) == 0) {	//创建子进程处理客户需求
+				Close(listenfd);	//监听套接字计数-1.为0时关闭
+				str_echo(connfd);	
+				exit(0);
+			}
+			Close(connfd);			//连接套接字计数减1，为0时关闭
+		}
+
+		if (FD_ISSET(udpfd, &amp;rset)) {
+			len = sizeof(cliaddr);
+			n = Recvfrom(udpfd, mesg, MAXLINE, 0, (SA *) &amp;cliaddr, &amp;len);//UDP传输
+
+			Sendto(udpfd, mesg, n, 0, (SA *) &amp;cliaddr, len);//回射
+		}
+	}
+}
+</code></pre>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">Unix网络编程</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2016/07/31/treetraversalmethod/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">全面剖析树的各类遍历方法</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2016/08/05/cppobjectmodelpart1/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">C&#43;&#43;对象模型的那些事儿之一：对象模型（上）</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

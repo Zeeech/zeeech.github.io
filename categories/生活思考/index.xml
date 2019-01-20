@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>生活思考 on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/categories/%E7%94%9F%E6%B4%BB%E6%80%9D%E8%80%83/</link>
+    <description>Recent content in 生活思考 on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sat, 07 Jan 2017 14:10:59 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/categories/%E7%94%9F%E6%B4%BB%E6%80%9D%E8%80%83/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>2016已过去，2017请努力</title>
+      <link>https://zcheng.ren/2017/01/07/my2016/</link>
+      <pubDate>Sat, 07 Jan 2017 14:10:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2017/01/07/my2016/</guid>
+      <description>&lt;p&gt;过着2017年的日子，思考着2016年人生的变化，或许，最大的变化是懂得记录学习，记录生活吧。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

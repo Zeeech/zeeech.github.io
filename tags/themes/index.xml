@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Themes on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/themes/</link>
+    <description>Recent content in Themes on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 23 Nov 2016 21:16:14 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/themes/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>博客折腾故事</title>
+      <link>https://zcheng.ren/2016/11/23/changedblogthemes/</link>
+      <pubDate>Wed, 23 Nov 2016 21:16:14 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/11/23/changedblogthemes/</guid>
+      <description>&lt;p&gt;自从搭建个人博客之后，一直使用的nexT主题。今天看到一款更加简洁的主题：Maupassant，果断的更换之&amp;hellip;.(折腾ing)&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Maupassant最初是由Cho大神为Typecho平台设计开发的一套响应式模板，体积只有20KB，在各种尺寸的设备上表现出色。
+主题地址：&lt;a href=&#34;https://github.com/tufu9441/maupassant-hexo&#34;&gt;https://github.com/tufu9441/maupassant-hexo&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>iterm2下管理ssh的几点经验</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="iterm2下管理ssh的几点经验" />
+<meta property="og:description" content="工作了之后经常和服务器打交道，自己也搭了好几个虚拟机用于开发。那么，问题来了：如何有效地管理ssh呢？
+
+一开始，我秉承着“好记性不如烂笔头的”的执念，把每个虚拟机的登录方式记在笔记上，每次登录的时候都要先去印象笔记中搜一下，然后复制粘贴。可想而知这样的效率有多低。为了更好地投身工作，节约ssh浪费的时间，我开始搜寻更有效率的方法。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2017/11/24/sshforwardagent/" /><meta property="article:published_time" content="2017-11-24T20:03:55&#43;08:00"/>
+<meta property="article:modified_time" content="2017-11-24T20:03:55&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="iterm2下管理ssh的几点经验"/>
+<meta name="twitter:description" content="工作了之后经常和服务器打交道，自己也搭了好几个虚拟机用于开发。那么，问题来了：如何有效地管理ssh呢？
+
+一开始，我秉承着“好记性不如烂笔头的”的执念，把每个虚拟机的登录方式记在笔记上，每次登录的时候都要先去印象笔记中搜一下，然后复制粘贴。可想而知这样的效率有多低。为了更好地投身工作，节约ssh浪费的时间，我开始搜寻更有效率的方法。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">iterm2下管理ssh的几点经验</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2017-11-24T20:03:55">November 24, 2017</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7" rel="category">开发工具</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#基础工具iterm2">基础工具Iterm2</a></li>
+<li><a href="#进阶sshpass">进阶sshpass</a>
+<ul>
+<li><a href="#安装sshpass">安装sshpass</a></li>
+<li><a href="#设置密码文件">设置密码文件</a></li>
+<li><a href="#配置iterm2">配置Iterm2</a></li>
+</ul></li>
+<li><a href="#高阶forwardagent-or-proxycommand">高阶ForwardAgent or ProxyCommand?</a>
+<ul>
+<li><a href="#forwardagent">ForwardAgent</a></li>
+<li><a href="#proxycommand">ProxyCommand</a></li>
+</ul></li>
+<li><a href="#参考">参考</a></li>
+</ul></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>工作了之后经常和服务器打交道，自己也搭了好几个虚拟机用于开发。那么，问题来了：如何有效地管理ssh呢？</p>
+
+<p>一开始，我秉承着“好记性不如烂笔头的”的执念，把每个虚拟机的登录方式记在笔记上，每次登录的时候都要先去印象笔记中搜一下，然后复制粘贴。可想而知这样的效率有多低。为了更好地投身工作，节约ssh浪费的时间，我开始搜寻更有效率的方法。</p>
+
+<p><img src="http://ww1.sinaimg.cn/large/73a1af36gy1flu6ozxjruj20dw098glw.jpg" alt="奋笔疾书" /></p>
+
+<h2 id="基础工具iterm2">基础工具Iterm2</h2>
+
+<p>为了更方便的管理多个SSH，最基础的工具Iterm2登场了。它的profiles配置可以方面地为我们提供多ssh登陆信息保存的功能。具体配置如下图所示。</p>
+
+<p><img src="http://ww1.sinaimg.cn/large/73a1af36gy1flu71k99hdj20pf0fpmzu.jpg" alt="" /></p>
+
+<p>配置方法：在Iterm2-&gt;Prefenerce-&gt;Profiles，中添加新的Profiles，并填入相应的name和Tags，Tags可以为你提供分组服务，便于快速的找到该profiles。最关键的步骤是在Command一栏中，填上你登录ssh的指令，如下所示：</p>
+
+<pre><code class="language-c">ssh zhangcheng@192.168.2.235
+</code></pre>
+
+<p>这样一来，每次登录该服务器的时候，只需要点击对应的Profiles即可。</p>
+
+<p><img src="http://ww1.sinaimg.cn/large/73a1af36gy1flu8q9ida7j20jc07vjs0.jpg" alt="" /></p>
+
+<h2 id="进阶sshpass">进阶sshpass</h2>
+
+<p>Iterm2的Profiles能很好的解决多ssh登陆信息保存的问题，但是，一旦服务器多了，记密码貌似也是件及其烦心的事。别急，sshpass能帮我们解决。</p>
+
+<h3 id="安装sshpass">安装sshpass</h3>
+
+<p>在Macos下，通过以下命令来安装sshpass：</p>
+
+<pre><code>brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/master/Library/Formula/sshpass.rb
+</code></pre>
+
+<p>执行完成后，通过<code>sshpass -h</code>命令来检查是否安装正确。</p>
+
+<h3 id="设置密码文件">设置密码文件</h3>
+
+<p>通过sshpass来使用ssh密码，需要事先将密码保存在一个文件里，再通过sshpass命令来读取文件中保存的密码。密码文件很简单，例如，在/user/用户名/sshpass目录下新建一个pass文件，里面写上主机密码，如123456，即可。</p>
+
+<h3 id="配置iterm2">配置Iterm2</h3>
+
+<p>在Iterm2中更改Profiles的配置，将Command一栏改为如下：</p>
+
+<pre><code>/usr/local/bin/sshpass -f /Users/zhangcheng/sshpass/pass ssh -p22 zhangcheng@192.168.2.235
+</code></pre>
+
+<p>保存该Profiles，下次登录的时候只需要以该Profiles打开Iterm2即可。是不是感觉节省了很多时间。</p>
+
+<h2 id="高阶forwardagent-or-proxycommand">高阶ForwardAgent or ProxyCommand?</h2>
+
+<p>在公司，一般登录线上服务器需要先登录跳板机，在通过跳板机来登录线上服务器。对于Key Pair登录，通常的做法是将Key Pair存放在跳板机上，这样安全性得不到保证。最初我也是这么做，后来被运维“骂”了一通后，“被迫”使用了ForwardAgent。</p>
+
+<p>SSH ForwardAgent可以让开发者将Local端的SSH Key Pair带到另一台机器上，这样一来你就不用讲SSH Key复制到跳板机在进行跳板动作了，同样，跳板机也仅仅只是跳板机了，不需要存放任何凭证资料，你的个人Key Pair也得到了安全性保障。</p>
+
+<h3 id="forwardagent">ForwardAgent</h3>
+
+<p>使用SSH的ForwardAgent很简单，包括了如下几个步骤：（假设跳板机IP为1.1.1.1，远端服务器为2.2.2.2，端口为1046）</p>
+
+<ul>
+<li>将Key Pair放到清单</li>
+</ul>
+
+<p>通过ssh-add命令可以将你的Private Key Pair加入清单</p>
+
+<pre><code>ssh-add ~/.ssh/id_ras
+</code></pre>
+
+<p>然后通过以下命令可以查看上述命令是否执行成功。</p>
+
+<pre><code>ssh-add -L
+</code></pre>
+
+<ul>
+<li>设定~/.ssh/config</li>
+</ul>
+
+<p>在本机的ssh config文件中，需要配置ForwardAgent参数，如下：</p>
+
+<pre><code>Host hosta
+    HostName 1.1.1.1
+    User username
+    ForwardAgent yes
+    IdentityFile ~/.ssh/id_rsa  // 指定私钥
+</code></pre>
+
+<p>同样在跳板机上也需要配置config文件，如下：</p>
+
+<pre><code>Host hostb
+    HostName 2.2.2.2
+    User username
+    ForwardAgent yes
+</code></pre>
+
+<p>上述配置完成后，在本机即可通过ssh -A指令登录到跳板机，如下：</p>
+
+<pre><code>ssh -A -p 1046 username@1.1.1.1
+</code></pre>
+
+<p>登录到跳板机之后，同样通过以下指令，登录到线上机器：</p>
+
+<pre><code>ssh -A -p 1046 username@2.2.2.2
+</code></pre>
+
+<p>上述步骤下来，私钥不需要上传到跳板机，保证了安全性，但是两遍ssh操作，还是太费事。而且，通过ssh-add操作还是存在安全隐患，具体可以看这篇文章<a href="https://heipei.github.io/2015/02/26/SSH-Agent-Forwarding-considered-harmful/">SSH Agent Forwarding considered harmful</a></p>
+
+<h3 id="proxycommand">ProxyCommand</h3>
+
+<p>ProxyCommand不仅不需要将私钥ssh-add加入到ssh清单中，而且也简化了登录步骤，只需要一条指令直接登录到线上服务器。</p>
+
+<p>该方法也是需要配置~/.ssh/config文件，但是是通过ProxyCommand而不是ForwardAgent yes。</p>
+
+<pre><code>Host Hosta
+    User username
+    Hostname 1.1.1.1
+
+Host Hostb
+    User username
+    Hostname 2.2.2.2
+    Port 1046
+    ProxyCommand ssh -q -W %h:%p hosta
+    IdentityFile ~/.ssh/id_rsa
+</code></pre>
+
+<p>这样一来只需要一条指令即可直达线上机器</p>
+
+<pre><code>ssh hostb
+</code></pre>
+
+<p>实在是省时省力又省心啊！！！！不知道大家会了没有呢？</p>
+
+<h2 id="参考">参考</h2>
+
+<p><a href="https://blog.wu-boy.com/2016/10/ssh-agent-forwarding-proxycommand-tutorial/">SSH agent forwarding 教學</a>
+<a href="http://mingxinglai.com/cn/2015/07/ssh-proxycommand/">SSH穿越跳板机：一条命令跨越跳板机直接登陆远程计算机</a></p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/linux/" rel="tag">Linux</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2017/01/07/my2016/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">2016已过去，2017请努力</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2018/01/29/nginxsourcequickstart/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Nginx快速上手</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

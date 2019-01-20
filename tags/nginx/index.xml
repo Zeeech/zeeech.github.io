@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Nginx on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/nginx/</link>
+    <description>Recent content in Nginx on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 29 Jan 2018 14:19:10 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/nginx/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Nginx快速上手</title>
+      <link>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</link>
+      <pubDate>Mon, 29 Jan 2018 14:19:10 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</guid>
+      <description>&lt;p&gt;入职半年来，一直在Nginx的基础上做模块开发，学到了很多东西，也碰到了很多坑。在业务开发的同时，由于对Nginx本身也是一知半解，造成了很多不必要的Bug。痛定思痛，很早以前就想系统的学习一下Nginx，迟迟没有抽出时间下定决心，我知道和以前浅析Redis一样，那是一个一旦开始了就停不下来的旅程。好勒，别立flag了，一篇一篇写下去吧。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

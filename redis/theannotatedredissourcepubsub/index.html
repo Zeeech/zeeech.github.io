@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--发布与订阅Pubsub</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--发布与订阅Pubsub" />
+<meta property="og:description" content="在分析Notify通知功能的时候讲到，Notify是用过订阅和发布功能来发送通知的。本来按计划是要分析持久化的代码的，可是对这个pubsub实在是有点感兴趣，所以先分析这方面的代码。订阅和发布，顾名思义，就是客户端可以订阅某个频道，也可以向某个频道发布消息，有点像收音机的功能一样。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/redis/theannotatedredissourcepubsub/" /><meta property="article:published_time" content="2016-12-29T13:34:48&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-29T13:34:48&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--发布与订阅Pubsub"/>
+<meta name="twitter:description" content="在分析Notify通知功能的时候讲到，Notify是用过订阅和发布功能来发送通知的。本来按计划是要分析持久化的代码的，可是对这个pubsub实在是有点感兴趣，所以先分析这方面的代码。订阅和发布，顾名思义，就是客户端可以订阅某个频道，也可以向某个频道发布消息，有点像收音机的功能一样。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--发布与订阅Pubsub</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-29T13:34:48">December 29, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#pubsub概述">Pubsub概述</a></li>
+<li><a href="#pubsub数据结构">Pubsub数据结构</a></li>
+<li><a href="#订阅">订阅</a>
+<ul>
+<li><a href="#订阅频道">订阅频道</a></li>
+<li><a href="#订阅模式">订阅模式</a></li>
+</ul></li>
+<li><a href="#退订">退订</a></li>
+<li><a href="#发布消息">发布消息</a></li>
+<li><a href="#pubsub小结">Pubsub小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>在分析Notify通知功能的时候讲到，Notify是用过订阅和发布功能来发送通知的。本来按计划是要分析持久化的代码的，可是对这个pubsub实在是有点感兴趣，所以先分析这方面的代码。订阅和发布，顾名思义，就是客户端可以订阅某个频道，也可以向某个频道发布消息，有点像收音机的功能一样。</p>
+
+<h1 id="pubsub概述">Pubsub概述</h1>
+
+<p>Redis的发布和订阅功能由PUBLISH、SUBSCRIBE和PSUBSCRIBE等命令组成，要想理解源码，必须首先熟悉这些命令的形式和功能。</p>
+
+<p>首先我们打开三个redis-cli的客户端，其中，每个客户端的职责如下：</p>
+
+<ul>
+<li>0号客户端：打开redis-server，开启服务器程序</li>
+<li>1号客户端：向频道发送消息</li>
+<li>2号客户端：订阅channle0和channle2频道</li>
+<li>3号客户端：订阅channle1和channle2频道</li>
+</ul>
+
+<p>初始化如下图所示：</p>
+
+<p><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkgb3xnroj313z0nbadr.jpg" alt="" /></p>
+
+<p>接下来，1号客户端分别向channle0，channle1和channle2发送消息，查看2、3号客户端是否接收到。</p>
+
+<p><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkgb5nrdrj313z0natcs.jpg" alt="" /></p>
+
+<p>接下来，测试多个收听channle2的客户端能否同时受到1号客户端向channle2频道发布的消息。</p>
+
+<p><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkgb7kwoij313y0n8q7f.jpg" alt="" /></p>
+
+<p>如此一来，简单的订阅和发布功能就基本上了解了。下面，一起来看看Redis的底层是怎么实现这个功能的。</p>
+
+<h1 id="pubsub数据结构">Pubsub数据结构</h1>
+
+<p>阅读源码最好是从数据结构开始，这样能尽可能的理解功能函数。Redis服务器结构体中定义了如下数据结构用来记录某个频道有哪些客户端订阅。</p>
+
+<pre><code class="language-cpp">struct redisServer {
+  // ...
+  dict *pubsub_channels;  // 字典结构，用来记录频道和客户端的对应关系
+  // ...
+}
+</code></pre>
+
+<p>例如，上一节中的简单示例里面，其服务器的dict结构布局如下：</p>
+
+<p><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkgb6p7cpj30bu04iaaf.jpg" alt="" /></p>
+
+<p>当客户端向某频道发送消息的时候，就检查这个字典下该频道对应的客户端，然后一一发送消息。</p>
+
+<p>同样，在客户端结构体也用一个字典结构记录了该客户端订阅了哪些频道。</p>
+
+<pre><code class="language-cpp">struct client {
+  // ...
+  dict *pubsub_channels; // 记录了该客户端订阅了哪些频道
+  // ...
+}
+</code></pre>
+
+<p>在上一届的示例中，2号客户端的<code>pubsub_channels</code>字典结构的结构布局如下：</p>
+
+<p><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkgb61sogj306o03q74f.jpg" alt="" /></p>
+
+<p>该字典结构的键为收听的频道，值全为NULL，这样做的目的是快速判断该客户端是否收听了该频道。</p>
+
+<p>另外，Redis还支持订阅特定模式的频道，其命令是PSUBSCRIBE，例如运行如下命令，就代表我可以订阅所有以chann开头的频道。</p>
+
+<pre><code class="language-cpp">PSUBSCRIBE chann*
+</code></pre>
+
+<p>关于订阅指定模式的频道，Redis定义了<code>pubsub_patterns</code>链表结构，在服务器结构体重，该链表的每一个节点都是一个<code>pubsubPattern</code>结构，具体定义如下：</p>
+
+<pre><code class="language-cpp">/* 服务器结构 */
+struct redisServer {
+  // ...
+  list *pubsub_patterns;  // 记录了客户端和模式串的对应关系
+  // ...
+}
+/* pubsub模式串结构体 */
+typedef struct pubsubPattern {
+    client *client; // 指向客户端
+    robj *pattern;  // 指向该客户端收听的模式串
+} pubsubPattern;
+/* 客户端结构 
+ * 注意：在客户端结构中，该链表的每一个节点就是一个模式串
+ * 而不是一个结构体。(这里为啥不采取字典结构，有待考虑)
+ */
+struct client {
+  // ...
+  list *pubsub_patterns; // 记录了该客户端订阅了哪些模式串
+  // ...
+} 
+</code></pre>
+
+<p>假设客户端订阅了某个模式串，其会向上述两个链表中添加相关信息，之后发布消息的时候，会检查模式串是否符合要求，如符合就向客户端发送消息。</p>
+
+<h1 id="订阅">订阅</h1>
+
+<h2 id="订阅频道">订阅频道</h2>
+
+<p>当客户端执行订阅频道命令的时候，客户端和服务器需要执行两个步骤：</p>
+
+<ul>
+<li>向客户端的<code>pubsub_channels</code>字典中添加该频道</li>
+<li>向服务器的<code>pubsub_channels</code>字典中添加该频道及其对应的客户端</li>
+</ul>
+
+<p>上述两个步骤由subscribeCommand函数完成，其源码如下：</p>
+
+<pre><code class="language-cpp">/* 订阅频道命令的实现 */
+void subscribeCommand(client *c) {
+    int j;
+    // 遍历指令中的所有频道
+    for (j = 1; j &lt; c-&gt;argc; j++)
+        pubsubSubscribeChannel(c,c-&gt;argv[j]);
+    c-&gt;flags |= CLIENT_PUBSUB;
+}
+/* 订阅频道的底层实现代码 */
+int pubsubSubscribeChannel(client *c, robj *channel) {
+    dictEntry *de;
+    list *clients = NULL;
+    int retval = 0;
+
+    // 添加频道到client-&gt;pubsub_channels字典中
+    if (dictAdd(c-&gt;pubsub_channels,channel,NULL) == DICT_OK) {
+        retval = 1;
+        incrRefCount(channel);
+        // 查找server.pubsub_channels字典中是否存在该频道
+        de = dictFind(server.pubsub_channels,channel);
+        if (de == NULL) {
+            // 如不存在就创建，客户端是以链表形式连接
+            clients = listCreate();
+            // 添加频道和收听该频道的客户端链表到pubsub_channels字典中
+            dictAdd(server.pubsub_channels,channel,clients);
+            incrRefCount(channel);
+        } else {
+            // 如果存在，获取客户端链表
+            clients = dictGetVal(de);
+        }
+        // 将该客户端添加到客户端链表的尾部
+        listAddNodeTail(clients,c);
+    }
+    // 通知客户端
+    addReply(c,shared.mbulkhdr[3]);
+    addReply(c,shared.subscribebulk);
+    addReplyBulk(c,channel);
+    addReplyLongLong(c,clientSubscriptionsCount(c));
+    return retval;
+}
+</code></pre>
+
+<h2 id="订阅模式">订阅模式</h2>
+
+<p>当客户端执行订阅模式的指令时，同样需要对服务器和客户端的pubsub_patterns链表进行操作。其源码如下：</p>
+
+<pre><code class="language-cpp">/* 订阅模式命令的实现 */
+void psubscribeCommand(client *c) {
+    int j;
+    // 遍历模式串
+    for (j = 1; j &lt; c-&gt;argc; j++)
+        pubsubSubscribePattern(c,c-&gt;argv[j]);
+    c-&gt;flags |= CLIENT_PUBSUB;
+}
+/* 订阅模式的底层实现 */
+int pubsubSubscribePattern(client *c, robj *pattern) {
+    int retval = 0;
+	// 查看链表中该模式是否存在，如存在不做处理，反之则添加
+    if (listSearchKey(c-&gt;pubsub_patterns,pattern) == NULL) {
+        retval = 1;
+        pubsubPattern *pat;
+        // 添加模式串到client-&gt;pubsub_patterns链表的尾部
+        listAddNodeTail(c-&gt;pubsub_patterns,pattern);
+        incrRefCount(pattern);
+        // 构造pubsubPattern结构体并赋值
+        pat = zmalloc(sizeof(*pat));
+        pat-&gt;pattern = getDecodedObject(pattern);
+        pat-&gt;client = c;
+        // 添加pubsubPattern结构体到链表尾部
+        listAddNodeTail(server.pubsub_patterns,pat);
+    }
+    // 回复客户端
+    addReply(c,shared.mbulkhdr[3]);
+    addReply(c,shared.psubscribebulk);
+    addReplyBulk(c,pattern);
+    addReplyLongLong(c,clientSubscriptionsCount(c));
+    return retval;
+}
+</code></pre>
+
+<h1 id="退订">退订</h1>
+
+<p>退订的操作就放在一节里面讲了，无非就是从结构体中删除一些节点，事实就是如此，以退订频道为例：</p>
+
+<pre><code class="language-cpp">/* 退订频道的命令实现 */
+void unsubscribeCommand(client *c) {
+    if (c-&gt;argc == 1) {
+        // 退订所有频道
+        pubsubUnsubscribeAllChannels(c,1);
+    } else {
+        int j;
+        // 遍历频道，一一退订
+        for (j = 1; j &lt; c-&gt;argc; j++)
+            // 退订频道
+            pubsubUnsubscribeChannel(c,c-&gt;argv[j],1);
+    }
+    if (clientSubscriptionsCount(c) == 0) c-&gt;flags &amp;= ~CLIENT_PUBSUB;
+}
+/* 退订频道的底层实现 */
+int pubsubUnsubscribeChannel(client *c, robj *channel, int notify) {
+    dictEntry *de;
+    list *clients;
+    listNode *ln;
+    int retval = 0;
+    // 该指针可能指向字典结构中的同一个对象，此处需要保护它
+    incrRefCount(channel); 
+    // 在客户端的pubsub_channels字典中删除
+    if (dictDelete(c-&gt;pubsub_channels,channel) == DICT_OK) {
+        retval = 1;
+        // 在服务器的pubsub_channels中删除
+        de = dictFind(server.pubsub_channels,channel);
+        serverAssertWithInfo(c,NULL,de != NULL);
+        clients = dictGetVal(de); // 获取客户端链表
+        ln = listSearchKey(clients,c); // 找到该客户端对应的节点
+        serverAssertWithInfo(c,NULL,ln != NULL);
+        listDelNode(clients,ln); // 删除节点
+        if (listLength(clients) == 0) {
+            // 如果该频道下没有客户端了，就删除字典中的该频道节点
+            dictDelete(server.pubsub_channels,channel);
+        }
+    }
+    // 通知客户端
+    if (notify) {
+        addReply(c,shared.mbulkhdr[3]);
+        addReply(c,shared.unsubscribebulk);
+        addReplyBulk(c,channel);
+        addReplyLongLong(c,dictSize(c-&gt;pubsub_channels)+
+                       listLength(c-&gt;pubsub_patterns));
+
+    }
+    // 到了这里可以安全的删除了
+    decrRefCount(channel);
+    return retval;
+}
+</code></pre>
+
+<p>其他的退订操作也是如此，下面仅罗列出它们的函数声明和功能，有兴趣的可以去源码中查看。</p>
+
+<pre><code class="language-cpp">/* 退订所有频道 */
+pubsubUnsubscribeAllChannels(client *c, int notify);
+/* 退订所有模式 */
+pubsubUnsubscribeAllPatterns(client *c, int notify);
+/* 退订一个或多个频道 */
+pubsubUnsubscribeChannel(client *c, robj *channel, int notify);
+/* 退订一个或多个模式 */
+pubsubUnsubscribePattern(client *c, robj *pattern, int notify);
+/* 退订模式的命令实现 */
+punsubscribeCommand(client *c);
+/* 退订频道的命令实现 */
+subscribeCommand(client *c);
+</code></pre>
+
+<h1 id="发布消息">发布消息</h1>
+
+<p>当客户端调用发布消息的命令时，需要进行如下两个操作：</p>
+
+<ul>
+<li>查找服务器的pubsub_channels字典下该频道对应的客户端链表，然后遍历，一一发送</li>
+<li>查找服务器的pubsub_patterns链表，遍历模式串，如果匹配就发送，反之不作处理</li>
+</ul>
+
+<p>发布消息的命令由publishCommand函数实现，其源码如下：</p>
+
+<pre><code class="language-cpp">/* 发布消息命令的实现 */
+void publishCommand(client *c) {
+    int receivers = pubsubPublishMessage(c-&gt;argv[1],c-&gt;argv[2]);
+    // 如果开启了集群，需要向集群中的客户端发送消息
+    // 现阶段不讨论集群
+  	if (server.cluster_enabled)
+        clusterPropagatePublish(c-&gt;argv[1],c-&gt;argv[2]);
+    else
+        forceCommandPropagation(c,PROPAGATE_REPL);
+    addReplyLongLong(c,receivers);
+}
+/* 发布消息的底层实现 */
+int pubsubPublishMessage(robj *channel, robj *message) {
+    int receivers = 0;
+    dictEntry *de;
+    listNode *ln;
+    listIter li;
+
+    // 发送到订阅该频道的所有客户端
+    de = dictFind(server.pubsub_channels,channel);
+    if (de) {
+        // 如果存在该频道，则获取客户端链表
+        list *list = dictGetVal(de);
+        listNode *ln;
+        listIter li;
+		// 获取迭代器
+        listRewind(list,&amp;li);
+        // 遍历，发送消息
+        while ((ln = listNext(&amp;li)) != NULL) {
+            client *c = ln-&gt;value;
+			// 发送消息
+            addReply(c,shared.mbulkhdr[3]);
+            addReply(c,shared.messagebulk);
+            addReplyBulk(c,channel);
+            addReplyBulk(c,message);
+            receivers++;
+        }
+    }
+    // 发送到所有模式能与该频道匹配上的客户端
+    if (listLength(server.pubsub_patterns)) {
+        // 获取迭代器
+        listRewind(server.pubsub_patterns,&amp;li);
+        // 解码频道
+        channel = getDecodedObject(channel);
+        // 遍历该链表
+        while ((ln = listNext(&amp;li)) != NULL) {
+            pubsubPattern *pat = ln-&gt;value;
+            // 判断是否能匹配上
+            if (stringmatchlen((char*)pat-&gt;pattern-&gt;ptr,
+                                sdslen(pat-&gt;pattern-&gt;ptr),
+                                (char*)channel-&gt;ptr,
+                                sdslen(channel-&gt;ptr),0)) {
+                // 能匹配上，发送消息
+                addReply(pat-&gt;client,shared.mbulkhdr[4]);
+                addReply(pat-&gt;client,shared.pmessagebulk);
+                addReplyBulk(pat-&gt;client,pat-&gt;pattern);
+                addReplyBulk(pat-&gt;client,channel);
+                addReplyBulk(pat-&gt;client,message);
+                receivers++;
+            }
+        }
+        // 执行完之后，引用计数减1
+        decrRefCount(channel);
+    }
+    // 返回收到消息的客户端个数
+    return receivers;
+}
+</code></pre>
+
+<p>本来感觉到此就没有什么功能了，没想到还有一个函数给漏掉了。那就是PUBSUB命令的实现函数，一开始不怎么理解它，于是查看了一下源码。有意思，这是个含有子命令的命令。</p>
+
+<pre><code class="language-cpp">/* 后面的参数是模式串，子命令channels的功能是返回所有符合该模式串的频道 */
+PUBSUB CHANNELS [&lt;pattern1&gt;]
+/* 后面的参数是频道，子命令NUMSUB的功能是返回收听该频道的客户端个数 */
+PUBSUB NUMSUB [channel1 ... channeln]
+/* 子命令NUMPAT的功能是返回服务器中所有模式串频道的个数，即pubsub_patterns链表的长度*/
+PUBSUB NUMPAT 
+</code></pre>
+
+<p>其源码实现也很简单，这里列出来大家一起看看。</p>
+
+<pre><code class="language-cpp">/* PUBSUB命令源码实现 */
+void pubsubCommand(client *c) {
+    if (!strcasecmp(c-&gt;argv[1]-&gt;ptr,&quot;channels&quot;) &amp;&amp;
+        (c-&gt;argc == 2 || c-&gt;argc ==3))
+    {
+        // 子命令 PUBSUB CHANNELS [&lt;pattern&gt;]
+        sds pat = (c-&gt;argc == 2) ? NULL : c-&gt;argv[2]-&gt;ptr;
+        // 获取迭代器
+        dictIterator *di = dictGetIterator(server.pubsub_channels);
+        dictEntry *de;
+        long mblen = 0;
+        void *replylen;
+
+        replylen = addDeferredMultiBulkLength(c);
+        // 遍历并检查与模式串是否匹配
+        while((de = dictNext(di)) != NULL) {
+            robj *cobj = dictGetKey(de);
+            sds channel = cobj-&gt;ptr;
+            if (!pat || stringmatchlen(pat, sdslen(pat),
+                                       channel, sdslen(channel),0))
+            {
+                // 如匹配，就返回该频道的名称
+                addReplyBulk(c,cobj);
+                mblen++;
+            }
+        }
+        dictReleaseIterator(di);
+        setDeferredMultiBulkLength(c,replylen,mblen);
+    } else if (!strcasecmp(c-&gt;argv[1]-&gt;ptr,&quot;numsub&quot;) &amp;&amp; c-&gt;argc &gt;= 2) {
+        // 子命令PUBSUB NUMSUB [Channel_1 ... Channel_N]
+        int j;
+
+        addReplyMultiBulkLen(c,(c-&gt;argc-2)*2);
+        for (j = 2; j &lt; c-&gt;argc; j++) {
+            list *l = dictFetchValue(server.pubsub_channels,c-&gt;argv[j]);
+
+            addReplyBulk(c,c-&gt;argv[j]);
+            addReplyLongLong(c,l ? listLength(l) : 0);
+        }
+    } else if (!strcasecmp(c-&gt;argv[1]-&gt;ptr,&quot;numpat&quot;) &amp;&amp; c-&gt;argc == 2) {
+        // 子命令PUBSUB NUMPAT
+        addReplyLongLong(c,listLength(server.pubsub_patterns));
+    } else {
+        // 其他不能识别的命令 直接报错
+        addReplyErrorFormat(c,
+            &quot;Unknown PUBSUB subcommand or wrong number of arguments for '%s'&quot;,
+            (char*)c-&gt;argv[1]-&gt;ptr);
+    }
+}
+</code></pre>
+
+<h1 id="pubsub小结">Pubsub小结</h1>
+
+<p>至此，发布和订阅这个有意思的功能就全部剖析完了，是不是感觉超级简单但很实用？其中，还是不太理解为什么模式串频道要用list，难道是因为模式串频道数据量比较小？要用list来节省内存？而且效率方面也不会影响多少？姑且就这么认为吧，哈哈。大家有什么疑惑和问题请在下方留言区留言，期待和志同道合的你一起讨论Redis！共同学习，共同进步！</p>
+
+<p>欢迎转载本篇博客，不过请注明博客原地址：<a href="http://zcheng.ren/2016/12/29/TheAnnotatedRedisSourcePubsub">http://zcheng.ren/2016/12/29/TheAnnotatedRedisSourcePubsub</a></p>
+
+<p><p style="text-align:right">张程<p></p>
+
+<p><p style="text-align:right">于湖北·武汉 <p></p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/redis/theannotatedredissourcenotify/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--通知Notify</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/redis/theannotatedredissourcerdb/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--RDB持久化</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

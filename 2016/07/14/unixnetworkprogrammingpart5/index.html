@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>UNIX网络编程之五：select和poll函数</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="UNIX网络编程之五：select和poll函数" />
+<meta property="og:description" content="一、I/O复用技术
+
+I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条件准备就绪，它就通知该进程。I/O复用适用于以下场合：
+
+
+当客户处理多个描述符（一般是交互式输入或网络套接字），必须适用I/O复用
+当一个客户处理多个套接字时，这种情况很少见，但也可能出现
+当一个TCP服务器既要处理监听套接字，又要处理已连接套接字，一般就要使用I/O复用
+如果一个服务器既要适用TCP，又要适用UDP，一般就要使用I/O复用
+如果一个服务器要处理多个服务或者多个协议，一般就要使用I/O复用
+
+
+与多线程和多进程技术相比，I/O复用技术的最大优势就是系统开销小，系统不必创建进程/线程，也不必维护这些进程/进程，从而大大减小了系统的开销。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2016/07/14/unixnetworkprogrammingpart5/" /><meta property="article:published_time" content="2016-07-14T10:21:59&#43;08:00"/>
+<meta property="article:modified_time" content="2016-07-14T10:21:59&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="UNIX网络编程之五：select和poll函数"/>
+<meta name="twitter:description" content="一、I/O复用技术
+
+I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条件准备就绪，它就通知该进程。I/O复用适用于以下场合：
+
+
+当客户处理多个描述符（一般是交互式输入或网络套接字），必须适用I/O复用
+当一个客户处理多个套接字时，这种情况很少见，但也可能出现
+当一个TCP服务器既要处理监听套接字，又要处理已连接套接字，一般就要使用I/O复用
+如果一个服务器既要适用TCP，又要适用UDP，一般就要使用I/O复用
+如果一个服务器要处理多个服务或者多个协议，一般就要使用I/O复用
+
+
+与多线程和多进程技术相比，I/O复用技术的最大优势就是系统开销小，系统不必创建进程/线程，也不必维护这些进程/进程，从而大大减小了系统的开销。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">UNIX网络编程之五：select和poll函数</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-07-14T10:21:59">July 14, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#一-i-o复用技术"><strong>一、I/O复用技术</strong></a></li>
+<li><a href="#二-i-o模型">二、I/O模型</a>
+<ul>
+<li><a href="#阻塞式i-o模型">阻塞式I/O模型</a>
+<ul>
+<li><a href="#趣解模型">趣解模型</a></li>
+<li><a href="#网络模型">网络模型</a></li>
+</ul></li>
+<li><a href="#非阻塞式i-o模型">非阻塞式I/O模型</a>
+<ul>
+<li><a href="#趣解模型-1">趣解模型</a></li>
+<li><a href="#网络模型-1">网络模型</a></li>
+</ul></li>
+<li><a href="#i-o复用模型">I/O复用模型</a>
+<ul>
+<li><a href="#趣解模型-2">趣解模型</a></li>
+<li><a href="#网络模型-2">网络模型</a></li>
+</ul></li>
+<li><a href="#信号驱动式i-o模型">信号驱动式I/O模型</a>
+<ul>
+<li><a href="#趣解模型-3">趣解模型</a></li>
+<li><a href="#网络模型-3">网络模型</a></li>
+</ul></li>
+<li><a href="#异步i-o模型">异步I/O模型</a>
+<ul>
+<li><a href="#趣解模型-4">趣解模型</a></li>
+<li><a href="#网络模型-4">网络模型</a></li>
+</ul></li>
+<li><a href="#各种i-o模型的比较">各种I/O模型的比较</a></li>
+</ul></li>
+<li><a href="#三-select函数">三、select函数</a>
+<ul>
+<li><a href="#函数原型">函数原型</a></li>
+<li><a href="#使用select函数修改的str-cli函数">使用select函数修改的str_cli函数</a></li>
+<li><a href="#批量输入">批量输入</a></li>
+<li><a href="#shutdown函数">shutdown函数</a></li>
+<li><a href="#str-cli函数再修改版">str_cli函数再修改版</a></li>
+</ul></li>
+<li><a href="#四-tcp回射服务器程序-采用select函数">四、TCP回射服务器程序(采用select函数)</a></li>
+<li><a href="#五-pselect函数">五、pselect函数</a></li>
+<li><a href="#六-poll函数">六、poll函数</a></li>
+<li><a href="#七-tcp回射服务器再修改版">七、TCP回射服务器再修改版</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<h1 id="一-i-o复用技术"><strong>一、I/O复用技术</strong></h1>
+
+<p>I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条件准备就绪，它就通知该进程。I/O复用适用于以下场合：</p>
+
+<ul>
+<li>当客户处理多个描述符（一般是交互式输入或网络套接字），必须适用I/O复用</li>
+<li>当一个客户处理多个套接字时，这种情况很少见，但也可能出现</li>
+<li>当一个TCP服务器既要处理监听套接字，又要处理已连接套接字，一般就要使用I/O复用</li>
+<li>如果一个服务器既要适用TCP，又要适用UDP，一般就要使用I/O复用</li>
+<li>如果一个服务器要处理多个服务或者多个协议，一般就要使用I/O复用</li>
+</ul>
+
+<p>与多线程和多进程技术相比，I/O复用技术的最大优势就是系统开销小，系统不必创建进程/线程，也不必维护这些进程/进程，从而大大减小了系统的开销。</p>
+
+<h1 id="二-i-o模型">二、I/O模型</h1>
+
+<p>Unix下常见的I/O模型有五种，分别是：阻塞式I/O，非阻塞式I/O，I/O复用，信号驱动式I/O和异步I/O。</p>
+
+<p>Unix下对于一个输入操作，通常包含两个不同的阶段：</p>
+
+<ul>
+<li>等待数据准备好</li>
+<li>从内核向进程复制数据</li>
+</ul>
+
+<p>例如：对于一次read函数操作来说，数据先会被拷贝到操作系统内核的缓冲区去，然后才会从操作系统内核的缓冲区拷贝到应用程序的地址空间。</p>
+
+<p>再比如对于一次socket流传输来说，首先等待网络上的数据到达，然后复制到内核的某个缓冲区，然后再把内核缓冲区的数据复制到进程缓冲区。</p>
+
+<p>下面就以上述两个阶段来阐述五种I/O模型。</p>
+
+<h2 id="阻塞式i-o模型">阻塞式I/O模型</h2>
+
+<h3 id="趣解模型">趣解模型</h3>
+
+<p>假定一个特定的场景，你的一个好朋友找你借钱，你身上没有充足的现金，于是，你要去银行取钱，银行人多，你只能在那里排队，在这段时间内，你不能离开队伍去干你自己的事情。时间都浪费在排队上面了。这就是典型的阻塞式I/O模型。</p>
+
+<h3 id="网络模型">网络模型</h3>
+
+<p>默认情况下，所有的套接字都时阻塞的，以数据报套接字为例</p>
+
+<p><img src="http://img.blog.csdn.net/20160714101008730" alt="这里写图片描述" /></p>
+
+<p>如上图，我们把recvfrom函数视为系统调用，进程调用recvform函数后就阻塞于此，等待数据报的到达，一直到内核把数据报准备好后，就将数据从内核复制到用户进程，随后用户进程再对这些数据进行处理。</p>
+
+<p>这种模型的好处就是，能够及时获得数据，没有延迟，但是就像上面趣解模型中讲到，对用户来说，这段时间一直要处于等到状态，不能去做其他的事情，在性能方面付出了代价。</p>
+
+<h2 id="非阻塞式i-o模型">非阻塞式I/O模型</h2>
+
+<h3 id="趣解模型-1">趣解模型</h3>
+
+<p>还是去取钱的例子，假设你无法忍受一直在那里排队，而是去旁边的商场逛逛，然后隔一段时间回来看看还有在排队没，有的话再继续去逛逛，直到有一次你回来看到没有人排队了为止。这就是非阻塞式I/O模型。</p>
+
+<h3 id="网络模型-1">网络模型</h3>
+
+<p>进程把一个套接字设置成非阻塞是在通知内核：当所请求的I/O操作非得把本进程投入睡眠才能完成时，不要把本进程投入睡眠，而是返回一个错误。</p>
+
+<p><img src="http://img.blog.csdn.net/20160714101031308" alt="这里写图片描述" /></p>
+
+<p>如上图所示，前三次询问都返回一个错误，即内核没有数据报准备好，到第四次调用recvform函数时，数据被准备好了，它被复制到应用进程缓存区，于是recvform成功返回，应用进程随后处理数据。</p>
+
+<p>这种模型相对于阻塞式来说，</p>
+
+<p>优点在于：应用进程不必阻塞在recvfrom调用中，而是可以去处理其他事情</p>
+
+<p>缺点在于：如趣解模型中所说，你来回跑银行带来了很大的延时，可能在你来回的路上叫到了你的号。在网络模型中即可以表现在任务完成的响应延迟增大了，隔一段时间轮询一次recvform，数据报可能在两次轮询之间的任意时间内准备好，这将会导致整体数据吞吐量的降低。</p>
+
+<h2 id="i-o复用模型">I/O复用模型</h2>
+
+<h3 id="趣解模型-2">趣解模型</h3>
+
+<p>现在，银行都会按一个显示屏，上面会显示轮到几号客户了。这个时候，你就不用每次都去跑进去看还有排队没，而是远远的看看显示屏上轮到你没有，如果显示了你的名字，你就去取钱就行了。这就是I/O复用模型。</p>
+
+<h3 id="网络模型-2">网络模型</h3>
+
+<p>有了I/O复用技术，我们可以调用select或poll函数，阻塞在这两个系统调用中的某一个之上，而不是阻塞在真正的I/O系统调用上。</p>
+
+<p><img src="http://img.blog.csdn.net/20160714101044654" alt="这里写图片描述" /></p>
+
+<p>如上图所示，进程受阻于select调用，等待可能多个套接字中的任一个变为可读。当select返回套接字可读这一条件时，应用进程就调用recvfrom把所读的数据报复制到应用进程缓冲区。</p>
+
+<p>进程阻塞在select，如果进程还有其他的任务的话就能体现到I/O复用技术的好处，那个任务先返回可读条件，就去执行哪个任务。从单一的等待变成多个任务的同时等待。</p>
+
+<p>这种模型较之前的模型来说，可以不必多次轮询内核，而是等到内核的通知。</p>
+
+<h2 id="信号驱动式i-o模型">信号驱动式I/O模型</h2>
+
+<h3 id="趣解模型-3">趣解模型</h3>
+
+<p>你还是不满意银行的服务，虽然不必排队，但你在商场逛的也不放心啊，你还是要盯着显示屏，深怕没有看到显示屏上面你的名字，于是，银行也退出了全新的服务，你去银行取钱的时候，银行目前人多不能及时处理你的业务，而是叫你留下手机号，等到空闲的时候就短信通知你可以去取钱了。这就是信号驱动式I/O模型。</p>
+
+<h3 id="网络模型-3">网络模型</h3>
+
+<p>我们可以用信号，让内核在描述符就绪时发送SIGIO信号告知我们。</p>
+
+<p><img src="http://img.blog.csdn.net/20160714101059902" alt="这里写图片描述" /></p>
+
+<p>如上图所示，进程建立SIGIO的信号处理程序（就要趣解模型中的留下手机号），并通过sigaction系统调用安装一个信号处理函数，该系统调用将立即返回，进程继续工作，知道数据报准备好后，内核产生一个SIGIO信号，告知应用进程以及准备好，于是就在信号处理程序中调用recvfrom读取数据报，并通知主循环数据已准备好待处理，也可以立即通知主循环让他读取数据报。</p>
+
+<p>这种模型的好处就是，在数据报没有准备好的期间，应用进程不必阻塞，继续执行主循环，只要等待来自信号处理函数的通知即可。</p>
+
+<h2 id="异步i-o模型">异步I/O模型</h2>
+
+<h3 id="趣解模型-4">趣解模型</h3>
+
+<p>你细细的想了想自己取钱时为了什么，无非时借给你的朋友，银行都退出了网上银行服务，你只需要知道你的好朋友的银行卡号，然后在网银中申请转账，银行后台会给你处理，然后把钱打到你朋友的账户下面，等这些都处理好后，银行会给你发一条短信，告诉你转账成功，这个时候你就可以跟你的好朋友说，钱已经打给你了。这就是异步I/O模型，取钱借钱的繁琐事就交给银行后台给你处理吧。</p>
+
+<h3 id="网络模型-4">网络模型</h3>
+
+<p>POSIX规范中提供一些函数，这些函数的工作机制是：告知内核启动某个操作，并让内核在整个操作完成后通知我们。
+<img src="http://img.blog.csdn.net/20160714101517763" alt="这里写图片描述" /></p>
+
+<p>如上图所示，我们调用aio_read函数(POSIX异步I/O函数以aio_或lio_开头)，给内核传递描述符，缓冲区指针，缓冲区大小和文件偏移，并告诉内核完成整个操作后通知我们。</p>
+
+<p>不同于信号驱动式I/O模型，信号是在数据已复制到进程缓冲区才产生的。</p>
+
+<h2 id="各种i-o模型的比较">各种I/O模型的比较</h2>
+
+<p>以一张图来说明五种I/O操作的差异：</p>
+
+<p><img src="http://img.blog.csdn.net/20160714101531942" alt="这里写图片描述" /></p>
+
+<p>同步I/O操作：导致请求进程阻塞，直到I/O操作完成</p>
+
+<p>异步I/O操作：不导致进程阻塞</p>
+
+<p>可知，前四种都属于同步I/O操作慢系统都会阻塞与recvfrom操作，而异步I/O不会。</p>
+
+<h1 id="三-select函数">三、select函数</h1>
+
+<p>select函数用于I/O复用，该函数允许进程指示内核等待多个事件中的任何一个发生，并只在有一个或多个事件发生或经历一段指定的事件才唤醒它。</p>
+
+<h2 id="函数原型">函数原型</h2>
+
+<p>它的函数原型时：</p>
+
+<pre><code class="language-cpp">
+int select(int maxfdp1, fd_set *readset, fd_set *writeset , fd_set *exceptset , const struct timeval *timeout);
+
+</code></pre>
+
+<p>对于timeout参数：</p>
+
+<p>(1) timeout==NULL，表示要永远等待下去，直到有一个描述符准备好I/O时才返回</p>
+
+<p>(2) *timeout的值为0，表示不等待，检查描述符就立即返回，这称为轮询。</p>
+
+<p>(2) *timeout的值不为0，表示等待一段固定的时间，再有一个描述符准备好I/O时返回，但是不能超过由该参数制定的时间。</p>
+
+<p>对于readset，writeset和exceptset三个参数：</p>
+
+<p>这三个描述符说明了可读，可写和处于异常条件的描述符集合</p>
+
+<p>对于描述集fd_set结构，提供了如下四个操作函数</p>
+
+<pre><code class="language-cpp">
+#include &lt;sys/select.h&gt;
+
+int FD_ISSET(int fd,fd_set *fdset); //设定描述集中的某个描述符
+
+void FD_CLR(int fd,fd_set *fdset);//关掉描述集中的某个描述符
+
+void FD_SET(int fd,fd_set *fdset);//打开描述集中的某个描述符
+
+void FD_ZERO(fd_set *fdset);//清除集合内所有元素
+
+</code></pre>
+
+<p>对于maxfdp1参数：</p>
+
+<p>指定待测试的描述符个数，它的值时待测试的最大描述符编号加1，即从上面三个描述符集中的最大描述符编号加1。</p>
+
+<p>对于返回值：</p>
+
+<p>select返回值有三种情况：</p>
+
+<p>(1) 返回值为-1时，表示出错，如果在指定的描述符一个都没有准备好时捕捉一个信号，则返回-1</p>
+
+<p>(2) 返回0，表示没有描述符准备好，指定的时间就超过了。</p>
+
+<p>(3) 返回正数，表示已经准备好的描述符个数，在这种情况下，三个描述符集中依旧打开的位对应于已准备好的描述符</p>
+
+<h2 id="使用select函数修改的str-cli函数">使用select函数修改的str_cli函数</h2>
+
+<pre><code class="language-cpp">#include	&quot;unp.h&quot;
+
+
+void
+str_cli(FILE *fp, int sockfd)
+{
+	int			maxfdp1;
+	fd_set		rset;
+	char		sendline[MAXLINE], recvline[MAXLINE];
+
+
+	FD_ZERO(&amp;rset);
+	for ( ; ; ) {
+		FD_SET(fileno(fp), &amp;rset);//标准输入描述符
+		FD_SET(sockfd, &amp;rset);//socket描述符
+		maxfdp1 = max(fileno(fp), sockfd) + 1;//最大描述符编号+1
+		Select(maxfdp1, &amp;rset, NULL, NULL, NULL);//调用select，阻塞于此
+  //如果返回的套接字可读，就用readline读入回射文本
+		if (FD_ISSET(sockfd, &amp;rset)) {	/* socket is readable */
+			if (Readline(sockfd, recvline, MAXLINE) == 0)
+				err_quit(&quot;str_cli: server terminated prematurely&quot;);
+			Fputs(recvline, stdout);
+		}
+  //如果标准输入可读，就先用fgets读入一行文本
+		if (FD_ISSET(fileno(fp), &amp;rset)) {  /* input is readable */
+			if (Fgets(sendline, MAXLINE, fp) == NULL)
+				return;		/* all done */
+			Writen(sockfd, sendline, strlen(sendline));
+		}
+	}
+}
+</code></pre>
+
+<h2 id="批量输入">批量输入</h2>
+
+<p>在上一节提到的str_cli版本中，仍然存在一个问题。假设客户在标准输入中批量输入数据，在输入完最后一个数据后，碰到了EOF，str_cli返回到main函数，main函数随后终止。但是，在这个过程中，标准输入的EOF终止符并不意味着我们也同时完成了从套接字的读入，可能仍有请求在去往服务器的路上，或者仍有应答在返回客户的路上。</p>
+
+<p>原因就处在于此：</p>
+
+<pre><code class="language-cpp">	if (Fgets(sendline, MAXLINE, fp) == NULL)
+				return;		/* all done */
+</code></pre>
+
+<p>当碰到EOF终止符的时候，str_cli函数选择了立即返回，而此时，我们更需要的是找到一个条件来判断套接字的读取是否完成。</p>
+
+<h2 id="shutdown函数">shutdown函数</h2>
+
+<p>shutdown函数提供了关闭TCP连接其中一半的方法，也正是为了解决上一小节发现的问题。</p>
+
+<p>假设在标准输入碰到EOF终止符时，我们只关闭发送这一端，也就是给服务器发送一个FIN，告诉它我们已经完成了数据发送，但是仍然保持套接字描述打开以便读取。</p>
+
+<p>这点跟close函数有点像，但是考虑到close函数有如下两个限制：</p>
+
+<p>(1) close把描述符的引用计数减1，仅在该计数变为0时才关闭该套接字。但是使用shutdown可以不管引用计数就激发TCP的正常连接终止序列</p>
+
+<p>(2) close终止读和写两个方向的数据传送。shutdown只是关闭单方向的读或写。</p>
+
+<p>其函数原型如下：</p>
+
+<pre><code class="language-cpp">int shutdown(int sockfd , int howto);//若成功则返回0，若出错返回-1
+</code></pre>
+
+<p>关于该函数的第二个参数howto：</p>
+
+<p>(1) SHUT_RD 关闭连接的读这一半，套接字中不再有数据可接收，而且套接字接收缓冲区中的现有数据都被丢弃</p>
+
+<p>(2) SHUT_WR 关闭连接的写这一半，对于TCP套接字来说，这称为半关闭，当前留在套接字发送缓冲区的数据将被发送，后跟TCP正常的连接终止序列。</p>
+
+<p>(3) SHUT_RDWR 关闭读半部和写半部，这与调用shutdown两次等效。</p>
+
+<h2 id="str-cli函数再修改版">str_cli函数再修改版</h2>
+
+<pre><code class="language-cpp">#include	&quot;unp.h&quot;
+void
+str_cli(FILE *fp, int sockfd)
+{
+	int			maxfdp1, stdineof;
+	fd_set		rset;
+	char		buf[MAXLINE];
+	int		n;
+
+	stdineof = 0;
+	FD_ZERO(&amp;rset);
+	for ( ; ; ) {
+		if (stdineof == 0)//套接字读取完成标识符
+			FD_SET(fileno(fp), &amp;rset);//关闭select描述符集中的标准输入描述符
+		FD_SET(sockfd, &amp;rset);
+		maxfdp1 = max(fileno(fp), sockfd) + 1;
+		Select(maxfdp1, &amp;rset, NULL, NULL, NULL);
+
+		if (FD_ISSET(sockfd, &amp;rset)) {	/* socket is readable */
+			if ( (n = Read(sockfd, buf, MAXLINE)) == 0) {
+				if (stdineof == 1)
+					return;		/* normal termination */
+				else
+					err_quit(&quot;str_cli: server terminated prematurely&quot;);
+			}
+
+			Write(fileno(stdout), buf, n);
+		}
+
+		if (FD_ISSET(fileno(fp), &amp;rset)) {  /* input is readable */
+			if ( (n = Read(fileno(fp), buf, MAXLINE)) == 0) {//若读取的字节数为0
+				stdineof = 1;//表明套接字读取数据完成
+				Shutdown(sockfd, SHUT_WR);	/* send FIN *///关闭读这一半
+				FD_CLR(fileno(fp), &amp;rset);
+				continue;
+			}
+
+			Writen(sockfd, buf, n);
+		}
+	}
+}
+</code></pre>
+
+<h1 id="四-tcp回射服务器程序-采用select函数">四、TCP回射服务器程序(采用select函数)</h1>
+
+<p>在<a href="http://blog.csdn.net/terence1212/article/details/51881659">【unix网络编程第三版】阅读笔记（四）：TCP客户/服务器实例</a>中我们采用fork生成子进程来处理每个客户的需求。</p>
+
+<p>如今，有了select函数，就不必创建那么多子进程了，避免了为每一个客户创建一个子进程的所有开销，本节就将其改写成任意个客户的单进程版本。</p>
+
+<p>select函数的描述符集中需要存储每个客户的连接套接字。于是我们很容易想到用采用一个数组client[FD_SETSIZE]来保存所有已连接的套接字。</p>
+
+<p>每次有新客户连接的时候，就在client数组中找到第一个可用项来保存该连接套接字。</p>
+
+<p>具体解释见代码注释：</p>
+
+<pre><code class="language-cpp">#include	&quot;unp.h&quot;
+int
+main(int argc, char **argv)
+{
+	int					i, maxi, maxfd, listenfd, connfd, sockfd;
+	int					nready, client[FD_SETSIZE];
+	ssize_t				n;
+	fd_set				rset, allset;
+	char				buf[MAXLINE];
+	socklen_t			clilen;
+	struct sockaddr_in	cliaddr, servaddr;
+
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+
+	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+
+	Listen(listenfd, LISTENQ);
+
+	maxfd = listenfd;		//初始化maxfd，在传入select函数时需要+1
+	maxi = -1;					//记录client数组中最后一个非-1数所占的序号
+	for (i = 0; i &lt; FD_SETSIZE; i++)
+		client[i] = -1;		//初始化client数组，为-1表示该项可用
+	FD_ZERO(&amp;allset);
+	FD_SET(listenfd, &amp;allset);
+
+
+	for ( ; ; ) {
+		rset = allset;	//初始化描述符集
+		nready = Select(maxfd+1, &amp;rset, NULL, NULL, NULL);//注意此处为最大描述符编号+1，返回已准备好的描述符个数
+
+		if (FD_ISSET(listenfd, &amp;rset)) {	//检测到有新客户连接
+			clilen = sizeof(cliaddr);
+			connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;clilen);//连接新客户，获得已连接套接字
+#ifdef	NOTDEF
+			printf(&quot;new client: %s, port %d\n&quot;,
+					Inet_ntop(AF_INET, &amp;cliaddr.sin_addr, 4, NULL),
+					ntohs(cliaddr.sin_port));
+#endif
+
+			for (i = 0; i &lt; FD_SETSIZE; i++)
+				if (client[i] &lt; 0) {//找到第一个可用项
+					client[i] = connfd;	//存储套接字描述符
+					break;
+				}
+			if (i == FD_SETSIZE)//限制最大连接个数
+				err_quit(&quot;too many clients&quot;);
+
+			FD_SET(connfd, &amp;allset);	/* add new descriptor to set */
+			if (connfd &gt; maxfd)
+				maxfd = connfd;		//重置maxfd为最大描述符编号+1
+			if (i &gt; maxi)
+				maxi = i;				//client数组中最后一个描述符所占的序号
+
+			if (--nready &lt;= 0)
+				continue;				//没有已连接套接字了
+		}
+
+		for (i = 0; i &lt;= maxi; i++) {	/* check all clients for data */
+			if ( (sockfd = client[i]) &lt; 0)
+				continue;
+			if (FD_ISSET(sockfd, &amp;rset)) {
+				if ( (n = Read(sockfd, buf, MAXLINE)) == 0) {
+						/*connection closed by client */
+					Close(sockfd);//直接关闭套接字
+					FD_CLR(sockfd, &amp;allset);
+					client[i] = -1;
+				} else
+					Writen(sockfd, buf, n);
+
+				if (--nready &lt;= 0)
+					break;				//没有已连接套接字了
+			}
+		}
+	}
+}
+</code></pre>
+
+<h1 id="五-pselect函数">五、pselect函数</h1>
+
+<p>pselect函数由POSIX发明，是select的变种。</p>
+
+<pre><code class="language-cpp">#include &lt;sys/select.h&gt;
+int pselect(int maxfdp1,fd_set *restrict readfds,fd_set *restrict writefds,fd_set *restrict exceptfds,const struct timespec *restrict tsptr,const sigset_t *restrict sigmask);
+</code></pre>
+
+<p>相对于select函数，pselect函数有如下几点不同：</p>
+
+<p>(1) pselect使用timespec结构，新结构的tv_nsec指定纳秒数，而原结构里的tv_usec指定微妙级</p>
+
+<p>(2) pselect增加了第六个参数：一个指向信号掩码的指针。该参数允许程序先禁止递交某些信号，再测试由这些当前被禁止的信号处理函数设置的全局变量，然后调用pselect，告诉它重新设置信号掩码。</p>
+
+<p>(3)pselect的超时值设为了const，保证了调用pselect不会修改此值。</p>
+
+<h1 id="六-poll函数">六、poll函数</h1>
+
+<p>poll函数的功能与select相似，不过在处理流设备时，它能够提供额外的信息。</p>
+
+<pre><code class="language-cpp">#include &lt;poll.h&gt;
+int poll(struct pollfd *fdarray,nfds_t nfds,int timeout);//若有就绪描述符就返回其数目，如超时则返回0，若出错就返回-1
+
+</code></pre>
+
+<p>对于第一个参数：为指向一个结构数组第一个元素的指针，每个数组元素都是一个pollfd结构，用于指定测试某个给定描述符fd的条件。</p>
+
+<pre><code class="language-cpp">struct pollfd {
+        int   fd;         /* file descriptor */
+        short events;     /* requested events */
+        short revents;    /* returned events */
+};
+</code></pre>
+
+<p>要测试的条件由events成员指定，函数在相应的revents成员中返回该描述符的状态。</p>
+
+<p>这里每个描述符都有两个变量，一个为调用值，一个为返回结果，避免了使用值结果参数。</p>
+
+<p>该结构中events和revents成员所用的常值如下表：</p>
+
+<p>该表中，前四个处理输入，中间三个处理输出，最后三个处理异常。</p>
+
+<p>就TCP/UDP而言，如下几种情况引起poll返回特定的revent</p>
+
+<p>(1) 所有正规TCP数据和所有UDP数据都被认为时普通数据</p>
+
+<p>(2) TCP的带外数据被认为时优先级带数据</p>
+
+<p>(3) 当TCP连接的读半部关闭时，也被认为时普通数据，随后的读操作将返回0</p>
+
+<p>(4) TCP连接存在错误既可认为是普通数据，也可认为时错误，无论哪种情况，随后的读操作都会返回-1，并把errno设为合适的值</p>
+
+<p>(5) 在监听套接字上有新的连接可用既可认为时普通数据，也可认为时优先级数据。</p>
+
+<p>(6) 非阻塞式connect的完成被认为是使相应套接字可写</p>
+
+<p>对于第二个参数nfds：表示结构数组中元素的个数</p>
+
+<p>对于第三个参数timeout：指定poll函数返回前等待多长时间。</p>
+
+<table>
+<thead>
+<tr>
+<th align="left">timeout值</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">INFINT</td>
+<td align="left">永远等待</td>
+</tr>
+
+<tr>
+<td align="left">0</td>
+<td align="left">立即返回，不阻塞进程</td>
+</tr>
+
+<tr>
+<td align="left">大于0</td>
+<td align="left">等待指定数目的毫秒数</td>
+</tr>
+</tbody>
+</table>
+
+<p>在select函数中，FD_SETSIZE以及每个描述符集中最大描述符数目这些都涉及到固定值。但是在poll函数中分配一个pollfd数组并把该数组中元素的数据通知内核成了调用者的责任，内核不再需要知道这些固定大小的数据类型。</p>
+
+<h1 id="七-tcp回射服务器再修改版">七、TCP回射服务器再修改版</h1>
+
+<pre><code class="language-cpp">#include	&quot;unp.h&quot;
+#include	&lt;limits.h&gt;		/* for OPEN_MAX */
+
+int
+main(int argc, char **argv)
+{
+	int					i, maxi, listenfd, connfd, sockfd;
+	int					nready;
+	ssize_t				n;
+	char				buf[MAXLINE];
+	socklen_t			clilen;
+	struct pollfd		client[OPEN_MAX];
+	struct sockaddr_in	cliaddr, servaddr;
+
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+
+	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+
+	Listen(listenfd, LISTENQ);
+
+	client[0].fd = listenfd;
+	client[0].events = POLLRDNORM;
+	for (i = 1; i &lt; OPEN_MAX; i++)//由调用者指定OPEN_MAX
+		client[i].fd = -1;		//初始化为-1，表示可用
+	maxi = 0;				//client数组中已用项的最大序号
+	for ( ; ; ) {
+		nready = Poll(client, maxi+1, INFTIM);
+
+		if (client[0].revents &amp; POLLRDNORM) {//新客户连接
+			clilen = sizeof(cliaddr);
+			connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;clilen);//返回已连接客户套接字
+#ifdef	NOTDEF
+			printf(&quot;new client: %s\n&quot;, Sock_ntop((SA *) &amp;cliaddr, clilen));
+#endif
+
+			for (i = 1; i &lt; OPEN_MAX; i++)//与select不同，这里的最大值均由调用者指定
+				if (client[i].fd &lt; 0) {//找到第一个可用项
+					client[i].fd = connfd;	//保存已连接套接字描述符
+					break;
+				}
+			if (i == OPEN_MAX)
+				err_quit(&quot;too many clients&quot;);
+
+			client[i].events = POLLRDNORM;
+			if (i &gt; maxi)
+				maxi = i;			//更新已用项的最大序号值
+
+			if (--nready &lt;= 0)
+				continue;			//没有已连接套接字了
+		}
+
+		for (i = 1; i &lt;= maxi; i++) {	//检查client数组中所有项
+			if ( (sockfd = client[i].fd) &lt; 0)
+				continue;
+			//有些实现在一个连接上接收到RST时返回的时POLLERR事件，而其他实现返回的只是POLLRDNORM事件
+			if (client[i].revents &amp; (POLLRDNORM | POLLERR)) {//查看返回的revents状态
+				if ( (n = read(sockfd, buf, MAXLINE)) &lt; 0) {
+					if (errno == ECONNRESET) {
+							//由用户来关闭该套接字
+#ifdef	NOTDEF
+						printf(&quot;client[%d] aborted connection\n&quot;, i);
+#endif
+						Close(sockfd);
+						client[i].fd = -1;
+					} else
+						err_sys(&quot;read error&quot;);
+				} else if (n == 0) {
+						//由用户来关闭该套接字
+#ifdef	NOTDEF
+					printf(&quot;client[%d] closed connection\n&quot;, i);
+#endif
+					Close(sockfd);
+					client[i].fd = -1;
+				} else
+					Writen(sockfd, buf, n);
+
+				if (--nready &lt;= 0)
+					break;				//没有已连接套接字了
+			}
+		}
+	}
+}
+</code></pre>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">Unix网络编程</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2016/07/11/unixnetworkprogrammingpart4/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">UNIX网络编程之四：TCP客户-服务器示例</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2016/07/31/treetraversalmethod/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">全面剖析树的各类遍历方法</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Spacevim on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/spacevim/</link>
+    <description>Recent content in Spacevim on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Fri, 27 Jul 2018 22:42:05 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/spacevim/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>SpaceVim Tutorial On Mac</title>
+      <link>https://zcheng.ren/2018/07/27/spacevimtutorial/</link>
+      <pubDate>Fri, 27 Jul 2018 22:42:05 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2018/07/27/spacevimtutorial/</guid>
+      <description>&lt;p&gt;最近试用了&lt;a href=&#34;https://spacevim.org/&#34;&gt;SpaceVim&lt;/a&gt;，虽然官网说out of the box.但是，我觉得还是有一些地方不符合我个人的设置，这里简要的记录一下，如果你也有用着别扭的地方，可以拿这篇博客做个参考。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Linux on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/linux/</link>
+    <description>Recent content in Linux on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Fri, 24 Nov 2017 20:03:55 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/linux/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>iterm2下管理ssh的几点经验</title>
+      <link>https://zcheng.ren/2017/11/24/sshforwardagent/</link>
+      <pubDate>Fri, 24 Nov 2017 20:03:55 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2017/11/24/sshforwardagent/</guid>
+      <description>&lt;p&gt;工作了之后经常和服务器打交道，自己也搭了好几个虚拟机用于开发。那么，问题来了：如何有效地管理ssh呢？&lt;/p&gt;
+
+&lt;p&gt;一开始，我秉承着“好记性不如烂笔头的”的执念，把每个虚拟机的登录方式记在笔记上，每次登录的时候都要先去印象笔记中搜一下，然后复制粘贴。可想而知这样的效率有多低。为了更好地投身工作，节约ssh浪费的时间，我开始搜寻更有效率的方法。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>ubuntu16.04主题美化和软件推荐</title>
+      <link>https://zcheng.ren/2016/08/21/ubuntusoftware/</link>
+      <pubDate>Sun, 21 Aug 2016 13:20:19 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/21/ubuntusoftware/</guid>
+      <description>&lt;p&gt;前几天把ubuntu从15.10更新到了16.10，在网上看到有很多直接更新出问题的，正好赶上换SSD，于是采用全新安装，之前用ubuntu的时候装软件最让人头疼了，这回又得头疼一次了！！
+索性把他记录下来，既能方便以后重装，又能与大家分享一下！&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>GDB调试工具入门</title>
+      <link>https://zcheng.ren/2016/08/15/gdbdebug/</link>
+      <pubDate>Mon, 15 Aug 2016 11:20:19 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/15/gdbdebug/</guid>
+      <description>&lt;p&gt;从windows转到linux下已经有一段时间了，每次刷算法题碰到问题需要调试的时候，就分分钟想关机，切换到windows上调试。于是，花了一点时间来搜索一下linux下常见的调试工具，这不搜不知道，一搜吓一跳，居然差点错过了这么好的调试利器GDB。上手十分简单，几分钟就可以开开心心调试你的代码了。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>UNIX网络编程之四：TCP客户-服务器示例</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="UNIX网络编程之四：TCP客户-服务器示例" />
+<meta property="og:description" content="
+本篇博客主要记录一个完整的TCP客户/服务器实例的编写，以及从这个实例中引发的对僵死进程的处理等问题。
+
+
+一、TCP客户/服务器功能需求
+
+本实例完成以下功能：
+
+
+客户从标准输入读入一行文本，并写给服务器
+服务器从网络输入中读入这行文本，并回射给客户
+客户从网路输入读入这行回射文本，并显示在标准输入
+
+
+需要用到的函数：
+
+
+套接字编程基本函数(socket,bind,listen,accept,connect,close等)，完成套接字编程
+标准I/O库函数fputs和fgets，完成输入和输出
+read，writen，readline函数，完成数据的传输
+fork函数，完成并行服务器的编写
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2016/07/11/unixnetworkprogrammingpart4/" /><meta property="article:published_time" content="2016-07-11T16:10:59&#43;08:00"/>
+<meta property="article:modified_time" content="2016-07-11T16:10:59&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="UNIX网络编程之四：TCP客户-服务器示例"/>
+<meta name="twitter:description" content="
+本篇博客主要记录一个完整的TCP客户/服务器实例的编写，以及从这个实例中引发的对僵死进程的处理等问题。
+
+
+一、TCP客户/服务器功能需求
+
+本实例完成以下功能：
+
+
+客户从标准输入读入一行文本，并写给服务器
+服务器从网络输入中读入这行文本，并回射给客户
+客户从网路输入读入这行回射文本，并显示在标准输入
+
+
+需要用到的函数：
+
+
+套接字编程基本函数(socket,bind,listen,accept,connect,close等)，完成套接字编程
+标准I/O库函数fputs和fgets，完成输入和输出
+read，writen，readline函数，完成数据的传输
+fork函数，完成并行服务器的编写
+"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">UNIX网络编程之四：TCP客户-服务器示例</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-07-11T16:10:59">July 11, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#一-tcp客户-服务器功能需求">一、TCP客户/服务器功能需求</a></li>
+<li><a href="#二-tcp回射服务器程序清单">二、TCP回射服务器程序清单</a></li>
+<li><a href="#三-tcp回射客户端程序清单">三、TCP回射客户端程序清单</a></li>
+<li><a href="#四-正常启动">四、正常启动</a></li>
+<li><a href="#五-正常终止">五、正常终止</a></li>
+<li><a href="#六-posix信号处理">六、POSIX信号处理</a>
+<ul>
+<li><a href="#signal函数">signal函数</a></li>
+<li><a href="#posix信号语义">POSIX信号语义</a></li>
+</ul></li>
+<li><a href="#七-处理sigchld信号">七、处理SIGCHLD信号</a>
+<ul>
+<li><a href="#处理僵死进程">处理僵死进程</a></li>
+<li><a href="#处理被中断的系统调用">处理被中断的系统调用</a></li>
+</ul></li>
+<li><a href="#八-wait和waitpid函数">八、wait和waitpid函数</a>
+<ul>
+<li><a href="#wait和waitpid的区别">wait和waitpid的区别</a></li>
+<li><a href="#三种情况的总结">三种情况的总结</a></li>
+</ul></li>
+<li><a href="#九-服务器进程终止">九、服务器进程终止</a></li>
+<li><a href="#十-sigpipe信号">十、SIGPIPE信号</a></li>
+<li><a href="#十一-服务器主机崩溃">十一、服务器主机崩溃</a></li>
+<li><a href="#十二-服务器主机崩溃后重启">十二、服务器主机崩溃后重启</a></li>
+<li><a href="#十三-服务器关机">十三、服务器关机</a></li>
+<li><a href="#十四-客户和服务器传送的数据类型">十四、客户和服务器传送的数据类型</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<blockquote>
+<p>本篇博客主要记录一个完整的TCP客户/服务器实例的编写，以及从这个实例中引发的对僵死进程的处理等问题。</p>
+</blockquote>
+
+<h1 id="一-tcp客户-服务器功能需求">一、TCP客户/服务器功能需求</h1>
+
+<p>本实例完成以下功能：</p>
+
+<ul>
+<li>客户从标准输入读入一行文本，并写给服务器</li>
+<li>服务器从网络输入中读入这行文本，并回射给客户</li>
+<li>客户从网路输入读入这行回射文本，并显示在标准输入</li>
+</ul>
+
+<p>需要用到的函数：</p>
+
+<ul>
+<li>套接字编程基本函数(socket,bind,listen,accept,connect,close等)，完成套接字编程</li>
+<li>标准I/O库函数fputs和fgets，完成输入和输出</li>
+<li>read，writen，readline函数，完成数据的传输</li>
+<li>fork函数，完成并行服务器的编写</li>
+</ul>
+
+<h1 id="二-tcp回射服务器程序清单">二、TCP回射服务器程序清单</h1>
+
+<pre><code class="language-cpp">#include &lt;unp.h&gt;
+#include &lt;stdio.h&gt;
+void str_echo(int sockfd);//回射函数
+
+
+int main(int argc , char **argv)
+{
+    int listenfd,connfd;
+    pid_t pid;
+    socklen_t clilen;
+    struct sockaddr_in cliaddr,servaddr;
+    //创建套接字
+    listenfd = Socket(AF_INET,SOCK_STREAM,0);
+    //初始化套接字地址
+    bzero(&amp;servaddr,sizeof(servaddr));
+    servaddr.sin_port = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);//通配地址
+    servaddr.sin_port = htons(SERV_PORT);
+    //将本地协议地址赋值给套接字
+    Bind(listenfd,(SA *) &amp;servaddr,sizeof(servaddr));
+    //监听
+    Listen(listenfd,LISTENQ);
+    while(1)
+    {
+        clilen = sizeof(cliaddr);//客户端套接字地址长度
+        connfd = Accept(listenfd,(SA *)&amp;cliaddr,&amp;clilen);//接受客户端的信息
+        if((pid = Fork())==0)//调用子进程去处理与客户的通信
+        {
+            Close(listenfd);//listenfd套接字的引用技术减1
+            str_echo(connfd);//消息回射函数
+            exit(0);    
+        }
+        Close(connfd);//connfd客户套接字引用计数减1
+    }
+}
+void str_echo(int sockfd)
+{
+    ssize_t n;
+    char buf[MAXLINE];
+again:
+    while((n=read(sockfd,buf,MAXLINE))&gt;0)//读取客户传来的消息
+    {
+        Write(sockfd,buf,n);//回传给客户
+    }    
+    if(n&lt;0 &amp;&amp; errno == EINTR)
+        goto again;
+    else if(n&lt;0)
+        err_sys(&quot;str_echo:read error&quot;);
+}
+</code></pre>
+
+<h1 id="三-tcp回射客户端程序清单">三、TCP回射客户端程序清单</h1>
+
+<pre><code class="language-cpp">#include &lt;unp.h&gt;
+void str_cli(FILE* fp, int sockfd);
+
+int main(int argc,char **argv)
+{
+    int sockfd;
+    struct sockaddr_in servaddr;
+    if(argc != 2){
+        err_quit(&quot;usage:tcpcli &lt;IPaddress&gt;&quot;);
+    }
+    //创建套接字
+    sockfd = Socket(AF_INET , SOCK_STREAM , 0);
+    //初始化套接地地址
+    bzero(&amp;servaddr,sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(SERV_PORT);
+    Inet_pton(AF_INET,argv[1],&amp;servaddr.sin_addr);//将输入的点分十进制串转换成网络字节序二进制值
+    Connect(sockfd,(SA*)&amp;servaddr , sizeof(servaddr));//连接服务器
+    str_cli(stdin,sockfd);//客户处理函数
+    exit(0);
+}
+void str_cli(FILE *fp,int sockfd)
+{
+    char sendline[MAXLINE], recvline[MAXLINE];
+    //获取客户端标准输入的字节
+    while(Fgets(sendline,MAXLINE,fp)!=NULL)
+    {
+        //将标准输入读入的字节传给服务器
+        Write(sockfd,sendline,strlen(sendline));
+        //读取服务器回射的字节
+        if(Readline(sockfd,recvline,MAXLINE)==0)
+        {
+            err_quit(&quot;strcli:server terminated prematurely&quot;);
+        }
+        //将获取的服务器回射字节打印到标准输出
+        Fputs(recvline,stdout);
+    }
+}
+</code></pre>
+
+<h1 id="四-正常启动">四、正常启动</h1>
+
+<p>写完上述代码后，首先运行服务器端程序，正常启动后，它调用socket，bind，listen和accept，并阻塞于accept调用。让我们运行netstat程序来检查服务器监听套接字的状态。</p>
+
+<pre><code class="language-cpp">～$netstat -a
+Proto Recv-Q Send-Q Local Address           Foreign Address         State          
+tcp        0      0 *:9877                  *:*                     LISTEN
+</code></pre>
+
+<p>这个正是该服务器建立起的套接字，*:9877表示一个为0的IP地址(INADDR_ANY，通配地址)，然后内核分配的9877端口号。此套接字处于LISTEN状态，即阻塞于accept调用，等待客户连接。
+接着，我们启动客户端程序，并指定服务器主机的IP地址为127.0.0.1，</p>
+
+<pre><code class="language-cpp"># ./tcpcli 127.0.0.1
+</code></pre>
+
+<p>客户端依次调用socket，connect，后者引起TCP的三次握手过程，当三次握手完成后，客户中的connect和服务器的accept均返回，连接于是建立。接着发生以下步骤：</p>
+
+<p>(1) 客户调用str_cli函数，该函数阻塞于fgets调用，然后等待客户输入一行文本</p>
+
+<p>(2) 当服务器的accept返回时，服务器接着调用fork函数，再由子进程调用str_echo函数。该函数调用readline，readline调用read，而read在等待客户送入一行文本期间阻塞</p>
+
+<p>(3) 另一方面，服务器父进程再次调用accept并阻塞，等待下一个客户连接。</p>
+
+<p>此时的网络状态如下：</p>
+
+<pre><code class="language-cpp">Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0      0 localhost:56490         localhost:9877          ESTABLISHED
+tcp        0      0 localhost:9877          localhost:56490         ESTABLISHED
+tcp        0      0 *:9877                  *:*                     LISTEN
+</code></pre>
+
+<p>如上，列出了三个套接字状态，第一个对应于客户进程的套接字，它的本地端口号为56490；第二个对应于服务器子进程的套接字，本地端口号为9877；第三个为服务器父进程则继续监听客户。</p>
+
+<h1 id="五-正常终止">五、正常终止</h1>
+
+<p>至此，连接已经建立，在客户端键入一行文本后，都会被服务器回射回来，然后用标准输出。如下：</p>
+
+<pre><code class="language-cpp">root@zc-Inspiron-N4010:/home/zc/Documents/unp# ./tcpcli 127.0.0.1
+hello,world
+hello,world
+goodbye
+goodbye
+nice to meet you
+nice to meet you
+</code></pre>
+
+<p>接着我们键入ctrl+D，代表终端EOF字符，以终止客户。此刻调用netstat会得到如下一行：</p>
+
+<pre><code class="language-cpp">tcp        0      0 localhost:56490         localhost:9877          TIME_WAIT  
+//监听套接字
+tcp        0      0 *:9877                  *:*                     LISTEN
+</code></pre>
+
+<p>之前连接的客户进入TIME_WAIT状态，而服务器还在等待下一个客户的连接。</p>
+
+<p>下面为正常终止客户和服务器的步骤:</p>
+
+<p>(1) 当键入EOF字符时，fgets返回一个空指针，于是str_cli函数返回</p>
+
+<p>(2) 当str_cli返回到客户的main函数，main通过exit终止</p>
+
+<p>(3) 进程终止处理的部分工作时关闭所有打开的描述符，因此客户打开的套接字由内核关闭。这会导致客户TCP发送一个FIN给服务器，服务器TCP则以ACP响应，至此，服务器套接字进入CLOSE_WAIT状态，客户套接字处于FIN_WAIT_2状态</p>
+
+<p>(4) 当服务器接受FIN时，服务器子进程阻塞于readline调用，于是readline返回0，str_echo函数返回服务器子进程的main函数</p>
+
+<p>(5) 服务器子进程通过调用exit来终止</p>
+
+<p>(6) 服务器打开的所有描述符随之关闭，由子进程来关闭已连接套接字会引发TCP连接终止序列的最后两个分节：一个从服务器到客户的FIN，一个从客户到服务器的ACK。至此，连接完全终止，客户套接字进入TIME_WAIT状态。</p>
+
+<p>(7) 进程终止处理的另一部分内容：在服务器子进程终止时，给父进程发送一个SIGCHLD信号。本例中父进程未对此信号进程处理，子进程于是进入僵死状态。如下，所示</p>
+
+<pre><code class="language-cpp"># ps -t pts/3 -o pid,ppid,tty,stat,args,wchan
+ 6057  6055 pts/3    Z   [tcpsrv] &lt;defunct&gt;          exit
+</code></pre>
+
+<h1 id="六-posix信号处理">六、POSIX信号处理</h1>
+
+<p>信号是告知某个进程发生了某个事件的通知，有时也叫做软件中断。信号通常时异步发生的。</p>
+
+<p>信号可以：
+(1) 由一个进程发给另一个进程</p>
+
+<p>(2)由内核发给某个进程</p>
+
+<p>每个信号都有一个与之关联的处置(disposition)。通常有如下三种选择：</p>
+
+<p>(1) 通过调用信号处理函数，用来捕获特定的信号。有两个信号SIGKILL和SIGSTOP</p>
+
+<p>(2) 通过设置某个信号为SIG_IGN来忽略它。SIGKILL和SIGSTOP不能被忽略</p>
+
+<p>(3) 通过设置某个信号为SIG_DFL来启用它的默认处置。</p>
+
+<h2 id="signal函数">signal函数</h2>
+
+<p>建立信号处置的POSIX方法就是调用sigaction函数，不过这有点复杂，因为该函数的参数之一是我们必须分配并填写结构。简单的方法时调用signal函数，其第一个参数是信号名，第二个参数或为指向函数的指针，或为常值SIG_IGN或SIG_DFL。调用如下：</p>
+
+<pre><code class="language-cpp">signal(SIGCHLD,SIG_DFL);//代表捕捉SIGCHLD信号并启用默认处置。
+</code></pre>
+
+<h2 id="posix信号语义">POSIX信号语义</h2>
+
+<p>符合POSIX的系统上的信号处理总结为一下几点：</p>
+
+<p>(1) 一旦安装了信号处理函数，它便一直安装着。</p>
+
+<p>(2) 在一个信号处理函数运行期间，正被递交的信号时阻塞的，而且，安装处理函数时在传递给sigaction函数的sa_mask信号集中指定的任何额外信号也被阻塞。</p>
+
+<p>(3) 如果一个信号在被阻塞期间产生了一次或者多次，那么该信号被解阻塞之后通常只递交一次。<strong>Unix信号默认时不排队的</strong></p>
+
+<h1 id="七-处理sigchld信号">七、处理SIGCHLD信号</h1>
+
+<p>设置僵死(zombie)状态的目的是维护子进程的信息，以便父进程在以后某个时候获取，这些信息包括子进程的进程ID，终止状态以及资源利用信息(CPU时间，内存是用量等等)。</p>
+
+<p>如果一个进程终止，而该进程有子进程处于僵死状态，那么它的所有僵死子进程的父进程ID都被重置为1(init进程)，继承这些子进程的init进程将清理他们。</p>
+
+<h2 id="处理僵死进程">处理僵死进程</h2>
+
+<p>留存僵死进程会占用内核中的空间，最终可能导致我们耗尽进程资源。
+无论何时，我们fork子进程都得wait它们！
+于是我们必须调用信号处理函数(在LISTEN之后添加如下函数)，并在函数体内调用wait。</p>
+
+<pre><code class="language-cpp">Signal(SIGCHLD,sig_child); //第二个参数为我们定义的信号处理函数的函数指针
+void sig_child(int signo)
+{
+    pid_t pid ;
+    int stat;
+    pid = wait(&amp;stat);//调用wait函数
+    printf(&quot;child %d terminated\n&quot;, pid);
+    return;
+}
+</code></pre>
+
+<p>运行以上程序得到输出：</p>
+
+<pre><code class="language-cpp">child 6625 terminated
+</code></pre>
+
+<p>具体步骤如下：</p>
+
+<p>(1) 当键入EOF字符来终止客户，客户TCP发送一个FIN给服务器，服务器响应以一个ACK</p>
+
+<p>(2) 收到客户的FIN导致服务器TCP递送一个EOF给子进程阻塞中的readline，从而子进程终止</p>
+
+<p>(3) 当SIGCHLD信号递交时，父进程阻塞于accept函数，sig_chld函数执行，其wait调用取到子进程的PID和终止状态，随后printf调用，最后返回</p>
+
+<p>(4) 该信号在父进程阻塞于慢系统调用accept时由父进程捕获的，内核就会使accept返回一个EINTR错误(被中断的系统调用)，而父进程不出理该错误(源代码中未处理该错误)，于是中止！</p>
+
+<h2 id="处理被中断的系统调用">处理被中断的系统调用</h2>
+
+<p>慢系统调用适用于那些可能永远阻塞的系统调用。永远阻塞的系统调用是指调用永远无法返回，多数网络支持函数都属于这一类。如accept函数，如果没有客户连接到服务器，那么服务器的accept调用就没有返回；再比如read函数，如果客户从未发送过一行要求服务器回射的文本，那么服务器的read调用将永远不会返回，等等
+慢系统调用可以被永久阻塞，包括一下几个类别(此处摘选至APUE)：</p>
+
+<p>(1)读写‘慢’设备（包括pipe，终端设备，网络连接等）。读时，数据不存在，需要等待；写时，缓冲区满或其他原因，需要等待。读写磁盘文件一般不会阻塞。</p>
+
+<p>(2)当打开某些特殊文件时，需要等待某些条件，才能打开。例如：打开中断设备时，需要等到连接设备的modem响应才能完成。</p>
+
+<p>(3)pause和wait函数。pause函数使调用进程睡眠，直到捕获到一个信号。wait等待子进程终止。</p>
+
+<p>(4)某些ioctl操作。</p>
+
+<p>(5)某些IPC操作。</p>
+
+<p>适用于慢系统调用的基本规则：当阻塞于某个慢系统调用的一个进程捕获某个信号且相应信号处理函数返回时，该系统调用可能返回一个EINTR错误。
+例如：</p>
+
+<pre><code class="language-cpp">for(;;){
+    clilen  = sizeof(cliaddr);
+    if((connfd = accept(listenfd,(SA*)&amp;addcli,&amp;clilen))&lt;0){
+        if(errno == EINTR){//返回一个EINTR错误，重启被中断的系统调用
+            continue;//继续for循环
+        }
+        else
+            err_sys(&quot;accepted error&quot;);
+    }
+}
+</code></pre>
+
+<p>对于accept以及诸如read，write，select和open之类的函数来说，可以重启被中断的系统调用。
+不过，connect函数不能重启，如果该函数返回EINTR，我们不能再次调用它，否则将立即返回一个错误。当connect呗一个捕获的信号中断而且不自动重启时，我们必须调用select来等待连接完成。</p>
+
+<h1 id="八-wait和waitpid函数">八、wait和waitpid函数</h1>
+
+<p>调用wait函数来处理已终止的子进程，函数原型如下：</p>
+
+<pre><code class="language-cpp">#include &lt;sys/wait.h&gt;
+//此函数均返回两个值：已终止子进程的进程ID号，以及通过指针statloc返回的子进程中止状态。
+pid_t wait(int *statloc);
+pid_t waitpid(pid_t pid , int *statloc , int options);//若成功则返回子进程ID，若出错则返回0或-1
+</code></pre>
+
+<p>需要说明一点：如果调用wait的进程没有已终止的子进程，不过有一个或者多个子进程仍在执行，那么wait将阻塞到现有子进程的第一个终止为止。</p>
+
+<h2 id="wait和waitpid的区别">wait和waitpid的区别</h2>
+
+<p>由于Unix信号一般时不排队的，所以当多个客户同时终止连接时，就会产生多个僵死进程，而wait函数只能处理其中一个。
+这时候，就需要调用waitpid函数，我们采用在一个循环中调用waitpid，以获取所有已终止子进程的状态。如下代码：</p>
+
+<pre><code class="language-cpp">void sig_child(int signo)
+{
+    pid_t pid ;
+    int stat;
+    //第一个参数为-1：表示等到第一个终止的子进程
+    //第三个参数指定为WHOCHANG，它告知waitpid在有尚未终止的子进程在运行时不要阻塞
+    while((pid = waitpid(-1, &amp;stat , WHOHANG))&gt;0)  {//调用waitpid函数
+        printf(&quot;child %d terminated\n&quot;, pid);
+    }
+    return;
+}
+</code></pre>
+
+<h2 id="三种情况的总结">三种情况的总结</h2>
+
+<p>(1) 当fork子进程时，必须捕获SIGCHLD信号</p>
+
+<p>(2) 当捕获信号时，必须处理中断的系统调用</p>
+
+<p>(3) SIGCHLD的信号处理函数必须正确编写，应使用waitpid函数以免留下僵死进程。</p>
+
+<p>到目前为止，完整的客户端程序如下：</p>
+
+<pre><code class="language-cpp">#include &lt;unp.h&gt;
+#include &lt;stdio.h&gt;
+void str_echo(int sockfd);//回射函数
+void sig_chld(int signo);
+int main(int argc , char **argv)
+{
+    int listenfd,connfd;
+    pid_t pid;
+    socklen_t clilen;
+    struct sockaddr_in cliaddr,servaddr;
+    //创建套接字
+    listenfd = Socket(AF_INET,SOCK_STREAM,0);
+    //初始化套接字地址
+    bzero(&amp;servaddr,sizeof(servaddr));
+    servaddr.sin_port = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);//通配地址
+    servaddr.sin_port = htons(SERV_PORT);
+    //将本地协议地址赋值给套接字
+    Bind(listenfd,(SA *) &amp;servaddr,sizeof(servaddr));
+    //监听
+    Listen(listenfd,LISTENQ);
+    Signal(SIGCHLD,sig_chld);
+    while(1)
+    {
+        clilen = sizeof(cliaddr);//客户端套接字地址长度
+        if((connfd = accept(listenfd,(SA*)&amp;addcli,&amp;clilen))&lt;0){//接受客户端的消息
+        if(errno == EINTR){//当返回一个EINTR错误
+            continue;//继续for循环,重启被中断的系统调用
+        }
+        else
+            err_sys(&quot;accepted error&quot;);
+        if((pid = Fork())==0)//调用子进程去处理与客户的通信
+        {
+            Close(listenfd);//listenfd套接字的引用技术减1
+            str_echo(connfd);//消息回射函数
+            exit(0);
+        }
+        Close(connfd);//connfd客户套接字引用计数减1
+    }
+}
+void sig_child(int signo)
+{
+    pid_t pid ;
+    int stat;
+    //第一个参数为-1：表示等到第一个终止的子进程
+    //第三个参数指定为WHOCHANG，它告知waitpid在有尚未终止的子进程在运行时不要阻塞
+    while((pid = waitpid(-1, &amp;stat , WHOHANG))&gt;0)  {//调用waitpid函数
+        printf(&quot;child %d terminated\n&quot;, pid);
+    }
+    return;
+}
+void str_echo(int sockfd)
+{
+    ssize_t n;
+    char buf[MAXLINE];
+again:
+    while((n=read(sockfd,buf,MAXLINE))&gt;0)//读取客户传来的消息
+    {
+        Write(sockfd,buf,n);//回传回去
+    }
+    if(n&lt;0 &amp;&amp; errno == EINTR)
+        goto again;
+    else if(n&lt;0)
+        err_sys(&quot;str_echo:read error&quot;);
+}
+</code></pre>
+
+<h1 id="九-服务器进程终止">九、服务器进程终止</h1>
+
+<p>本节讨论当服务器子进程意外崩溃的情况下，客户进程会发生什么。</p>
+
+<p>(1) 首先正常启动服务器和客户程序，并测试一行文本可以由服务器回射给客户。</p>
+
+<p>(2) 然后找到服务器子进程的进程ID，使用如下命令kill掉<code>sudo kill XXXXX</code>，此时，子进程中左右打开的套接字描述符都被关闭，这就导致向客户发出一个FIN，而客户TCP则响应一个ACK。</p>
+
+<p>(3) SIGCHLD信号被发送给服务器父进程，并得到正确处理，即处理僵死进程</p>
+
+<p>(4) 客户此时正阻塞在fgets调用上，等待从终端接受一行文本，当我们再键入一行时，会出现如下现象：</p>
+
+<pre><code class="language-cpp">root@zc-Inspiron-N4010:/home/zc/Documents/unp# ./tcpcli 127.0.0.1      //启动客户
+hello        //测试
+hello        //正常回射
+            //此处找到服务器子进程的进程ID，执行sudo kill XXXX杀死该进程
+line        //再键入一行文本
+strcli:server terminated prematurely //出错信息：服务器过早终止
+</code></pre>
+
+<p>(5) 我们可以分析，当键入最后一行时，str_cli调用writen，客户TCP接着把数据发送给服务器，之所以可以这么做，是因为客户TCP接收到FIN只是表示服务器进程已关闭了连接的服务器端，从而不再往其中发送数据，FIN并没有告知客户TCP服务器进程已经中止。</p>
+
+<p>当服务器接收到来自客户的数据时，既然先前打开的那个套接字已经关闭，就返回一个RST。</p>
+
+<p>(6) 然后客户看不到这个RST，于是继续调用readline，并且由于之前接受的FIN，所调用的readline立即返回0，客户此时并未预期收到EOF，于是弹出出错消息：server terminated prematurely服务器过早终止</p>
+
+<p>(7) 当客户终止时，它所有打开的描述符都被关闭。</p>
+
+<h1 id="十-sigpipe信号">十、SIGPIPE信号</h1>
+
+<p>当客户不理会readline函数返回的错误，反而写入更多的数据到服务器上，如客户可能读回任何数据之前执行两次针对服务器的写操作，而RST是由其中一个写操作引发的。此时会发生什么？
+当一个进程向某个已收到RST的套接字执行写操作时，内核向该进程发送一个SIGPIPE信号。该信号的默认行为是终止进程。
+不管该进程时捕获了该信号并从信号处理函数返回，还是简单的忽略，第二次写操作都将返回EPIPE错误。
+测试代码：</p>
+
+<pre><code class="language-cpp">void str_cli(FILE *fp,int sockfd)
+{
+    char sendline[MAXLINE], recvline[MAXLINE];
+    //获取客户端标准输入的字节
+    while(Fgets(sendline,MAXLINE,fp)!=NULL)
+    {
+        Write(sockfd,sendline,1);
+        //将标准输入读入的字节传给服务器
+        sleep(1);
+        Write(sockfd,sendline+1,strlen(sendline)-1);//连续写两次来测试是否产生SIGPIPE信号
+        //读取服务器回射的字节
+        if(Readline(sockfd,recvline,MAXLINE)==0)
+        {
+            err_quit(&quot;strcli:server terminated prematurely&quot;);
+        }
+        //将获取的服务器回射字节打印到标准输出
+        Fputs(recvline,stdout);
+    }
+}
+/**********测试输出**************/
+unp# ./tcpcli 127.0.0.1
+hello  //键入第一行文本
+hello    ﻿    //正常回射
+    ﻿    ﻿    ﻿ //此处杀死服务器子进程
+bye    ﻿    ﻿  //然后继续键入此行，发现并没有任何输出
+Broken pipe  //此行由shell显示，告诉我们客户因为SIGPIPE信号而死亡了
+</code></pre>
+
+<h1 id="十一-服务器主机崩溃">十一、服务器主机崩溃</h1>
+
+<p>本小节讨论服务器主机崩溃的情况下，客户端会发生什么
+当服务器主机崩溃(注意不是此处不是服务器主机关机)，客户端并不知情，所有客户端端连续发送数据，试图从服务器端接受一个ACK。
+这时，可以看出TCP的重传机制，客户端总共重传该数据12次，共等待大约9分钟才放弃重传。当客户TCP最后终于放弃时，服务器主机并没有重新启动，或者如果时服务器主机未崩溃但是从网络上不可达，则返回ETIMEOUT错误；然而如果时中间某个路由器判定服务器主机不可达，从而响应一个“destination unreachable”目的地不可达ICMP信息，则返回的错误时EHOSTUNREACH或者ENETUNREACH。</p>
+
+<h1 id="十二-服务器主机崩溃后重启">十二、服务器主机崩溃后重启</h1>
+
+<p>当服务器崩溃后重启(9分钟内)，它的TCP丢失了崩溃前的所有连接信息，因此服务器TCP对于所收到的来自客户的数据分节响应一个RST。
+当客户TCP收到该RST时，客户正阻塞与readline调用，导致该调用返回ECONNRESET错误。</p>
+
+<h1 id="十三-服务器关机">十三、服务器关机</h1>
+
+<p>Unix系统关机时，init进程通常先给所有进程发送SIGTERM信号，等待一段时间后，给所有仍在运行的进程发送SIGKILL信号，这么做留给所有运行的进程一小段时间来清除和终止。
+当服务器子进程终止时，它所有打开着的描述符都被关闭，随后发生和服务器主机崩溃一样的效果。</p>
+
+<h1 id="十四-客户和服务器传送的数据类型">十四、客户和服务器传送的数据类型</h1>
+
+<p>在客户和服务器间传送文本串，不论客户和服务器主机的字节序如何，都能很好的工作。
+在客户和服务器间传送二进制结构，如下结构体：</p>
+
+<pre><code class="language-cpp">struct args{
+  long arg1;
+  long arg2;
+};
+struct result{
+  long sum;
+};
+</code></pre>
+
+<p>socket不提倡传送这种二进制结构，因为如果客户或者服务器端某一方不支持这种数据结构，或字节序不一样，支持的long的字节不一样，这都会导致异常的现象
+所以在socket传输时，应当把所有的二进制结构转换成字符型文本串，再进行传输。
+或者，还有一种解决办法：显示的定义所支持的数据类型的二进制格式(位数，大端或小端字节序)，并以这样的格式在客户与服务器之间传递所有数据。</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" rel="tag">Unix网络编程</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2016/07/06/unixnetworkprogrammingpart2/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">UNIX网络编程之三：基本套接字编程</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2016/07/14/unixnetworkprogrammingpart5/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">UNIX网络编程之五：select和poll函数</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

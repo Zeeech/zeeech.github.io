@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Vim on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/vim/</link>
+    <description>Recent content in Vim on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 28 Dec 2016 16:35:40 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/vim/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Mac下打造vim&#43;Python开发环境</title>
+      <link>https://zcheng.ren/2016/12/28/vimandzshinmacterminal/</link>
+      <pubDate>Wed, 28 Dec 2016 16:35:40 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/12/28/vimandzshinmacterminal/</guid>
+      <description>&lt;p&gt;记得刚装ubuntu那会，对vim和terminal爱不释手，装各种插件DIY。换到mac上后接触到SublimeText和VScode，就再也没有去理会vim了。前几天看了点《程序员修炼之道》，里面说『最好精通一种编辑器，并将其用于所有编辑任务。如果不坚持使用一种编辑器，可能会面临现代的巴别特大混乱』&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

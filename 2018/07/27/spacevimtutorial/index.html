@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>SpaceVim Tutorial On Mac</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="SpaceVim入门教程">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="SpaceVim Tutorial On Mac" />
+<meta property="og:description" content="SpaceVim入门教程" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/2018/07/27/spacevimtutorial/" /><meta property="article:published_time" content="2018-07-27T22:42:05&#43;08:00"/>
+<meta property="article:modified_time" content="2018-07-27T22:42:05&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="SpaceVim Tutorial On Mac"/>
+<meta name="twitter:description" content="SpaceVim入门教程"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">MachineLearning</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/redis/">Redis源码剖析</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">SpaceVim Tutorial On Mac</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2018-07-27T22:42:05">July 27, 2018</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7" rel="category">开发工具</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#安装spacevim-neovim">安装SpaceVim &amp; Neovim</a>
+<ul>
+<li><a href="#neovim">Neovim</a>
+<ul>
+<li><a href="#python加持">python加持</a></li>
+</ul></li>
+<li><a href="#spacevim">SpaceVim</a></li>
+</ul></li>
+<li><a href="#模块">模块</a>
+<ul>
+<li><a href="#vimfiler">Vimfiler</a></li>
+<li><a href="#字体和配色">字体和配色</a></li>
+<li><a href="#go语言">Go语言</a></li>
+<li><a href="#git和版本控制">git和版本控制</a></li>
+<li><a href="#leaderf">leaderF</a></li>
+<li><a href="#tags">Tags</a></li>
+<li><a href="#ui位置">UI位置</a>
+<ul>
+<li><a href="#shell底部">shell底部</a></li>
+<li><a href="#vimfiler右侧">vimfiler右侧</a></li>
+<li><a href="#tags右侧">tags右侧</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#总结">总结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>最近试用了<a href="https://spacevim.org/">SpaceVim</a>，虽然官网说out of the box.但是，我觉得还是有一些地方不符合我个人的设置，这里简要的记录一下，如果你也有用着别扭的地方，可以拿这篇博客做个参考。</p>
+
+<blockquote>
+<p>Spacevim装上之后太卡了.已经不用了.自己搞了一个,<a href="https://github.com/Zeeech/dotfiles">https://github.com/Zeeech/dotfiles</a></p>
+</blockquote>
+
+<h1 id="安装spacevim-neovim">安装SpaceVim &amp; Neovim</h1>
+
+<p>据说，SpaceVim在Neovim上体验更佳。然而，本人只是想和以前的vim隔离开来，毕竟攒了那么久的配置，一时还不舍得。好吧，废话不多说，先安装Neovim。</p>
+
+<h2 id="neovim">Neovim</h2>
+
+<p>brew是mac上的软件安装神器，通过brew安装neovim也很方便。</p>
+
+<pre><code class="language-bash">// 安装Neovim
+brew install neovim
+// 更新Neovim
+brew upgrade neovim
+</code></pre>
+
+<p>安装完后，在iterm2输入<code>nvim</code>即可打开Neovim。目前Neovim是v0.3.0版本。</p>
+
+<h3 id="python加持">python加持</h3>
+
+<p>通常，使用Vim的一些插件都需要Python支持，这里给Neovim添加python支持。</p>
+
+<pre><code class="language-bash">pip install neovim --upgrade
+// 这里说明一下，如果需要python3支持，则使用pip3 install neovim --upgrade
+// 然后修改配置文件，~/.config/nvim/init.vim中添加
+let g:python_host_prog = '/usr/local/bin/python'
+// 这里也一样，如果是python3，则let g:python3_host_prog = '/usr/local/bin/python3'
+</code></pre>
+
+<p>要确认添加了python支持，在打开nvim之后输入<code>:echo has('python3')</code>如果返回1，则表示安装成功。</p>
+
+<p>到这里，简单的Neovim已经安装完成。</p>
+
+<blockquote>
+<p>2018-08-12 16:45:17 修复jedi-vim补全python相关问题</p>
+
+<p>Mac下既有python2又有python3的，如果neovim安装了python3支持，但系统python环境是python，这个时候就需要强制让jedi使用python。</p>
+
+<p>解决办法：在.SpaceVim.d/init.vim中添加如下<code>let g:jedi#force_py_version=3</code></p>
+</blockquote>
+
+<h2 id="spacevim">SpaceVim</h2>
+
+<p>SpaceVim提供了很完善的quickstart文档，安装起来也是自动化脚本一键安装。
+这里首先运行安装帮助命令。</p>
+
+<pre><code class="language-shell">➜  ~ curl -sLf https://spacevim.org/install.sh | bash -s -- -h
+SpaceVim install script : V 0.9.0-dev
+
+Usage : curl -sLf https://spacevim.org/install.sh | bash -s -- [option] [target]
+
+  This is bootstrap script for SpaceVim.
+
+OPTIONS
+
+ -i, --install            install spacevim for vim or neovim
+ -v, --version            Show version information and exit
+ -u, --uninstall          Uninstall SpaceVim
+ -c, --checkRequirements  checkRequirements for SpaceVim
+
+EXAMPLE
+
+    Install SpaceVim for vim and neovim
+
+        curl -sLf https://spacevim.org/install.sh | bash
+
+    Install SpaceVim for vim only or neovim only
+
+        curl -sLf https://spacevim.org/install.sh | bash -s -- --install vim
+        curl -sLf https://spacevim.org/install.sh | bash -s -- --install neovim
+
+    Uninstall SpaceVim
+
+        curl -sLf https://spacevim.org/install.sh | bash -s -- --uninstalled
+</code></pre>
+
+<p>这里我们可以看到，当前最新的版本是0.9.0dev，SpaceVim提供了两个安装脚本，可以分别为vim和neovim安装。这里运行单独给neovim安装的脚本。</p>
+
+<pre><code class="language-shell">curl -sLf https://spacevim.org/install.sh | bash -s -- --install neovim
+</code></pre>
+
+<p>安装界面。</p>
+
+<p><img src="https://ws1.sinaimg.cn/large/73a1af36gy1ftqsnonivyj212c0uyk0i.jpg" alt="" /></p>
+
+<p>脚本执行完之后，打开nvim，会自动安装插件。</p>
+
+<p><img src="https://ws1.sinaimg.cn/large/73a1af36gy1ftqsq8myucj21rc1gy4jf.jpg" alt="" /></p>
+
+<p>这些都是vim常用的基础插件。接下来打开nvim，就看到Spacevim的环境界面。</p>
+
+<p><img src="https://ws1.sinaimg.cn/large/73a1af36gy1ftqsxa96b3j21r61h4tjh.jpg" alt="" /></p>
+
+<p>至此，SpaceVim已经安装完成，下面是一些模块配置，可以按需提取。</p>
+
+<h1 id="模块">模块</h1>
+
+<h2 id="vimfiler">Vimfiler</h2>
+
+<p>作为SpaceVim默认的文件树插件，vimfiler还是简单实用的。<code>F3</code>按键可以打开和关闭vimfilter，一般情况下我都不会打开，因为屏幕空间实在有限，而且有leaderF这类神器(下面具体介绍)辅助。但是，vimfiler在新建文件、删除文件等上还是挺有帮助的。</p>
+
+<p>默认情况下， vimdiler开启了安全模式，避免误删文件。这里可以在配置文件中关闭。</p>
+
+<pre><code class="language-shell">cd  ~/.SpaceVim/config/plugins
+nvim vimfiler.vim
+// 添加如下配置
+let g:vimfiler_safe_mode_by_default = 0
+</code></pre>
+
+<p>这样一来关闭了安全模式，可以随意增删改查文件了。</p>
+
+<ul>
+<li><p>r – 重命名光标位置下的文件或文件夹名称</p></li>
+
+<li><p>N – 新建文件</p></li>
+
+<li><p>K – 新建文件夹</p></li>
+
+<li><p>dd – 删除光标位置下的文件或文件夹</p></li>
+
+<li><p>cc – 复制文件或文件夹，会要求输入目标位置</p></li>
+
+<li><p>mm – 移动文件或文件夹，要求输入目标位置</p></li>
+</ul>
+
+<p>具体其他操作可以参考：<a href="https://zfanw.com/blog/vimfiler.html">Vimfiler</a></p>
+
+<h2 id="字体和配色">字体和配色</h2>
+
+<p>初次打开SpaceVim会发现，状态栏和文件标识都是乱码和问号，这是字体的问题，SpaceVim需要nerd字体才能达到完美显示。</p>
+
+<p><img src="https://ws1.sinaimg.cn/large/73a1af36gy1ftqtj1gsp8j21ri0ww10i.jpg" alt="" /></p>
+
+<p>这里推荐一下mritd改的<a href="https://gist.github.com/mritd/35ad163573251ba2a63b0f44f28e9a89">manaco nerd</a>字体，如果你不喜欢的话，可以去<a href="https://github.com/ryanoasis/nerd-fonts">nerd font</a>网站下载其他的字体。Mac下载字体之后，点击直接安装。然后在iterm中修改字体即可。</p>
+
+<p><img src="https://ws2.sinaimg.cn/large/006tKfTcgy1ftqtzbs553j31kw0tqq5y.jpg" alt="006tKfTcgy1ftqto2wftwj31kw0tqn2y" /></p>
+
+<p>配色方面，SpaceVim默认Gruvbox很不错，但是，本人还是很倾向于solarized，这里采用neoSolarized作为默认配色。需要修改init.toml文件，导入相关配色。</p>
+
+<pre><code class="language-bash">// 修改配置文件， nvim ~/.SpaceVim.d/init.toml
+colorscheme = &quot;NeoSolarized&quot;&quot;
+    background = &quot;dark&quot;
+ 
+[[custom_plugins]]
+    name = &quot;iCyMind/NeoSolarized&quot;
+    merged = 0
+</code></pre>
+
+<p>关闭后重新打开nvim，SpaceVim会自动安装插件。待安装完成后即可看到最新的主题配色。</p>
+
+<p><img src="https://ws3.sinaimg.cn/large/006tKfTcgy1ftqtz5blt4j31kw1bhk99.jpg" alt="image-20180729165202267" /></p>
+
+<h2 id="go语言">Go语言</h2>
+
+<pre><code>[[layers]]
+    name = &quot;lang#go&quot;
+</code></pre>
+
+<p>绑定的按键如下：</p>
+
+<table>
+<thead>
+<tr>
+<th>Key Binding</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>SPC l a</code></td>
+<td>go alternate</td>
+</tr>
+
+<tr>
+<td><code>SPC l b</code></td>
+<td>go build</td>
+</tr>
+
+<tr>
+<td><code>SPC l c</code></td>
+<td>go coverage</td>
+</tr>
+
+<tr>
+<td><code>SPC l d</code></td>
+<td>go doc</td>
+</tr>
+
+<tr>
+<td><code>SPC l D</code></td>
+<td>go doc vertical</td>
+</tr>
+
+<tr>
+<td><code>SPC l e</code></td>
+<td>go rename</td>
+</tr>
+
+<tr>
+<td><code>SPC l g</code></td>
+<td>go definition</td>
+</tr>
+
+<tr>
+<td><code>SPC l G</code></td>
+<td>go generate</td>
+</tr>
+
+<tr>
+<td><code>SPC l h</code></td>
+<td>go info</td>
+</tr>
+
+<tr>
+<td><code>SPC l i</code></td>
+<td>go implements</td>
+</tr>
+
+<tr>
+<td><code>SPC l I</code></td>
+<td>implement stubs</td>
+</tr>
+
+<tr>
+<td><code>SPC l k</code></td>
+<td>add tags</td>
+</tr>
+
+<tr>
+<td><code>SPC l K</code></td>
+<td>remove tags</td>
+</tr>
+
+<tr>
+<td><code>SPC l l</code></td>
+<td>list declarations in file</td>
+</tr>
+
+<tr>
+<td><code>SPC l m</code></td>
+<td>format improts</td>
+</tr>
+
+<tr>
+<td><code>SPC l M</code></td>
+<td>add import</td>
+</tr>
+
+<tr>
+<td><code>SPC l r</code></td>
+<td>go referrers</td>
+</tr>
+
+<tr>
+<td><code>SPC l s</code></td>
+<td>fill struct</td>
+</tr>
+
+<tr>
+<td><code>SPC l t</code></td>
+<td>go test</td>
+</tr>
+
+<tr>
+<td><code>SPC l v</code></td>
+<td>freevars</td>
+</tr>
+
+<tr>
+<td><code>SPC l x</code></td>
+<td>go run</td>
+</tr>
+</tbody>
+</table>
+
+<p>C语言模块请查看：<a href="https://spacevim.org/layers/lang/c/">SpaceVim C</a></p>
+
+<p>python语言模块请查看：<a href="https://spacevim.org/layers/lang/python/">SpaceVim Python</a></p>
+
+<p>其他的请参考：<a href="http://webcache.googleusercontent.com/search?q=cache:https://spacevim.org/layers/">SpaceVim 模块列表</a></p>
+
+<h2 id="git和版本控制">git和版本控制</h2>
+
+<pre><code>[[layers]]
+    name = &quot;git&quot;
+
+[[layers]]
+    name = &quot;VersionControl&quot;
+</code></pre>
+
+<p>具体功能可以查看<a href="https://spacevim.org/layers/VersionControl/">verison control</a>和<a href="https://spacevim.org/layers/git/">git</a>，这里不再赘述了。安装完之后可以在状态栏和vimfiler上看到git版本信息。</p>
+
+<p><img src="https://ws4.sinaimg.cn/large/006tKfTcgy1ftqu6est2ej31kw037jsu.jpg" alt="image-20180729165901868" /></p>
+
+<h2 id="leaderf">leaderF</h2>
+
+<pre><code>[[layers]]
+  name = &quot;leaderf&quot;
+</code></pre>
+
+<p>具体可以查看<a href="https://spacevim.org/layers/leaderf/">leaderF</a>，这里列举一下简单的用途</p>
+
+<pre><code>&lt;leader&gt; f   // 如果没有修改vim的leader键的话，默认是\
+</code></pre>
+
+<p>就可以快速查询文件。</p>
+
+<p><img src="https://ws4.sinaimg.cn/large/006tKfTcgy1ftqu9vmjcrj31kw0potrz.jpg" alt="image-20180729170214824" /></p>
+
+<h2 id="tags">Tags</h2>
+
+<p>Tags对阅读C代码有极高的作用，tags依赖系统的ctags，这里可以按照如下方式安装：</p>
+
+<pre><code>brew install global --with-pygments --with-ctags
+</code></pre>
+
+<p>然后在SpaceVim配置文件中添加：</p>
+
+<pre><code>[[layers]]
+  name = &quot;tags&quot;
+</code></pre>
+
+<p>重启nvim后等到自动安装完插件即可。</p>
+
+<p>默认绑定<code>F2</code>按键，在左侧打开ctag。这样就可以看到tags相关内容了。</p>
+
+<p>tags主要显示变量，类和函数等信息，对于阅读代码很有帮助。</p>
+
+<p><img src="https://ws4.sinaimg.cn/large/006tKfTcgy1ftququ6qgzj31kw1be4qp.jpg" alt="image-20180729171839589" /></p>
+
+<h2 id="ui位置">UI位置</h2>
+
+<p>SHELL默认在底部，vimfiler默认在右侧，tags在左侧。 右侧经常有弹窗消息，挡住文件树，而且按照IDE惯例，也应该放在左侧。</p>
+
+<p>这里重新修改一下布局。</p>
+
+<h3 id="shell底部">shell底部</h3>
+
+<pre><code>[[layers]]
+name = 'shell'
+default_position = 'bottom'
+default_height = 30
+</code></pre>
+
+<p>修改<code>default_position</code>参数为<code>bottom</code>，这样一来，shell默认打开后在底部。</p>
+
+<h3 id="vimfiler右侧">vimfiler右侧</h3>
+
+<p>修改此文件：<code>~/.SpaceVim/config/plugins/vimfiler.vim</code></p>
+
+<pre><code>let g:vimfiler_direction = get(g:, 'vimfiler_direction', 'topleft')
+</code></pre>
+
+<h3 id="tags右侧">tags右侧</h3>
+
+<p>修改此文件：<code>~/.SpaceVim/config/plugins/tagbar.vim</code></p>
+
+<pre><code>&quot; let g:tagbar_left = get(g:, 'tagbar_left', 1)
+let g:tagbar_right = get(g:, 'tagbar_right', 1) // 将上句修改为此句
+</code></pre>
+
+<h1 id="总结">总结</h1>
+
+<p>总体来说，SpaceVim在功能方面达到了开箱即用的效果，适合那些想用vim但不想折腾vim配置的伪vimer，比如我。已经放弃了sublimetext，vscode，全体投奔vim的怀抱，贴一张最后成品图。之后遇到更好地插件和配置，我会继续更新此博客，欢迎关注。</p>
+
+<p><img src="https://ws1.sinaimg.cn/large/006tKfTcgy1ftquxr0hmoj31kw1amb29.jpg" alt="image-20180729172518732" /></p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/spacevim/" rel="tag">SpaceVim</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.png" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/2018/07/25/goinaction/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Go实战--基础知识</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/2018/07/30/learncocoapods/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">三分钟学会cocoapods</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163,com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163,com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Unix网络编程 on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/tags/unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/</link>
+    <description>Recent content in Unix网络编程 on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 03 Aug 2016 10:21:59 +0800</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/tags/unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>UNIX网络编程之六：基本UDP套接字</title>
+      <link>https://zcheng.ren/2016/08/03/unixnetworkprogrammingpart6/</link>
+      <pubDate>Wed, 03 Aug 2016 10:21:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/08/03/unixnetworkprogrammingpart6/</guid>
+      <description>&lt;p&gt;UDP是无连接不可靠的数据报协议，不同于TCP提供的面向连接的可靠字节流。常见的使用UDP的应用程序有：DNS，NFS和SNMP。&lt;/p&gt;
+
+&lt;h1 id=&#34;一-概述&#34;&gt;&lt;strong&gt;一、概述&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;UDP的主要特点如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;UDP是面向无连接的，不需要建立连接就可以传输数据&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP尽最大可能交付，不保证可靠交付&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP是面向报文，对应用层传输的报文添加首部后就直接发送，不合并不拆分&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP没有拥塞控制&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP支持一对一，一对多，多对一，多对多&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;UDP首部八个字节，开销小&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;基于UDP的套接字编程比基于TCP的相对较为简单。客户不与服务器建立连接，而是只管使用sendto函数给服务器发送数据报，其中必须指定目的地，的地址作为参数。类似的，服务器不接受来自客户端的连接，而是只管调用recvfrom函数，等待来自某个客户的数据到达。recvform将所接收的数据报一道返回客户的协议地址，因此服务器可以把响应发送给正确的客户。下图给出了典型的UDP客户/服务器程序的函数调用。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之五：select和poll函数</title>
+      <link>https://zcheng.ren/2016/07/14/unixnetworkprogrammingpart5/</link>
+      <pubDate>Thu, 14 Jul 2016 10:21:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/14/unixnetworkprogrammingpart5/</guid>
+      <description>&lt;h1 id=&#34;一-i-o复用技术&#34;&gt;&lt;strong&gt;一、I/O复用技术&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条件准备就绪，它就通知该进程。I/O复用适用于以下场合：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;当客户处理多个描述符（一般是交互式输入或网络套接字），必须适用I/O复用&lt;/li&gt;
+&lt;li&gt;当一个客户处理多个套接字时，这种情况很少见，但也可能出现&lt;/li&gt;
+&lt;li&gt;当一个TCP服务器既要处理监听套接字，又要处理已连接套接字，一般就要使用I/O复用&lt;/li&gt;
+&lt;li&gt;如果一个服务器既要适用TCP，又要适用UDP，一般就要使用I/O复用&lt;/li&gt;
+&lt;li&gt;如果一个服务器要处理多个服务或者多个协议，一般就要使用I/O复用&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;与多线程和多进程技术相比，I/O复用技术的最大优势就是系统开销小，系统不必创建进程/线程，也不必维护这些进程/进程，从而大大减小了系统的开销。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之四：TCP客户-服务器示例</title>
+      <link>https://zcheng.ren/2016/07/11/unixnetworkprogrammingpart4/</link>
+      <pubDate>Mon, 11 Jul 2016 16:10:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/11/unixnetworkprogrammingpart4/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;本篇博客主要记录一个完整的TCP客户/服务器实例的编写，以及从这个实例中引发的对僵死进程的处理等问题。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-tcp客户-服务器功能需求&#34;&gt;一、TCP客户/服务器功能需求&lt;/h1&gt;
+
+&lt;p&gt;本实例完成以下功能：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;客户从标准输入读入一行文本，并写给服务器&lt;/li&gt;
+&lt;li&gt;服务器从网络输入中读入这行文本，并回射给客户&lt;/li&gt;
+&lt;li&gt;客户从网路输入读入这行回射文本，并显示在标准输入&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;需要用到的函数：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;套接字编程基本函数(socket,bind,listen,accept,connect,close等)，完成套接字编程&lt;/li&gt;
+&lt;li&gt;标准I/O库函数fputs和fgets，完成输入和输出&lt;/li&gt;
+&lt;li&gt;read，writen，readline函数，完成数据的传输&lt;/li&gt;
+&lt;li&gt;fork函数，完成并行服务器的编写&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之三：基本套接字编程</title>
+      <link>https://zcheng.ren/2016/07/06/unixnetworkprogrammingpart2/</link>
+      <pubDate>Wed, 06 Jul 2016 16:30:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/06/unixnetworkprogrammingpart2/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bind(),connect(),accept(),listen()等。
+本博文也直接进入正题，对这几个函数进行剖析和讲解。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-基本套接字函数&#34;&gt;&lt;strong&gt;一、基本套接字函数&lt;/strong&gt;&lt;/h1&gt;
+
+&lt;p&gt;在《计算机网络》和《TCP/IP详解》中，我们经常讨论TCP/IP的工作流程，连接建立的三次握手和连接断开的四次挥手等，那么这些如何体现在程序中呢？我们如何来运用这些理论知识于实践之中呢？下面我们来看看套接字编程中客户和服务器进程之间的一些典型事件的时间表。&lt;/p&gt;
+
+&lt;p&gt;如图，服务器首先启动，稍后客户进程启动，它通过connect()函数试图连接服务器，这个阶段完成三次握手，然后read()和write()完成客户和服务器之间的数据传输，之后客户进程调用close()来请求断开连接，服务器收到后读取EOF，接着关闭连接，这时完成四次挥手的过程。下面就图中的每个函数，细细剖析他们的用途。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之二：套接字编程简介</title>
+      <link>https://zcheng.ren/2016/07/03/unixnetworkprogrammingpart3/</link>
+      <pubDate>Sun, 03 Jul 2016 20:41:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/03/unixnetworkprogrammingpart3/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;unp第二章&lt;/strong&gt;主要将了TCP和UDP的简介，这些在《TCP/IP详解》和《计算机网络》等书中有很多细致的讲解，可以参考本人的这篇博客&lt;a href=&#34;http://blog.csdn.net/terence1212/article/details/51567833&#34;&gt;【计算机网络 第五版】阅读笔记之五：运输层&lt;/a&gt;，这篇博客就不再赘述。&lt;/p&gt;
+
+&lt;p&gt;本篇博客主要记录套接字编程API，从一些基本的API来一步一步了解套接字网络编程。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-套接字地址结构&#34;&gt;一、套接字地址结构&lt;/h1&gt;
+
+&lt;p&gt;大多数的套接字函数都以一个指向套接字地址结构的指针作为参数。每个协议簇都定义了自己的套接字地址结构。
+套接字地址结构均以sockaddr_开头，并以对应每个协议簇的唯一后缀结尾。&lt;/p&gt;
+
+&lt;h2 id=&#34;ipv4套接字地址结构&#34;&gt;ipv4套接字地址结构&lt;/h2&gt;</description>
+    </item>
+    
+    <item>
+      <title>UNIX网络编程之一：代码环境搭建</title>
+      <link>https://zcheng.ren/2016/07/01/unixnetworkprogrammingpart1/</link>
+      <pubDate>Fri, 01 Jul 2016 17:28:59 +0800</pubDate>
+      
+      <guid>https://zcheng.ren/2016/07/01/unixnetworkprogrammingpart1/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;粗略的阅读过《TCP/IP详解》和《计算机网络（第五版）》后，开始啃这本《UNIX网络编程卷一：套接字联网API》，目前linux下的编程不算太了解，在阅读的过程中也会有很多障碍，希望自己坚持下去。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;一-源代码的下载和编译&#34;&gt;一、源代码的下载和编译&lt;/h1&gt;
+
+&lt;p&gt;源代码下载地址：&lt;a href=&#34;http://www.unpbook.com/&#34;&gt;http://www.unpbook.com/&lt;/a&gt; ， 下载下来得到unpv13e.tar.gz文件&lt;/p&gt;
+
+&lt;p&gt;编译步骤：
+解压缩zxvf unpv13e.tar.gz&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;tar zxvf unpv13e.tar.gz
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;进入unpv13e文件夹中&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;cd /unpv13e
+./configure//如果权限不够可以chmod改权限
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;编译lib文件&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;cd lib
+make
+cd ../libfree
+make
+cd ../libgai
+make
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
