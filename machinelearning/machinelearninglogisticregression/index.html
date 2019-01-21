@@ -256,6 +256,47 @@ def costFunction(theta, X,y):
 &=& \frac{1}{m} \sum\limits _{i =1}^{m} (h _\theta(x^{(i)}) -y^{(i)})  x_j^{(i)}
 \end{eqnarray}
 \]</span></p>
+
+<p>推导到这里，我们就可以用线性回归中用到的向量化的方式来一步得到更新后的$\theta$值，代码就不赘述了。</p>
+
+<h2 id="15-高级优化">1.5 高级优化</h2>
+
+<p>在前面提到的梯度下降算法中，我们首先需要提出假设函数和代价函数，其次对代价函数进行求导，然后同步更新$\theta$的值，直到达到收敛。</p>
+
+<p>除了梯度下降算法外，&quot;共轭梯度&quot;, &quot;BFGS&quot;和&quot;L-BFGS&quot;这些更加复杂的函数，能代替梯度下降算法，使我们能更快速的找到能使$J(\theta)$达到最优值的参数$\theta$。这些算法目前超出了课程的教学范围，每个算法估计要花费一周甚至更长时间来实现和理解。现阶段不建议自行实现这些算法，我们可以利用一些封装好的库函数来帮我们实现这些算法，它们往往是被优化到极致的函数。</p>
+
+<p>在python中，可以使用scipy提供的优化函数库optimize中的minimize函数来实现对$J(\theta)$求取最优值参数。代码如下：</p>
+
+<pre><code class="language-python">from scipy.optimize import minimize
+
+res = minimize(costFunction, initial_theta, method='TNC', jac=False, args=(X, y), options={'gtol': 1e-3, 'disp': True, 'maxiter': 1000})
+theta = res.x
+cost = res.fun
+# Print theta to screen
+print('Cost at theta found by scipy: %f' % cost)
+print('theta:', [&quot;%0.4f&quot; % i for i in theta])
+</code></pre>
+
+<h3 id="16-多元分类问题">1.6 多元分类问题</h3>
+
+<p>对于多元分类问题，我们可以将其转换成多个二分类问题。如下图所示：</p>
+
+<p><figure><img src="https://ws1.sinaimg.cn/large/73a1af36ly1fzeiq1et18j20d507agmp.jpg" alt=""></figure></p>
+
+<p>因此对于$n$分类问题，我们可以求出$n$个假设函数，如下：</p>
+
+<p><span  class="math">\[
+h ^{(0)} _\theta(x) = P(y = 0 | x,\theta) \\
+h ^{(1)} _\theta(x) = P(y = 1 | x,\theta) \\
+... \\
+h ^{(n)} _\theta(x) = P(y = n | x,\theta) \\
+\]</span></p>
+
+<p>于是，对于待分类的数据来说，我们可以有如下分类算法：</p>
+
+<p><span  class="math">\[
+prediction = \mathop {max} _i (h ^ {(i)} _\theta (x))
+\]</span></p>
 		</div>
 		
 <div class="post__tags tags clearfix">
