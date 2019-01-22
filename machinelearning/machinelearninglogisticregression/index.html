@@ -265,6 +265,19 @@ def costFunction(theta, X,y):
 
 <p>除了梯度下降算法外，&quot;共轭梯度&quot;, &quot;BFGS&quot;和&quot;L-BFGS&quot;这些更加复杂的函数，能代替梯度下降算法，使我们能更快速的找到能使$J(\theta)$达到最优值的参数$\theta$。这些算法目前超出了课程的教学范围，每个算法估计要花费一周甚至更长时间来实现和理解。现阶段不建议自行实现这些算法，我们可以利用一些封装好的库函数来帮我们实现这些算法，它们往往是被优化到极致的函数。</p>
 
+<p>这些算法的优势在于：</p>
+
+<ul>
+<li>不需要手动选择学习率$\alpha$</li>
+<li>比梯度下降更快</li>
+</ul>
+
+<p>缺点在于：</p>
+
+<ul>
+<li>算法过于复杂</li>
+</ul>
+
 <p>在python中，可以使用scipy提供的优化函数库optimize中的minimize函数来实现对$J(\theta)$求取最优值参数。代码如下：</p>
 
 <pre><code class="language-python">from scipy.optimize import minimize
@@ -297,6 +310,8 @@ h ^{(n)} _\theta(x) = P(y = n | x,\theta) \\
 <p><span  class="math">\[
 prediction = \mathop {max} _i (h ^ {(i)} _\theta (x))
 \]</span></p>
+
+<h2 id="17-过拟合和正则化">1.7 过拟合和正则化</h2>
 		</div>
 		
 <div class="post__tags tags clearfix">
