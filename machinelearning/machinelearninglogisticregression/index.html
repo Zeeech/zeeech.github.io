@@ -409,21 +409,19 @@ Repeat \ until \ converage \{ &  \\
 
 <p>那么加入正则化后，正规方程演变成如下：</p>
 
-<p>$$
-\theta = (X ^T X + \lambda L) ^ {-1} Y ^T X <br>
-where \ L = \begin{bmatrix}</p>
+<p><span  class="math">\[
+\theta = (X ^T X + \lambda L) ^ {-1} Y ^T X \\
+where \ L = 
+\begin{bmatrix}
+0 & & & & & \\
+& 1 & & & & \\
+& & 1 & & & \\
+& & &  ... &  & \\
+& & &  &  1&
+\end{bmatrix}
+\]</span></p>
 
-<pre><code> 0&amp; &amp; &amp; &amp; &amp; \\
- &amp; 1&amp; &amp; &amp; &amp;\\
- &amp; &amp; 1&amp; &amp; &amp;\\
- &amp; &amp; &amp;  ...&amp;  &amp; \\
- &amp; &amp; &amp;  &amp;  1&amp;
-</code></pre>
-
-<p>\end{bmatrix}
-$$</p>
-
-<p>正规方程$A<sup>TA$可逆性，之前我们提到，如果特征之间具有相关性或者特征数大于样本集数时，会导致$A</sup>TA$不可逆。那么，在本节中，加入了正则化之后，由于$\lambda &gt; 0$，可以证明$X ^T X + \lambda L$这个矩阵始终可逆，这也是正则化为我们带来求解正规方程带来的好处。</p>
+<p>正规方程$A ^TA$可逆性，之前我们提到，如果特征之间具有相关性或者特征数大于样本集数时，会导致$A ^TA$不可逆。那么，在本节中，加入了正则化之后，由于$\lambda &gt; 0$，可以证明$X ^T X + \lambda L$这个矩阵始终可逆，这也是正则化为我们带来求解正规方程带来的好处。</p>
 
 <h4 id="1722-逻辑回归正则化">1.7.2.2 逻辑回归正则化</h4>
 
