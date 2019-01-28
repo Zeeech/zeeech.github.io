@@ -50,9 +50,11 @@ ipv4套接字地址结构"/>
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -85,7 +87,6 @@ ipv4套接字地址结构"/>
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -153,53 +154,46 @@ ipv4套接字地址结构"/>
 
 <h2 id="ipv4套接字地址结构">ipv4套接字地址结构</h2>
 
-<pre><code class="language-cpp">//ipv4的套接字地址结构
-typedef uint32_t in_addr_t;
-struct in_addr
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//ipv4的套接字地址结构
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> uint32_t in_addr_t;
+<span style="color:#66d9ef">struct</span> in_addr
 {
-	in_addr_t s_addr;//32位的ipv4地址
-};
-//网络套接字地址结构
-struct sockaddr_in
+	in_addr_t s_addr;<span style="color:#75715e">//32位的ipv4地址
+</span><span style="color:#75715e"></span>};
+<span style="color:#75715e">//网络套接字地址结构
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> sockaddr_in
 {
-	//查看in.h源码发现此处为__SOCKADDR_COMMON (sin_)
-	uint8_t sin_len  //套接字地址结构的长度
-	sa_family_t sin_family //	AF_INET
-	in_port_t sin_port;	//端口号
-	struct in_addr sin_addr;	//网络地址
-	unsigned char sin_zero[8]；//不使用，该字段必须为0
-};
-</code></pre>
-
+	<span style="color:#75715e">//查看in.h源码发现此处为__SOCKADDR_COMMON (sin_)
+</span><span style="color:#75715e"></span>	uint8_t sin_len  <span style="color:#75715e">//套接字地址结构的长度
+</span><span style="color:#75715e"></span>	sa_family_t sin_family <span style="color:#75715e">//	AF_INET
+</span><span style="color:#75715e"></span>	in_port_t sin_port;	<span style="color:#75715e">//端口号
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">struct</span> in_addr sin_addr;	<span style="color:#75715e">//网络地址
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> sin_zero[<span style="color:#ae81ff">8</span>]<span style="color:#960050;background-color:#1e0010">；</span><span style="color:#75715e">//不使用，该字段必须为0
+</span><span style="color:#75715e"></span>};
+</code></pre></div>
 <p>通常我们在使用套接字的时候，只会用到三个字段：sin_family,sin_addr和sin_port，如下：</p>
-
-<pre><code class="language-cpp">struct sockaddr_in	servaddr;//声明一个套接字地址
-bzero(&amp;servaddr, sizeof(servaddr));//套接字结构体清0
-servaddr.sin_family : AF_INET;//使用ipv4的协议簇
-servaddr.sin_port   : htons(13);//端口号，13为获取日期和时间的端口
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> sockaddr_in	servaddr;<span style="color:#75715e">//声明一个套接字地址
+</span><span style="color:#75715e"></span>bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));<span style="color:#75715e">//套接字结构体清0
+</span><span style="color:#75715e"></span>servaddr.sin_family : AF_INET;<span style="color:#75715e">//使用ipv4的协议簇
+</span><span style="color:#75715e"></span>servaddr.sin_port   : htons(<span style="color:#ae81ff">13</span>);<span style="color:#75715e">//端口号，13为获取日期和时间的端口
+</span><span style="color:#75715e"></span></code></pre></div>
 <h2 id="通用套接字结构">通用套接字结构</h2>
 
 <p>当作为一个参数传递进任何套接字函数时，套接字地址总是以引用形式来传递。
 类似于void*代表通用指针类型，通用套接字地址结构可以便于参数传递，使得套接字函数能够处理来自所支持的任何协议簇的套接字地址结构。</p>
-
-<pre><code class="language-cpp">struct sockaddr
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> sockaddr
 {
-	__SOCKADDR_COMMON (sa_);	/* Common data: address family and length.  */
-	char sa_data[14];		/* Address data.  */
+	__SOCKADDR_COMMON (sa_);	<span style="color:#75715e">/* Common data: address family and length.  */</span>
+	<span style="color:#66d9ef">char</span> sa_data[<span style="color:#ae81ff">14</span>];		<span style="color:#75715e">/* Address data.  */</span>
 };
-</code></pre>
-
+</code></pre></div>
 <p>以bind函数为例，说明它的用法：</p>
-
-<pre><code class="language-cpp">struct sockaddr_in	servaddr;
-//SA为struct scokaddr的简写
-Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));//必须对servaddr进行强制转换
-//附：Bind函数的原型
-int bind(int , struct sockaddr* , socklen_t);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> sockaddr_in	servaddr;
+<span style="color:#75715e">//SA为struct scokaddr的简写
+</span><span style="color:#75715e"></span>Bind(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));<span style="color:#75715e">//必须对servaddr进行强制转换
+</span><span style="color:#75715e">//附：Bind函数的原型
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">bind</span>(<span style="color:#66d9ef">int</span> , <span style="color:#66d9ef">struct</span> sockaddr<span style="color:#f92672">*</span> , socklen_t);
+</code></pre></div>
 <h2 id="ipv6的套接字地址结构">IPv6的套接字地址结构</h2>
 
 <pre><code>struct in6_addr
@@ -222,17 +216,14 @@ struct sockaddr_in6
 <p>为IPV6套接字API定义的新的通用套接字地址结构，其足以容纳所支持的任何套接字地址结构</p>
 
 <p>书中说到在in.h文件中，可是我怎么也找不到。后来在usr/include/X86_64-linux-gnu/bits的socket.h中找到</p>
-
-<pre><code class="language-cpp">struct sockaddr_storage
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> sockaddr_storage
 {
-	uint8_t ss_len;//length of this struct
-	sa_family_t ss_family; // address family：AF_XXXX value
-	__ss_aligntype __ss_align;	/* Force desired alignment.  */
-	char __ss_padding[_SS_PADSIZE];//enough storage to hold any type of socket address that the system supports
-};
-
-</code></pre>
-
+	uint8_t ss_len;<span style="color:#75715e">//length of this struct
+</span><span style="color:#75715e"></span>	sa_family_t ss_family; <span style="color:#75715e">// address family：AF_XXXX value
+</span><span style="color:#75715e"></span>	__ss_aligntype __ss_align;	<span style="color:#75715e">/* Force desired alignment.  */</span>
+	<span style="color:#66d9ef">char</span> __ss_padding[_SS_PADSIZE];<span style="color:#75715e">//enough storage to hold any type of socket address that the system supports
+</span><span style="color:#75715e"></span>};
+</code></pre></div>
 <h1 id="二-值-结果参数">二、值-结果参数</h1>
 
 <p>当一个套接字函数传递一个套接字地址结构时，往往是采用引用的方式传递。为了读取正确的字节数和写入时不会越界，该套接字的长度也需要作为参数传递给套接字函数。</p>
@@ -242,56 +233,50 @@ struct sockaddr_in6
 <h2 id="从进程到内核">从进程到内核</h2>
 
 <p>这类函数有三个：bind，connect和sendto，其传递的时该结构的整数大小，这样内核就知道从进程中复制多少数据，例如：</p>
-
-<pre><code class="language-cpp">struct sockaddr_in serv;
-connect( sockfd, ( SA * )&amp;serv, sizeof( serv ) );//第三个参数为传递的该结构的整数大小
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> sockaddr_in serv;
+connect( sockfd, ( SA <span style="color:#f92672">*</span> )<span style="color:#f92672">&amp;</span>serv, <span style="color:#66d9ef">sizeof</span>( serv ) );<span style="color:#75715e">//第三个参数为传递的该结构的整数大小
+</span><span style="color:#75715e"></span></code></pre></div>
 <h2 id="从内核到进程">从内核到进程</h2>
 
 <p>这类函数有4个，accept，recvfrom，getsockname和getpeername，其传递的是指向某个套接字结构的指针和指向表示该结构大小的整数变量和指针：</p>
-
-<pre><code class="language-cpp">struct sockaddr_un cli;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> sockaddr_un cli;
 socklen_t len;
-len : sizeof(cli);//len is value
-getpeername(unixfd,(SA*)&amp;cli,&amp;len);//len既作为值被传递进去，又作为结果返回出来
-</code></pre>
-
+len : <span style="color:#66d9ef">sizeof</span>(cli);<span style="color:#75715e">//len is value
+</span><span style="color:#75715e"></span>getpeername(unixfd,(SA<span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>cli,<span style="color:#f92672">&amp;</span>len);<span style="color:#75715e">//len既作为值被传递进去，又作为结果返回出来
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="三-字节排序函数">三、字节排序函数</h1>
 
 <h2 id="大端和小端字节序">大端和小端字节序</h2>
 
 <p>字节序分为大端字节序和小端字节序，以下面的代码来判断系统到底时何种字节序：</p>
-
-<pre><code class="language-cpp">#include &quot;unp.h&quot;
-int main(int argc, char const *argv[])
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#66d9ef">const</span> <span style="color:#f92672">*</span>argv[])
 {
-	union {
-		short s;
-		char c[sizeof(short)];
+	<span style="color:#66d9ef">union</span> {
+		<span style="color:#66d9ef">short</span> s;
+		<span style="color:#66d9ef">char</span> c[<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">short</span>)];
 	}un;
-	un.s : 0x0102;
-	printf(&quot;%s: &quot;, CPU_VENDOR_OS);
-	if (sizeof(short) :: 2)
+	un.s : <span style="color:#ae81ff">0x0102</span>;
+	printf(<span style="color:#e6db74">&#34;%s: &#34;</span>, CPU_VENDOR_OS);
+	<span style="color:#66d9ef">if</span> (<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">short</span>) <span style="color:#f92672">::</span> <span style="color:#ae81ff">2</span>)
 	{
-		if (un.c[0]::0x01 &amp;&amp; un.c[1]::0x02)
+		<span style="color:#66d9ef">if</span> (un.c[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">::</span><span style="color:#ae81ff">0x01</span> <span style="color:#f92672">&amp;&amp;</span> un.c[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">::</span><span style="color:#ae81ff">0x02</span>)
 		{
-			printf(&quot;big-endian\n&quot;);
+			printf(<span style="color:#e6db74">&#34;big-endian</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
 		}
-		else if(un.c[0]::0x02 &amp;&amp; un.c[1]::0x01)
+		<span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span>(un.c[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">::</span><span style="color:#ae81ff">0x02</span> <span style="color:#f92672">&amp;&amp;</span> un.c[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">::</span><span style="color:#ae81ff">0x01</span>)
 		{
-			printf(&quot;little-endian\n&quot;);
+			printf(<span style="color:#e6db74">&#34;little-endian</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
 		}
-		else
-			printf(&quot;unknown\n&quot;);
+		<span style="color:#66d9ef">else</span>
+			printf(<span style="color:#e6db74">&#34;unknown</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
 	}
-	else
-		printf(&quot;sizeof(short):%d\n&quot;, (int)sizeof(short));
-	exit(0);
-	return 0;
+	<span style="color:#66d9ef">else</span>
+		printf(<span style="color:#e6db74">&#34;sizeof(short):%d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, (<span style="color:#66d9ef">int</span>)<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">short</span>));
+	exit(<span style="color:#ae81ff">0</span>);
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }
-</code></pre>
-
+</code></pre></div>
 <p>运行此代码后输出：</p>
 
 <pre><code>$ gcc byteorder.c -o byteorder -lunp
@@ -306,232 +291,209 @@ x86_64-unknown-linux-gnu: little-endian
 <p>网络字节序使用大端字节序来传送，那么本机和网络之间要正确传递数据，就需要一个转换函数。</p>
 
 <p>这两种字节序之间的转换使用以下4种函数：</p>
-
-<pre><code class="language-cpp">uint16_t htons( uint16_t host16bitvalue );
-uint32_t htonl( uint32_t host32bitvalue );----均返回：网络字节序的值
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">uint16_t <span style="color:#a6e22e">htons</span>( uint16_t host16bitvalue );
+uint32_t <span style="color:#a6e22e">htonl</span>( uint32_t host32bitvalue );<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">均返回：网络字节序的值</span>
 uint16_t ntohs( uint16_t net16bitvalue );
-uint32_t ntohl( uint32_t net32bitvalue );----均返回：主机字节序的值
-</code></pre>
-
+uint32_t <span style="color:#a6e22e">ntohl</span>( uint32_t net32bitvalue );<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">均返回：主机字节序的值</span>
+</code></pre></div>
 <p>h代表host主机，n代表net网络，s代表short，l代表long</p>
 
 <blockquote>
 <p>测试用例：将0x1234（4660）从主机字节序转换成网络字节序，转换后应该为0x3412(13330)</p>
 </blockquote>
-
-<pre><code class="language-cpp">#include &quot;unp.h&quot;
-int main(int argc, char const *argv[])
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#66d9ef">const</span> <span style="color:#f92672">*</span>argv[])
 {
 	uint16_t portAddr;
-	portAddr : htons(0x1234);//十进制值为4660
-	printf(&quot;the port 0x1234 netword port is:%d\n&quot;, portAddr);
-    printf(&quot;the port is:%d\n&quot;, ntohs(portAddr));
-	return 0;
+	portAddr : htons(<span style="color:#ae81ff">0x1234</span>);<span style="color:#75715e">//十进制值为4660
+</span><span style="color:#75715e"></span>	printf(<span style="color:#e6db74">&#34;the port 0x1234 netword port is:%d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, portAddr);
+    printf(<span style="color:#e6db74">&#34;the port is:%d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, ntohs(portAddr));
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }
-//输出结果
-the port 0x1234 netword port is:13330
-the port is:4660//答案正确
-</code></pre>
-
+<span style="color:#75715e">//输出结果
+</span><span style="color:#75715e"></span>the port <span style="color:#ae81ff">0x1234</span> netword port is:<span style="color:#ae81ff">13330</span>
+the port is:<span style="color:#ae81ff">4660</span><span style="color:#75715e">//答案正确
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="四-字节操纵函数">四、字节操纵函数</h1>
 
 <p>操作多字节字段的函数有两组，他们既不对数据作解释，也不假设数据是以空字符结束的C字符串。</p>
-
-<pre><code class="language-cpp">#include &lt;string.h&gt;
-//b开头（表示字节）的一组函数
-void bzero(void* dest,size_t nbytes);//将指针dest以后的nbytes位置0
-void bcopy(const void* src,void *dest , size_t nbytes);//将指针src后的nbytes位复制到指针dest
-int bcmp(const void *ptr1, const void* ptr2, size_t nbytes);//比较ptr1和ptr2后的nbytes位的大小
-//mem开头（表示内存）的一组函数
-void *memset(void *dest , int c , size_t len);//将dest开始的一段长度为len的内存的值设为c
-void *memcpy(void *dest , const void* src , size_t nbytes);//同bcopy
-int memcmp(const void *ptr1 , const void *ptr2, size_t nbytes);//同bcmp
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">//b开头（表示字节）的一组函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">bzero</span>(<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> dest,size_t nbytes);<span style="color:#75715e">//将指针dest以后的nbytes位置0
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">bcopy</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> src,<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>dest , size_t nbytes);<span style="color:#75715e">//将指针src后的nbytes位复制到指针dest
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">bcmp</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr1, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> ptr2, size_t nbytes);<span style="color:#75715e">//比较ptr1和ptr2后的nbytes位的大小
+</span><span style="color:#75715e">//mem开头（表示内存）的一组函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">memset</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>dest , <span style="color:#66d9ef">int</span> c , size_t len);<span style="color:#75715e">//将dest开始的一段长度为len的内存的值设为c
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">memcpy</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>dest , <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> src , size_t nbytes);<span style="color:#75715e">//同bcopy
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">memcmp</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr1 , <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr2, size_t nbytes);<span style="color:#75715e">//同bcmp
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="五-地址转换函数">五、地址转换函数</h1>
 
 <h2 id="inet-aton-inet-addr和inet-ntoa函数">inet_aton，inet_addr和inet_ntoa函数</h2>
 
 <p>在点分十进制数串和与它长度为32位的网络字节序二进制值间转换ipv4地址</p>
-
-<pre><code class="language-cpp">
-//将__cp所指的字符串转换成一个32位的网络字节序，保存在__inp结构体中
-int inet_aton (const char *__cp, struct in_addr *__inp) ;//返回：若字符串有效则为1，否则为0
-//同上，只不过转换后的值作为返回值直接返回
-in_addr_t inet_addr (const char *__cp);//如字符串有效则返回32位字节序，否则返回INADDR_NONE
-//将一个32位的网络字节序二进制IPv4地址转换成相应的点分十进制数串
-char *inet_ntoa (struct in_addr __in);//返回一个点分十进制数串的指针
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//将__cp所指的字符串转换成一个32位的网络字节序，保存在__inp结构体中
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">inet_aton</span> (<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>__cp, <span style="color:#66d9ef">struct</span> in_addr <span style="color:#f92672">*</span>__inp) ;<span style="color:#75715e">//返回：若字符串有效则为1，否则为0
+</span><span style="color:#75715e">//同上，只不过转换后的值作为返回值直接返回
+</span><span style="color:#75715e"></span>in_addr_t <span style="color:#a6e22e">inet_addr</span> (<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>__cp);<span style="color:#75715e">//如字符串有效则返回32位字节序，否则返回INADDR_NONE
+</span><span style="color:#75715e">//将一个32位的网络字节序二进制IPv4地址转换成相应的点分十进制数串
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">inet_ntoa</span> (<span style="color:#66d9ef">struct</span> in_addr __in);<span style="color:#75715e">//返回一个点分十进制数串的指针
+</span><span style="color:#75715e"></span></code></pre></div>
 <blockquote>
 <p>测试用例：输入一个点分十进制网络地址，测试输出</p>
-
-<pre><code class="language-cpp">#include &quot;unp.h&quot;
-int main(int argc, char const *argv[])
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#66d9ef">const</span> <span style="color:#f92672">*</span>argv[])
 {
-	struct in_addr addr;
-	char *pAddr;
-	inet_aton(argv[1],&amp;addr);
-	printf(&quot;%d\n&quot;,addr.s_addr);
+	<span style="color:#66d9ef">struct</span> in_addr addr;
+	<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>pAddr;
+	inet_aton(argv[<span style="color:#ae81ff">1</span>],<span style="color:#f92672">&amp;</span>addr);
+	printf(<span style="color:#e6db74">&#34;%d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,addr.s_addr);
 	pAddr : inet_ntoa(addr);
-	printf(&quot;%s\n&quot;,pAddr);
-	return 0;
+	printf(<span style="color:#e6db74">&#34;%s</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,pAddr);
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }
-//输出结果：
-$ ./Test_inet_aton 127.0.0.1  //0x7F000001
-16777343//小端字节序，0100007F
-127.0.0.1//转换为点分十进制数串
-</code></pre>
-</blockquote>
+<span style="color:#75715e">//输出结果：
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span> .<span style="color:#f92672">/</span>Test_inet_aton <span style="color:#ae81ff">127.0.0.1</span>  <span style="color:#75715e">//0x7F000001
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">16777343</span><span style="color:#75715e">//小端字节序，0100007F
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">127.0.0.1</span><span style="color:#75715e">//转换为点分十进制数串
+</span><span style="color:#75715e"></span></code></pre></div></blockquote>
 
 <h2 id="inet-pton和inet-ntop函数">inet_pton和inet_ntop函数</h2>
 
 <p>随着IPv6出现的新函数，p代表表达式，即ASCII字符串；n代表数值，即存放在套接字地址结构中的二进制值。
 这两个函数对于ipv4和ipv6都适用。</p>
-
-<pre><code class="language-cpp">//int __af为AF_INET或者AF_INET6
-//将__cp存储的字符串转换成二进制，结果存放在__buf
-int inet_pton (int __af, const char *__cp, void * __buf)
-//将__cp所指的二进制转换成字符串，__len指定二进制大小，
-const char *inet_ntop (int __af, const void *__cp, char *__buf, socklen_t __len)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//int __af为AF_INET或者AF_INET6
+</span><span style="color:#75715e">//将__cp存储的字符串转换成二进制，结果存放在__buf
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> inet_pton (<span style="color:#66d9ef">int</span> __af, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>__cp, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> __buf)
+<span style="color:#75715e">//将__cp所指的二进制转换成字符串，__len指定二进制大小，
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>inet_ntop (<span style="color:#66d9ef">int</span> __af, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>__cp, <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>__buf, socklen_t __len)
+</code></pre></div>
 <h2 id="sock-ntop和相关函数-作者自定义的函数">sock_ntop和相关函数(作者自定义的函数)</h2>
 
 <p>inet_ntop函数的基本问题时要求调用者传递一个指向某个二进制地址的指针，而该地址通常包含在一个套接字地址中
 因此调用者事先需要知道这个结构的格式。</p>
-
-<pre><code class="language-cpp">struct sockaddr_in addr;//需要事先定义，如果为ipv6则为sockaddr_in6
-inet_ntop(AF_INET,&amp;addr.sin_addr,str,sizeof(str))；
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> sockaddr_in addr;<span style="color:#75715e">//需要事先定义，如果为ipv6则为sockaddr_in6
+</span><span style="color:#75715e"></span>inet_ntop(AF_INET,<span style="color:#f92672">&amp;</span>addr.sin_addr,str,<span style="color:#66d9ef">sizeof</span>(str))<span style="color:#960050;background-color:#1e0010">；</span>
+</code></pre></div>
 <p>为了解决这个问题，作者自己写了一个函数：</p>
-
-<pre><code class="language-cpp">
-#include &quot;unp.h&quot;
-
-char *sock_ntop(const struct sockaddr *sa, socklen_t salen);
-//具体实现如下：
-char *
-sock_ntop(const struct sockaddr *sa, socklen_t salen)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">sock_ntop</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>sa, socklen_t salen);
+<span style="color:#75715e">//具体实现如下：
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>
+<span style="color:#a6e22e">sock_ntop</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>sa, socklen_t salen)
 {
-    char		portstr[8];
-    static char str[128];		/* Unix domain is largest */
-	switch (sa-&gt;sa_family) {
-	case AF_INET: {
-		struct sockaddr_in	*sin : (struct sockaddr_in *) sa;
-		if (inet_ntop(AF_INET, &amp;sin-&gt;sin_addr, str, sizeof(str)) :: NULL)
-			return(NULL);
-		if (ntohs(sin-&gt;sin_port) !: 0) {
-			snprintf(portstr, sizeof(portstr), &quot;:%d&quot;, ntohs(sin-&gt;sin_port));
+    <span style="color:#66d9ef">char</span>		portstr[<span style="color:#ae81ff">8</span>];
+    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">char</span> str[<span style="color:#ae81ff">128</span>];		<span style="color:#75715e">/* Unix domain is largest */</span>
+	<span style="color:#66d9ef">switch</span> (sa<span style="color:#f92672">-&gt;</span>sa_family) {
+	<span style="color:#66d9ef">case</span> AF_INET: {
+		<span style="color:#66d9ef">struct</span> sockaddr_in	<span style="color:#f92672">*</span>sin : (<span style="color:#66d9ef">struct</span> sockaddr_in <span style="color:#f92672">*</span>) sa;
+		<span style="color:#66d9ef">if</span> (inet_ntop(AF_INET, <span style="color:#f92672">&amp;</span>sin<span style="color:#f92672">-&gt;</span>sin_addr, str, <span style="color:#66d9ef">sizeof</span>(str)) <span style="color:#f92672">::</span> NULL)
+			<span style="color:#66d9ef">return</span>(NULL);
+		<span style="color:#66d9ef">if</span> (ntohs(sin<span style="color:#f92672">-&gt;</span>sin_port) <span style="color:#f92672">!:</span> <span style="color:#ae81ff">0</span>) {
+			snprintf(portstr, <span style="color:#66d9ef">sizeof</span>(portstr), <span style="color:#e6db74">&#34;:%d&#34;</span>, ntohs(sin<span style="color:#f92672">-&gt;</span>sin_port));
 			strcat(str, portstr);
 		}
-		return(str);
+		<span style="color:#66d9ef">return</span>(str);
 	}
-/* end sock_ntop */
-#ifdef	IPV6
-	case AF_INET6: {
-		struct sockaddr_in6	*sin6 : (struct sockaddr_in6 *) sa;
-		str[0] : '[';
-		if (inet_ntop(AF_INET6, &amp;sin6-&gt;sin6_addr, str + 1, sizeof(str) - 1) :: NULL)
-			return(NULL);
-		if (ntohs(sin6-&gt;sin6_port) !: 0) {
-			snprintf(portstr, sizeof(portstr), &quot;]:%d&quot;, ntohs(sin6-&gt;sin6_port));
+<span style="color:#75715e">/* end sock_ntop */</span>
+<span style="color:#75715e">#ifdef	IPV6
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">case</span> AF_INET6: {
+		<span style="color:#66d9ef">struct</span> sockaddr_in6	<span style="color:#f92672">*</span>sin6 : (<span style="color:#66d9ef">struct</span> sockaddr_in6 <span style="color:#f92672">*</span>) sa;
+		str[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;[&#39;</span>;
+		<span style="color:#66d9ef">if</span> (inet_ntop(AF_INET6, <span style="color:#f92672">&amp;</span>sin6<span style="color:#f92672">-&gt;</span>sin6_addr, str <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, <span style="color:#66d9ef">sizeof</span>(str) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">::</span> NULL)
+			<span style="color:#66d9ef">return</span>(NULL);
+		<span style="color:#66d9ef">if</span> (ntohs(sin6<span style="color:#f92672">-&gt;</span>sin6_port) <span style="color:#f92672">!:</span> <span style="color:#ae81ff">0</span>) {
+			snprintf(portstr, <span style="color:#66d9ef">sizeof</span>(portstr), <span style="color:#e6db74">&#34;]:%d&#34;</span>, ntohs(sin6<span style="color:#f92672">-&gt;</span>sin6_port));
 			strcat(str, portstr);
-			return(str);
+			<span style="color:#66d9ef">return</span>(str);
 		}
-		return (str + 1);
+		<span style="color:#66d9ef">return</span> (str <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>);
 	}
-#endif
-//后续省略了一些case，如case AF_UNIX:
-}
-</code></pre>
-
+<span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span><span style="color:#75715e">//后续省略了一些case，如case AF_UNIX:
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h1 id="六-readn-writen和readline">六、readn，writen和readline</h1>
 
 <p>字节流套接字上调用read和write输入和输出的字节数可能比请求的数量要少，所以作者自己写了readn，writen和readline三个函数。</p>
 
 <p>readn的实现如下：</p>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-ssize_t						/* Read &quot;n&quot; bytes from a descriptor. */
-readn(int fd, void *vptr, size_t n)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>ssize_t						<span style="color:#75715e">/* Read &#34;n&#34; bytes from a descriptor. */</span>
+readn(<span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>vptr, size_t n)
 {
 	size_t	nleft;
 	ssize_t	nread;
-	char	*ptr;
+	<span style="color:#66d9ef">char</span>	<span style="color:#f92672">*</span>ptr;
 	ptr : vptr;
 	nleft : n;
-	while (nleft &gt; 0) {
-		if ( (nread : read(fd, ptr, nleft)) &lt; 0) {//循环读取
-			if (errno :: EINTR)
-				nread : 0;		/* and call read() again */
-			else
-				return(-1);
-		} else if (nread :: 0)
-			break;				/* EOF */
-		nleft -: nread;
-		ptr   +: nread;
+	<span style="color:#66d9ef">while</span> (nleft <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+		<span style="color:#66d9ef">if</span> ( (nread : read(fd, ptr, nleft)) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {<span style="color:#75715e">//循环读取
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> (errno <span style="color:#f92672">::</span> EINTR)
+				nread : <span style="color:#ae81ff">0</span>;		<span style="color:#75715e">/* and call read() again */</span>
+			<span style="color:#66d9ef">else</span>
+				<span style="color:#a6e22e">return</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+		} <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (nread <span style="color:#f92672">::</span> <span style="color:#ae81ff">0</span>)
+			<span style="color:#66d9ef">break</span>;				<span style="color:#75715e">/* EOF */</span>
+		nleft <span style="color:#f92672">-:</span> nread;
+		ptr   <span style="color:#f92672">+:</span> nread;
 	}
-	return(n - nleft);		/* return &gt;: 0 */
+	<span style="color:#66d9ef">return</span>(n <span style="color:#f92672">-</span> nleft);		<span style="color:#75715e">/* return &gt;: 0 */</span>
 }
-/* end readn */
-</code></pre>
-
+<span style="color:#75715e">/* end readn */</span>
+</code></pre></div>
 <p>writen的实现如下：</p>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-ssize_t						/* Write &quot;n&quot; bytes to a descriptor. */
-writen(int fd, const void *vptr, size_t n)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>ssize_t						<span style="color:#75715e">/* Write &#34;n&#34; bytes to a descriptor. */</span>
+writen(<span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>vptr, size_t n)
 {
 	size_t		nleft;
 	ssize_t		nwritten;
-	const char	*ptr;
+	<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span>	<span style="color:#f92672">*</span>ptr;
 	ptr : vptr;
 	nleft : n;
-	while (nleft &gt; 0) {
-		if ( (nwritten : write(fd, ptr, nleft)) &lt;: 0) {
-			if (nwritten &lt; 0 &amp;&amp; errno :: EINTR)
-				nwritten : 0;		/* and call write() again */
-			else
-				return(-1);			/* error */
+	<span style="color:#66d9ef">while</span> (nleft <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+		<span style="color:#66d9ef">if</span> ( (nwritten : write(fd, ptr, nleft)) <span style="color:#f92672">&lt;:</span> <span style="color:#ae81ff">0</span>) {
+			<span style="color:#66d9ef">if</span> (nwritten <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">&amp;&amp;</span> errno <span style="color:#f92672">::</span> EINTR)
+				nwritten : <span style="color:#ae81ff">0</span>;		<span style="color:#75715e">/* and call write() again */</span>
+			<span style="color:#66d9ef">else</span>
+				<span style="color:#a6e22e">return</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);			<span style="color:#75715e">/* error */</span>
 		}
-		nleft -: nwritten;
-		ptr   +: nwritten;
+		nleft <span style="color:#f92672">-:</span> nwritten;
+		ptr   <span style="color:#f92672">+:</span> nwritten;
 	}
-	return(n);
+	<span style="color:#66d9ef">return</span>(n);
 }
-</code></pre>
-
+</code></pre></div>
 <p>readline的实现如下：</p>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-//较慢的一个版本，需要每次都调用系统的read函数
-//作者还写了一个较快的版本，这里就不贴出代码了，主要思想是定义一个my_read一次读取进来，但每次都只返回给readline一个字符
-ssize_t
-readline(int fd, void *vptr, size_t maxlen)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">//较慢的一个版本，需要每次都调用系统的read函数
+</span><span style="color:#75715e">//作者还写了一个较快的版本，这里就不贴出代码了，主要思想是定义一个my_read一次读取进来，但每次都只返回给readline一个字符
+</span><span style="color:#75715e"></span>ssize_t
+<span style="color:#a6e22e">readline</span>(<span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>vptr, size_t maxlen)
 {
 	ssize_t	n, rc;
-	char	c, *ptr;
+	<span style="color:#66d9ef">char</span>	c, <span style="color:#f92672">*</span>ptr;
 	ptr : vptr;
-	for (n : 1; n &lt; maxlen; n++) {
-		if ( (rc : read(fd, &amp;c, 1)) :: 1) {
-			*ptr++ : c;
-			if (c :: '\n')
-				break;
-		} else if (rc :: 0) {
-			if (n :: 1)
-				return(0);	/* EOF, no data read */
-			else
-				break;		/* EOF, some data was read */
-		} else
-			return(-1);	/* error */
+	<span style="color:#66d9ef">for</span> (n : <span style="color:#ae81ff">1</span>; n <span style="color:#f92672">&lt;</span> maxlen; n<span style="color:#f92672">++</span>) {
+		<span style="color:#66d9ef">if</span> ( (rc : read(fd, <span style="color:#f92672">&amp;</span>c, <span style="color:#ae81ff">1</span>)) <span style="color:#f92672">::</span> <span style="color:#ae81ff">1</span>) {
+			<span style="color:#f92672">*</span>ptr<span style="color:#f92672">++</span> <span style="color:#f92672">:</span> c;
+			<span style="color:#66d9ef">if</span> (c <span style="color:#f92672">::</span> <span style="color:#e6db74">&#39;\n&#39;</span>)
+				<span style="color:#66d9ef">break</span>;
+		} <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (rc <span style="color:#f92672">::</span> <span style="color:#ae81ff">0</span>) {
+			<span style="color:#66d9ef">if</span> (n <span style="color:#f92672">::</span> <span style="color:#ae81ff">1</span>)
+				<span style="color:#66d9ef">return</span>(<span style="color:#ae81ff">0</span>);	<span style="color:#75715e">/* EOF, no data read */</span>
+			<span style="color:#66d9ef">else</span>
+				<span style="color:#66d9ef">break</span>;		<span style="color:#75715e">/* EOF, some data was read */</span>
+		} <span style="color:#66d9ef">else</span>
+			<span style="color:#66d9ef">return</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);	<span style="color:#75715e">/* error */</span>
 	}
-	*ptr : 0;
-	return(n);
+	<span style="color:#f92672">*</span>ptr : <span style="color:#ae81ff">0</span>;
+	<span style="color:#66d9ef">return</span>(n);
 }
-/* end readline */
-</code></pre>
+<span style="color:#75715e">/* end readline */</span>
+</code></pre></div>
 		</div>
 		
 <div class="post__tags tags clearfix">

@@ -44,9 +44,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -79,7 +81,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -131,60 +132,58 @@
 <p>以deque为底层容器来实现stack这种数据结构，简直不能再简单，基本的操作函数都已经定义好了，deque可以为它完成所有工作。与其说stack是一种容器，倒不如说它是一种配接器，一种容器适配器。</p>
 
 <p>下面我们就来看看stack的源码，真的没骗你，超级简单。</p>
-
-<pre><code class="language-cpp">template &lt;class T, class Sequence = deque&lt;T&gt;  // 以deque作为缺省底层容器
-class stack
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span> <span style="color:#f92672">=</span> deque<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>  <span style="color:#75715e">// 以deque作为缺省底层容器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">stack</span>
 {
-	// #define __STL_NULL_TMPL_ARGS &lt;&gt;
-  friend bool operator== __STL_NULL_TMPL_ARGS (const stack&amp;, const stack&amp;);
-  friend bool operator&lt; __STL_NULL_TMPL_ARGS (const stack&amp;, const stack&amp;);
+	<span style="color:#75715e">// #define __STL_NULL_TMPL_ARGS &lt;&gt;
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&amp;</span>);
+  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&amp;</span>);
 
-public:
-  typedef typename Sequence::value_type value_type;
-  typedef typename Sequence::size_type size_type;
-  typedef typename Sequence::reference reference;
-  typedef typename Sequence::const_reference const_reference;
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>value_type value_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>size_type size_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>reference reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>const_reference const_reference;
 
-protected:
-  Sequence c;   // 底层容器，stack全靠它来实现
+<span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+  Sequence c;   <span style="color:#75715e">// 底层容器，stack全靠它来实现
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// 以下函数直接调用底层容器的接口即可实现
+</span><span style="color:#75715e"></span>
+  <span style="color:#75715e">// 判断stack是否为空
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">bool</span> empty() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.empty(); }	
 
-public:
-	// 以下函数直接调用底层容器的接口即可实现
+  <span style="color:#75715e">// stack中元素个数
+</span><span style="color:#75715e"></span>  size_type size() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.size(); }
 
-  // 判断stack是否为空
-  bool empty() const { return c.empty(); }	
+  <span style="color:#75715e">// 返回栈顶元素, 注意这里返回的是引用!!!
+</span><span style="color:#75715e"></span>  reference top() { <span style="color:#66d9ef">return</span> c.back(); }
+  const_reference top() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.back(); }
 
-  // stack中元素个数
-  size_type size() const { return c.size(); }
+  <span style="color:#75715e">// 在栈顶追加新元素
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> push(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x) { c.push_back(x); }
 
-  // 返回栈顶元素, 注意这里返回的是引用!!!
-  reference top() { return c.back(); }
-  const_reference top() const { return c.back(); }
-
-  // 在栈顶追加新元素
-  void push(const value_type&amp; x) { c.push_back(x); }
-
-  // 移除栈顶元素, 注意不返回元素的引用,
-  // 很多初学者随机用此容器时经常误认为pop()操作同时会返回栈顶元素的引用
-  void pop() { c.pop_back(); }
+  <span style="color:#75715e">// 移除栈顶元素, 注意不返回元素的引用,
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 很多初学者随机用此容器时经常误认为pop()操作同时会返回栈顶元素的引用
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> pop() { c.pop_back(); }
 };
 
-// 判断两个stack是否相等, 就要测试其内部维护容器是否相等
-// x.c == y.c会调用容器重载的operator ==
-template &lt;class T, class Sequence&gt;
-bool operator==(const stack&lt;T, Sequence&gt;&amp; x, const stack&lt;T, Sequence&gt;&amp; y)
+<span style="color:#75715e">// 判断两个stack是否相等, 就要测试其内部维护容器是否相等
+</span><span style="color:#75715e">// x.c == y.c会调用容器重载的operator ==
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> x, <span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> y)
 {
-  return x.c == y.c;
+  <span style="color:#66d9ef">return</span> x.c <span style="color:#f92672">==</span> y.c;
 }
 
-// 比较两个迭代器的大小，即比较底层容器的大小
-template &lt;class T, class Sequence&gt;
-bool operator&lt;(const stack&lt;T, Sequence&gt;&amp; x, const stack&lt;T, Sequence&gt;&amp; y)
+<span style="color:#75715e">// 比较两个迭代器的大小，即比较底层容器的大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span>(<span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> x, <span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> y)
 {
-  return x.c &lt; y.c;
+  <span style="color:#66d9ef">return</span> x.c <span style="color:#f92672">&lt;</span> y.c;
 }
-</code></pre>
-
+</code></pre></div>
 <p>你没有看错，stack的源码就只有上面几句话，全是调用底层容器的接口。下面再来看看它的同胞queue，同样很简单。</p>
 
 <h1 id="queue">queue</h1>
@@ -194,50 +193,48 @@ bool operator&lt;(const stack&lt;T, Sequence&gt;&amp; x, const stack&lt;T, Seque
 <p>queue允许新增元素、移除元素、从最底端插入元素，从最顶端取得元素，但是，从了最底端插入，最顶端取出之外，没有任何其他方法可以存取queue里面的元素，queue和stack一样，不允许有遍历行为，因此，queue也没有迭代器！！！！</p>
 
 <p>queue和stack一样，也是一种容器适配器，只需要调用底层容器的接口就能实现。下面来看看它的源码吧。</p>
-
-<pre><code class="language-cpp">template &lt;class T, class Sequence = deque&lt;T&gt; &gt;
-class queue
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span> <span style="color:#f92672">=</span> deque<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">queue</span>
 {
-  friend bool operator== __STL_NULL_TMPL_ARGS (const queue&amp; x, const queue&amp; y);
-  friend bool operator&lt; __STL_NULL_TMPL_ARGS (const queue&amp; x, const queue&amp; y);
+  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&amp;</span> x, <span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&amp;</span> y);
+  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&amp;</span> x, <span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&amp;</span> y);
 
-public:
-  // 由于queue仅支持对队头和队尾的操作, 所以不定义STL要求的
-  // pointer, iterator, difference_type
-  typedef typename Sequence::value_type value_type;
-  typedef typename Sequence::size_type size_type;
-  typedef typename Sequence::reference reference;
-  typedef typename Sequence::const_reference const_reference;
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#75715e">// 由于queue仅支持对队头和队尾的操作, 所以不定义STL要求的
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// pointer, iterator, difference_type
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>value_type value_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>size_type size_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>reference reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>const_reference const_reference;
 
-protected:
-  Sequence c;   // 底层容器
-
-public:
-	// 以下操作和stack一样
-  bool empty() const { return c.empty(); }
-  size_type size() const { return c.size(); }
-  reference front() { return c.front(); }
-  const_reference front() const { return c.front(); }
-  reference back() { return c.back(); }
-  const_reference back() const { return c.back(); }
-  void push(const value_type&amp; x) { c.push_back(x); }
-  void pop() { c.pop_front(); }
+<span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+  Sequence c;   <span style="color:#75715e">// 底层容器
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// 以下操作和stack一样
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">bool</span> empty() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.empty(); }
+  size_type size() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.size(); }
+  reference front() { <span style="color:#66d9ef">return</span> c.front(); }
+  const_reference front() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.front(); }
+  reference back() { <span style="color:#66d9ef">return</span> c.back(); }
+  const_reference back() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.back(); }
+  <span style="color:#66d9ef">void</span> push(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x) { c.push_back(x); }
+  <span style="color:#66d9ef">void</span> pop() { c.pop_front(); }
 };
 
-// 重载==操作符，比较底层容器即可
-template &lt;class T, class Sequence&gt;
-bool operator==(const queue&lt;T, Sequence&gt;&amp; x, const queue&lt;T, Sequence&gt;&amp; y)
+<span style="color:#75715e">// 重载==操作符，比较底层容器即可
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> x, <span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> y)
 {
-  return x.c == y.c;
+  <span style="color:#66d9ef">return</span> x.c <span style="color:#f92672">==</span> y.c;
 }
-// 同上
-template &lt;class T, class Sequence&gt;
-bool operator&lt;(const queue&lt;T, Sequence&gt;&amp; x, const queue&lt;T, Sequence&gt;&amp; y)
+<span style="color:#75715e">// 同上
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span>(<span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> x, <span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> y)
 {
-  return x.c &lt; y.c;
+  <span style="color:#66d9ef">return</span> x.c <span style="color:#f92672">&lt;</span> y.c;
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="后记">后记</h1>
 
 <p>这篇博客的两个”容器“比较容易理解，因为底层都已经学过了，只需要调用接口即可。最后再啰嗦两句，stack是一个先进后出的容器，queue是一个先进先出的容器，在使用过程中，需要根据你的需求来选择。我在刷leetcode的时候，碰到遍历二叉树的问题，基本上前、中后序遍历的非递归实现中，都会用到stack，而树的层序遍历中，会采用queue，具体的做法可以参考我的这片博文，<a href="http://zcheng.ren/2016/08/01/%E3%80%90%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%92%8C%E7%AE%97%E6%B3%95%E3%80%91%E5%85%A8%E9%9D%A2%E5%89%96%E6%9E%90%E6%A0%91%E7%9A%84%E5%90%84%E7%B1%BB%E9%81%8D%E5%8E%86%E6%96%B9%E6%B3%95/">全面剖析树的各类遍历方法</a>,相信看完你会对stack和queue的使用有进一步的理解！</p>

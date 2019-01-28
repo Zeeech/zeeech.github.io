@@ -32,9 +32,11 @@ STL的set和map都是基于红黑树实现的，和stack和queue都是基于dequ
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -67,7 +69,6 @@ STL的set和map都是基于红黑树实现的，和stack和queue都是基于dequ
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -147,233 +148,213 @@ STL的set和map都是基于红黑树实现的，和stack和queue都是基于dequ
 <p>针对这五点来说，前四点都不用再多作说明，第五点需要做一下说明。如果set中允许修改键值的话，那么首先需要删除该键，然后调节平衡，在插入修改后的键值，再调节平衡，如此一来，严重破坏了set的结构，导致iterator失效，不知道应该指向之前的位置，还是指向改变后的位置。所以STL中将set的迭代器设置成const，不允许修改迭代器的值。</p>
 
 <h2 id="set的数据结构">set的数据结构</h2>
-
-<pre><code class="language-cpp">// 比较器默认采用less，内部按照升序排列，配置器默认采用alloc
-template &lt;class Key, class Compare = less&lt;Key&gt;, class Alloc = alloc&gt;
-class set
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 比较器默认采用less，内部按照升序排列，配置器默认采用alloc
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span> <span style="color:#f92672">=</span> less<span style="color:#f92672">&lt;</span>Key<span style="color:#f92672">&gt;</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">set</span>
 {
-public:
-  //  在set中key就是value, value同时也是key
-  typedef Key key_type;
-  typedef Key value_type;
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#75715e">//  在set中key就是value, value同时也是key
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> Key key_type;
+  <span style="color:#66d9ef">typedef</span> Key value_type;
 
-  // 用于比较的函数
-  typedef Compare key_compare;
-  typedef Compare value_compare;
+  <span style="color:#75715e">// 用于比较的函数
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> Compare key_compare;
+  <span style="color:#66d9ef">typedef</span> Compare value_compare;
 
-private:
-  // 内部采用RBTree作为底层容器
-  typedef rb_tree&lt;key_type, value_type,
-                  identity&lt;value_type&gt;, key_compare, Alloc&gt; rep_type;
-  rep_type t;	// t为内部RBTree容器
+<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+  <span style="color:#75715e">// 内部采用RBTree作为底层容器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> rb_tree<span style="color:#f92672">&lt;</span>key_type, value_type,
+                  identity<span style="color:#f92672">&lt;</span>value_type<span style="color:#f92672">&gt;</span>, key_compare, Alloc<span style="color:#f92672">&gt;</span> rep_type;
+  rep_type t;	<span style="color:#75715e">// t为内部RBTree容器
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#75715e">// 用于提供iterator_traits&lt;I&gt;支持
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_pointer pointer;            
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_pointer const_pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_reference reference;        
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_reference const_reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>difference_type difference_type; 
+  <span style="color:#75715e">// 设置成const迭代器，set的键值不允许修改
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_iterator iterator;          
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_iterator const_iterator;
+  <span style="color:#75715e">// 反向迭代器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_reverse_iterator reverse_iterator;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_reverse_iterator const_reverse_iterator;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>size_type size_type;
 
-public:
-  // 用于提供iterator_traits&lt;I&gt;支持
-  typedef typename rep_type::const_pointer pointer;            
-  typedef typename rep_type::const_pointer const_pointer;
-  typedef typename rep_type::const_reference reference;        
-  typedef typename rep_type::const_reference const_reference;
-  typedef typename rep_type::difference_type difference_type; 
-  // 设置成const迭代器，set的键值不允许修改
-  typedef typename rep_type::const_iterator iterator;          
-  typedef typename rep_type::const_iterator const_iterator;
-  // 反向迭代器
-  typedef typename rep_type::const_reverse_iterator reverse_iterator;
-  typedef typename rep_type::const_reverse_iterator const_reverse_iterator;
-  typedef typename rep_type::size_type size_type;
+  iterator <span style="color:#a6e22e">begin</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.begin(); }
+  iterator <span style="color:#a6e22e">end</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.end(); }
+  reverse_iterator <span style="color:#a6e22e">rbegin</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.rbegin(); }
+  reverse_iterator <span style="color:#a6e22e">rend</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.rend(); }
+  <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">empty</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.empty(); }
+  size_type <span style="color:#a6e22e">size</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.size(); }
+  size_type <span style="color:#a6e22e">max_size</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.max_size(); }
 
-  iterator begin() const { return t.begin(); }
-  iterator end() const { return t.end(); }
-  reverse_iterator rbegin() const { return t.rbegin(); }
-  reverse_iterator rend() const { return t.rend(); }
-  bool empty() const { return t.empty(); }
-  size_type size() const { return t.size(); }
-  size_type max_size() const { return t.max_size(); }
+  <span style="color:#75715e">// 返回用于key比较的函数
+</span><span style="color:#75715e"></span>  key_compare <span style="color:#a6e22e">key_comp</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.key_comp(); }
+  <span style="color:#75715e">// 由于set的性质, value比较和key使用同一个比较函数
+</span><span style="color:#75715e"></span>  value_compare <span style="color:#a6e22e">value_comp</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.key_comp(); }
 
-  // 返回用于key比较的函数
-  key_compare key_comp() const { return t.key_comp(); }
-  // 由于set的性质, value比较和key使用同一个比较函数
-  value_compare value_comp() const { return t.key_comp(); }
-
-  // 声明了两个友元函数，重载了==和&lt;操作符
-  friend bool operator== __STL_NULL_TMPL_ARGS (const set&amp;, const set&amp;);
-  friend bool operator&lt; __STL_NULL_TMPL_ARGS (const set&amp;, const set&amp;);
-  // ...
-}
-</code></pre>
-
+  <span style="color:#75715e">// 声明了两个友元函数，重载了==和&lt;操作符
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> set<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> set<span style="color:#f92672">&amp;</span>);
+  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> set<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> set<span style="color:#f92672">&amp;</span>);
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="set的构造函数">set的构造函数</h2>
 
 <p>set提供了如下几个构造函数用于初始化一个set</p>
-
-<pre><code class="language-cpp">// 注：下面相关函数都在set类中定义，为了介绍方便才抽出来单独讲解
-// 空构造函数，初始化一个空的set
-set() : t(Compare()) {}
-// 支持自定义比较器，如set&lt;int,greater&lt;int&gt; &gt; myset的初始化
-explicit set(const Compare&amp; comp) : t(comp) {}
-// 实现诸如set&lt;int&gt; myset(anotherset.begin(),anotherset.end())这样的初始化
-template &lt;class InputIterator&gt;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 注：下面相关函数都在set类中定义，为了介绍方便才抽出来单独讲解
+</span><span style="color:#75715e">// 空构造函数，初始化一个空的set
+</span><span style="color:#75715e"></span>set() <span style="color:#f92672">:</span> t(Compare()) {}
+<span style="color:#75715e">// 支持自定义比较器，如set&lt;int,greater&lt;int&gt; &gt; myset的初始化
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">explicit</span> set(<span style="color:#66d9ef">const</span> Compare<span style="color:#f92672">&amp;</span> comp) <span style="color:#f92672">:</span> t(comp) {}
+<span style="color:#75715e">// 实现诸如set&lt;int&gt; myset(anotherset.begin(),anotherset.end())这样的初始化
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
 set(InputIterator first, InputIterator last)
-: t(Compare()) { t.insert_unique(first, last); }
-// 支持自定义比较器的初始化操作
-template &lt;class InputIterator&gt;
-set(InputIterator first, InputIterator last, const Compare&amp; comp)
-: t(comp) { t.insert_unique(first, last); }
-// 以另一个set来初始化
-set(const set&lt;Key, Compare, Alloc&gt;&amp; x) : t(x.t) {}
-// 赋值运算符函数
-set&lt;Key, Compare, Alloc&gt;&amp; operator=(const set&lt;Key, Compare, Alloc&gt;&amp; x)
+<span style="color:#f92672">:</span> t(Compare()) { t.insert_unique(first, last); }
+<span style="color:#75715e">// 支持自定义比较器的初始化操作
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+set(InputIterator first, InputIterator last, <span style="color:#66d9ef">const</span> Compare<span style="color:#f92672">&amp;</span> comp)
+<span style="color:#f92672">:</span> t(comp) { t.insert_unique(first, last); }
+<span style="color:#75715e">// 以另一个set来初始化
+</span><span style="color:#75715e"></span>set(<span style="color:#66d9ef">const</span> set<span style="color:#f92672">&lt;</span>Key, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x) <span style="color:#f92672">:</span> t(x.t) {}
+<span style="color:#75715e">// 赋值运算符函数
+</span><span style="color:#75715e"></span>set<span style="color:#f92672">&lt;</span>Key, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">=</span>(<span style="color:#66d9ef">const</span> set<span style="color:#f92672">&lt;</span>Key, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x)
 {
-	t = x.t;
-	return *this;
+	t <span style="color:#f92672">=</span> x.t;
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="set的操作函数">set的操作函数</h2>
 
 <h3 id="insert">insert</h3>
 
 <p>插入函数，调用RBTree的插入函数即可</p>
-
-<pre><code class="language-cpp">typedef  pair&lt;iterator, bool&gt; pair_iterator_bool;
-// 由于set不允许键值重复，所以必须调用RBTree的insert_unique函数
-// second表示插入操作是否成功
-pair&lt;iterator,bool&gt; insert(const value_type&amp; x)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span>  pair<span style="color:#f92672">&lt;</span>iterator, <span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span> pair_iterator_bool;
+<span style="color:#75715e">// 由于set不允许键值重复，所以必须调用RBTree的insert_unique函数
+</span><span style="color:#75715e">// second表示插入操作是否成功
+</span><span style="color:#75715e"></span>pair<span style="color:#f92672">&lt;</span>iterator,<span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span> insert(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x)
 {
-  pair&lt;typename rep_type::iterator, bool&gt; p = t.insert_unique(x);
-  return pair&lt;iterator, bool&gt;(p.first, p.second);
+  pair<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>iterator, <span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span> p <span style="color:#f92672">=</span> t.insert_unique(x);
+  <span style="color:#66d9ef">return</span> pair<span style="color:#f92672">&lt;</span>iterator, <span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span>(p.first, p.second);
 }
 
-// 在position处插入元素, 但是position仅仅是个提示, 如果给出的位置不能进行插入,
-// STL会进行查找, 这会导致很差的效率
-iterator insert(iterator position, const value_type&amp; x)
+<span style="color:#75715e">// 在position处插入元素, 但是position仅仅是个提示, 如果给出的位置不能进行插入,
+</span><span style="color:#75715e">// STL会进行查找, 这会导致很差的效率
+</span><span style="color:#75715e"></span>iterator insert(iterator position, <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x)
 {
-  typedef typename rep_type::iterator rep_iterator;
-  return t.insert_unique((rep_iterator&amp;)position, x);
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>iterator rep_iterator;
+  <span style="color:#66d9ef">return</span> t.insert_unique((rep_iterator<span style="color:#f92672">&amp;</span>)position, x);
 }
-// 将[first，last)区间内的元素插入到set中
-template &lt;class InputIterator&gt;
-void insert(InputIterator first, InputIterator last)
+<span style="color:#75715e">// 将[first，last)区间内的元素插入到set中
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> insert(InputIterator first, InputIterator last)
 {
   t.insert_unique(first, last);
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="erase">erase</h3>
 
 <p>擦除函数，用于擦除单个元素或者区间内的元素，直接调用RBTree的函数即可</p>
-
-<pre><code class="language-cpp">// 擦除指定位置的元素, 会导致内部的红黑树重新排列
-void erase(iterator position)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 擦除指定位置的元素, 会导致内部的红黑树重新排列
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">erase</span>(iterator position)
 {
-  typedef typename rep_type::iterator rep_iterator;
-  t.erase((rep_iterator&amp;)position);
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>iterator rep_iterator;
+  t.erase((rep_iterator<span style="color:#f92672">&amp;</span>)position);
 }
 
-// 会返回擦除元素的个数, 其实就是标识set内原来是否有指定的元素
-size_type erase(const key_type&amp; x)
+<span style="color:#75715e">// 会返回擦除元素的个数, 其实就是标识set内原来是否有指定的元素
+</span><span style="color:#75715e"></span>size_type <span style="color:#a6e22e">erase</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x)
 {
-  return t.erase(x);
+  <span style="color:#66d9ef">return</span> t.erase(x);
 }
 
-// 擦除指定区间的元素, 会导致红黑树有较大变化
-void erase(iterator first, iterator last)
+<span style="color:#75715e">// 擦除指定区间的元素, 会导致红黑树有较大变化
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">erase</span>(iterator first, iterator last)
 {
-  typedef typename rep_type::iterator rep_iterator;
-  t.erase((rep_iterator&amp;)first, (rep_iterator&amp;)last);
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>iterator rep_iterator;
+  t.erase((rep_iterator<span style="color:#f92672">&amp;</span>)first, (rep_iterator<span style="color:#f92672">&amp;</span>)last);
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="clean">clean</h3>
 
 <p>清除整个set容器，直接调用RBTree的clean函数即可</p>
-
-<pre><code class="language-cpp">  void clear() { t.clear(); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">clear</span>() { t.clear(); }
+</code></pre></div>
 <h3 id="find">find</h3>
 
 <p>查找函数，RBTree也提供了，直接调用即可</p>
-
-<pre><code class="language-cpp">  // 查找指定的元素
-  iterator find(const key_type&amp; x) const { return t.find(x); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">  <span style="color:#75715e">// 查找指定的元素
+</span><span style="color:#75715e"></span>  iterator <span style="color:#a6e22e">find</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.find(x); }
+</code></pre></div>
 <h3 id="count">count</h3>
 
 <p>查找制定元素的个数</p>
-
-<pre><code class="language-cpp">  // 返回指定元素的个数, set不允许键值重复，其实就是测试元素是否在set中
-  size_type count(const key_type&amp; x) const { return t.count(x); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">  <span style="color:#75715e">// 返回指定元素的个数, set不允许键值重复，其实就是测试元素是否在set中
+</span><span style="color:#75715e"></span>  size_type <span style="color:#a6e22e">count</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.count(x); }
+</code></pre></div>
 <h3 id="重载操作符">重载操作符</h3>
 
 <p>set重载了==和&lt;操作符，基本上都是调用RBTree的接口函数即可，如下所示：</p>
-
-<pre><code class="language-cpp">template &lt;class Key, class Compare, class Alloc&gt;
-inline bool operator==(const set&lt;Key, Compare, Alloc&gt;&amp; x,
-                       const set&lt;Key, Compare, Alloc&gt;&amp; y) {
-  return x.t == y.t;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> set<span style="color:#f92672">&lt;</span>Key, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x,
+                       <span style="color:#66d9ef">const</span> set<span style="color:#f92672">&lt;</span>Key, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> y) {
+  <span style="color:#66d9ef">return</span> x.t <span style="color:#f92672">==</span> y.t;
 }
 
-template &lt;class Key, class Compare, class Alloc&gt;
-inline bool operator&lt;(const set&lt;Key, Compare, Alloc&gt;&amp; x,
-                      const set&lt;Key, Compare, Alloc&gt;&amp; y) {
-  return x.t &lt; y.t;
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span>(<span style="color:#66d9ef">const</span> set<span style="color:#f92672">&lt;</span>Key, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x,
+                      <span style="color:#66d9ef">const</span> set<span style="color:#f92672">&lt;</span>Key, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> y) {
+  <span style="color:#66d9ef">return</span> x.t <span style="color:#f92672">&lt;</span> y.t;
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="其他操作函数">其他操作函数</h3>
-
-<pre><code class="language-cpp">// 返回小于当前元素的第一个可插入的位置
-iterator lower_bound(const key_type&amp; x) const
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 返回小于当前元素的第一个可插入的位置
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">lower_bound</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span>
 {
-  return t.lower_bound(x);
+  <span style="color:#66d9ef">return</span> t.lower_bound(x);
 }
 
-// 返回大于当前元素的第一个可插入的位置
-iterator upper_bound(const key_type&amp; x) const
+<span style="color:#75715e">// 返回大于当前元素的第一个可插入的位置
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">upper_bound</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span>
 {
-  return t.upper_bound(x);
+  <span style="color:#66d9ef">return</span> t.upper_bound(x);
 }
-// 返回与指定键值相等的元素区间
-pair&lt;iterator,iterator&gt; equal_range(const key_type&amp; x) const
+<span style="color:#75715e">// 返回与指定键值相等的元素区间
+</span><span style="color:#75715e"></span>pair<span style="color:#f92672">&lt;</span>iterator,iterator<span style="color:#f92672">&gt;</span> equal_range(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span>
 {
-  return t.equal_range(x);
+  <span style="color:#66d9ef">return</span> t.equal_range(x);
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="multiset">multiset</h1>
 
 <p>multiset相对于set来说，区别就是multiset允许键值重复，在multiset中调用的是RBTree的insert_equal函数，其他的基本与set相同。</p>
 
 <p>其他的就不赘述了，下面列举一下跟set不同的地方：</p>
-
-<pre><code class="language-cpp">// 初始化函数，
-// 注意！！！！插入操作采用的是RBTree的insert_equal，而不是insert_unique
-template &lt;class InputIterator&gt;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 初始化函数，
+</span><span style="color:#75715e">// 注意！！！！插入操作采用的是RBTree的insert_equal，而不是insert_unique
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
 multiset(InputIterator first, InputIterator last)
-  : t(Compare()) { t.insert_equal(first, last); }
-template &lt;class InputIterator&gt;
-multiset(InputIterator first, InputIterator last, const Compare&amp; comp)
-  : t(comp) { t.insert_equal(first, last); }
+  <span style="color:#f92672">:</span> t(Compare()) { t.insert_equal(first, last); }
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+multiset(InputIterator first, InputIterator last, <span style="color:#66d9ef">const</span> Compare<span style="color:#f92672">&amp;</span> comp)
+  <span style="color:#f92672">:</span> t(comp) { t.insert_equal(first, last); }
 
-// 插入元素, 注意, 插入的元素key允许重复
-iterator insert(const value_type&amp; x)
+<span style="color:#75715e">// 插入元素, 注意, 插入的元素key允许重复
+</span><span style="color:#75715e"></span>iterator insert(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x)
 {
-  return t.insert_equal(x);
+  <span style="color:#66d9ef">return</span> t.insert_equal(x);
 }
 
-// 在position处插入元素, 但是position仅仅是个提示, 如果给出的位置不能进行插入,
-// STL会进行查找, 这会导致很差的效率
-iterator insert(iterator position, const value_type&amp; x)
+<span style="color:#75715e">// 在position处插入元素, 但是position仅仅是个提示, 如果给出的位置不能进行插入,
+</span><span style="color:#75715e">// STL会进行查找, 这会导致很差的效率
+</span><span style="color:#75715e"></span>iterator insert(iterator position, <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x)
 {
-  typedef typename rep_type::iterator rep_iterator;
-  return t.insert_equal((rep_iterator&amp;)position, x);
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>iterator rep_iterator;
+  <span style="color:#66d9ef">return</span> t.insert_equal((rep_iterator<span style="color:#f92672">&amp;</span>)position, x);
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="map">map</h1>
 
 <p>map和set一样是关联式容器，它们的底层容器都是红黑树，区别就在于map的值不作为键，键和值是分开的。它的特性如下：</p>
@@ -389,218 +370,202 @@ iterator insert(iterator position, const value_type&amp; x)
 <p>在map中，一个键对应一个值，其中键不允许重复，不允许修改，但是键对应的值是可以修改的，原因可以看上面set中的解释。下面就一起来看看STL中的map的源代码。</p>
 
 <h2 id="map的数据结构">map的数据结构</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 默认比较器为less&lt;key&gt;,元素按照键的大小升序排列
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span> <span style="color:#f92672">=</span> less<span style="color:#f92672">&lt;</span>Key<span style="color:#f92672">&gt;</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">map</span> {
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#66d9ef">typedef</span> Key key_type;                         <span style="color:#75715e">// key类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> T data_type;                          <span style="color:#75715e">// value类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> T mapped_type;
+  <span style="color:#66d9ef">typedef</span> pair<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">const</span> Key, T<span style="color:#f92672">&gt;</span> value_type;        <span style="color:#75715e">// 元素类型, 要保证key不被修改
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> Compare key_compare;                  <span style="color:#75715e">// 用于key比较的函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+  <span style="color:#75715e">// 内部采用RBTree作为底层容器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> rb_tree<span style="color:#f92672">&lt;</span>key_type, value_type,
+                  identity<span style="color:#f92672">&lt;</span>value_type<span style="color:#f92672">&gt;</span>, key_compare, Alloc<span style="color:#f92672">&gt;</span> rep_type;
+  rep_type t; <span style="color:#75715e">// t为内部RBTree容器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#75715e">// 用于提供iterator_traits&lt;I&gt;支持
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_pointer pointer;            
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_pointer const_pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_reference reference;        
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_reference const_reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>difference_type difference_type; 
+  <span style="color:#75715e">// 注意：这里与set不一样，map的迭代器是可以修改的
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>iterator iterator;          
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_iterator const_iterator;
+  <span style="color:#75715e">// 反向迭代器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_reverse_iterator reverse_iterator;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>const_reverse_iterator const_reverse_iterator;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> rep_type<span style="color:#f92672">::</span>size_type size_type;
 
-<pre><code class="language-cpp">// 默认比较器为less&lt;key&gt;,元素按照键的大小升序排列
-template &lt;class Key, class T, class Compare = less&lt;Key&gt;, class Alloc = alloc&gt;
-class map {
-public:
-  typedef Key key_type;                         // key类型
-  typedef T data_type;                          // value类型
-  typedef T mapped_type;
-  typedef pair&lt;const Key, T&gt; value_type;        // 元素类型, 要保证key不被修改
-  typedef Compare key_compare;                  // 用于key比较的函数
-private:
-  // 内部采用RBTree作为底层容器
-  typedef rb_tree&lt;key_type, value_type,
-                  identity&lt;value_type&gt;, key_compare, Alloc&gt; rep_type;
-  rep_type t; // t为内部RBTree容器
-public:
-  // 用于提供iterator_traits&lt;I&gt;支持
-  typedef typename rep_type::const_pointer pointer;            
-  typedef typename rep_type::const_pointer const_pointer;
-  typedef typename rep_type::const_reference reference;        
-  typedef typename rep_type::const_reference const_reference;
-  typedef typename rep_type::difference_type difference_type; 
-  // 注意：这里与set不一样，map的迭代器是可以修改的
-  typedef typename rep_type::iterator iterator;          
-  typedef typename rep_type::const_iterator const_iterator;
-  // 反向迭代器
-  typedef typename rep_type::const_reverse_iterator reverse_iterator;
-  typedef typename rep_type::const_reverse_iterator const_reverse_iterator;
-  typedef typename rep_type::size_type size_type;
+  <span style="color:#75715e">// 常规的返回迭代器函数
+</span><span style="color:#75715e"></span>  iterator <span style="color:#a6e22e">begin</span>() { <span style="color:#66d9ef">return</span> t.begin(); }
+  const_iterator <span style="color:#a6e22e">begin</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.begin(); }
+  iterator <span style="color:#a6e22e">end</span>() { <span style="color:#66d9ef">return</span> t.end(); }
+  const_iterator <span style="color:#a6e22e">end</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.end(); }
+  reverse_iterator <span style="color:#a6e22e">rbegin</span>() { <span style="color:#66d9ef">return</span> t.rbegin(); }
+  const_reverse_iterator <span style="color:#a6e22e">rbegin</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.rbegin(); }
+  reverse_iterator <span style="color:#a6e22e">rend</span>() { <span style="color:#66d9ef">return</span> t.rend(); }
+  const_reverse_iterator <span style="color:#a6e22e">rend</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.rend(); }
+  <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">empty</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.empty(); }
+  size_type <span style="color:#a6e22e">size</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.size(); }
+  size_type <span style="color:#a6e22e">max_size</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.max_size(); }
 
-  // 常规的返回迭代器函数
-  iterator begin() { return t.begin(); }
-  const_iterator begin() const { return t.begin(); }
-  iterator end() { return t.end(); }
-  const_iterator end() const { return t.end(); }
-  reverse_iterator rbegin() { return t.rbegin(); }
-  const_reverse_iterator rbegin() const { return t.rbegin(); }
-  reverse_iterator rend() { return t.rend(); }
-  const_reverse_iterator rend() const { return t.rend(); }
-  bool empty() const { return t.empty(); }
-  size_type size() const { return t.size(); }
-  size_type max_size() const { return t.max_size(); }
+  <span style="color:#75715e">// 返回用于key比较的函数
+</span><span style="color:#75715e"></span>  key_compare <span style="color:#a6e22e">key_comp</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.key_comp(); }
 
-  // 返回用于key比较的函数
-  key_compare key_comp() const { return t.key_comp(); }
+  <span style="color:#75715e">// 由于map的性质, value和key使用同一个比较函数, 实际上我们并不使用value比较函数
+</span><span style="color:#75715e"></span>  value_compare <span style="color:#a6e22e">value_comp</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> value_compare(t.key_comp()); }
 
-  // 由于map的性质, value和key使用同一个比较函数, 实际上我们并不使用value比较函数
-  value_compare value_comp() const { return value_compare(t.key_comp()); }
-
-  // 注意: 这里有一个常见的陷阱, 如果访问的key不存在, 会新建立一个
-  T&amp; operator[](const key_type&amp; k)
+  <span style="color:#75715e">// 注意: 这里有一个常见的陷阱, 如果访问的key不存在, 会新建立一个
+</span><span style="color:#75715e"></span>  T<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span>[](<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> k)
   {
-    return (*((insert(value_type(k, T()))).first)).second;
+    <span style="color:#66d9ef">return</span> (<span style="color:#f92672">*</span>((insert(value_type(k, T()))).first)).second;
   }
-  // 重载了==和&lt;操作符，后面会有实现
-  friend bool operator== __STL_NULL_TMPL_ARGS (const map&amp;, const map&amp;);
-  friend bool operator&lt; __STL_NULL_TMPL_ARGS (const map&amp;, const map&amp;);
+  <span style="color:#75715e">// 重载了==和&lt;操作符，后面会有实现
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> map<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> map<span style="color:#f92672">&amp;</span>);
+  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> map<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> map<span style="color:#f92672">&amp;</span>);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="map的构造函数">map的构造函数</h2>
 
 <p>map提供了一下的构造函数来初始化一个map</p>
-
-<pre><code class="language-cpp">// 空构造函数，直接调用RBTree的空构造函数
-map() : t(Compare()) {}
-explicit map(const Compare&amp; comp) : t(comp) {}
-// 提供类似map&lt;int,int&gt; myMap(anotherMap.begin(),anotherMap.end())的初始化
-template &lt;class InputIterator&gt;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 空构造函数，直接调用RBTree的空构造函数
+</span><span style="color:#75715e"></span>map() <span style="color:#f92672">:</span> t(Compare()) {}
+<span style="color:#66d9ef">explicit</span> map(<span style="color:#66d9ef">const</span> Compare<span style="color:#f92672">&amp;</span> comp) <span style="color:#f92672">:</span> t(comp) {}
+<span style="color:#75715e">// 提供类似map&lt;int,int&gt; myMap(anotherMap.begin(),anotherMap.end())的初始化
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
 map(InputIterator first, InputIterator last)
-  : t(Compare()) { t.insert_unique(first, last); }
-// 提供类似map&lt;int,int&gt; myMap(anotherMap.begin(),anotherMap.end(),less&lt;int&gt;)初始化
-template &lt;class InputIterator&gt;
-map(InputIterator first, InputIterator last, const Compare&amp; comp)
-  : t(comp) { t.insert_unique(first, last); }
-// 提供类似map&lt;int&gt; maMap(anotherMap)的初始化
-map(const map&lt;Key, T, Compare, Alloc&gt;&amp; x) : t(x.t) {}
-// 重载=操作符，赋值运算符
-map&lt;Key, T, Compare, Alloc&gt;&amp; operator=(const map&lt;Key, T, Compare, Alloc&gt;&amp; x)
+  <span style="color:#f92672">:</span> t(Compare()) { t.insert_unique(first, last); }
+<span style="color:#75715e">// 提供类似map&lt;int,int&gt; myMap(anotherMap.begin(),anotherMap.end(),less&lt;int&gt;)初始化
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+map(InputIterator first, InputIterator last, <span style="color:#66d9ef">const</span> Compare<span style="color:#f92672">&amp;</span> comp)
+  <span style="color:#f92672">:</span> t(comp) { t.insert_unique(first, last); }
+<span style="color:#75715e">// 提供类似map&lt;int&gt; maMap(anotherMap)的初始化
+</span><span style="color:#75715e"></span>map(<span style="color:#66d9ef">const</span> map<span style="color:#f92672">&lt;</span>Key, T, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x) <span style="color:#f92672">:</span> t(x.t) {}
+<span style="color:#75715e">// 重载=操作符，赋值运算符
+</span><span style="color:#75715e"></span>map<span style="color:#f92672">&lt;</span>Key, T, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">=</span>(<span style="color:#66d9ef">const</span> map<span style="color:#f92672">&lt;</span>Key, T, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x)
 {
-  t = x.t;
-  return *this;
+  t <span style="color:#f92672">=</span> x.t;
+  <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="map的操作函数">map的操作函数</h2>
 
 <h3 id="insert-1">insert</h3>
 
 <p>同set一样，直接调用RBTree的插入函数即可，注意map不允许键值重复，所以调用的是insert_unique</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 对于相同的key, 只允许出现一次, bool标识
+</span><span style="color:#75715e"></span>pair<span style="color:#f92672">&lt;</span>iterator,<span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span> insert(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x) { <span style="color:#66d9ef">return</span> t.insert_unique(x); }
 
-<pre><code class="language-cpp">// 对于相同的key, 只允许出现一次, bool标识
-pair&lt;iterator,bool&gt; insert(const value_type&amp; x) { return t.insert_unique(x); }
-
-// 在position处
-插入元素, 但是position仅仅是个提示, 如果给出的位置不能进行插入,
-// STL会进行查找, 这会导致很差的效率
-iterator insert(iterator position, const value_type&amp; x)
+<span style="color:#75715e">// 在position处
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">插入元素</span>, <span style="color:#960050;background-color:#1e0010">但是</span>position仅仅是个提示, <span style="color:#960050;background-color:#1e0010">如果给出的位置不能进行插入</span>,
+<span style="color:#75715e">// STL会进行查找, 这会导致很差的效率
+</span><span style="color:#75715e"></span>iterator insert(iterator position, <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x)
 {
-  return t.insert_unique(position, x);
+  <span style="color:#66d9ef">return</span> t.insert_unique(position, x);
 }
-// 将[first，last)区间内的元素插入到map中
-template &lt;class InputIterator&gt;
-void insert(InputIterator first, InputIterator last) {
+<span style="color:#75715e">// 将[first，last)区间内的元素插入到map中
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> insert(InputIterator first, InputIterator last) {
   t.insert_unique(first, last);
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="erase-1">erase</h3>
 
 <p>同set，直接调用即可</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 擦除指定位置的元素, 会导致内部的红黑树重新排列
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">erase</span>(iterator position) { t.erase(position); }
 
-<pre><code class="language-cpp">// 擦除指定位置的元素, 会导致内部的红黑树重新排列
-void erase(iterator position) { t.erase(position); }
-
-// 会返回擦除元素的个数, 其实就是标识map内原来是否有指定的元素
-size_type erase(const key_type&amp; x) { return t.erase(x); }
-void erase(iterator first, iterator last) { t.erase(first, last); }
-</code></pre>
-
+<span style="color:#75715e">// 会返回擦除元素的个数, 其实就是标识map内原来是否有指定的元素
+</span><span style="color:#75715e"></span>size_type <span style="color:#a6e22e">erase</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) { <span style="color:#66d9ef">return</span> t.erase(x); }
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">erase</span>(iterator first, iterator last) { t.erase(first, last); }
+</code></pre></div>
 <h3 id="clean-1">clean</h3>
 
 <p>同set，直接调用即可</p>
-
-<pre><code class="language-cpp">void clear() { t.clear(); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">clear</span>() { t.clear(); }
+</code></pre></div>
 <h3 id="find-1">find</h3>
-
-<pre><code class="language-cpp">// 查找指定key的元素
-iterator find(const key_type&amp; x) { return t.find(x); }
-const_iterator find(const key_type&amp; x) const { return t.find(x); }
-````
-### 重载运算符
-上面介绍到map重载了[],==和&lt;运算符，[]的实现已经介绍过，下面是==和&lt;的实现
-```cpp
-// 比较map直接是对其底层容器t的比较，直接调用RBTree的比较函数即可
-template &lt;class Key, class T, class Compare, class Alloc&gt;
-inline bool operator==(const map&lt;Key, T, Compare, Alloc&gt;&amp; x,
-                       const map&lt;Key, T, Compare, Alloc&gt;&amp; y)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 查找指定key的元素
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">find</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) { <span style="color:#66d9ef">return</span> t.find(x); }
+const_iterator <span style="color:#a6e22e">find</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> t.find(x); }
+<span style="color:#960050;background-color:#1e0010">````</span>
+<span style="color:#75715e">### 重载运算符
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">上面介绍到</span>map重载了[],<span style="color:#f92672">==</span><span style="color:#960050;background-color:#1e0010">和</span><span style="color:#f92672">&lt;</span><span style="color:#960050;background-color:#1e0010">运算符，</span>[]<span style="color:#960050;background-color:#1e0010">的实现已经介绍过，下面是</span><span style="color:#f92672">==</span><span style="color:#960050;background-color:#1e0010">和</span><span style="color:#f92672">&lt;</span><span style="color:#960050;background-color:#1e0010">的实现</span>
+<span style="color:#960050;background-color:#1e0010">```</span>cpp
+<span style="color:#75715e">// 比较map直接是对其底层容器t的比较，直接调用RBTree的比较函数即可
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> map<span style="color:#f92672">&lt;</span>Key, T, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x,
+                       <span style="color:#66d9ef">const</span> map<span style="color:#f92672">&lt;</span>Key, T, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> y)
 {
-  return x.t == y.t;
+  <span style="color:#66d9ef">return</span> x.t <span style="color:#f92672">==</span> y.t;
 }
 
-template &lt;class Key, class T, class Compare, class Alloc&gt;
-inline bool operator&lt;(const map&lt;Key, T, Compare, Alloc&gt;&amp; x,
-                      const map&lt;Key, T, Compare, Alloc&gt;&amp; y)
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span>(<span style="color:#66d9ef">const</span> map<span style="color:#f92672">&lt;</span>Key, T, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x,
+                      <span style="color:#66d9ef">const</span> map<span style="color:#f92672">&lt;</span>Key, T, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> y)
 {
-  return x.t &lt; y.t;
+  <span style="color:#66d9ef">return</span> x.t <span style="color:#f92672">&lt;</span> y.t;
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="其他操作函数-1">其他操作函数</h3>
-
-<pre><code class="language-cpp">// 返回小于当前元素的第一个可插入的位置
-iterator lower_bound(const key_type&amp; x) {return t.lower_bound(x); }
-const_iterator lower_bound(const key_type&amp; x) const
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 返回小于当前元素的第一个可插入的位置
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">lower_bound</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) {<span style="color:#66d9ef">return</span> t.lower_bound(x); }
+const_iterator <span style="color:#a6e22e">lower_bound</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span>
 {
-  return t.lower_bound(x);
+  <span style="color:#66d9ef">return</span> t.lower_bound(x);
 }
 
-// 返回大于当前元素的第一个可插入的位置
-iterator upper_bound(const key_type&amp; x) {return t.upper_bound(x); }
-const_iterator upper_bound(const key_type&amp; x) const
+<span style="color:#75715e">// 返回大于当前元素的第一个可插入的位置
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">upper_bound</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) {<span style="color:#66d9ef">return</span> t.upper_bound(x); }
+const_iterator <span style="color:#a6e22e">upper_bound</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span>
 {
-  return t.upper_bound(x);
+  <span style="color:#66d9ef">return</span> t.upper_bound(x);
 }
-// 返回与指定键值相等的元素区间
-pair&lt;iterator,iterator&gt; equal_range(const key_type&amp; x)
+<span style="color:#75715e">// 返回与指定键值相等的元素区间
+</span><span style="color:#75715e"></span>pair<span style="color:#f92672">&lt;</span>iterator,iterator<span style="color:#f92672">&gt;</span> equal_range(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x)
 {
-  return t.equal_range(x);
+  <span style="color:#66d9ef">return</span> t.equal_range(x);
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="multimap">multimap</h1>
 
 <p>multimap和map的关系就跟multiset和set的关系一样，multimap允许键的值相同，因此在插入操作的时候用到insert_equal()，除此之外，基本上与map相同。</p>
 
 <p>下面就仅仅列出不同的地方</p>
-
-<pre><code class="language-cpp">template &lt;class Key, class T, class Compare = less&lt;Key&gt;, class Alloc = alloc&gt;
-class multimap
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span> <span style="color:#f92672">=</span> less<span style="color:#f92672">&lt;</span>Key<span style="color:#f92672">&gt;</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">multimap</span>
 {
-  // ... 其他地方与map相同
-  // 注意下面这些函数都调用的是insert_equal，而不是insert_unique
-  template &lt;class InputIterator&gt;
+  <span style="color:#75715e">// ... 其他地方与map相同
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 注意下面这些函数都调用的是insert_equal，而不是insert_unique
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
   multimap(InputIterator first, InputIterator last)
-    : t(Compare()) { t.insert_equal(first, last); }
+    <span style="color:#f92672">:</span> t(Compare()) { t.insert_equal(first, last); }
 
-  template &lt;class InputIterator&gt;
-  multimap(InputIterator first, InputIterator last, const Compare&amp; comp)
-    : t(comp) { t.insert_equal(first, last); }
+  <span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+  multimap(InputIterator first, InputIterator last, <span style="color:#66d9ef">const</span> Compare<span style="color:#f92672">&amp;</span> comp)
+    <span style="color:#f92672">:</span> t(comp) { t.insert_equal(first, last); }
 
-  // 插入元素, 注意, 插入的元素key允许重复
-  iterator insert(const value_type&amp; x) { return t.insert_equal(x); }
+  <span style="color:#75715e">// 插入元素, 注意, 插入的元素key允许重复
+</span><span style="color:#75715e"></span>  iterator insert(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x) { <span style="color:#66d9ef">return</span> t.insert_equal(x); }
 
-  // 在position处插入元素, 但是position仅仅是个提示, 如果给出的位置不能进行插入,
-  // STL会进行查找, 这会导致很差的效率
-  iterator insert(iterator position, const value_type&amp; x)
+  <span style="color:#75715e">// 在position处插入元素, 但是position仅仅是个提示, 如果给出的位置不能进行插入,
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// STL会进行查找, 这会导致很差的效率
+</span><span style="color:#75715e"></span>  iterator insert(iterator position, <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x)
   {
-    return t.insert_equal(position, x);
+    <span style="color:#66d9ef">return</span> t.insert_equal(position, x);
   }
-  // 插入一个区间内的元素
-  template &lt;class InputIterator&gt;
-  void insert(InputIterator first, InputIterator last)
+  <span style="color:#75715e">// 插入一个区间内的元素
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+  <span style="color:#66d9ef">void</span> insert(InputIterator first, InputIterator last)
   {
     t.insert_equal(first, last);
   }
-  // ...其余地方和map相同
-}
-</code></pre>
-
+  <span style="color:#75715e">// ...其余地方和map相同
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h1 id="总结">总结</h1>
 
 <p>总的来说，这四类容器仅仅只是在RBTree上进行了一层封装，首先，set和map的区别就在于键和值是否相同，set中将值作为键，支持STL的提供的一些交集、并集和差集等运算；map的键和值不同，每个键都有自己的值，键不能重复，但是值可以重复。</p>

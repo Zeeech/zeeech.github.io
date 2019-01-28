@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -109,93 +110,87 @@
 <p>列表没有其特有的数据结构，而是采用RedisObject作为其泛型数据结构，当RedisObject的type字段为OBJ_LIST时，该对象被认为是一个列表。</p>
 
 <p>Redis为列表提供了迭代器结构，本质就是quicklist迭代器的基本上做了一层封装。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> {
+    robj <span style="color:#f92672">*</span>subject;  <span style="color:#75715e">// 迭代器指向的对象
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> encoding;  <span style="color:#75715e">// 编码类型
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> direction; <span style="color:#75715e">// 迭代器方向
+</span><span style="color:#75715e"></span>    quicklistIter <span style="color:#f92672">*</span>iter; <span style="color:#75715e">// quicklist的迭代器
+</span><span style="color:#75715e"></span>} listTypeIterator;
 
-<pre><code class="language-cpp">typedef struct {
-    robj *subject;  // 迭代器指向的对象
-    unsigned char encoding;  // 编码类型
-    unsigned char direction; // 迭代器方向
-    quicklistIter *iter; // quicklist的迭代器
-} listTypeIterator;
-
-// 代表list中的某个数据项
-typedef struct {
-    listTypeIterator *li;  // list迭代器指针
-    quicklistEntry entry; // quicklist的数据项节点结构
-} listTypeEntry;
-</code></pre>
-
+<span style="color:#75715e">// 代表list中的某个数据项
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> {
+    listTypeIterator <span style="color:#f92672">*</span>li;  <span style="color:#75715e">// list迭代器指针
+</span><span style="color:#75715e"></span>    quicklistEntry entry; <span style="color:#75715e">// quicklist的数据项节点结构
+</span><span style="color:#75715e"></span>} listTypeEntry;
+</code></pre></div>
 <h1 id="list主要接口">List主要接口</h1>
 
 <p>列表定义了基本的接口函数，包括push，pop，insert，find等等，基本上都是在quicklist上做了一次封装。我们先来看看主要有哪些接口。</p>
-
-<pre><code class="language-cpp">// list的push操作
-void listTypePush(robj *subject, robj *value, int where);
-// list的pop操作
-robj *listTypePop(robj *subject, int where);
-// 返回list的数据项个数总和
-unsigned long listTypeLength(robj *subject);
-// 初始化一个list迭代器
-listTypeIterator *listTypeInitIterator(robj *subject, long index,
-                                       unsigned char direction);
-// 释放一个list迭代器
-void listTypeReleaseIterator(listTypeIterator *li);
-// 指向下一个数据项的list迭代器
-int listTypeNext(listTypeIterator *li, listTypeEntry *entry);
-// 返回entry指向的list中的数据项的值
-robj *listTypeGet(listTypeEntry *entry) ;
-// 在entry指向的list数据项前面或者后面插入value
-void listTypeInsert(listTypeEntry *entry, robj *value, int where);
-// 比较entry指向的list中的数据项与o的大小
-int listTypeEqual(listTypeEntry *entry, robj *o);
-// 删除entry指向的list中的数据项
-void listTypeDelete(listTypeIterator *iter, listTypeEntry *entry);
-// 将OBJ_ENCODING_ZIPLIST类型编码的列表转换成OBJ_ENCODING_QUICKLIST编码的列表
-void listTypeConvert(robj *subject, int enc);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// list的push操作
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listTypePush</span>(robj <span style="color:#f92672">*</span>subject, robj <span style="color:#f92672">*</span>value, <span style="color:#66d9ef">int</span> where);
+<span style="color:#75715e">// list的pop操作
+</span><span style="color:#75715e"></span>robj <span style="color:#f92672">*</span><span style="color:#a6e22e">listTypePop</span>(robj <span style="color:#f92672">*</span>subject, <span style="color:#66d9ef">int</span> where);
+<span style="color:#75715e">// 返回list的数据项个数总和
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">listTypeLength</span>(robj <span style="color:#f92672">*</span>subject);
+<span style="color:#75715e">// 初始化一个list迭代器
+</span><span style="color:#75715e"></span>listTypeIterator <span style="color:#f92672">*</span><span style="color:#a6e22e">listTypeInitIterator</span>(robj <span style="color:#f92672">*</span>subject, <span style="color:#66d9ef">long</span> index,
+                                       <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> direction);
+<span style="color:#75715e">// 释放一个list迭代器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listTypeReleaseIterator</span>(listTypeIterator <span style="color:#f92672">*</span>li);
+<span style="color:#75715e">// 指向下一个数据项的list迭代器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">listTypeNext</span>(listTypeIterator <span style="color:#f92672">*</span>li, listTypeEntry <span style="color:#f92672">*</span>entry);
+<span style="color:#75715e">// 返回entry指向的list中的数据项的值
+</span><span style="color:#75715e"></span>robj <span style="color:#f92672">*</span><span style="color:#a6e22e">listTypeGet</span>(listTypeEntry <span style="color:#f92672">*</span>entry) ;
+<span style="color:#75715e">// 在entry指向的list数据项前面或者后面插入value
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listTypeInsert</span>(listTypeEntry <span style="color:#f92672">*</span>entry, robj <span style="color:#f92672">*</span>value, <span style="color:#66d9ef">int</span> where);
+<span style="color:#75715e">// 比较entry指向的list中的数据项与o的大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">listTypeEqual</span>(listTypeEntry <span style="color:#f92672">*</span>entry, robj <span style="color:#f92672">*</span>o);
+<span style="color:#75715e">// 删除entry指向的list中的数据项
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listTypeDelete</span>(listTypeIterator <span style="color:#f92672">*</span>iter, listTypeEntry <span style="color:#f92672">*</span>entry);
+<span style="color:#75715e">// 将OBJ_ENCODING_ZIPLIST类型编码的列表转换成OBJ_ENCODING_QUICKLIST编码的列表
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listTypeConvert</span>(robj <span style="color:#f92672">*</span>subject, <span style="color:#66d9ef">int</span> enc);
+</code></pre></div>
 <p>其中，我们以push和pop操作来简要看看这些函数的实现源码。</p>
-
-<pre><code class="language-cpp">// 向list中压入数据
-void listTypePush(robj *subject, robj *value, int where) {
-    // 仅仅当编码类型为OBJ_ENCODING_QUICKLIST时才进行操作
-    if (subject-&gt;encoding == OBJ_ENCODING_QUICKLIST) {
-        // 判断压入位置
-        int pos = (where == LIST_HEAD) ? QUICKLIST_HEAD : QUICKLIST_TAIL;
-        // 从value中解码出数据项
-        value = getDecodedObject(value);
-        // 得到数据项的长度
-        size_t len = sdslen(value-&gt;ptr);
-        // 调用quicklistPush插入数据
-        quicklistPush(subject-&gt;ptr, value-&gt;ptr, len, pos);
-        // 将数据项对象的引用次数减1，也就是释放value
-        decrRefCount(value);
-    } else {
-        serverPanic(&quot;Unknown list encoding&quot;);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 向list中压入数据
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listTypePush</span>(robj <span style="color:#f92672">*</span>subject, robj <span style="color:#f92672">*</span>value, <span style="color:#66d9ef">int</span> where) {
+    <span style="color:#75715e">// 仅仅当编码类型为OBJ_ENCODING_QUICKLIST时才进行操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (subject<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_QUICKLIST) {
+        <span style="color:#75715e">// 判断压入位置
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">int</span> pos <span style="color:#f92672">=</span> (where <span style="color:#f92672">==</span> LIST_HEAD) <span style="color:#f92672">?</span> QUICKLIST_HEAD : QUICKLIST_TAIL;
+        <span style="color:#75715e">// 从value中解码出数据项
+</span><span style="color:#75715e"></span>        value <span style="color:#f92672">=</span> getDecodedObject(value);
+        <span style="color:#75715e">// 得到数据项的长度
+</span><span style="color:#75715e"></span>        size_t len <span style="color:#f92672">=</span> sdslen(value<span style="color:#f92672">-&gt;</span>ptr);
+        <span style="color:#75715e">// 调用quicklistPush插入数据
+</span><span style="color:#75715e"></span>        quicklistPush(subject<span style="color:#f92672">-&gt;</span>ptr, value<span style="color:#f92672">-&gt;</span>ptr, len, pos);
+        <span style="color:#75715e">// 将数据项对象的引用次数减1，也就是释放value
+</span><span style="color:#75715e"></span>        decrRefCount(value);
+    } <span style="color:#66d9ef">else</span> {
+        serverPanic(<span style="color:#e6db74">&#34;Unknown list encoding&#34;</span>);
     }
 }
-// 向list中弹出数据
-robj *listTypePop(robj *subject, int where) {
-    long long vlong;
-    robj *value = NULL;
-	// 判断弹出位置
-    int ql_where = where == LIST_HEAD ? QUICKLIST_HEAD : QUICKLIST_TAIL;
-    // 仅仅当编码类型为OBJ_ENCODING_QUICKLIST时才进行操作
-    if (subject-&gt;encoding == OBJ_ENCODING_QUICKLIST) {
-        // 调用quicklistPopCustom函数弹出数据
-        if (quicklistPopCustom(subject-&gt;ptr, ql_where, (unsigned char **)&amp;value,
-                               NULL, &amp;vlong, listPopSaver)) {
-            if (!value)
-                // 将数据项编码成string类型的RedisObject
-                value = createStringObjectFromLongLong(vlong);
+<span style="color:#75715e">// 向list中弹出数据
+</span><span style="color:#75715e"></span>robj <span style="color:#f92672">*</span><span style="color:#a6e22e">listTypePop</span>(robj <span style="color:#f92672">*</span>subject, <span style="color:#66d9ef">int</span> where) {
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> vlong;
+    robj <span style="color:#f92672">*</span>value <span style="color:#f92672">=</span> NULL;
+	<span style="color:#75715e">// 判断弹出位置
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> ql_where <span style="color:#f92672">=</span> where <span style="color:#f92672">==</span> LIST_HEAD <span style="color:#f92672">?</span> QUICKLIST_HEAD : QUICKLIST_TAIL;
+    <span style="color:#75715e">// 仅仅当编码类型为OBJ_ENCODING_QUICKLIST时才进行操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (subject<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_QUICKLIST) {
+        <span style="color:#75715e">// 调用quicklistPopCustom函数弹出数据
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (quicklistPopCustom(subject<span style="color:#f92672">-&gt;</span>ptr, ql_where, (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>)<span style="color:#f92672">&amp;</span>value,
+                               NULL, <span style="color:#f92672">&amp;</span>vlong, listPopSaver)) {
+            <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>value)
+                <span style="color:#75715e">// 将数据项编码成string类型的RedisObject
+</span><span style="color:#75715e"></span>                value <span style="color:#f92672">=</span> createStringObjectFromLongLong(vlong);
         }
-    } else {
-        serverPanic(&quot;Unknown list encoding&quot;);
+    } <span style="color:#66d9ef">else</span> {
+        serverPanic(<span style="color:#e6db74">&#34;Unknown list encoding&#34;</span>);
     }
-    // 返回string类型编码的数据项对象
-    return value;
+    <span style="color:#75715e">// 返回string类型编码的数据项对象
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> value;
 }
-</code></pre>
-
+</code></pre></div>
 <p>其他的一些接口函数均是调用quicklist提供的底层接口函数来实现，大家有空可以对照源码来看看。</p>
 
 <h1 id="list命令">List命令</h1>
@@ -269,140 +264,136 @@ robj *listTypePop(robj *subject, int where) {
 </table>
 
 <p>同样，博主仅仅贴出部分源码来供大家理解这些命令的简要实现过程，我们来看看LPUSH和RPUSH命令的实现。</p>
-
-<pre><code class="language-cpp">// lpush操作
-void lpushCommand(client *c) {
-    c-&gt;argv[2] = tryObjectEncoding(c-&gt;argv[2]);
-    pushxGenericCommand(c,NULL,c-&gt;argv[2],LIST_HEAD);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// lpush操作
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">lpushCommand</span>(client <span style="color:#f92672">*</span>c) {
+    c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> tryObjectEncoding(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>]);
+    pushxGenericCommand(c,NULL,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>],LIST_HEAD);
 }
-// rpush操作
-void rpushCommand(client *c) {
-    c-&gt;argv[2] = tryObjectEncoding(c-&gt;argv[2]);
-    pushxGenericCommand(c,NULL,c-&gt;argv[2],LIST_TAIL);
+<span style="color:#75715e">// rpush操作
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">rpushCommand</span>(client <span style="color:#f92672">*</span>c) {
+    c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> tryObjectEncoding(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>]);
+    pushxGenericCommand(c,NULL,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>],LIST_TAIL);
 }
-// 真正的push操作函数，where指定位置
-void pushGenericCommand(client *c, int where) {
-    int j, waiting = 0, pushed = 0;
-    // 在数据库中查找是否存在该键，如果存在则返回该键，反之返回NULL
-    robj *lobj = lookupKeyWrite(c-&gt;db,c-&gt;argv[1]);
-    // 如果该键并非list，属于类型错误，交由服务器处理
-    if (lobj &amp;&amp; lobj-&gt;type != OBJ_LIST) {
+<span style="color:#75715e">// 真正的push操作函数，where指定位置
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pushGenericCommand</span>(client <span style="color:#f92672">*</span>c, <span style="color:#66d9ef">int</span> where) {
+    <span style="color:#66d9ef">int</span> j, waiting <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, pushed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 在数据库中查找是否存在该键，如果存在则返回该键，反之返回NULL
+</span><span style="color:#75715e"></span>    robj <span style="color:#f92672">*</span>lobj <span style="color:#f92672">=</span> lookupKeyWrite(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]);
+    <span style="color:#75715e">// 如果该键并非list，属于类型错误，交由服务器处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (lobj <span style="color:#f92672">&amp;&amp;</span> lobj<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">!=</span> OBJ_LIST) {
         addReply(c,shared.wrongtypeerr);
-        return;
+        <span style="color:#66d9ef">return</span>;
     }
-    // 添加数据元素
-    for (j = 2; j &lt; c-&gt;argc; j++) {
-        // 试图将该元素编码成字符串类型以节省空间
-        c-&gt;argv[j] = tryObjectEncoding(c-&gt;argv[j]);
-        // 如果该列表不存在
-        if (!lobj) {
-            // 创建一个编码类型为OBJ_ENCODING_QUICKLIST的列表
-            lobj = createQuicklistObject();
-            // 设定列表的属性
-            quicklistSetOptions(lobj-&gt;ptr, server.list_max_ziplist_size,
+    <span style="color:#75715e">// 添加数据元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>) {
+        <span style="color:#75715e">// 试图将该元素编码成字符串类型以节省空间
+</span><span style="color:#75715e"></span>        c<span style="color:#f92672">-&gt;</span>argv[j] <span style="color:#f92672">=</span> tryObjectEncoding(c<span style="color:#f92672">-&gt;</span>argv[j]);
+        <span style="color:#75715e">// 如果该列表不存在
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>lobj) {
+            <span style="color:#75715e">// 创建一个编码类型为OBJ_ENCODING_QUICKLIST的列表
+</span><span style="color:#75715e"></span>            lobj <span style="color:#f92672">=</span> createQuicklistObject();
+            <span style="color:#75715e">// 设定列表的属性
+</span><span style="color:#75715e"></span>            quicklistSetOptions(lobj<span style="color:#f92672">-&gt;</span>ptr, server.list_max_ziplist_size,
                                 server.list_compress_depth);
-            // 将键和新的列表作为键值对添加到数据库
-            dbAdd(c-&gt;db,c-&gt;argv[1],lobj);
+            <span style="color:#75715e">// 将键和新的列表作为键值对添加到数据库
+</span><span style="color:#75715e"></span>            dbAdd(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],lobj);
         }
-        // 将元素添加到列表中
-        listTypePush(lobj,c-&gt;argv[j],where);
-        // 记录添加的元素个数
-        pushed++;
+        <span style="color:#75715e">// 将元素添加到列表中
+</span><span style="color:#75715e"></span>        listTypePush(lobj,c<span style="color:#f92672">-&gt;</span>argv[j],where);
+        <span style="color:#75715e">// 记录添加的元素个数
+</span><span style="color:#75715e"></span>        pushed<span style="color:#f92672">++</span>;
     }
-    // 返回添加的节点数量
-    addReplyLongLong(c, waiting + (lobj ? listTypeLength(lobj) : 0));
-    // 至少有一个添加成功则进行操作
-    if (pushed) {
-        char *event = (where == LIST_HEAD) ? &quot;lpush&quot; : &quot;rpush&quot;;
-        // 发送键修改信号
-        signalModifiedKey(c-&gt;db,c-&gt;argv[1]);
-        // 发送事件通知
-        notifyKeyspaceEvent(NOTIFY_LIST,event,c-&gt;argv[1],c-&gt;db-&gt;id);
+    <span style="color:#75715e">// 返回添加的节点数量
+</span><span style="color:#75715e"></span>    addReplyLongLong(c, waiting <span style="color:#f92672">+</span> (lobj <span style="color:#f92672">?</span> listTypeLength(lobj) <span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>));
+    <span style="color:#75715e">// 至少有一个添加成功则进行操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (pushed) {
+        <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>event <span style="color:#f92672">=</span> (where <span style="color:#f92672">==</span> LIST_HEAD) <span style="color:#f92672">?</span> <span style="color:#e6db74">&#34;lpush&#34;</span> <span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;rpush&#34;</span>;
+        <span style="color:#75715e">// 发送键修改信号
+</span><span style="color:#75715e"></span>        signalModifiedKey(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]);
+        <span style="color:#75715e">// 发送事件通知
+</span><span style="color:#75715e"></span>        notifyKeyspaceEvent(NOTIFY_LIST,event,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
     }
-    // 服务器的脏数据个数增加
-    server.dirty += pushed;
+    <span style="color:#75715e">// 服务器的脏数据个数增加
+</span><span style="color:#75715e"></span>    server.dirty <span style="color:#f92672">+=</span> pushed;
 }
-</code></pre>
-
+</code></pre></div>
 <p>这些命令的源码实现基本上大同小异，不过相对于其他数据类型，list提供了带有阻塞的命令，包括BLPOP，BRPOP，BLPOPRPUSH，这些命令可能会造成客户端被阻塞。这属于list的一大特色，也是需要着重理解的地方。</p>
 
 <h2 id="阻塞命令">阻塞命令</h2>
 
 <p>前面提到，list为用户提供了三个带有阻塞模式的命令，分别是BLPOP，BRPOP，BLPOPRPUSH。那么，到底这些命令是如何执行，如何进行阻塞和解阻塞的呢？首先，我们来看看BLPOP，BRPOP的源码。</p>
-
-<pre><code class="language-cpp">// BLPOP命令
-void blpopCommand(client *c) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// BLPOP命令
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">blpopCommand</span>(client <span style="color:#f92672">*</span>c) {
     blockingPopGenericCommand(c,LIST_HEAD);
 }
-// BRPOP命令
-void brpopCommand(client *c) {
+<span style="color:#75715e">// BRPOP命令
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">brpopCommand</span>(client <span style="color:#f92672">*</span>c) {
     blockingPopGenericCommand(c,LIST_TAIL);
 }
-// 带有阻塞的pop命令实现函数
-void blockingPopGenericCommand(client *c, int where) {
-    robj *o;
+<span style="color:#75715e">// 带有阻塞的pop命令实现函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">blockingPopGenericCommand</span>(client <span style="color:#f92672">*</span>c, <span style="color:#66d9ef">int</span> where) {
+    robj <span style="color:#f92672">*</span>o;
     mstime_t timeout;
-    int j;
-	// 取出timeout参数
-    if (getTimeoutFromObjectOrReply(c,c-&gt;argv[c-&gt;argc-1],&amp;timeout,UNIT_SECONDS)
-        != C_OK) return;
-	// 遍历所有输入键
-    for (j = 1; j &lt; c-&gt;argc-1; j++) {
-        // 在当前数据库中查找list键
-        o = lookupKeyWrite(c-&gt;db,c-&gt;argv[j]);
-        if (o != NULL) {
-            // 执行到此处，说明数据库中存在此键
-            // 检查类型
-            if (o-&gt;type != OBJ_LIST) {
+    <span style="color:#66d9ef">int</span> j;
+	<span style="color:#75715e">// 取出timeout参数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (getTimeoutFromObjectOrReply(c,c<span style="color:#f92672">-&gt;</span>argv[c<span style="color:#f92672">-&gt;</span>argc<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>],<span style="color:#f92672">&amp;</span>timeout,UNIT_SECONDS)
+        <span style="color:#f92672">!=</span> C_OK) <span style="color:#66d9ef">return</span>;
+	<span style="color:#75715e">// 遍历所有输入键
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; j<span style="color:#f92672">++</span>) {
+        <span style="color:#75715e">// 在当前数据库中查找list键
+</span><span style="color:#75715e"></span>        o <span style="color:#f92672">=</span> lookupKeyWrite(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[j]);
+        <span style="color:#66d9ef">if</span> (o <span style="color:#f92672">!=</span> NULL) {
+            <span style="color:#75715e">// 执行到此处，说明数据库中存在此键
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 检查类型
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">!=</span> OBJ_LIST) {
                 addReply(c,shared.wrongtypeerr);
-                return;
-            } else {
-                // list不为空的话，则转换为普通的pop操作
-                if (listTypeLength(o) != 0) {
-                    // 当前list不为空，转换为普通的pop进行处理
-                    char *event = (where == LIST_HEAD) ? &quot;lpop&quot; : &quot;rpop&quot;;
-                    robj *value = listTypePop(o,where);
-                    serverAssert(value != NULL);
+                <span style="color:#66d9ef">return</span>;
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#75715e">// list不为空的话，则转换为普通的pop操作
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (listTypeLength(o) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+                    <span style="color:#75715e">// 当前list不为空，转换为普通的pop进行处理
+</span><span style="color:#75715e"></span>                    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>event <span style="color:#f92672">=</span> (where <span style="color:#f92672">==</span> LIST_HEAD) <span style="color:#f92672">?</span> <span style="color:#e6db74">&#34;lpop&#34;</span> <span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;rpop&#34;</span>;
+                    robj <span style="color:#f92672">*</span>value <span style="color:#f92672">=</span> listTypePop(o,where);
+                    serverAssert(value <span style="color:#f92672">!=</span> NULL);
 
-                    addReplyMultiBulkLen(c,2);
-                    addReplyBulk(c,c-&gt;argv[j]);
+                    addReplyMultiBulkLen(c,<span style="color:#ae81ff">2</span>);
+                    addReplyBulk(c,c<span style="color:#f92672">-&gt;</span>argv[j]);
                     addReplyBulk(c,value);
                     decrRefCount(value);
                     notifyKeyspaceEvent(NOTIFY_LIST,event,
-                                        c-&gt;argv[j],c-&gt;db-&gt;id);
-                    // 如果弹出后list为空，则删除
-                    if (listTypeLength(o) == 0) {
-                        dbDelete(c-&gt;db,c-&gt;argv[j]);
-                        notifyKeyspaceEvent(NOTIFY_GENERIC,&quot;del&quot;,
-                                            c-&gt;argv[j],c-&gt;db-&gt;id);
+                                        c<span style="color:#f92672">-&gt;</span>argv[j],c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
+                    <span style="color:#75715e">// 如果弹出后list为空，则删除
+</span><span style="color:#75715e"></span>                    <span style="color:#66d9ef">if</span> (listTypeLength(o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+                        dbDelete(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[j]);
+                        notifyKeyspaceEvent(NOTIFY_GENERIC,<span style="color:#e6db74">&#34;del&#34;</span>,
+                                            c<span style="color:#f92672">-&gt;</span>argv[j],c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
                     }
-                    signalModifiedKey(c-&gt;db,c-&gt;argv[j]);
-                    server.dirty++;
+                    signalModifiedKey(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[j]);
+                    server.dirty<span style="color:#f92672">++</span>;
 
-                    /* Replicate it as an [LR]POP instead of B[LR]POP. */
-                    rewriteClientCommandVector(c,2,
-                        (where == LIST_HEAD) ? shared.lpop : shared.rpop,
-                        c-&gt;argv[j]);
-                    return;
+                    <span style="color:#75715e">/* Replicate it as an [LR]POP instead of B[LR]POP. */</span>
+                    rewriteClientCommandVector(c,<span style="color:#ae81ff">2</span>,
+                        (where <span style="color:#f92672">==</span> LIST_HEAD) <span style="color:#f92672">?</span> shared.lpop : shared.rpop,
+                        c<span style="color:#f92672">-&gt;</span>argv[j]);
+                    <span style="color:#66d9ef">return</span>;
                 }
             }
         }
     }
 
-    /* If we are inside a MULTI/EXEC and the list is empty the only thing
-     * we can do is treating it as a timeout (even with timeout 0). */
-    // 如果用户在一个事务中执行阻塞命令，则返回一个空回复。这样做为了避免客户端死等
-    if (c-&gt;flags &amp; CLIENT_MULTI) {
+    <span style="color:#75715e">/* If we are inside a MULTI/EXEC and the list is empty the only thing
+</span><span style="color:#75715e">     * we can do is treating it as a timeout (even with timeout 0). */</span>
+    <span style="color:#75715e">// 如果用户在一个事务中执行阻塞命令，则返回一个空回复。这样做为了避免客户端死等
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI) {
         addReply(c,shared.nullmultibulk);
-        return;
+        <span style="color:#66d9ef">return</span>;
     }
 
-    // 执行到此处，说明列表为空，或者当前键并不存在
-    // 执行阻塞
-    blockForKeys(c, c-&gt;argv + 1, c-&gt;argc - 2, timeout, NULL);
+    <span style="color:#75715e">// 执行到此处，说明列表为空，或者当前键并不存在
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 执行阻塞
+</span><span style="color:#75715e"></span>    blockForKeys(c, c<span style="color:#f92672">-&gt;</span>argv <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>, timeout, NULL);
 }
-</code></pre>
-
+</code></pre></div>
 <p>从这段代码中，我们可以看出，当执行带有阻塞的pop命令时，有如下两种情况。</p>
 
 <ul>
@@ -411,74 +402,70 @@ void blockingPopGenericCommand(client *c, int where) {
 </ul>
 
 <p>那么阻塞的过程是如下进行的呢？别急，我们去查看以下blockForKeys函数，看看它干了些什么。</p>
-
-<pre><code class="language-cpp">// 设置客户端对指定键的阻塞状态
-// 参数keys可以指定任意数量的键，timeout指定超时时间，target代表目标listType对象
-void blockForKeys(client *c, robj **keys, int numkeys, mstime_t timeout, robj *target) {
-    dictEntry *de;
-    list *l;
-    int j;
-    // 设定阻塞超时时间
-    c-&gt;bpop.timeout = timeout;
-    // 设置目标选项，target在执行RPOPLPUSH命令时使用
-    c-&gt;bpop.target = target;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 设置客户端对指定键的阻塞状态
+</span><span style="color:#75715e">// 参数keys可以指定任意数量的键，timeout指定超时时间，target代表目标listType对象
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">blockForKeys</span>(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">**</span>keys, <span style="color:#66d9ef">int</span> numkeys, mstime_t timeout, robj <span style="color:#f92672">*</span>target) {
+    dictEntry <span style="color:#f92672">*</span>de;
+    list <span style="color:#f92672">*</span>l;
+    <span style="color:#66d9ef">int</span> j;
+    <span style="color:#75715e">// 设定阻塞超时时间
+</span><span style="color:#75715e"></span>    c<span style="color:#f92672">-&gt;</span>bpop.timeout <span style="color:#f92672">=</span> timeout;
+    <span style="color:#75715e">// 设置目标选项，target在执行RPOPLPUSH命令时使用
+</span><span style="color:#75715e"></span>    c<span style="color:#f92672">-&gt;</span>bpop.target <span style="color:#f92672">=</span> target;
  
-    if (target != NULL) incrRefCount(target);
-    // 添加阻塞客户端和键的映射关系
-    for (j = 0; j &lt; numkeys; j++) {
-        // 如果当前键存在，则忽略；反之则添加该键
-        // bpop.keys记录所有造成客户端阻塞的键
-        if (dictAdd(c-&gt;bpop.keys,keys[j],NULL) != DICT_OK) continue;
+    <span style="color:#66d9ef">if</span> (target <span style="color:#f92672">!=</span> NULL) incrRefCount(target);
+    <span style="color:#75715e">// 添加阻塞客户端和键的映射关系
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> numkeys; j<span style="color:#f92672">++</span>) {
+        <span style="color:#75715e">// 如果当前键存在，则忽略；反之则添加该键
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// bpop.keys记录所有造成客户端阻塞的键
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (dictAdd(c<span style="color:#f92672">-&gt;</span>bpop.keys,keys[j],NULL) <span style="color:#f92672">!=</span> DICT_OK) <span style="color:#66d9ef">continue</span>;
         incrRefCount(keys[j]);
 
-        // blocking_keys是一个字典，其键为造成阻塞的键，值是一个链表，记录所有被该键阻塞的客户端
-        // 查找当前造成阻塞的键
-        de = dictFind(c-&gt;db-&gt;blocking_keys,keys[j]);
-        if (de == NULL) {
-            // 键不存在，则新创建一个，并将它关联到字典中
-            int retval;
-            // 创建新的list
-            l = listCreate();
-            // 将键和值加入到c-&gt;db-&gt;blocking_keys中
-            retval = dictAdd(c-&gt;db-&gt;blocking_keys,keys[j],l);
+        <span style="color:#75715e">// blocking_keys是一个字典，其键为造成阻塞的键，值是一个链表，记录所有被该键阻塞的客户端
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 查找当前造成阻塞的键
+</span><span style="color:#75715e"></span>        de <span style="color:#f92672">=</span> dictFind(c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>blocking_keys,keys[j]);
+        <span style="color:#66d9ef">if</span> (de <span style="color:#f92672">==</span> NULL) {
+            <span style="color:#75715e">// 键不存在，则新创建一个，并将它关联到字典中
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">int</span> retval;
+            <span style="color:#75715e">// 创建新的list
+</span><span style="color:#75715e"></span>            l <span style="color:#f92672">=</span> listCreate();
+            <span style="color:#75715e">// 将键和值加入到c-&gt;db-&gt;blocking_keys中
+</span><span style="color:#75715e"></span>            retval <span style="color:#f92672">=</span> dictAdd(c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>blocking_keys,keys[j],l);
             incrRefCount(keys[j]);
-            serverAssertWithInfo(c,keys[j],retval == DICT_OK);
-        } else {
-            // 如果键存在，则直接获取该键的值
-            l = dictGetVal(de);
+            serverAssertWithInfo(c,keys[j],retval <span style="color:#f92672">==</span> DICT_OK);
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 如果键存在，则直接获取该键的值
+</span><span style="color:#75715e"></span>            l <span style="color:#f92672">=</span> dictGetVal(de);
         }
-        // 将客户端加入到链表中
-        listAddNodeTail(l,c);
+        <span style="color:#75715e">// 将客户端加入到链表中
+</span><span style="color:#75715e"></span>        listAddNodeTail(l,c);
     }
-    // 阻塞该客户端
-    blockClient(c,BLOCKED_LIST);
+    <span style="color:#75715e">// 阻塞该客户端
+</span><span style="color:#75715e"></span>    blockClient(c,BLOCKED_LIST);
 }
-</code></pre>
-
+</code></pre></div>
 <p>在上述代码中，设计到server.c中的一些数据结构。这里我简要的罗列一下。</p>
-
-<pre><code class="language-cpp">typedef struct client {
-    redisDb *db;   // 指向当前数据库
-	blockingState bpop;  // 记录阻塞状态
-    // ...其他的参数省略
-}
-// 阻塞状态结构体
-typedef struct blockingState {
-    mstime_t timeout;      // 阻塞超时时间
-
-    dict *keys;           // 记录所有造成客户端阻塞的键
-    robj *target;         // 目标选项，target在执行RPOPLPUSH命令时使用，
-
-    /* BLOCKED_WAIT */
-    int numreplicas;        /* Number of replicas we are waiting for ACK. */
-    long long reploffset;   /* Replication offset to reach. */
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> client {
+    redisDb <span style="color:#f92672">*</span>db;   <span style="color:#75715e">// 指向当前数据库
+</span><span style="color:#75715e"></span>	blockingState bpop;  <span style="color:#75715e">// 记录阻塞状态
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// ...其他的参数省略
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">// 阻塞状态结构体
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> blockingState {
+    mstime_t timeout;      <span style="color:#75715e">// 阻塞超时时间
+</span><span style="color:#75715e"></span>
+    dict <span style="color:#f92672">*</span>keys;           <span style="color:#75715e">// 记录所有造成客户端阻塞的键
+</span><span style="color:#75715e"></span>    robj <span style="color:#f92672">*</span>target;         <span style="color:#75715e">// 目标选项，target在执行RPOPLPUSH命令时使用，
+</span><span style="color:#75715e"></span>
+    <span style="color:#75715e">/* BLOCKED_WAIT */</span>
+    <span style="color:#66d9ef">int</span> numreplicas;        <span style="color:#75715e">/* Number of replicas we are waiting for ACK. */</span>
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> reploffset;   <span style="color:#75715e">/* Replication offset to reach. */</span>
 } blockingState;
-typedef struct redisDb {
-    dict *blocking_keys;        // 记录所有造成阻塞的键，及其相应的客户端
-    // ...其他参数省略
-} redisDb;
-</code></pre>
-
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> redisDb {
+    dict <span style="color:#f92672">*</span>blocking_keys;        <span style="color:#75715e">// 记录所有造成阻塞的键，及其相应的客户端
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// ...其他参数省略
+</span><span style="color:#75715e"></span>} redisDb;
+</code></pre></div>
 <p>Redis采用了一个字典结构blocking_keys，其将所有造成阻塞的键，以及阻塞于该键的所有客户端的信息存放起来。执行完这些以后，就调用blockClient函数，真正的对该客户端进行阻塞。</p>
 
 <p>那么，接下来要考虑的问题就是如何解阻塞，客户端不可能一直阻塞在那吧，是不是？由我们之前设定的参数，可以推测出来，有两种情况会对客户端进行解阻塞操作。</p>
@@ -489,150 +476,144 @@ typedef struct redisDb {
 </ul>
 
 <p>有了这些推测之后，我们就去push命令中找关于解阻塞的操作，一番查找之后，锁定了signalListAsReady函数，该函数在dbadd函数中执行。于是，跳转到signalListAsReady函数的源码。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 如果有客户端因为等待给定key 被push阻塞，那么将此key加入到server.ready_keys中
+</span><span style="color:#75715e">// 这个列表最终会被 handleClientsBlockedOnLists() 函数处理。
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">signalListAsReady</span>(redisDb <span style="color:#f92672">*</span>db, robj <span style="color:#f92672">*</span>key) {
+    readyList <span style="color:#f92672">*</span>rl;
 
-<pre><code class="language-cpp">// 如果有客户端因为等待给定key 被push阻塞，那么将此key加入到server.ready_keys中
-// 这个列表最终会被 handleClientsBlockedOnLists() 函数处理。
-void signalListAsReady(redisDb *db, robj *key) {
-    readyList *rl;
+    <span style="color:#75715e">// 如果在所有造成客户端阻塞的键中找不到此键，则不作处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictFind(db<span style="color:#f92672">-&gt;</span>blocking_keys,key) <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span>;
 
-    // 如果在所有造成客户端阻塞的键中找不到此键，则不作处理
-    if (dictFind(db-&gt;blocking_keys,key) == NULL) return;
+    <span style="color:#75715e">// 这个键已经存在于ready_keys中了，则不做处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictFind(db<span style="color:#f92672">-&gt;</span>ready_keys,key) <span style="color:#f92672">!=</span> NULL) <span style="color:#66d9ef">return</span>;
 
-    // 这个键已经存在于ready_keys中了，则不做处理
-    if (dictFind(db-&gt;ready_keys,key) != NULL) return;
-
-    // 执行到此，说明有客户端因为此键被阻塞，且此键不存在于db-&gt;ready_keys中
-    // 创建一个新的readylists结构，保存键和数据库
-    // 然后将该结构添加到server.ready_keys中
-    rl = zmalloc(sizeof(*rl));
-    rl-&gt;key = key;
-    rl-&gt;db = db;
+    <span style="color:#75715e">// 执行到此，说明有客户端因为此键被阻塞，且此键不存在于db-&gt;ready_keys中
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 创建一个新的readylists结构，保存键和数据库
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 然后将该结构添加到server.ready_keys中
+</span><span style="color:#75715e"></span>    rl <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>rl));
+    rl<span style="color:#f92672">-&gt;</span>key <span style="color:#f92672">=</span> key;
+    rl<span style="color:#f92672">-&gt;</span>db <span style="color:#f92672">=</span> db;
     incrRefCount(key);
     listAddNodeTail(server.ready_keys,rl);
 
-    // 同样，将key添加到db-&gt;ready_keys中
-    incrRefCount(key);
-    serverAssert(dictAdd(db-&gt;ready_keys,key,NULL) == DICT_OK);
+    <span style="color:#75715e">// 同样，将key添加到db-&gt;ready_keys中
+</span><span style="color:#75715e"></span>    incrRefCount(key);
+    serverAssert(dictAdd(db<span style="color:#f92672">-&gt;</span>ready_keys,key,NULL) <span style="color:#f92672">==</span> DICT_OK);
 }
-</code></pre>
-
+</code></pre></div>
 <p>此代码中有一点小小的疑惑，<code>db-&gt;ready_keys</code>和<code>server.ready_keys</code>这不重复了吗？为什么要设计这两个同样的结构。于是我们来查看以下它们的定义。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> redisDb {
+    dict <span style="color:#f92672">*</span>ready_keys;           <span style="color:#75715e">// 存放push操作添加的造成阻塞的键，字典结构
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 省略了其他参数
+</span><span style="color:#75715e"></span>} redisDb;
 
-<pre><code class="language-cpp">typedef struct redisDb {
-    dict *ready_keys;           // 存放push操作添加的造成阻塞的键，字典结构
-    // 省略了其他参数
-} redisDb;
-
-struct redisServer {
-	list *ready_keys;    // 存在push操作添加的造成阻塞的键，链表结构
-    // 省略了不必要的参数
-}
-// ready_keys链表结构中存放的节点数据结构
-typedef struct readyList {
-    redisDb *db;  // key所在的数据库
-    robj *key;  //造成阻塞的键
-} readyList;
-</code></pre>
-
+<span style="color:#66d9ef">struct</span> redisServer {
+	list <span style="color:#f92672">*</span>ready_keys;    <span style="color:#75715e">// 存在push操作添加的造成阻塞的键，链表结构
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 省略了不必要的参数
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">// ready_keys链表结构中存放的节点数据结构
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> readyList {
+    redisDb <span style="color:#f92672">*</span>db;  <span style="color:#75715e">// key所在的数据库
+</span><span style="color:#75715e"></span>    robj <span style="color:#f92672">*</span>key;  <span style="color:#75715e">//造成阻塞的键
+</span><span style="color:#75715e"></span>} readyList;
+</code></pre></div>
 <p>Redis采用了一个链表和一个字典结构存放同一个key，想了想，这似乎也有道理。假设我们往一个key中添加多个新值时，Redis只需要在<code>server.ready_keys</code>中为该key保存一个readyList节点即可，这样可以避免在一个事务或者脚本中将同一个key一次又一次的添加到<code>server.ready_keys</code>中，为了避免不重复添加，Redis又采用一个链表结构<code>db-&gt;ready_keys</code>来快速判断<code>server.ready_keys</code>中是否存在该键。这样一来，既保证了不重复添加，又保证了哈希结构带来的查找效率。</p>
 
 <p>好了，理解了这一点，我们继续往下剖析，在push操作的时候，只是回收了push进来的造成阻塞的键，如何利用这些信息对已经阻塞的客户端进行解阻塞呢？Redis在运行的过程中，会一直查看<code>server.ready_keys</code>里是否有值，如果有则需要对存放的值对应的客户端进行接阻塞，此操作由handleClientsBlockedOnLists函数执行。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 遍历server.ready_keys中所有已经准备好的key，同时在c-&gt;db-&gt;blocking_keys中
+</span><span style="color:#75715e">// 遍历所有由此键造成阻塞的客户端，如果key不为空的话，就从key中弹出一个元素返回给客户端并
+</span><span style="color:#75715e">// 接触该客户端的阻塞状态，直到server.ready_keys为空，或没有因该key而阻塞的客户端为止
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">handleClientsBlockedOnLists</span>(<span style="color:#66d9ef">void</span>) {
+    <span style="color:#66d9ef">while</span>(listLength(server.ready_keys) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+        list <span style="color:#f92672">*</span>l;
 
-<pre><code class="language-cpp">// 遍历server.ready_keys中所有已经准备好的key，同时在c-&gt;db-&gt;blocking_keys中
-// 遍历所有由此键造成阻塞的客户端，如果key不为空的话，就从key中弹出一个元素返回给客户端并
-// 接触该客户端的阻塞状态，直到server.ready_keys为空，或没有因该key而阻塞的客户端为止
-void handleClientsBlockedOnLists(void) {
-    while(listLength(server.ready_keys) != 0) {
-        list *l;
+        <span style="color:#75715e">// 备份server.ready_keys，然后初始化server.ready_keys
+</span><span style="color:#75715e"></span>        l <span style="color:#f92672">=</span> server.ready_keys;
+        server.ready_keys <span style="color:#f92672">=</span> listCreate();
+		<span style="color:#75715e">// 不为空
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span>(listLength(l) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+            <span style="color:#75715e">// 取出server.ready_keys中的第一个节点
+</span><span style="color:#75715e"></span>            listNode <span style="color:#f92672">*</span>ln <span style="color:#f92672">=</span> listFirst(l);
+            <span style="color:#75715e">// 指向redislist结构
+</span><span style="color:#75715e"></span>            readyList <span style="color:#f92672">*</span>rl <span style="color:#f92672">=</span> ln<span style="color:#f92672">-&gt;</span>value;
 
-        // 备份server.ready_keys，然后初始化server.ready_keys
-        l = server.ready_keys;
-        server.ready_keys = listCreate();
-		// 不为空
-        while(listLength(l) != 0) {
-            // 取出server.ready_keys中的第一个节点
-            listNode *ln = listFirst(l);
-            // 指向redislist结构
-            readyList *rl = ln-&gt;value;
+            <span style="color:#75715e">/* First of all remove this key from db-&gt;ready_keys so that
+</span><span style="color:#75715e">             * we can safely call signalListAsReady() against this key. */</span>
+            <span style="color:#75715e">// 从ready_keys中移除就绪的key
+</span><span style="color:#75715e"></span>            dictDelete(rl<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>ready_keys,rl<span style="color:#f92672">-&gt;</span>key);
 
-            /* First of all remove this key from db-&gt;ready_keys so that
-             * we can safely call signalListAsReady() against this key. */
-            // 从ready_keys中移除就绪的key
-            dictDelete(rl-&gt;db-&gt;ready_keys,rl-&gt;key);
+            <span style="color:#75715e">/* If the key exists and it&#39;s a list, serve blocked clients
+</span><span style="color:#75715e">             * with data. */</span>
+            <span style="color:#75715e">// 获取键对象，此对象非空且为list结构
+</span><span style="color:#75715e"></span>            robj <span style="color:#f92672">*</span>o <span style="color:#f92672">=</span> lookupKeyWrite(rl<span style="color:#f92672">-&gt;</span>db,rl<span style="color:#f92672">-&gt;</span>key);
+            <span style="color:#66d9ef">if</span> (o <span style="color:#f92672">!=</span> NULL <span style="color:#f92672">&amp;&amp;</span> o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_LIST) {
+                dictEntry <span style="color:#f92672">*</span>de;
 
-            /* If the key exists and it's a list, serve blocked clients
-             * with data. */
-            // 获取键对象，此对象非空且为list结构
-            robj *o = lookupKeyWrite(rl-&gt;db,rl-&gt;key);
-            if (o != NULL &amp;&amp; o-&gt;type == OBJ_LIST) {
-                dictEntry *de;
+                <span style="color:#75715e">/* We serve clients in the same order they blocked for
+</span><span style="color:#75715e">                 * this key, from the first blocked to the last. */</span>
+                <span style="color:#75715e">// 取出没有被这个key阻塞的客户端
+</span><span style="color:#75715e"></span>                de <span style="color:#f92672">=</span> dictFind(rl<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>blocking_keys,rl<span style="color:#f92672">-&gt;</span>key);
+                <span style="color:#66d9ef">if</span> (de) {
+                    list <span style="color:#f92672">*</span>clients <span style="color:#f92672">=</span> dictGetVal(de);
+                    <span style="color:#66d9ef">int</span> numclients <span style="color:#f92672">=</span> listLength(clients);
 
-                /* We serve clients in the same order they blocked for
-                 * this key, from the first blocked to the last. */
-                // 取出没有被这个key阻塞的客户端
-                de = dictFind(rl-&gt;db-&gt;blocking_keys,rl-&gt;key);
-                if (de) {
-                    list *clients = dictGetVal(de);
-                    int numclients = listLength(clients);
-
-                    while(numclients--) {
-                        // 取出客户端
-                        listNode *clientnode = listFirst(clients);
-                        client *receiver = clientnode-&gt;value;
-                      	// 设置弹出的目标对象（只在 BRPOPLPUSH 时使用）
-                        robj *dstkey = receiver-&gt;bpop.target;
-                        // 从列表中弹出元素
-                        // 弹出的位置取决于是执行 BLPOP 还是 BRPOP 或者 BRPOPLPUSH
-                        int where = (receiver-&gt;lastcmd &amp;&amp;
-                                     receiver-&gt;lastcmd-&gt;proc == blpopCommand) ?
+                    <span style="color:#66d9ef">while</span>(numclients<span style="color:#f92672">--</span>) {
+                        <span style="color:#75715e">// 取出客户端
+</span><span style="color:#75715e"></span>                        listNode <span style="color:#f92672">*</span>clientnode <span style="color:#f92672">=</span> listFirst(clients);
+                        client <span style="color:#f92672">*</span>receiver <span style="color:#f92672">=</span> clientnode<span style="color:#f92672">-&gt;</span>value;
+                      	<span style="color:#75715e">// 设置弹出的目标对象（只在 BRPOPLPUSH 时使用）
+</span><span style="color:#75715e"></span>                        robj <span style="color:#f92672">*</span>dstkey <span style="color:#f92672">=</span> receiver<span style="color:#f92672">-&gt;</span>bpop.target;
+                        <span style="color:#75715e">// 从列表中弹出元素
+</span><span style="color:#75715e"></span>                        <span style="color:#75715e">// 弹出的位置取决于是执行 BLPOP 还是 BRPOP 或者 BRPOPLPUSH
+</span><span style="color:#75715e"></span>                        <span style="color:#66d9ef">int</span> where <span style="color:#f92672">=</span> (receiver<span style="color:#f92672">-&gt;</span>lastcmd <span style="color:#f92672">&amp;&amp;</span>
+                                     receiver<span style="color:#f92672">-&gt;</span>lastcmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> blpopCommand) <span style="color:#f92672">?</span>
                                     LIST_HEAD : LIST_TAIL;
-                        robj *value = listTypePop(o,where);
-                        // 还有元素可弹出，非NULL
-                        if (value) {
-                            /* Protect receiver-&gt;bpop.target, that will be
-                             * freed by the next unblockClient()
-                             * call. */
-                            if (dstkey) incrRefCount(dstkey);
-                            // 取消客户端的阻塞状态
-                            unblockClient(receiver);
+                        robj <span style="color:#f92672">*</span>value <span style="color:#f92672">=</span> listTypePop(o,where);
+                        <span style="color:#75715e">// 还有元素可弹出，非NULL
+</span><span style="color:#75715e"></span>                        <span style="color:#66d9ef">if</span> (value) {
+                            <span style="color:#75715e">/* Protect receiver-&gt;bpop.target, that will be
+</span><span style="color:#75715e">                             * freed by the next unblockClient()
+</span><span style="color:#75715e">                             * call. */</span>
+                            <span style="color:#66d9ef">if</span> (dstkey) incrRefCount(dstkey);
+                            <span style="color:#75715e">// 取消客户端的阻塞状态
+</span><span style="color:#75715e"></span>                            unblockClient(receiver);
 
-                            if (serveClientBlockedOnList(receiver,
-                                rl-&gt;key,dstkey,rl-&gt;db,value,
-                                where) == C_ERR)
+                            <span style="color:#66d9ef">if</span> (serveClientBlockedOnList(receiver,
+                                rl<span style="color:#f92672">-&gt;</span>key,dstkey,rl<span style="color:#f92672">-&gt;</span>db,value,
+                                where) <span style="color:#f92672">==</span> C_ERR)
                             {
-                                /* If we failed serving the client we need
-                                 * to also undo the POP operation. */
+                                <span style="color:#75715e">/* If we failed serving the client we need
+</span><span style="color:#75715e">                                 * to also undo the POP operation. */</span>
                                     listTypePush(o,value,where);
                             }
 
-                            if (dstkey) decrRefCount(dstkey);
+                            <span style="color:#66d9ef">if</span> (dstkey) decrRefCount(dstkey);
                             decrRefCount(value);
-                        } else {
-                            // 执行到此处，表示还有至少一个客户端被该key阻塞
-                            // 这些客户端需要下一次push才能被解阻塞
-                            break;
+                        } <span style="color:#66d9ef">else</span> {
+                            <span style="color:#75715e">// 执行到此处，表示还有至少一个客户端被该key阻塞
+</span><span style="color:#75715e"></span>                            <span style="color:#75715e">// 这些客户端需要下一次push才能被解阻塞
+</span><span style="color:#75715e"></span>                            <span style="color:#66d9ef">break</span>;
                         }
                     }
                 }
-                // 如果列表元素已经为空，那么从数据库中将它删除
-                if (listTypeLength(o) == 0) {
-                    dbDelete(rl-&gt;db,rl-&gt;key);
+                <span style="color:#75715e">// 如果列表元素已经为空，那么从数据库中将它删除
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (listTypeLength(o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+                    dbDelete(rl<span style="color:#f92672">-&gt;</span>db,rl<span style="color:#f92672">-&gt;</span>key);
                 }
-                /* We don't call signalModifiedKey() as it was already called
-                 * when an element was pushed on the list. */
+                <span style="color:#75715e">/* We don&#39;t call signalModifiedKey() as it was already called
+</span><span style="color:#75715e">                 * when an element was pushed on the list. */</span>
             }
 
-            /* Free this item. */
-            // 释放
-            decrRefCount(rl-&gt;key);
+            <span style="color:#75715e">/* Free this item. */</span>
+            <span style="color:#75715e">// 释放
+</span><span style="color:#75715e"></span>            decrRefCount(rl<span style="color:#f92672">-&gt;</span>key);
             zfree(rl);
             listDelNode(l,ln);
         }
-        listRelease(l); /* We have the new list on place at this point. */
+        listRelease(l); <span style="color:#75715e">/* We have the new list on place at this point. */</span>
     }
 }
-</code></pre>
-
+</code></pre></div>
 <p>剖析到此，整个阻塞操作的流程就都清晰明了了。如有疑惑，可以在留言区留言，咋们继续讨论。</p>
 
 <h1 id="list小结">List小结</h1>

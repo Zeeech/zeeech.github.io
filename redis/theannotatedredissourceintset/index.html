@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -110,25 +111,21 @@
 <h1 id="intset数据结构">intset数据结构</h1>
 
 <p>Intset是集合键的底层实现之一，如果一个集合满足只保存整数元素和元素数量不多这两个条件，那么Redis就会采用intset来保存这个数据集。intset的数据结构如下：</p>
-
-<pre><code class="language-cpp">typedef struct intset {
-    uint32_t encoding; // 编码模式
-    uint32_t length;  // 长度
-    int8_t contents[];  // 数据部分
-} intset;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> intset {
+    uint32_t encoding; <span style="color:#75715e">// 编码模式
+</span><span style="color:#75715e"></span>    uint32_t length;  <span style="color:#75715e">// 长度
+</span><span style="color:#75715e"></span>    int8_t contents[];  <span style="color:#75715e">// 数据部分
+</span><span style="color:#75715e"></span>} intset;
+</code></pre></div>
 <p>其中，encoding字段表示该整数集合的编码模式，Redis提供三种模式的宏定义如下：</p>
-
-<pre><code class="language-cpp">// 可以看出，虽然contents部分指明的类型是int8_t，但是数据并不以这个类型存放
-// 数据以int16_t类型存放，每个占2个字节，能存放-32768~32767范围内的整数
-#define INTSET_ENC_INT16 (sizeof(int16_t)) 
-// 数据以int32_t类型存放，每个占4个字节，能存放-2^32-1~2^32范围内的整数
-#define INTSET_ENC_INT32 (sizeof(int32_t)) 
-// 数据以int64_t类型存放，每个占8个字节，能存放-2^64-1~2^64范围内的整数
-#define INTSET_ENC_INT64 (sizeof(int64_t)) 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 可以看出，虽然contents部分指明的类型是int8_t，但是数据并不以这个类型存放
+</span><span style="color:#75715e">// 数据以int16_t类型存放，每个占2个字节，能存放-32768~32767范围内的整数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define INTSET_ENC_INT16 (sizeof(int16_t)) 
+</span><span style="color:#75715e"></span><span style="color:#75715e">// 数据以int32_t类型存放，每个占4个字节，能存放-2^32-1~2^32范围内的整数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define INTSET_ENC_INT32 (sizeof(int32_t)) 
+</span><span style="color:#75715e"></span><span style="color:#75715e">// 数据以int64_t类型存放，每个占8个字节，能存放-2^64-1~2^64范围内的整数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define INTSET_ENC_INT64 (sizeof(int64_t)) 
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>length字段用来保存集合中元素的个数。</p>
 
 <p>contents字段用于保存整数，数组中的元素要求不含有重复的整数且按照从小到大的顺序排列。在读取和写入的时候，均按照指定的encoding编码模式读取和写入。</p>
@@ -143,86 +140,84 @@
 <img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkg8hvupwj30li0h1dhi.jpg"/>
 </div>
 其源代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 升级整数集合并添加元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> intset <span style="color:#f92672">*</span><span style="color:#a6e22e">intsetUpgradeAndAdd</span>(intset <span style="color:#f92672">*</span>is, int64_t value) {
+    <span style="color:#75715e">// 获取当前编码格式
+</span><span style="color:#75715e"></span>    uint8_t curenc <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding);
+    <span style="color:#75715e">// 获取需要升级到的编码格式
+</span><span style="color:#75715e"></span>    uint8_t newenc <span style="color:#f92672">=</span> _intsetValueEncoding(value);
+    <span style="color:#75715e">// 获取原整数集中的整数个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> length <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length);
+    <span style="color:#75715e">// 由于待添加的元素一定是大于或者小于整数集中所有元素，故此处需要判断添加到新数据集的头部或者尾部
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 如果value为正，则添加到新数据集的尾部；反之则添加到首部
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> prepend <span style="color:#f92672">=</span> value <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>;
 
-<pre><code class="language-cpp">// 升级整数集合并添加元素
-static intset *intsetUpgradeAndAdd(intset *is, int64_t value) {
-    // 获取当前编码格式
-    uint8_t curenc = intrev32ifbe(is-&gt;encoding);
-    // 获取需要升级到的编码格式
-    uint8_t newenc = _intsetValueEncoding(value);
-    // 获取原整数集中的整数个数
-    int length = intrev32ifbe(is-&gt;length);
-    // 由于待添加的元素一定是大于或者小于整数集中所有元素，故此处需要判断添加到新数据集的头部或者尾部
-    // 如果value为正，则添加到新数据集的尾部；反之则添加到首部
-    int prepend = value &lt; 0 ? 1 : 0;
+    <span style="color:#75715e">// 设定新的编码格式
+</span><span style="color:#75715e"></span>    is<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> intrev32ifbe(newenc);
+    <span style="color:#75715e">// 对原数据集进行扩容
+</span><span style="color:#75715e"></span>    is <span style="color:#f92672">=</span> intsetResize(is,intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
 
-    // 设定新的编码格式
-    is-&gt;encoding = intrev32ifbe(newenc);
-    // 对原数据集进行扩容
-    is = intsetResize(is,intrev32ifbe(is-&gt;length)+1);
+    <span style="color:#75715e">// 采用从后往前的重编码顺序，这样就避免覆盖数据了。
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(length<span style="color:#f92672">--</span>)
+        <span style="color:#75715e">// 将原数据集中的数据依次赋值到新数据集中
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// _intsetGetEncoded(is,length,curenc)获取数据集is的第length位上的数据，curenc为原数据集的编码格式
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// _intsetSet将数据集is的第length+prepend位上设定为上一函数返回的值
+</span><span style="color:#75715e"></span>        _intsetSet(is,length<span style="color:#f92672">+</span>prepend,_intsetGetEncoded(is,length,curenc));
 
-    // 采用从后往前的重编码顺序，这样就避免覆盖数据了。
-    while(length--)
-        // 将原数据集中的数据依次赋值到新数据集中
-        // _intsetGetEncoded(is,length,curenc)获取数据集is的第length位上的数据，curenc为原数据集的编码格式
-        // _intsetSet将数据集is的第length+prepend位上设定为上一函数返回的值
-        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));
-
-    // 将待添加的数据添加到首部或者尾部
-    if (prepend)
-        _intsetSet(is,0,value);
-    else
-        _intsetSet(is,intrev32ifbe(is-&gt;length),value);
-    // 修改新数据集的长度
-    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+1);
-    return is;
+    <span style="color:#75715e">// 将待添加的数据添加到首部或者尾部
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (prepend)
+        _intsetSet(is,<span style="color:#ae81ff">0</span>,value);
+    <span style="color:#66d9ef">else</span>
+        _intsetSet(is,intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length),value);
+    <span style="color:#75715e">// 修改新数据集的长度
+</span><span style="color:#75715e"></span>    is<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> intrev32ifbe(intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">return</span> is;
 }
-// 将value设定到整数集合is的第pos位
-static void _intsetSet(intset *is, int pos, int64_t value) {
-    // 获取整数集合is的编码格式
-    uint32_t encoding = intrev32ifbe(is-&gt;encoding);
-    // 针对不同的编码格式做相应的处理
-    if (encoding == INTSET_ENC_INT64) {
-        // 将对应的pos位设置成value
-        ((int64_t*)is-&gt;contents)[pos] = value;
-        // 如果必要，对新值进行大小端转换
-        memrev64ifbe(((int64_t*)is-&gt;contents)+pos);
-    } else if (encoding == INTSET_ENC_INT32) {
-        // 同上
-        ((int32_t*)is-&gt;contents)[pos] = value;
-        memrev32ifbe(((int32_t*)is-&gt;contents)+pos);
-    } else {
-        // 同上
-        ((int16_t*)is-&gt;contents)[pos] = value;
-        memrev16ifbe(((int16_t*)is-&gt;contents)+pos);
+<span style="color:#75715e">// 将value设定到整数集合is的第pos位
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">_intsetSet</span>(intset <span style="color:#f92672">*</span>is, <span style="color:#66d9ef">int</span> pos, int64_t value) {
+    <span style="color:#75715e">// 获取整数集合is的编码格式
+</span><span style="color:#75715e"></span>    uint32_t encoding <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding);
+    <span style="color:#75715e">// 针对不同的编码格式做相应的处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">==</span> INTSET_ENC_INT64) {
+        <span style="color:#75715e">// 将对应的pos位设置成value
+</span><span style="color:#75715e"></span>        ((int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)[pos] <span style="color:#f92672">=</span> value;
+        <span style="color:#75715e">// 如果必要，对新值进行大小端转换
+</span><span style="color:#75715e"></span>        memrev64ifbe(((int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">==</span> INTSET_ENC_INT32) {
+        <span style="color:#75715e">// 同上
+</span><span style="color:#75715e"></span>        ((int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)[pos] <span style="color:#f92672">=</span> value;
+        memrev32ifbe(((int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 同上
+</span><span style="color:#75715e"></span>        ((int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)[pos] <span style="color:#f92672">=</span> value;
+        memrev16ifbe(((int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos);
     }
 }
-// 获取整数集is中，按照enc编码格式的第pos位上的元素
-static int64_t _intsetGetEncoded(intset *is, int pos, uint8_t enc) {
+<span style="color:#75715e">// 获取整数集is中，按照enc编码格式的第pos位上的元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> int64_t <span style="color:#a6e22e">_intsetGetEncoded</span>(intset <span style="color:#f92672">*</span>is, <span style="color:#66d9ef">int</span> pos, uint8_t enc) {
     int64_t v64;
     int32_t v32;
     int16_t v16;
 
-    // 针对不同的编码格式做相应的处理
-    // (enc*)is-&gt;contents获取整数集中的数据部分
-    // (enc*)is-&gt;contents+pos获取第pos位上的元素
-    // memrevEncifbe(&amp;vEnc)如有必要对拷贝出来的值进行大小端转换
-    if (enc == INTSET_ENC_INT64) {
-        memcpy(&amp;v64,((int64_t*)is-&gt;contents)+pos,sizeof(v64));
-        memrev64ifbe(&amp;v64);
-        return v64;
-    } else if (enc == INTSET_ENC_INT32) {
-        memcpy(&amp;v32,((int32_t*)is-&gt;contents)+pos,sizeof(v32));
-        memrev32ifbe(&amp;v32);
-        return v32;
-    } else {
-        memcpy(&amp;v16,((int16_t*)is-&gt;contents)+pos,sizeof(v16));
-        memrev16ifbe(&amp;v16);
-        return v16;
+    <span style="color:#75715e">// 针对不同的编码格式做相应的处理
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (enc*)is-&gt;contents获取整数集中的数据部分
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (enc*)is-&gt;contents+pos获取第pos位上的元素
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// memrevEncifbe(&amp;vEnc)如有必要对拷贝出来的值进行大小端转换
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (enc <span style="color:#f92672">==</span> INTSET_ENC_INT64) {
+        memcpy(<span style="color:#f92672">&amp;</span>v64,((int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos,<span style="color:#66d9ef">sizeof</span>(v64));
+        memrev64ifbe(<span style="color:#f92672">&amp;</span>v64);
+        <span style="color:#66d9ef">return</span> v64;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (enc <span style="color:#f92672">==</span> INTSET_ENC_INT32) {
+        memcpy(<span style="color:#f92672">&amp;</span>v32,((int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos,<span style="color:#66d9ef">sizeof</span>(v32));
+        memrev32ifbe(<span style="color:#f92672">&amp;</span>v32);
+        <span style="color:#66d9ef">return</span> v32;
+    } <span style="color:#66d9ef">else</span> {
+        memcpy(<span style="color:#f92672">&amp;</span>v16,((int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos,<span style="color:#66d9ef">sizeof</span>(v16));
+        memrev16ifbe(<span style="color:#f92672">&amp;</span>v16);
+        <span style="color:#66d9ef">return</span> v16;
     }
 }
-</code></pre>
-
+</code></pre></div>
 <blockquote>
 <p>Redis不提供降级操作，所以一旦对数组进行了升级，编码就会一直保持升级后的状态。</p>
 </blockquote>
@@ -232,143 +227,137 @@ static int64_t _intsetGetEncoded(intset *is, int pos, uint8_t enc) {
 <h2 id="创建intset">创建intset</h2>
 
 <p>Redis在创建intset集合时，默认采用int16_t编码格式。</p>
-
-<pre><code class="language-cpp">intset *intsetNew(void) {
-    intset *is = zmalloc(sizeof(intset));
-    is-&gt;encoding = intrev32ifbe(INTSET_ENC_INT16);
-    is-&gt;length = 0;
-    return is;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">intset <span style="color:#f92672">*</span><span style="color:#a6e22e">intsetNew</span>(<span style="color:#66d9ef">void</span>) {
+    intset <span style="color:#f92672">*</span>is <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(intset));
+    is<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> intrev32ifbe(INTSET_ENC_INT16);
+    is<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">return</span> is;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="添加元素">添加元素</h2>
 
 <p>intset在添加元素时需要判断新数据的大小，如果超出原编码格式能表示的范围，则调用上面的intsetUpgradeAndAdd函数进行添加，如果没有超出，则直接添加到指定位置。</p>
-
-<pre><code class="language-cpp">// 向整数集合中添加元素
-intset *intsetAdd(intset *is, int64_t value, uint8_t *success) {
-    uint8_t valenc = _intsetValueEncoding(value);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 向整数集合中添加元素
+</span><span style="color:#75715e"></span>intset <span style="color:#f92672">*</span><span style="color:#a6e22e">intsetAdd</span>(intset <span style="color:#f92672">*</span>is, int64_t value, uint8_t <span style="color:#f92672">*</span>success) {
+    uint8_t valenc <span style="color:#f92672">=</span> _intsetValueEncoding(value);
     uint32_t pos;
-    if (success) *success = 1;
+    <span style="color:#66d9ef">if</span> (success) <span style="color:#f92672">*</span>success <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
 
-    // 如果超出了当前编码格式所能表示的范围，则升级整数集合并添加元素
-    if (valenc &gt; intrev32ifbe(is-&gt;encoding)) {
-        return intsetUpgradeAndAdd(is,value);
-    } else {
-        // 如果没有超出，则计算待添加整数需要应添加到整数集合中的位置
-        if (intsetSearch(is,value,&amp;pos)) {
-            // intset中应不存在相同元素，如果待添加的整数已存在，则直接返回
-            if (success) *success = 0;
-            return is;
+    <span style="color:#75715e">// 如果超出了当前编码格式所能表示的范围，则升级整数集合并添加元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (valenc <span style="color:#f92672">&gt;</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding)) {
+        <span style="color:#66d9ef">return</span> intsetUpgradeAndAdd(is,value);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果没有超出，则计算待添加整数需要应添加到整数集合中的位置
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (intsetSearch(is,value,<span style="color:#f92672">&amp;</span>pos)) {
+            <span style="color:#75715e">// intset中应不存在相同元素，如果待添加的整数已存在，则直接返回
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (success) <span style="color:#f92672">*</span>success <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+            <span style="color:#66d9ef">return</span> is;
         }
-        // 调整整数集合的大小
-        is = intsetResize(is,intrev32ifbe(is-&gt;length)+1);
-        // 将整数集合中pos~end的数据移动到pos+1~newend上
-        if (pos &lt; intrev32ifbe(is-&gt;length)) intsetMoveTail(is,pos,pos+1);
+        <span style="color:#75715e">// 调整整数集合的大小
+</span><span style="color:#75715e"></span>        is <span style="color:#f92672">=</span> intsetResize(is,intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+        <span style="color:#75715e">// 将整数集合中pos~end的数据移动到pos+1~newend上
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (pos <span style="color:#f92672">&lt;</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)) intsetMoveTail(is,pos,pos<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
     }
-    // 添加数据到第pos位
-    _intsetSet(is,pos,value);
-    // 更新length值
-    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+1);
-    return is;
+    <span style="color:#75715e">// 添加数据到第pos位
+</span><span style="color:#75715e"></span>    _intsetSet(is,pos,value);
+    <span style="color:#75715e">// 更新length值
+</span><span style="color:#75715e"></span>    is<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> intrev32ifbe(intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">return</span> is;
 }
-// 查找value在整数集is中该添加到的位置
-// 如果整数集中不存在value值，则返回0，并将插入位置存放在pos变量中
-// 反之，返回1，表示value已存在
-static uint8_t intsetSearch(intset *is, int64_t value, uint32_t *pos) {
-    int min = 0, max = intrev32ifbe(is-&gt;length)-1, mid = -1;
-    int64_t cur = -1;
+<span style="color:#75715e">// 查找value在整数集is中该添加到的位置
+</span><span style="color:#75715e">// 如果整数集中不存在value值，则返回0，并将插入位置存放在pos变量中
+</span><span style="color:#75715e">// 反之，返回1，表示value已存在
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> uint8_t <span style="color:#a6e22e">intsetSearch</span>(intset <span style="color:#f92672">*</span>is, int64_t value, uint32_t <span style="color:#f92672">*</span>pos) {
+    <span style="color:#66d9ef">int</span> min <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, max <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, mid <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+    int64_t cur <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
 
-    // 判断数据集是否为空
-    if (intrev32ifbe(is-&gt;length) == 0) {
-        if (pos) *pos = 0;
-        return 0;
-    } else {
-        // 如果待查找的数超出了整数集中现有元素的最大和最小范围，则不需要查找
-        if (value &gt; _intsetGet(is,intrev32ifbe(is-&gt;length)-1)) {
-            // value大于整数集中的最大值，则插入到整数集末尾
-            if (pos) *pos = intrev32ifbe(is-&gt;length);
-            return 0;
-        } else if (value &lt; _intsetGet(is,0)) {
-            // value小于整数集中的最小值，则插入到整数集头部
-            if (pos) *pos = 0;
-            return 0;
+    <span style="color:#75715e">// 判断数据集是否为空
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果待查找的数超出了整数集中现有元素的最大和最小范围，则不需要查找
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&gt;</span> _intsetGet(is,intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)) {
+            <span style="color:#75715e">// value大于整数集中的最大值，则插入到整数集末尾
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length);
+            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&lt;</span> _intsetGet(is,<span style="color:#ae81ff">0</span>)) {
+            <span style="color:#75715e">// value小于整数集中的最小值，则插入到整数集头部
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
         }
     }
-    // 利用二分法进行查找，时间复杂度为O(logn)
-    while(max &gt;= min) {
-        mid = ((unsigned int)min + (unsigned int)max) &gt;&gt; 1;
-        cur = _intsetGet(is,mid);
-        if (value &gt; cur) {
-            min = mid+1;
-        } else if (value &lt; cur) {
-            max = mid-1;
-        } else {
-            break;
+    <span style="color:#75715e">// 利用二分法进行查找，时间复杂度为O(logn)
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(max <span style="color:#f92672">&gt;=</span> min) {
+        mid <span style="color:#f92672">=</span> ((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)min <span style="color:#f92672">+</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)max) <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">1</span>;
+        cur <span style="color:#f92672">=</span> _intsetGet(is,mid);
+        <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&gt;</span> cur) {
+            min <span style="color:#f92672">=</span> mid<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>;
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&lt;</span> cur) {
+            max <span style="color:#f92672">=</span> mid<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#66d9ef">break</span>;
         }
     }
 
-    if (value == cur) {
-        if (pos) *pos = mid;
-        return 1;
-    } else {
-        if (pos) *pos = min;
-        return 0;
+    <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">==</span> cur) {
+        <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> mid;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> min;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
     }
 }
-// 将整数集的from为开始的数据全部移动到to位以后
-static void intsetMoveTail(intset *is, uint32_t from, uint32_t to) {
-    void *src, *dst;
-    uint32_t bytes = intrev32ifbe(is-&gt;length)-from;
-    uint32_t encoding = intrev32ifbe(is-&gt;encoding);
-    // 根据编码格式做相应处理
-    // src为待移动内存的初始位置
-    // dst为需要移动到的内存块的初始位置
-    // bytes为需要移动的字节数
-    if (encoding == INTSET_ENC_INT64) {
-        src = (int64_t*)is-&gt;contents+from;
-        dst = (int64_t*)is-&gt;contents+to;
-        bytes *= sizeof(int64_t);
-    } else if (encoding == INTSET_ENC_INT32) {
-        src = (int32_t*)is-&gt;contents+from;
-        dst = (int32_t*)is-&gt;contents+to;
-        bytes *= sizeof(int32_t);
-    } else {
-        src = (int16_t*)is-&gt;contents+from;
-        dst = (int16_t*)is-&gt;contents+to;
-        bytes *= sizeof(int16_t);
+<span style="color:#75715e">// 将整数集的from为开始的数据全部移动到to位以后
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">intsetMoveTail</span>(intset <span style="color:#f92672">*</span>is, uint32_t from, uint32_t to) {
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>src, <span style="color:#f92672">*</span>dst;
+    uint32_t bytes <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">-</span>from;
+    uint32_t encoding <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding);
+    <span style="color:#75715e">// 根据编码格式做相应处理
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// src为待移动内存的初始位置
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// dst为需要移动到的内存块的初始位置
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// bytes为需要移动的字节数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">==</span> INTSET_ENC_INT64) {
+        src <span style="color:#f92672">=</span> (int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>from;
+        dst <span style="color:#f92672">=</span> (int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>to;
+        bytes <span style="color:#f92672">*=</span> <span style="color:#66d9ef">sizeof</span>(int64_t);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">==</span> INTSET_ENC_INT32) {
+        src <span style="color:#f92672">=</span> (int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>from;
+        dst <span style="color:#f92672">=</span> (int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>to;
+        bytes <span style="color:#f92672">*=</span> <span style="color:#66d9ef">sizeof</span>(int32_t);
+    } <span style="color:#66d9ef">else</span> {
+        src <span style="color:#f92672">=</span> (int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>from;
+        dst <span style="color:#f92672">=</span> (int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>to;
+        bytes <span style="color:#f92672">*=</span> <span style="color:#66d9ef">sizeof</span>(int16_t);
     }
     memmove(dst,src,bytes);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="移除数据">移除数据</h2>
-
-<pre><code class="language-cpp">// 将整数集合中值为value的整数移除
-intset *intsetRemove(intset *is, int64_t value, int *success) {
-    uint8_t valenc = _intsetValueEncoding(value);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 将整数集合中值为value的整数移除
+</span><span style="color:#75715e"></span>intset <span style="color:#f92672">*</span><span style="color:#a6e22e">intsetRemove</span>(intset <span style="color:#f92672">*</span>is, int64_t value, <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>success) {
+    uint8_t valenc <span style="color:#f92672">=</span> _intsetValueEncoding(value);
     uint32_t pos;
-    if (success) *success = 0;
-    // 符合删除条件的要求有两条：
-    // -- 值不能超出当前编码格式能表示的范围
-    // -- 整数集中能找到该值
-    if (valenc &lt;= intrev32ifbe(is-&gt;encoding) &amp;&amp; intsetSearch(is,value,&amp;pos)) {
-        uint32_t len = intrev32ifbe(is-&gt;length);
+    <span style="color:#66d9ef">if</span> (success) <span style="color:#f92672">*</span>success <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 符合删除条件的要求有两条：
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// -- 值不能超出当前编码格式能表示的范围
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// -- 整数集中能找到该值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (valenc <span style="color:#f92672">&lt;=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding) <span style="color:#f92672">&amp;&amp;</span> intsetSearch(is,value,<span style="color:#f92672">&amp;</span>pos)) {
+        uint32_t len <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length);
 
-        // 表示能删除
-        if (success) *success = 1;
+        <span style="color:#75715e">// 表示能删除
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (success) <span style="color:#f92672">*</span>success <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
 
-        // 移动内存，删除数据
-        if (pos &lt; (len-1)) intsetMoveTail(is,pos+1,pos);
-        // 调整内存大小
-        is = intsetResize(is,len-1);
-        // 更新length值
-        is-&gt;length = intrev32ifbe(len-1);
+        <span style="color:#75715e">// 移动内存，删除数据
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (pos <span style="color:#f92672">&lt;</span> (len<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)) intsetMoveTail(is,pos<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,pos);
+        <span style="color:#75715e">// 调整内存大小
+</span><span style="color:#75715e"></span>        is <span style="color:#f92672">=</span> intsetResize(is,len<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+        <span style="color:#75715e">// 更新length值
+</span><span style="color:#75715e"></span>        is<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> intrev32ifbe(len<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
     }
-    return is;
+    <span style="color:#66d9ef">return</span> is;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="其他操作函数">其他操作函数</h2>
 
 <ul>

@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -188,8 +189,7 @@ root             31544   0.0  0.0  4287116    528   ??  Ss    8:50PM   0:00.00 n
 <p><img src="https://ws1.sinaimg.cn/large/73a1af36ly1fnxrwqh04lj20qe0d0dhd.jpg" alt="Nginx配置" /></p>
 
 <p>Nginx采取块配置，块与块之间可以嵌套。大体上可以分为四种块，全局，HTTP/EXENT/MAIL块，erver块，Location块。具体含义我们继续往下看。</p>
-
-<pre><code class="language-configure">user nobody;  // 用户名
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-configure" data-lang="configure">user nobody;  // 用户名
 worker_processes 1;  // 工作进程数
 master_process off; // 关闭主进程，即主进程和工作进程合为一个
 daemon off; // 不以daemon模式运行
@@ -215,9 +215,7 @@ http {
         }
 
    }
-}
-</code></pre>
-
+}</code></pre></div>
 <h2 id="静态文本服务器">静态文本服务器</h2>
 
 <p>前面我们提到，Nginx可以做静态文本服务器。此时只需要在Nginx.conf文件中添加如下：</p>

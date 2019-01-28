@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -117,77 +118,67 @@
 <h1 id="事件数据结构">事件数据结构</h1>
 
 <p>在上述的概述中，我们可以获得几个关键池：文件事件，时间事件，待处理事件池和事件循环，Redis为这几个关键词都定义了各自的结构体。下面，依次来看一看：</p>
-
-<pre><code class="language-cpp">/* 文件事件结构体 */
-typedef struct aeFileEvent {
-    int mask; // 事件标记，读or写
-    aeFileProc *rfileProc;  // 读事件处理函数
-    aeFileProc *wfileProc;  // 写事件处理函数
-    void *clientData;  // 事件中包含的待处理数据
-} aeFileEvent;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 文件事件结构体 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> aeFileEvent {
+    <span style="color:#66d9ef">int</span> mask; <span style="color:#75715e">// 事件标记，读or写
+</span><span style="color:#75715e"></span>    aeFileProc <span style="color:#f92672">*</span>rfileProc;  <span style="color:#75715e">// 读事件处理函数
+</span><span style="color:#75715e"></span>    aeFileProc <span style="color:#f92672">*</span>wfileProc;  <span style="color:#75715e">// 写事件处理函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>clientData;  <span style="color:#75715e">// 事件中包含的待处理数据
+</span><span style="color:#75715e"></span>} aeFileEvent;
+</code></pre></div>
 <p>很明显，文件事件在处理过程中，需要根据mask来判断调用读或者写函数来处理该事件，这个很好理解。</p>
-
-<pre><code class="language-cpp">/* 时间事件结构体 */
-typedef struct aeTimeEvent {
-    long long id; // 时间事件标识符，用于唯一标记该时间事件
-    long when_sec; // 时间事件触发时间 秒
-    long when_ms; // 时间事件触发时间 微秒
-    aeTimeProc *timeProc;  // 该事件对应的处理函数
-    aeEventFinalizerProc *finalizerProc;   // 时间事件的最后一次处理程序，若已设置，则删除该事件的时候会调用
-    void *clientData; // 数据
-    struct aeTimeEvent *next; // 下一个时间事件
-} aeTimeEvent;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 时间事件结构体 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> aeTimeEvent {
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> id; <span style="color:#75715e">// 时间事件标识符，用于唯一标记该时间事件
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> when_sec; <span style="color:#75715e">// 时间事件触发时间 秒
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> when_ms; <span style="color:#75715e">// 时间事件触发时间 微秒
+</span><span style="color:#75715e"></span>    aeTimeProc <span style="color:#f92672">*</span>timeProc;  <span style="color:#75715e">// 该事件对应的处理函数
+</span><span style="color:#75715e"></span>    aeEventFinalizerProc <span style="color:#f92672">*</span>finalizerProc;   <span style="color:#75715e">// 时间事件的最后一次处理程序，若已设置，则删除该事件的时候会调用
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>clientData; <span style="color:#75715e">// 数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> aeTimeEvent <span style="color:#f92672">*</span>next; <span style="color:#75715e">// 下一个时间事件
+</span><span style="color:#75715e"></span>} aeTimeEvent;
+</code></pre></div>
 <p>在上述结构体中，该时间事件的标识符包括，时间事件id和触发时间when，每次时间循环的时候判断是否到了触发时间，如到了，则调用对应的处理函数进行处理，该时间事件中还定义了该时间事件最后一次的处理函数。另外，next指针指向下一个时间事件，有些时间事件比如隔多少秒执行一次的，这时候next指针就派上用场了。</p>
-
-<pre><code class="language-cpp">/* 触发时间结构体 */
-typedef struct aeFiredEvent {
-    int fd;  // 文件事件描述符
-    int mask;  // 读写标记
-} aeFiredEvent;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 触发时间结构体 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> aeFiredEvent {
+    <span style="color:#66d9ef">int</span> fd;  <span style="color:#75715e">// 文件事件描述符
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> mask;  <span style="color:#75715e">// 读写标记
+</span><span style="color:#75715e"></span>} aeFiredEvent;
+</code></pre></div>
 <p>每次调用I/O复用程序之后，会返回已经准备好的文件事件描述符，这时候就会以该结构体的形式存放下来。Redis在事件循环的时候，会对这些已准备好待处理的事件一一进行处理，也就是上面说的待处理事件池。</p>
-
-<pre><code class="language-cpp">/* 事件循环结构体 */
-typedef struct aeEventLoop {
-    int maxfd;   // 当前注册的最大描述符
-    int setsize; // 需要监听的描述符个数
-    long long timeEventNextId; // 下一个时间事件的id，用于生成时间事件的唯一标识
-    time_t lastTime;     // 上一次事件循环的时间，用于检测系统时间是否变更
-    aeFileEvent *events; // 注册要使用的文件事件
-    aeFiredEvent *fired; // 已准备好，待处理的时间
-    aeTimeEvent *timeEventHead; // 时间事件头，因为事件时间其实是一个链表
-    int stop; //  停止标识，1表示停止
-    void *apidata; // 用于处理底层特定的API数据，对于epoll来说，其包括epoll_fd和epoll_event
-    aeBeforeSleepProc *beforesleep; // 没有待处理事件时调用
-} aeEventLoop;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 事件循环结构体 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> aeEventLoop {
+    <span style="color:#66d9ef">int</span> maxfd;   <span style="color:#75715e">// 当前注册的最大描述符
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> setsize; <span style="color:#75715e">// 需要监听的描述符个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> timeEventNextId; <span style="color:#75715e">// 下一个时间事件的id，用于生成时间事件的唯一标识
+</span><span style="color:#75715e"></span>    time_t lastTime;     <span style="color:#75715e">// 上一次事件循环的时间，用于检测系统时间是否变更
+</span><span style="color:#75715e"></span>    aeFileEvent <span style="color:#f92672">*</span>events; <span style="color:#75715e">// 注册要使用的文件事件
+</span><span style="color:#75715e"></span>    aeFiredEvent <span style="color:#f92672">*</span>fired; <span style="color:#75715e">// 已准备好，待处理的时间
+</span><span style="color:#75715e"></span>    aeTimeEvent <span style="color:#f92672">*</span>timeEventHead; <span style="color:#75715e">// 时间事件头，因为事件时间其实是一个链表
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> stop; <span style="color:#75715e">//  停止标识，1表示停止
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>apidata; <span style="color:#75715e">// 用于处理底层特定的API数据，对于epoll来说，其包括epoll_fd和epoll_event
+</span><span style="color:#75715e"></span>    aeBeforeSleepProc <span style="color:#f92672">*</span>beforesleep; <span style="color:#75715e">// 没有待处理事件时调用
+</span><span style="color:#75715e"></span>} aeEventLoop;
+</code></pre></div>
 <p>时间循坏结构中，存放着所有文件事件和时间事件，以及已准备好的事件，还有以下标识参数等。这些使得事件循环能够安全，高效的运行。</p>
 
 <h1 id="事件创建和删除">事件创建和删除</h1>
 
 <p>我们知道，Redis的事件分为文件事件和时间事件，上述也给出了其分别对应的结构体。首先，我们去看看如何创建和删除事件。</p>
-
-<pre><code class="language-cpp">/* 创建文件事件 */
-int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
-        aeFileProc *proc, void *clientData);
-/* 删除文件事件 */
-void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask);
-/* 根据文件描述符获取文件事件 */
-int aeGetFileEvents(aeEventLoop *eventLoop, int fd);
-/* 创建时间事件 */
-long long aeCreateTimeEvent(aeEventLoop *eventLoop, long long milliseconds,
-        aeTimeProc *proc, void *clientData,
-        aeEventFinalizerProc *finalizerProc);
-/* 删除时间事件 */
-int aeDeleteTimeEvent(aeEventLoop *eventLoop, long long id);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 创建文件事件 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">aeCreateFileEvent</span>(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">int</span> mask,
+        aeFileProc <span style="color:#f92672">*</span>proc, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>clientData);
+<span style="color:#75715e">/* 删除文件事件 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">aeDeleteFileEvent</span>(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">int</span> mask);
+<span style="color:#75715e">/* 根据文件描述符获取文件事件 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">aeGetFileEvents</span>(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">int</span> fd);
+<span style="color:#75715e">/* 创建时间事件 */</span>
+<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">aeCreateTimeEvent</span>(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> milliseconds,
+        aeTimeProc <span style="color:#f92672">*</span>proc, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>clientData,
+        aeEventFinalizerProc <span style="color:#f92672">*</span>finalizerProc);
+<span style="color:#75715e">/* 删除时间事件 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">aeDeleteTimeEvent</span>(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> id);
+</code></pre></div>
 <p>这些函数都非常简单，就是对其结构体进行一些初始化操作，我们主要来了解一下在什么时候创建事件，继续跟踪代码的话，这些就一目了然。</p>
 
 <p>关于文件事件，有两个地方需要创建它：</p>
@@ -195,44 +186,37 @@ int aeDeleteTimeEvent(aeEventLoop *eventLoop, long long id);
 <ul>
 <li>初始化服务器的时候，需要监听新的客户连接</li>
 </ul>
-
-<pre><code class="language-c">/* 截取至server.c/initServer函数 */
-/* 服务器可能有多个文件描述符，根据每个文件描述符来创建监听事件，监听新客户的连接 */
-for (j = 0; j &lt; server.ipfd_count; j++) { 
-	if (aeCreateFileEvent(server.el, server.ipfd[j], AE_READABLE,
-		acceptTcpHandler,NULL) == AE_ERR)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 截取至server.c/initServer函数 */</span>
+<span style="color:#75715e">/* 服务器可能有多个文件描述符，根据每个文件描述符来创建监听事件，监听新客户的连接 */</span>
+<span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> server.ipfd_count; j<span style="color:#f92672">++</span>) { 
+	<span style="color:#66d9ef">if</span> (aeCreateFileEvent(server.el, server.ipfd[j], AE_READABLE,
+		acceptTcpHandler,NULL) <span style="color:#f92672">==</span> AE_ERR)
 	{
-		serverPanic(&quot;Unrecoverable error creating server.ipfd file event.&quot;);
+		serverPanic(<span style="color:#e6db74">&#34;Unrecoverable error creating server.ipfd file event.&#34;</span>);
 	}
 }
-if (server.sofd &gt; 0 &amp;&amp; aeCreateFileEvent(server.el,server.sofd,AE_READABLE,
-    acceptUnixHandler,NULL) == AE_ERR) serverPanic(&quot;Unrecoverable error creating server.sofd file event.&quot;);
-</code></pre>
-
+<span style="color:#66d9ef">if</span> (server.sofd <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">&amp;&amp;</span> aeCreateFileEvent(server.el,server.sofd,AE_READABLE,
+    acceptUnixHandler,NULL) <span style="color:#f92672">==</span> AE_ERR) serverPanic(<span style="color:#e6db74">&#34;Unrecoverable error creating server.sofd file event.&#34;</span>);</code></pre></div>
 <ul>
 <li>在客户连接服务器之后，需要监听该客户的读写事件</li>
 </ul>
-
-<pre><code class="language-cpp">/* 代码截取至netWorking.c/createClient函数 */
-/* 新用户连接的时候需要创建client结构体，此时就需要创建文件事件，用来监听其读写操作 */
-if (aeCreateFileEvent(server.el,fd,AE_READABLE, readQueryFromClient, c) == AE_ERR)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 代码截取至netWorking.c/createClient函数 */</span>
+<span style="color:#75715e">/* 新用户连接的时候需要创建client结构体，此时就需要创建文件事件，用来监听其读写操作 */</span>
+<span style="color:#66d9ef">if</span> (aeCreateFileEvent(server.el,fd,AE_READABLE, readQueryFromClient, c) <span style="color:#f92672">==</span> AE_ERR)
 {
   close(fd);
   zfree(c);
-  return NULL;
+  <span style="color:#66d9ef">return</span> NULL;
 }
-</code></pre>
-
+</code></pre></div>
 <p>关于时间事件，Redis在初始化服务器的时候就会创建，前面我们提到的AOF和RDB持久化以及过期键的处理等操作中，都设计到定时操作，时间事件就是为了这些定时操作而设定的，在特定的时间触发时间事件，并进行相应的处理。</p>
-
-<pre><code class="language-cpp">/* 截取至server.c/initServer函数 */
-/* 创建时间事件，用于处理定时任务 */
-if(aeCreateTimeEvent(server.el, 1, serverCron, NULL, NULL) == AE_ERR) {
-        serverPanic(&quot;Can't create the serverCron time event.&quot;);
-        exit(1);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 截取至server.c/initServer函数 */</span>
+<span style="color:#75715e">/* 创建时间事件，用于处理定时任务 */</span>
+<span style="color:#66d9ef">if</span>(aeCreateTimeEvent(server.el, <span style="color:#ae81ff">1</span>, serverCron, NULL, NULL) <span style="color:#f92672">==</span> AE_ERR) {
+        serverPanic(<span style="color:#e6db74">&#34;Can&#39;t create the serverCron time event.&#34;</span>);
+        exit(<span style="color:#ae81ff">1</span>);
     }
-</code></pre>
-
+</code></pre></div>
 <h1 id="i-o多路复用">I/O多路复用</h1>
 
 <p>在进行文件事件处理前，需要调用I/O多路复用来获得已经准备就绪的文件描述符，关于I/O多路复用，有以下四种函数可以使用。</p>
@@ -247,180 +231,168 @@ if(aeCreateTimeEvent(server.el, 1, serverCron, NULL, NULL) == AE_ERR) {
 <p>其中，不同的系统支持不同的多路复用函数，linux下可以使用select和epoll，macos下可以使用select和kqueue，如果安装有libevent，则可以使用evport。对于I/O多路复用，不懂的可以参考我的这篇学习笔记：<a href="http://zcheng.ren/2016/07/14/%E3%80%90unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E7%AC%AC%E4%B8%89%E7%89%88%E3%80%91%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%94%EF%BC%89%EF%BC%9AI-O%E5%A4%8D%E7%94%A8%EF%BC%9Aselect%E5%92%8Cpoll%E5%87%BD%E6%95%B0/">UNIX网络编程之五：select和poll函数</a></p>
 
 <p>Redis为了适用于不同的操作系统，同时也要达到最高的效率，定义了如下库选择宏，用于根据当前操作系统的环境来选择最高效的I/O多路复用函数。</p>
-
-<pre><code class="language-cpp">#ifdef HAVE_EVPORT
-#include &quot;ae_evport.c&quot;
-#else
-    #ifdef HAVE_EPOLL
-    #include &quot;ae_epoll.c&quot;
-    #else
-        #ifdef HAVE_KQUEUE
-        #include &quot;ae_kqueue.c&quot;
-        #else
-        #include &quot;ae_select.c&quot;
-        #endif
-    #endif
-#endif
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#ifdef HAVE_EVPORT
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;ae_evport.c&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#else
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">#ifdef HAVE_EPOLL
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;ae_epoll.c&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">#else
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">#ifdef HAVE_KQUEUE
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;ae_kqueue.c&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">#else
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;ae_select.c&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">#endif
+</span><span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>另外，为了统一的使用这些I/O复用函数，Redis对其进行了特定的封装，使得对外的接口得到了统一，操作起来也很方便。</p>
-
-<pre><code class="language-cpp">/* 添加需要监听的事件 */
-static int aeApiAddEvent(aeEventLoop *eventLoop, int fd, int mask)
-/* 初始化I/O多路复用库所需的参数 */
-static int aeApiCreate(aeEventLoop *eventLoop)
-/* 删除不需要监听的事件 */
-static void aeApiDelEvent(aeEventLoop *eventLoop, int fd, int mask)
-/* 清空 */
-static void aeApiFree(aeEventLoop *eventLoop)
-/* 返回当前使用的库的名字 */
-static int aeApiName(void)
-/* 取出已准备好的文件描述符 */
-static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 添加需要监听的事件 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> aeApiAddEvent(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">int</span> mask)
+<span style="color:#75715e">/* 初始化I/O多路复用库所需的参数 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> aeApiCreate(aeEventLoop <span style="color:#f92672">*</span>eventLoop)
+<span style="color:#75715e">/* 删除不需要监听的事件 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> aeApiDelEvent(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">int</span> mask)
+<span style="color:#75715e">/* 清空 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> aeApiFree(aeEventLoop <span style="color:#f92672">*</span>eventLoop)
+<span style="color:#75715e">/* 返回当前使用的库的名字 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> aeApiName(<span style="color:#66d9ef">void</span>)
+<span style="color:#75715e">/* 取出已准备好的文件描述符 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> aeApiPoll(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">struct</span> timeval <span style="color:#f92672">*</span>tvp)
+</code></pre></div>
 <p>我们以select为例，其可以监听读或写类型的文件描述符，所以，需要定义一个结构体来存放需要监听的读写类型的文件描述符集合。</p>
-
-<pre><code class="language-cpp">typedef struct aeApiState {
-    fd_set rfds, wfds;  // 读写文件描述符集合
-    /* We need to have a copy of the fd sets as it's not safe to reuse
-     * FD sets after select(). */
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> aeApiState {
+    fd_set rfds, wfds;  <span style="color:#75715e">// 读写文件描述符集合
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/* We need to have a copy of the fd sets as it&#39;s not safe to reuse
+</span><span style="color:#75715e">     * FD sets after select(). */</span>
     fd_set _rfds, _wfds;
 } aeApiState;
-</code></pre>
-
+</code></pre></div>
 <p>在eventloop结构体中，<code>apidata</code>字段保存的数据类型就是<code>aeApiState</code>。增加，删除，清空等操作都是对这两个文件描述符集进行操作，没什么好讲的，主要是<code>aeApiPoll</code>函数，其调用底层的I/O复用函数，获取已经准备好的描述符集。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 调用select函数，获取已经准备好的描述符集 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">aeApiPoll</span>(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">struct</span> timeval <span style="color:#f92672">*</span>tvp) {
+    aeApiState <span style="color:#f92672">*</span>state <span style="color:#f92672">=</span> eventLoop<span style="color:#f92672">-&gt;</span>apidata;
+    <span style="color:#66d9ef">int</span> retval, j, numevents <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
 
-<pre><code class="language-cpp">/* 调用select函数，获取已经准备好的描述符集 */
-static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
-    aeApiState *state = eventLoop-&gt;apidata;
-    int retval, j, numevents = 0;
-
-    memcpy(&amp;state-&gt;_rfds,&amp;state-&gt;rfds,sizeof(fd_set));
-    memcpy(&amp;state-&gt;_wfds,&amp;state-&gt;wfds,sizeof(fd_set));
-	// 调用select函数
-    retval = select(eventLoop-&gt;maxfd+1,
-                &amp;state-&gt;_rfds,&amp;state-&gt;_wfds,NULL,tvp);
-    if (retval &gt; 0) {
-        for (j = 0; j &lt;= eventLoop-&gt;maxfd; j++) {
-            int mask = 0;
-            // 找到该描述符对应的事件
-          	aeFileEvent *fe = &amp;eventLoop-&gt;events[j];
-			// 根据mask判断读或写事件，并在需要监听的描述符中确定存在该描述符
-            if (fe-&gt;mask == AE_NONE) continue;
-            if (fe-&gt;mask &amp; AE_READABLE &amp;&amp; FD_ISSET(j,&amp;state-&gt;_rfds))
-                mask |= AE_READABLE;
-            if (fe-&gt;mask &amp; AE_WRITABLE &amp;&amp; FD_ISSET(j,&amp;state-&gt;_wfds))
-                mask |= AE_WRITABLE;
-            // 加入到已经准备好的事件中，等待处理
-            eventLoop-&gt;fired[numevents].fd = j;
-            eventLoop-&gt;fired[numevents].mask = mask;
-            numevents++;
+    memcpy(<span style="color:#f92672">&amp;</span>state<span style="color:#f92672">-&gt;</span>_rfds,<span style="color:#f92672">&amp;</span>state<span style="color:#f92672">-&gt;</span>rfds,<span style="color:#66d9ef">sizeof</span>(fd_set));
+    memcpy(<span style="color:#f92672">&amp;</span>state<span style="color:#f92672">-&gt;</span>_wfds,<span style="color:#f92672">&amp;</span>state<span style="color:#f92672">-&gt;</span>wfds,<span style="color:#66d9ef">sizeof</span>(fd_set));
+	<span style="color:#75715e">// 调用select函数
+</span><span style="color:#75715e"></span>    retval <span style="color:#f92672">=</span> select(eventLoop<span style="color:#f92672">-&gt;</span>maxfd<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,
+                <span style="color:#f92672">&amp;</span>state<span style="color:#f92672">-&gt;</span>_rfds,<span style="color:#f92672">&amp;</span>state<span style="color:#f92672">-&gt;</span>_wfds,NULL,tvp);
+    <span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;=</span> eventLoop<span style="color:#f92672">-&gt;</span>maxfd; j<span style="color:#f92672">++</span>) {
+            <span style="color:#66d9ef">int</span> mask <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+            <span style="color:#75715e">// 找到该描述符对应的事件
+</span><span style="color:#75715e"></span>          	aeFileEvent <span style="color:#f92672">*</span>fe <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>eventLoop<span style="color:#f92672">-&gt;</span>events[j];
+			<span style="color:#75715e">// 根据mask判断读或写事件，并在需要监听的描述符中确定存在该描述符
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (fe<span style="color:#f92672">-&gt;</span>mask <span style="color:#f92672">==</span> AE_NONE) <span style="color:#66d9ef">continue</span>;
+            <span style="color:#66d9ef">if</span> (fe<span style="color:#f92672">-&gt;</span>mask <span style="color:#f92672">&amp;</span> AE_READABLE <span style="color:#f92672">&amp;&amp;</span> FD_ISSET(j,<span style="color:#f92672">&amp;</span>state<span style="color:#f92672">-&gt;</span>_rfds))
+                mask <span style="color:#f92672">|=</span> AE_READABLE;
+            <span style="color:#66d9ef">if</span> (fe<span style="color:#f92672">-&gt;</span>mask <span style="color:#f92672">&amp;</span> AE_WRITABLE <span style="color:#f92672">&amp;&amp;</span> FD_ISSET(j,<span style="color:#f92672">&amp;</span>state<span style="color:#f92672">-&gt;</span>_wfds))
+                mask <span style="color:#f92672">|=</span> AE_WRITABLE;
+            <span style="color:#75715e">// 加入到已经准备好的事件中，等待处理
+</span><span style="color:#75715e"></span>            eventLoop<span style="color:#f92672">-&gt;</span>fired[numevents].fd <span style="color:#f92672">=</span> j;
+            eventLoop<span style="color:#f92672">-&gt;</span>fired[numevents].mask <span style="color:#f92672">=</span> mask;
+            numevents<span style="color:#f92672">++</span>;
         }
     }
-    // 返回已经准备好的事件个数
-    return numevents;
+    <span style="color:#75715e">// 返回已经准备好的事件个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> numevents;
 }
-</code></pre>
-
+</code></pre></div>
 <p>简单点来说，I/O多路复用函数的作用就是，将给定的需要监听的描述符集作为输入，该函数轮询这些描述符集，然后找出其中已经准备好的文件描述符集。</p>
 
 <h1 id="事件循环">事件循环</h1>
 
 <p>上面调用I/O多路复用程序已经获取了准备好的事件，接下来就需要对这些事件进行处理。在<code>server.c</code>文件里，Redis的入口函数<code>main</code>函数中，就调用了<code>aeMain()</code>函数，用于执行事件循环。</p>
-
-<pre><code class="language-cpp">/* 事件循环主函数 */
-void aeMain(aeEventLoop *eventLoop) {
-    eventLoop-&gt;stop = 0;  // 开启事件循环
-    while (!eventLoop-&gt;stop) {
-        if (eventLoop-&gt;beforesleep != NULL)
-            eventLoop-&gt;beforesleep(eventLoop);
-        aeProcessEvents(eventLoop, AE_ALL_EVENTS);  // 事件处理函数
-    }
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 事件循环主函数 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">aeMain</span>(aeEventLoop <span style="color:#f92672">*</span>eventLoop) {
+    eventLoop<span style="color:#f92672">-&gt;</span>stop <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 开启事件循环
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span> (<span style="color:#f92672">!</span>eventLoop<span style="color:#f92672">-&gt;</span>stop) {
+        <span style="color:#66d9ef">if</span> (eventLoop<span style="color:#f92672">-&gt;</span>beforesleep <span style="color:#f92672">!=</span> NULL)
+            eventLoop<span style="color:#f92672">-&gt;</span>beforesleep(eventLoop);
+        aeProcessEvents(eventLoop, AE_ALL_EVENTS);  <span style="color:#75715e">// 事件处理函数
+</span><span style="color:#75715e"></span>    }
 }
-</code></pre>
-
+</code></pre></div>
 <p>我们可以看到，基本上事件循环自服务器运行开始，就一直不停的执行，不停地处理各类事件。关于事件处理的具体函数如下：</p>
-
-<pre><code class="language-cpp">/* 事件处理函数 */
-int aeProcessEvents(aeEventLoop *eventLoop, int flags)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 事件处理函数 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">aeProcessEvents</span>(aeEventLoop <span style="color:#f92672">*</span>eventLoop, <span style="color:#66d9ef">int</span> flags)
 {
-    int processed = 0, numevents;
+    <span style="color:#66d9ef">int</span> processed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, numevents;
 
-    // 没有需要处理的事件就直接返回
-    if (!(flags &amp; AE_TIME_EVENTS) &amp;&amp; !(flags &amp; AE_FILE_EVENTS)) return 0;
+    <span style="color:#75715e">// 没有需要处理的事件就直接返回
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(flags <span style="color:#f92672">&amp;</span> AE_TIME_EVENTS) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>(flags <span style="color:#f92672">&amp;</span> AE_FILE_EVENTS)) <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 
-    // 即使没有要处理的文件事件，只要我们想处理时间事件就需要调用select()函数
-    // 这是为了睡眠直到下一个时间事件准备好。
-    if (eventLoop-&gt;maxfd != -1 ||
-        ((flags &amp; AE_TIME_EVENTS) &amp;&amp; !(flags &amp; AE_DONT_WAIT))) {
-        int j;
-        aeTimeEvent *shortest = NULL;
-        struct timeval tv, *tvp;
-		// 获取最近的时间事件
-        if (flags &amp; AE_TIME_EVENTS &amp;&amp; !(flags &amp; AE_DONT_WAIT))
-            shortest = aeSearchNearestTimer(eventLoop);
-        if (shortest) {
-            // 运行到这里说明时间事件存在，则根据最近可执行时间事件和现在的时间的时间差
-            // 来决定文件事件的阻塞事件
-            long now_sec, now_ms;
+    <span style="color:#75715e">// 即使没有要处理的文件事件，只要我们想处理时间事件就需要调用select()函数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 这是为了睡眠直到下一个时间事件准备好。
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (eventLoop<span style="color:#f92672">-&gt;</span>maxfd <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span>
+        ((flags <span style="color:#f92672">&amp;</span> AE_TIME_EVENTS) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>(flags <span style="color:#f92672">&amp;</span> AE_DONT_WAIT))) {
+        <span style="color:#66d9ef">int</span> j;
+        aeTimeEvent <span style="color:#f92672">*</span>shortest <span style="color:#f92672">=</span> NULL;
+        <span style="color:#66d9ef">struct</span> timeval tv, <span style="color:#f92672">*</span>tvp;
+		<span style="color:#75715e">// 获取最近的时间事件
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> AE_TIME_EVENTS <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>(flags <span style="color:#f92672">&amp;</span> AE_DONT_WAIT))
+            shortest <span style="color:#f92672">=</span> aeSearchNearestTimer(eventLoop);
+        <span style="color:#66d9ef">if</span> (shortest) {
+            <span style="color:#75715e">// 运行到这里说明时间事件存在，则根据最近可执行时间事件和现在的时间的时间差
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 来决定文件事件的阻塞事件
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">long</span> now_sec, now_ms;
 
-            aeGetTime(&amp;now_sec, &amp;now_ms);
-            tvp = &amp;tv;
+            aeGetTime(<span style="color:#f92672">&amp;</span>now_sec, <span style="color:#f92672">&amp;</span>now_ms);
+            tvp <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>tv;
 
-            // 计算下一次时间事件准备好的时间
-            long long ms =
-                (shortest-&gt;when_sec - now_sec)*1000 +
-                shortest-&gt;when_ms - now_ms;
-            if (ms &gt; 0) {
-                tvp-&gt;tv_sec = ms/1000;
-                tvp-&gt;tv_usec = (ms % 1000)*1000;
-            } else {
-                // 时间差小于0，代表可以处理了
-                tvp-&gt;tv_sec = 0;
-                tvp-&gt;tv_usec = 0;
+            <span style="color:#75715e">// 计算下一次时间事件准备好的时间
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> ms <span style="color:#f92672">=</span>
+                (shortest<span style="color:#f92672">-&gt;</span>when_sec <span style="color:#f92672">-</span> now_sec)<span style="color:#f92672">*</span><span style="color:#ae81ff">1000</span> <span style="color:#f92672">+</span>
+                shortest<span style="color:#f92672">-&gt;</span>when_ms <span style="color:#f92672">-</span> now_ms;
+            <span style="color:#66d9ef">if</span> (ms <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+                tvp<span style="color:#f92672">-&gt;</span>tv_sec <span style="color:#f92672">=</span> ms<span style="color:#f92672">/</span><span style="color:#ae81ff">1000</span>;
+                tvp<span style="color:#f92672">-&gt;</span>tv_usec <span style="color:#f92672">=</span> (ms <span style="color:#f92672">%</span> <span style="color:#ae81ff">1000</span>)<span style="color:#f92672">*</span><span style="color:#ae81ff">1000</span>;
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#75715e">// 时间差小于0，代表可以处理了
+</span><span style="color:#75715e"></span>                tvp<span style="color:#f92672">-&gt;</span>tv_sec <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+                tvp<span style="color:#f92672">-&gt;</span>tv_usec <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
             }
-        } else {
-            // 执行到这里，说明没有待处理的时间事件
-            // 此时根据AE_DONT_WAIT参数来决定是否设置阻塞和阻塞的时间
-            if (flags &amp; AE_DONT_WAIT) {
-                tv.tv_sec = tv.tv_usec = 0;
-                tvp = &amp;tv;
-            } else {
-                /* Otherwise we can block */
-                tvp = NULL; /* wait forever */
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 执行到这里，说明没有待处理的时间事件
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 此时根据AE_DONT_WAIT参数来决定是否设置阻塞和阻塞的时间
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> AE_DONT_WAIT) {
+                tv.tv_sec <span style="color:#f92672">=</span> tv.tv_usec <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+                tvp <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>tv;
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#75715e">/* Otherwise we can block */</span>
+                tvp <span style="color:#f92672">=</span> NULL; <span style="color:#75715e">/* wait forever */</span>
             }
         }
-		// 调用I/O复用函数获取已准备好的事件
-        numevents = aeApiPoll(eventLoop, tvp);
-        for (j = 0; j &lt; numevents; j++) {
-            // 从已就绪事件中获取事件
-            aeFileEvent *fe = &amp;eventLoop-&gt;events[eventLoop-&gt;fired[j].fd];
-            int mask = eventLoop-&gt;fired[j].mask;
-            int fd = eventLoop-&gt;fired[j].fd;
-            int rfired = 0;
+		<span style="color:#75715e">// 调用I/O复用函数获取已准备好的事件
+</span><span style="color:#75715e"></span>        numevents <span style="color:#f92672">=</span> aeApiPoll(eventLoop, tvp);
+        <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> numevents; j<span style="color:#f92672">++</span>) {
+            <span style="color:#75715e">// 从已就绪事件中获取事件
+</span><span style="color:#75715e"></span>            aeFileEvent <span style="color:#f92672">*</span>fe <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>eventLoop<span style="color:#f92672">-&gt;</span>events[eventLoop<span style="color:#f92672">-&gt;</span>fired[j].fd];
+            <span style="color:#66d9ef">int</span> mask <span style="color:#f92672">=</span> eventLoop<span style="color:#f92672">-&gt;</span>fired[j].mask;
+            <span style="color:#66d9ef">int</span> fd <span style="color:#f92672">=</span> eventLoop<span style="color:#f92672">-&gt;</span>fired[j].fd;
+            <span style="color:#66d9ef">int</span> rfired <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
 
-            // 如果为读事件则调用读事件处理函数
-            if (fe-&gt;mask &amp; mask &amp; AE_READABLE) {
-                rfired = 1;
-                fe-&gt;rfileProc(eventLoop,fd,fe-&gt;clientData,mask);
+            <span style="color:#75715e">// 如果为读事件则调用读事件处理函数
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (fe<span style="color:#f92672">-&gt;</span>mask <span style="color:#f92672">&amp;</span> mask <span style="color:#f92672">&amp;</span> AE_READABLE) {
+                rfired <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+                fe<span style="color:#f92672">-&gt;</span>rfileProc(eventLoop,fd,fe<span style="color:#f92672">-&gt;</span>clientData,mask);
             }
-            // 如果为写事件则调用写事件处理函数
-            if (fe-&gt;mask &amp; mask &amp; AE_WRITABLE) {
-                if (!rfired || fe-&gt;wfileProc != fe-&gt;rfileProc)
-                    fe-&gt;wfileProc(eventLoop,fd,fe-&gt;clientData,mask);
+            <span style="color:#75715e">// 如果为写事件则调用写事件处理函数
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (fe<span style="color:#f92672">-&gt;</span>mask <span style="color:#f92672">&amp;</span> mask <span style="color:#f92672">&amp;</span> AE_WRITABLE) {
+                <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>rfired <span style="color:#f92672">||</span> fe<span style="color:#f92672">-&gt;</span>wfileProc <span style="color:#f92672">!=</span> fe<span style="color:#f92672">-&gt;</span>rfileProc)
+                    fe<span style="color:#f92672">-&gt;</span>wfileProc(eventLoop,fd,fe<span style="color:#f92672">-&gt;</span>clientData,mask);
             }
-            processed++;
+            processed<span style="color:#f92672">++</span>;
         }
     }
-    // 处理时间事件，记住，此处说明Redis的文件事件优先于时间事件
-    if (flags &amp; AE_TIME_EVENTS)
-        processed += processTimeEvents(eventLoop);
-	// 返回处理的事件个数
-    return processed;
+    <span style="color:#75715e">// 处理时间事件，记住，此处说明Redis的文件事件优先于时间事件
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> AE_TIME_EVENTS)
+        processed <span style="color:#f92672">+=</span> processTimeEvents(eventLoop);
+	<span style="color:#75715e">// 返回处理的事件个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> processed;
 }
-</code></pre>
-
+</code></pre></div>
 <p>简而言之，事件的处理步骤就是：</p>
 
 <ul>
@@ -453,32 +425,30 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
 <p>在注册文件事件的时候，给定的文件处理函数是<code>acceptTcpHandler</code>和<code>readQueryFromClient</code>。我们先来看看前者。</p>
 
 <p>很显然，前者对应的事件是为了监听新客户的连接，其事件处理应该是：处理客户的连接，并创建新客户结构体，初始化等</p>
-
-<pre><code class="language-cpp">/* 监听新客户连接事件的处理函数*/
-void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
-    int cport, cfd, max = MAX_ACCEPTS_PER_CALL;
-    char cip[NET_IP_STR_LEN];
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 监听新客户连接事件的处理函数*/</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">acceptTcpHandler</span>(aeEventLoop <span style="color:#f92672">*</span>el, <span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privdata, <span style="color:#66d9ef">int</span> mask) {
+    <span style="color:#66d9ef">int</span> cport, cfd, max <span style="color:#f92672">=</span> MAX_ACCEPTS_PER_CALL;
+    <span style="color:#66d9ef">char</span> cip[NET_IP_STR_LEN];
     UNUSED(el);
     UNUSED(mask);
     UNUSED(privdata);
-	// TCP连接，接受客户的连接
-    while(max--) {
-        cfd = anetTcpAccept(server.neterr, fd, cip, sizeof(cip), &amp;cport);
-        // 连接出错
-      	if (cfd == ANET_ERR) {
-            if (errno != EWOULDBLOCK)
+	<span style="color:#75715e">// TCP连接，接受客户的连接
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(max<span style="color:#f92672">--</span>) {
+        cfd <span style="color:#f92672">=</span> anetTcpAccept(server.neterr, fd, cip, <span style="color:#66d9ef">sizeof</span>(cip), <span style="color:#f92672">&amp;</span>cport);
+        <span style="color:#75715e">// 连接出错
+</span><span style="color:#75715e"></span>      	<span style="color:#66d9ef">if</span> (cfd <span style="color:#f92672">==</span> ANET_ERR) {
+            <span style="color:#66d9ef">if</span> (errno <span style="color:#f92672">!=</span> EWOULDBLOCK)
                 serverLog(LL_WARNING,
-                    &quot;Accepting client connection: %s&quot;, server.neterr);
-            return;
+                    <span style="color:#e6db74">&#34;Accepting client connection: %s&#34;</span>, server.neterr);
+            <span style="color:#66d9ef">return</span>;
         }
-        // 记录日志
-        serverLog(LL_VERBOSE,&quot;Accepted %s:%d&quot;, cip, cport);
-        // 初始化客户操作
-      	acceptCommonHandler(cfd,0,cip);
+        <span style="color:#75715e">// 记录日志
+</span><span style="color:#75715e"></span>        serverLog(LL_VERBOSE,<span style="color:#e6db74">&#34;Accepted %s:%d&#34;</span>, cip, cport);
+        <span style="color:#75715e">// 初始化客户操作
+</span><span style="color:#75715e"></span>      	acceptCommonHandler(cfd,<span style="color:#ae81ff">0</span>,cip);
     }
 }
-</code></pre>
-
+</code></pre></div>
 <p>上述函数只是接受了该客户的连接，真正创建客户结构体的操作由<code>acceptCommonHandler</code>函数完成。该函数的源码就不列出来了，这里主要说一下它的主要工作：</p>
 
 <ul>

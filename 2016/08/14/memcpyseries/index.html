@@ -12,7 +12,6 @@
 <meta property="og:description" content="mem系列函数是面试的时候常考的知识点，我们需要熟练掌握这三个函数的原理和代码实现，要能准确无误的写出代码。
 
 memcpy、memset和memset三个函数在使用过程中，均需包含以下头文件：
-
 //在C中
 #include &lt;string.h&gt;
 //在C&#43;&#43;中
@@ -27,7 +26,6 @@ memcpy、memset和memset三个函数在使用过程中，均需包含以下头�
 <meta name="twitter:description" content="mem系列函数是面试的时候常考的知识点，我们需要熟练掌握这三个函数的原理和代码实现，要能准确无误的写出代码。
 
 memcpy、memset和memset三个函数在使用过程中，均需包含以下头文件：
-
 //在C中
 #include &lt;string.h&gt;
 //在C&#43;&#43;中
@@ -44,9 +42,11 @@ memcpy、memset和memset三个函数在使用过程中，均需包含以下头�
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -79,7 +79,6 @@ memcpy、memset和memset三个函数在使用过程中，均需包含以下头�
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -117,82 +116,72 @@ memcpy、memset和memset三个函数在使用过程中，均需包含以下头�
 			<p>mem系列函数是面试的时候常考的知识点，我们需要熟练掌握这三个函数的原理和代码实现，要能准确无误的写出代码。</p>
 
 <p>memcpy、memset和memset三个函数在使用过程中，均需包含以下头文件：</p>
-
-<pre><code class="language-cpp">//在C中
-#include &lt;string.h&gt;
-//在C++中
-#include &lt;cstring&gt;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//在C中
+</span><span style="color:#75715e"></span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">//在C++中
+</span><span style="color:#75715e"></span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;cstring&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="memcpy">memcpy</h1>
 
 <p>memcpy函数是C/C++中的内存拷贝函数，它的功能是从源src所指的内存地址的起始位置开始，拷贝n个字节到目标dst所指的内存地址的起始位置中。</p>
 
 <p>研究函数功能最好的办法就是研究其源代码，这里在网上找了一份，如下：</p>
-
-<pre><code class="language-cpp">void * __cdecl memcpy ( void * dst,const void * src,size_t count)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">__cdecl</span> <span style="color:#a6e22e">memcpy</span> ( <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> dst,<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> src,size_t count)
 {
-    void * ret = dst;
-    while (count--)
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> ret <span style="color:#f92672">=</span> dst;
+    <span style="color:#66d9ef">while</span> (count<span style="color:#f92672">--</span>)
     { 
-        // 注意， memcpy函数没有处理dst和src区域是否重叠的问题
-        *(char *)dst = *(char *)src;
-        dst = (char *)dst + 1;
-        src = (char *)src + 1;
+        <span style="color:#75715e">// 注意， memcpy函数没有处理dst和src区域是否重叠的问题
+</span><span style="color:#75715e"></span>        <span style="color:#f92672">*</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>)dst <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>)src;
+        dst <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>)dst <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
+        src <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>)src <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
     }
-    return(ret);
+    <span style="color:#66d9ef">return</span>(ret);
 }
-</code></pre>
-
+</code></pre></div>
 <p>源代码比较简单，定义一个计数，然后从头到尾一次将src指向的值拷贝给dst，库函数中的memcpy不能处理dst和src中存在重叠部分这种情况。</p>
 
 <p>那么处理重叠部分的话，我们可以采用从后往前依次拷贝的方法，下面给出我修改过的函数代码：</p>
-
-<pre><code class="language-cpp">void * __cdecl memcpy ( void * dst,const void * src,size_t count)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">__cdecl</span> <span style="color:#a6e22e">memcpy</span> ( <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> dst,<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> src,size_t count)
 {
-	char *pDst = static_cast&lt;char *&gt; dst;
-	const char *pSrc = static_cast&lt;const char *&gt; src;
-   	//检查参数
-   	if(pDst==NULL || pSrc== NULL || count &lt;=0){
-   		return NULL;
+	<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>pDst <span style="color:#f92672">=</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">char</span> <span style="color:#f92672">*&gt;</span> dst;
+	<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>pSrc <span style="color:#f92672">=</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*&gt;</span> src;
+   	<span style="color:#75715e">//检查参数
+</span><span style="color:#75715e"></span>   	<span style="color:#66d9ef">if</span>(pDst<span style="color:#f92672">==</span>NULL <span style="color:#f92672">||</span> pSrc<span style="color:#f92672">==</span> NULL <span style="color:#f92672">||</span> count <span style="color:#f92672">&lt;=</span><span style="color:#ae81ff">0</span>){
+   		<span style="color:#66d9ef">return</span> NULL;
   	}
-   	//判断有是否存在重叠部分
-   	if(pDst &gt; pSrc &amp;&amp; pDst &lt; pSrc + count){
-   		for(size_t i=count-1; i&gt;=0; i--)
+   	<span style="color:#75715e">//判断有是否存在重叠部分
+</span><span style="color:#75715e"></span>   	<span style="color:#66d9ef">if</span>(pDst <span style="color:#f92672">&gt;</span> pSrc <span style="color:#f92672">&amp;&amp;</span> pDst <span style="color:#f92672">&lt;</span> pSrc <span style="color:#f92672">+</span> count){
+   		<span style="color:#66d9ef">for</span>(size_t i<span style="color:#f92672">=</span>count<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; i<span style="color:#f92672">&gt;=</span><span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>)
         {
-            pDst[i] = pSrc[i];
+            pDst[i] <span style="color:#f92672">=</span> pSrc[i];
         }
    	}
-   	else {
-   		for(size_t i=0; i&lt;count; i++)
+   	<span style="color:#66d9ef">else</span> {
+   		<span style="color:#66d9ef">for</span>(size_t i<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>; i<span style="color:#f92672">&lt;</span>count; i<span style="color:#f92672">++</span>)
         {
-            pDst[i] = pSrc[i];
+            pDst[i] <span style="color:#f92672">=</span> pSrc[i];
         }
    	}
-   	return pDst;
+   	<span style="color:#66d9ef">return</span> pDst;
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="memset">memset</h1>
 
 <p>memset一般用于对内存初始化，在这里需要注意的是，memset函数是对内存的每个字节(按字节)设置成c的值。其函数原型如下：</p>
-
-<pre><code class="language-cpp">void memset(void *s, int c, size_t n)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">memset</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>s, <span style="color:#66d9ef">int</span> c, size_t n)
 {
-	const unsigned char uc = c;//将int转换成char，截去c的高24位，留下低8位
-	unsigned char *su;
-	for (su = s; 0 &lt; n; ++su, --n)
-		*su = uc;
-	return s;
+	<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> uc <span style="color:#f92672">=</span> c;<span style="color:#75715e">//将int转换成char，截去c的高24位，留下低8位
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>su;
+	<span style="color:#66d9ef">for</span> (su <span style="color:#f92672">=</span> s; <span style="color:#ae81ff">0</span> <span style="color:#f92672">&lt;</span> n; <span style="color:#f92672">++</span>su, <span style="color:#f92672">--</span>n)
+		<span style="color:#f92672">*</span>su <span style="color:#f92672">=</span> uc;
+	<span style="color:#66d9ef">return</span> s;
 }
-</code></pre>
-
+</code></pre></div>
 <p>注意，这里有一个坑，memset一般用于将内存清零，你要是想将这段内存初始化为1而写下下面的代码：</p>
-
-<pre><code class="language-cpp">int num[10];
-memset(num,1,sizeof(int)*10);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> num[<span style="color:#ae81ff">10</span>];
+memset(num,<span style="color:#ae81ff">1</span>,<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">int</span>)<span style="color:#f92672">*</span><span style="color:#ae81ff">10</span>);
+</code></pre></div>
 <p>这里并不会如你所愿，num的每一个数都被初始化为16843009，原因就是上述提到的会截去c的高24位。</p>
 
 <p>使用memset初始化比用for循环初始化要快很多，所以在初始化基本类型数据，结构体等的时候尽量选择memset，memset可以方便的清空一个结构类型的变量或数组。</p>
@@ -203,50 +192,44 @@ memset(num,1,sizeof(int)*10);
 
 <p>所以基本原则就是，如果你能确保两段内存没有重叠的部分，就使用memcpy来进行拷贝；如果你不能确定，为了保证复制的正确性，必须用memmove。
 其实现代码如下：</p>
-
-<pre><code class="language-cpp">void* memmove(void* dest, void* src, size_t count)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> <span style="color:#a6e22e">memmove</span>(<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> dest, <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> src, size_t count)
 {
-	void* ret = dest;
-	if (dest &lt;= src || dest &gt;= (src + count))
+	<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> ret <span style="color:#f92672">=</span> dest;
+	<span style="color:#66d9ef">if</span> (dest <span style="color:#f92672">&lt;=</span> src <span style="color:#f92672">||</span> dest <span style="color:#f92672">&gt;=</span> (src <span style="color:#f92672">+</span> count))
 	{
-		//Non-Overlapping Buffers
-		//copy from lower addresses to higher addresses
-		while (count --)
-			*dest++ = *src++;
+		<span style="color:#75715e">//Non-Overlapping Buffers
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">//copy from lower addresses to higher addresses
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">while</span> (count <span style="color:#f92672">--</span>)
+			<span style="color:#f92672">*</span>dest<span style="color:#f92672">++</span> <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>src<span style="color:#f92672">++</span>;
 	}
-	else
+	<span style="color:#66d9ef">else</span>
 	{
-		//Overlapping Buffers
-		//copy from higher addresses to lower addresses
-		dest += count - 1;
-		src += count - 1;
-		while (count--)
-			*dest-- = *src--;
+		<span style="color:#75715e">//Overlapping Buffers
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">//copy from higher addresses to lower addresses
+</span><span style="color:#75715e"></span>		dest <span style="color:#f92672">+=</span> count <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>;
+		src <span style="color:#f92672">+=</span> count <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>;
+		<span style="color:#66d9ef">while</span> (count<span style="color:#f92672">--</span>)
+			<span style="color:#f92672">*</span>dest<span style="color:#f92672">--</span> <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>src<span style="color:#f92672">--</span>;
 	}
-	return ret;
+	<span style="color:#66d9ef">return</span> ret;
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="strcpy">strcpy</h1>
 
 <p>strcpy是C语言的标准库函数，使用strcpy需要包含以下头文件：</p>
-
-<pre><code class="language-cpp">#include &lt;string.h&gt;
-#include &lt;stdio.h&gt;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>其函数功能是把从src地址开始且含有NULL结束符的字符串复制到dst开始的地址空间，返回指向dst的指针。其函数代码如下：</p>
-
-<pre><code class="language-cpp">char* strcpy(char* dst , char* src){
-	if(dst==NULL||src==NULL) return NULL;// --1
-
-	if(dst==src) return dst;	//--2
-	char* address = dst;	//--3
-	while((*dst++ = *src++)!='\0') //--4
-	return address;		//--5
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> <span style="color:#a6e22e">strcpy</span>(<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> dst , <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> src){
+	<span style="color:#66d9ef">if</span>(dst<span style="color:#f92672">==</span>NULL<span style="color:#f92672">||</span>src<span style="color:#f92672">==</span>NULL) <span style="color:#66d9ef">return</span> NULL;<span style="color:#75715e">// --1
+</span><span style="color:#75715e"></span>
+	<span style="color:#66d9ef">if</span>(dst<span style="color:#f92672">==</span>src) <span style="color:#66d9ef">return</span> dst;	<span style="color:#75715e">//--2
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> address <span style="color:#f92672">=</span> dst;	<span style="color:#75715e">//--3
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">while</span>((<span style="color:#f92672">*</span>dst<span style="color:#f92672">++</span> <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>src<span style="color:#f92672">++</span>)<span style="color:#f92672">!=</span><span style="color:#e6db74">&#39;\0&#39;</span>) <span style="color:#75715e">//--4
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> address;		<span style="color:#75715e">//--5
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>图中标出来的都是考点，下面一一说明：</p>
 
 <ul>
@@ -255,22 +238,18 @@ memset(num,1,sizeof(int)*10);
 <li>3、这里需要保存原始的dst指针，用作返回值</li>
 <li>4、这里有一个技巧，如果写成以下两种，面试的时候会大大扣分！</li>
 </ul>
-
-<pre><code class="language-cpp">//第一种
-while(*dst++ = *src++)  //直接越界访问，没有检查指针的有效性
-//第二种
-while(*src!='\0'){*dst++ = *src++;}//考虑了src的边界问题，没有在dst的后面加'\0'，会导致dst的长度未知引起错误
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//第一种
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">while</span>(<span style="color:#f92672">*</span>dst<span style="color:#f92672">++</span> <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>src<span style="color:#f92672">++</span>)  <span style="color:#75715e">//直接越界访问，没有检查指针的有效性
+</span><span style="color:#75715e">//第二种
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">while</span>(<span style="color:#f92672">*</span>src<span style="color:#f92672">!=</span><span style="color:#e6db74">&#39;\0&#39;</span>){<span style="color:#f92672">*</span>dst<span style="color:#f92672">++</span> <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>src<span style="color:#f92672">++</span>;}<span style="color:#75715e">//考虑了src的边界问题，没有在dst的后面加&#39;\0&#39;，会导致dst的长度未知引起错误
+</span><span style="color:#75715e"></span></code></pre></div>
 <ul>
 <li>5、函数返回dst的原始值是为了能够支持链式表达式，增加了函数的附加性。</li>
 </ul>
 
 <p>上述第5点可以用如下测试代码来说明：</p>
-
-<pre><code class="language-cpp">int length = strlen(strcpy(strA,strB));//如果不支持链式表达式，这里会报错。
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> length <span style="color:#f92672">=</span> strlen(strcpy(strA,strB));<span style="color:#75715e">//如果不支持链式表达式，这里会报错。
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>那么有时候也会问为什么不返回src的原始值，错误原因有以下三点：</p>
 
 <ul>

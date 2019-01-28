@@ -38,9 +38,11 @@ Maupassant最初是由Cho大神为Typecho平台设计开发的一套响应式模
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -73,7 +75,6 @@ Maupassant最初是由Cho大神为Typecho平台设计开发的一套响应式模
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -118,44 +119,34 @@ Maupassant最初是由Cho大神为Typecho平台设计开发的一套响应式模
 <h1 id="主题安装">主题安装</h1>
 
 <p>安装主题和渲染器</p>
-
-<pre><code class="language-cpp">cd 'hexo博客目录'
-git clone https://github.com/tufu9441/maupassant-hexo.git themes/maupassant
-npm install hexo-renderer-jade --save // 渲染器
-npm install hexo-renderer-sass --save
-npm install hexo-generator-feed --save // rss支持
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">cd <span style="color:#960050;background-color:#1e0010">&#39;</span>hexo博客目录<span style="color:#960050;background-color:#1e0010">&#39;</span>
+git clone https:<span style="color:#75715e">//github.com/tufu9441/maupassant-hexo.git themes/maupassant
+</span><span style="color:#75715e"></span>npm install hexo<span style="color:#f92672">-</span>renderer<span style="color:#f92672">-</span>jade <span style="color:#f92672">--</span>save <span style="color:#75715e">// 渲染器
+</span><span style="color:#75715e"></span>npm install hexo<span style="color:#f92672">-</span>renderer<span style="color:#f92672">-</span>sass <span style="color:#f92672">--</span>save
+npm install hexo<span style="color:#f92672">-</span>generator<span style="color:#f92672">-</span>feed <span style="color:#f92672">--</span>save <span style="color:#75715e">// rss支持
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>安装完后打开hexo的_config.yml，将theme修改为maupassant：</p>
-
-<pre><code class="language-cpp"># Extensions
-## Plugins: https://hexo.io/plugins/
-## Themes: https://hexo.io/themes/
-theme: maupassant
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e"># Extensions
+</span><span style="color:#75715e">## Plugins: https:</span><span style="color:#75715e">//hexo.io/plugins/
+</span><span style="color:#75715e"></span><span style="color:#75715e">## Themes: https:</span><span style="color:#75715e">//hexo.io/themes/
+</span><span style="color:#75715e"></span>theme: maupassant
+</code></pre></div>
 <h1 id="中文支持">中文支持</h1>
 
 <p>进入hexo的目录，打开_config.yml，修改language为zh-CN，目前该主题支持简体中文（zh-CN），繁体中文（zh-TW），英语（en），法语（fr-FR），德语（de-DE），韩语（ko）和西班牙语（es-ES）</p>
-
-<pre><code class="language-cpp">language: zh-CN
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">language: zh<span style="color:#f92672">-</span>CN
+</code></pre></div>
 <h1 id="添加站内搜索">添加站内搜索</h1>
 
 <p>首先，安装hexo插件：</p>
-
-<pre><code class="language-cpp">npm install hexo-generator-search --save
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">npm install hexo<span style="color:#f92672">-</span>generator<span style="color:#f92672">-</span>search <span style="color:#f92672">--</span>save
+</code></pre></div>
 <p>然后，编辑theme/maupassant目录下的_config.yml(注意此处是主题下的配置文件，非hexo的配置文件)</p>
-
-<pre><code class="language-cpp">// 添加如下字段
-search:
-  - path: search.xml
-  - field: post
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 添加如下字段
+</span><span style="color:#75715e"></span>search:
+  <span style="color:#f92672">-</span> path: search.xml
+  <span style="color:#f92672">-</span> field: post
+</code></pre></div>
 <h1 id="添加评论系统">添加评论系统</h1>
 
 <ul>
@@ -166,21 +157,18 @@ search:
 <h1 id="添加友情链接">添加友情链接</h1>
 
 <p>在themes/maupassant下打开_config.yml文件，默认links如下：</p>
-
-<pre><code class="language-cpp">links:
-  - title: site-name1
-    url: http://www.example1.com/
-  - title: site-name2
-    url: http://www.example2.com/
-  - title: site-name3
-    url: http://www.example3.com/
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">links:
+  <span style="color:#f92672">-</span> title: site<span style="color:#f92672">-</span>name1
+    url: http:<span style="color:#75715e">//www.example1.com/
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">-</span> title: site<span style="color:#f92672">-</span>name2
+    url: http:<span style="color:#75715e">//www.example2.com/
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">-</span> title: site<span style="color:#f92672">-</span>name3
+    url: http:<span style="color:#75715e">//www.example3.com/
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>按格式修改名称和网址即可</p>
 
 <h1 id="更多配置">更多配置</h1>
-
-<pre><code class="language-yml">fancybox：是否启用Fancybox图片灯箱效果
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yml" data-lang="yml">fancybox：是否启用Fancybox图片灯箱效果
 google_search：默认使用Google搜索引擎
 baidu_search：若想使用百度搜索，将其设定为true
 swiftype：Swiftype 站内搜索key
@@ -193,22 +181,18 @@ menu：自定义页面及菜单，依照已有格式填写。填写后请在sour
 widgets：选择和排列希望使用的侧边栏小工具
 links： 友情链接，请依照格式填写。
 静态文件目录：静态文件存储路径，方便设置CDN缓存
-version：主题版本，便于静态文件更新后刷新CDN缓存
-</code></pre>
-
+version：主题版本，便于静态文件更新后刷新CDN缓存</code></pre></div>
 <h2 id="在文章侧边增加文章目录">在文章侧边增加文章目录</h2>
 
 <p>在post文章的front_matter增加toc字段，如下：</p>
-
-<pre><code class="language-cpp">---
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">---</span>
 title: ChangedBlogThemes
-toc: true   // 添加此字段
-date: 2016-11-23 21:16:14
+toc: true   <span style="color:#75715e">// 添加此字段
+</span><span style="color:#75715e"></span>date: <span style="color:#ae81ff">2016</span><span style="color:#f92672">-</span><span style="color:#ae81ff">11</span><span style="color:#f92672">-</span><span style="color:#ae81ff">23</span> <span style="color:#ae81ff">21</span><span style="color:#f92672">:</span><span style="color:#ae81ff">16</span><span style="color:#f92672">:</span><span style="color:#ae81ff">14</span>
 tags: Themes
 categories: Hexo
----
-</code></pre>
-
+<span style="color:#f92672">---</span>
+</code></pre></div>
 <p>修改到这，主题也基本成型了，感谢tufu9441给我们提供这么好的主题。</p>
 
 <p>end。</p>

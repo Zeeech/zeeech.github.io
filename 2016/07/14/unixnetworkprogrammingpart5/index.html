@@ -52,9 +52,11 @@ I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条�
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -87,7 +89,6 @@ I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条�
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -294,12 +295,8 @@ I/O多路复用是指内核一旦发现进程指定的一个或者多个I/O条�
 <h2 id="函数原型">函数原型</h2>
 
 <p>它的函数原型时：</p>
-
-<pre><code class="language-cpp">
-int select(int maxfdp1, fd_set *readset, fd_set *writeset , fd_set *exceptset , const struct timeval *timeout);
-
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">select</span>(<span style="color:#66d9ef">int</span> maxfdp1, fd_set <span style="color:#f92672">*</span>readset, fd_set <span style="color:#f92672">*</span>writeset , fd_set <span style="color:#f92672">*</span>exceptset , <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> timeval <span style="color:#f92672">*</span>timeout);
+</code></pre></div>
 <p>对于timeout参数：</p>
 
 <p>(1) timeout==NULL，表示要永远等待下去，直到有一个描述符准备好I/O时才返回</p>
@@ -313,20 +310,16 @@ int select(int maxfdp1, fd_set *readset, fd_set *writeset , fd_set *exceptset , 
 <p>这三个描述符说明了可读，可写和处于异常条件的描述符集合</p>
 
 <p>对于描述集fd_set结构，提供了如下四个操作函数</p>
-
-<pre><code class="language-cpp">
-#include &lt;sys/select.h&gt;
-
-int FD_ISSET(int fd,fd_set *fdset); //设定描述集中的某个描述符
-
-void FD_CLR(int fd,fd_set *fdset);//关掉描述集中的某个描述符
-
-void FD_SET(int fd,fd_set *fdset);//打开描述集中的某个描述符
-
-void FD_ZERO(fd_set *fdset);//清除集合内所有元素
-
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/select.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">FD_ISSET</span>(<span style="color:#66d9ef">int</span> fd,fd_set <span style="color:#f92672">*</span>fdset); <span style="color:#75715e">//设定描述集中的某个描述符
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">FD_CLR</span>(<span style="color:#66d9ef">int</span> fd,fd_set <span style="color:#f92672">*</span>fdset);<span style="color:#75715e">//关掉描述集中的某个描述符
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">FD_SET</span>(<span style="color:#66d9ef">int</span> fd,fd_set <span style="color:#f92672">*</span>fdset);<span style="color:#75715e">//打开描述集中的某个描述符
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">FD_ZERO</span>(fd_set <span style="color:#f92672">*</span>fdset);<span style="color:#75715e">//清除集合内所有元素
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>对于maxfdp1参数：</p>
 
 <p>指定待测试的描述符个数，它的值时待测试的最大描述符编号加1，即从上面三个描述符集中的最大描述符编号加1。</p>
@@ -342,50 +335,46 @@ void FD_ZERO(fd_set *fdset);//清除集合内所有元素
 <p>(3) 返回正数，表示已经准备好的描述符个数，在这种情况下，三个描述符集中依旧打开的位对应于已准备好的描述符</p>
 
 <h2 id="使用select函数修改的str-cli函数">使用select函数修改的str_cli函数</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
 
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-
-
-void
-str_cli(FILE *fp, int sockfd)
+<span style="color:#66d9ef">void</span>
+<span style="color:#a6e22e">str_cli</span>(FILE <span style="color:#f92672">*</span>fp, <span style="color:#66d9ef">int</span> sockfd)
 {
-	int			maxfdp1;
+	<span style="color:#66d9ef">int</span>			maxfdp1;
 	fd_set		rset;
-	char		sendline[MAXLINE], recvline[MAXLINE];
+	<span style="color:#66d9ef">char</span>		sendline[MAXLINE], recvline[MAXLINE];
 
 
-	FD_ZERO(&amp;rset);
-	for ( ; ; ) {
-		FD_SET(fileno(fp), &amp;rset);//标准输入描述符
-		FD_SET(sockfd, &amp;rset);//socket描述符
-		maxfdp1 = max(fileno(fp), sockfd) + 1;//最大描述符编号+1
-		Select(maxfdp1, &amp;rset, NULL, NULL, NULL);//调用select，阻塞于此
-  //如果返回的套接字可读，就用readline读入回射文本
-		if (FD_ISSET(sockfd, &amp;rset)) {	/* socket is readable */
-			if (Readline(sockfd, recvline, MAXLINE) == 0)
-				err_quit(&quot;str_cli: server terminated prematurely&quot;);
+	FD_ZERO(<span style="color:#f92672">&amp;</span>rset);
+	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		FD_SET(fileno(fp), <span style="color:#f92672">&amp;</span>rset);<span style="color:#75715e">//标准输入描述符
+</span><span style="color:#75715e"></span>		FD_SET(sockfd, <span style="color:#f92672">&amp;</span>rset);<span style="color:#75715e">//socket描述符
+</span><span style="color:#75715e"></span>		maxfdp1 <span style="color:#f92672">=</span> max(fileno(fp), sockfd) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;<span style="color:#75715e">//最大描述符编号+1
+</span><span style="color:#75715e"></span>		Select(maxfdp1, <span style="color:#f92672">&amp;</span>rset, NULL, NULL, NULL);<span style="color:#75715e">//调用select，阻塞于此
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">//如果返回的套接字可读，就用readline读入回射文本
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> (FD_ISSET(sockfd, <span style="color:#f92672">&amp;</span>rset)) {	<span style="color:#75715e">/* socket is readable */</span>
+			<span style="color:#66d9ef">if</span> (Readline(sockfd, recvline, MAXLINE) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+				err_quit(<span style="color:#e6db74">&#34;str_cli: server terminated prematurely&#34;</span>);
 			Fputs(recvline, stdout);
 		}
-  //如果标准输入可读，就先用fgets读入一行文本
-		if (FD_ISSET(fileno(fp), &amp;rset)) {  /* input is readable */
-			if (Fgets(sendline, MAXLINE, fp) == NULL)
-				return;		/* all done */
+  <span style="color:#75715e">//如果标准输入可读，就先用fgets读入一行文本
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> (FD_ISSET(fileno(fp), <span style="color:#f92672">&amp;</span>rset)) {  <span style="color:#75715e">/* input is readable */</span>
+			<span style="color:#66d9ef">if</span> (Fgets(sendline, MAXLINE, fp) <span style="color:#f92672">==</span> NULL)
+				<span style="color:#66d9ef">return</span>;		<span style="color:#75715e">/* all done */</span>
 			Writen(sockfd, sendline, strlen(sendline));
 		}
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="批量输入">批量输入</h2>
 
 <p>在上一节提到的str_cli版本中，仍然存在一个问题。假设客户在标准输入中批量输入数据，在输入完最后一个数据后，碰到了EOF，str_cli返回到main函数，main函数随后终止。但是，在这个过程中，标准输入的EOF终止符并不意味着我们也同时完成了从套接字的读入，可能仍有请求在去往服务器的路上，或者仍有应答在返回客户的路上。</p>
 
 <p>原因就处在于此：</p>
-
-<pre><code class="language-cpp">	if (Fgets(sendline, MAXLINE, fp) == NULL)
-				return;		/* all done */
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">	<span style="color:#66d9ef">if</span> (Fgets(sendline, MAXLINE, fp) <span style="color:#f92672">==</span> NULL)
+				<span style="color:#66d9ef">return</span>;		<span style="color:#75715e">/* all done */</span>
+</code></pre></div>
 <p>当碰到EOF终止符的时候，str_cli函数选择了立即返回，而此时，我们更需要的是找到一个条件来判断套接字的读取是否完成。</p>
 
 <h2 id="shutdown函数">shutdown函数</h2>
@@ -401,10 +390,8 @@ str_cli(FILE *fp, int sockfd)
 <p>(2) close终止读和写两个方向的数据传送。shutdown只是关闭单方向的读或写。</p>
 
 <p>其函数原型如下：</p>
-
-<pre><code class="language-cpp">int shutdown(int sockfd , int howto);//若成功则返回0，若出错返回-1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">shutdown</span>(<span style="color:#66d9ef">int</span> sockfd , <span style="color:#66d9ef">int</span> howto);<span style="color:#75715e">//若成功则返回0，若出错返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>关于该函数的第二个参数howto：</p>
 
 <p>(1) SHUT_RD 关闭连接的读这一半，套接字中不再有数据可接收，而且套接字接收缓冲区中的现有数据都被丢弃</p>
@@ -414,50 +401,48 @@ str_cli(FILE *fp, int sockfd)
 <p>(3) SHUT_RDWR 关闭读半部和写半部，这与调用shutdown两次等效。</p>
 
 <h2 id="str-cli函数再修改版">str_cli函数再修改版</h2>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-void
-str_cli(FILE *fp, int sockfd)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span>
+<span style="color:#a6e22e">str_cli</span>(FILE <span style="color:#f92672">*</span>fp, <span style="color:#66d9ef">int</span> sockfd)
 {
-	int			maxfdp1, stdineof;
+	<span style="color:#66d9ef">int</span>			maxfdp1, stdineof;
 	fd_set		rset;
-	char		buf[MAXLINE];
-	int		n;
+	<span style="color:#66d9ef">char</span>		buf[MAXLINE];
+	<span style="color:#66d9ef">int</span>		n;
 
-	stdineof = 0;
-	FD_ZERO(&amp;rset);
-	for ( ; ; ) {
-		if (stdineof == 0)//套接字读取完成标识符
-			FD_SET(fileno(fp), &amp;rset);//关闭select描述符集中的标准输入描述符
-		FD_SET(sockfd, &amp;rset);
-		maxfdp1 = max(fileno(fp), sockfd) + 1;
-		Select(maxfdp1, &amp;rset, NULL, NULL, NULL);
+	stdineof <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	FD_ZERO(<span style="color:#f92672">&amp;</span>rset);
+	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		<span style="color:#66d9ef">if</span> (stdineof <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)<span style="color:#75715e">//套接字读取完成标识符
+</span><span style="color:#75715e"></span>			FD_SET(fileno(fp), <span style="color:#f92672">&amp;</span>rset);<span style="color:#75715e">//关闭select描述符集中的标准输入描述符
+</span><span style="color:#75715e"></span>		FD_SET(sockfd, <span style="color:#f92672">&amp;</span>rset);
+		maxfdp1 <span style="color:#f92672">=</span> max(fileno(fp), sockfd) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
+		Select(maxfdp1, <span style="color:#f92672">&amp;</span>rset, NULL, NULL, NULL);
 
-		if (FD_ISSET(sockfd, &amp;rset)) {	/* socket is readable */
-			if ( (n = Read(sockfd, buf, MAXLINE)) == 0) {
-				if (stdineof == 1)
-					return;		/* normal termination */
-				else
-					err_quit(&quot;str_cli: server terminated prematurely&quot;);
+		<span style="color:#66d9ef">if</span> (FD_ISSET(sockfd, <span style="color:#f92672">&amp;</span>rset)) {	<span style="color:#75715e">/* socket is readable */</span>
+			<span style="color:#66d9ef">if</span> ( (n <span style="color:#f92672">=</span> Read(sockfd, buf, MAXLINE)) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+				<span style="color:#66d9ef">if</span> (stdineof <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+					<span style="color:#66d9ef">return</span>;		<span style="color:#75715e">/* normal termination */</span>
+				<span style="color:#66d9ef">else</span>
+					err_quit(<span style="color:#e6db74">&#34;str_cli: server terminated prematurely&#34;</span>);
 			}
 
 			Write(fileno(stdout), buf, n);
 		}
 
-		if (FD_ISSET(fileno(fp), &amp;rset)) {  /* input is readable */
-			if ( (n = Read(fileno(fp), buf, MAXLINE)) == 0) {//若读取的字节数为0
-				stdineof = 1;//表明套接字读取数据完成
-				Shutdown(sockfd, SHUT_WR);	/* send FIN *///关闭读这一半
-				FD_CLR(fileno(fp), &amp;rset);
-				continue;
+		<span style="color:#66d9ef">if</span> (FD_ISSET(fileno(fp), <span style="color:#f92672">&amp;</span>rset)) {  <span style="color:#75715e">/* input is readable */</span>
+			<span style="color:#66d9ef">if</span> ( (n <span style="color:#f92672">=</span> Read(fileno(fp), buf, MAXLINE)) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {<span style="color:#75715e">//若读取的字节数为0
+</span><span style="color:#75715e"></span>				stdineof <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#75715e">//表明套接字读取数据完成
+</span><span style="color:#75715e"></span>				Shutdown(sockfd, SHUT_WR);	<span style="color:#75715e">/* send FIN */</span><span style="color:#75715e">//关闭读这一半
+</span><span style="color:#75715e"></span>				FD_CLR(fileno(fp), <span style="color:#f92672">&amp;</span>rset);
+				<span style="color:#66d9ef">continue</span>;
 			}
 
 			Writen(sockfd, buf, n);
 		}
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="四-tcp回射服务器程序-采用select函数">四、TCP回射服务器程序(采用select函数)</h1>
 
 <p>在<a href="http://blog.csdn.net/terence1212/article/details/51881659">【unix网络编程第三版】阅读笔记（四）：TCP客户/服务器实例</a>中我们采用fork生成子进程来处理每个客户的需求。</p>
@@ -469,97 +454,93 @@ str_cli(FILE *fp, int sockfd)
 <p>每次有新客户连接的时候，就在client数组中找到第一个可用项来保存该连接套接字。</p>
 
 <p>具体解释见代码注释：</p>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-int
-main(int argc, char **argv)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span>
+<span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-	int					i, maxi, maxfd, listenfd, connfd, sockfd;
-	int					nready, client[FD_SETSIZE];
+	<span style="color:#66d9ef">int</span>					i, maxi, maxfd, listenfd, connfd, sockfd;
+	<span style="color:#66d9ef">int</span>					nready, client[FD_SETSIZE];
 	ssize_t				n;
 	fd_set				rset, allset;
-	char				buf[MAXLINE];
+	<span style="color:#66d9ef">char</span>				buf[MAXLINE];
 	socklen_t			clilen;
-	struct sockaddr_in	cliaddr, servaddr;
+	<span style="color:#66d9ef">struct</span> sockaddr_in	cliaddr, servaddr;
 
-	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+	listenfd <span style="color:#f92672">=</span> Socket(AF_INET, SOCK_STREAM, <span style="color:#ae81ff">0</span>);
 
-	bzero(&amp;servaddr, sizeof(servaddr));
-	servaddr.sin_family      = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(SERV_PORT);
+	bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
+	servaddr.sin_family      <span style="color:#f92672">=</span> AF_INET;
+	servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);
+	servaddr.sin_port        <span style="color:#f92672">=</span> htons(SERV_PORT);
 
-	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+	Bind(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
 
 	Listen(listenfd, LISTENQ);
 
-	maxfd = listenfd;		//初始化maxfd，在传入select函数时需要+1
-	maxi = -1;					//记录client数组中最后一个非-1数所占的序号
-	for (i = 0; i &lt; FD_SETSIZE; i++)
-		client[i] = -1;		//初始化client数组，为-1表示该项可用
-	FD_ZERO(&amp;allset);
-	FD_SET(listenfd, &amp;allset);
+	maxfd <span style="color:#f92672">=</span> listenfd;		<span style="color:#75715e">//初始化maxfd，在传入select函数时需要+1
+</span><span style="color:#75715e"></span>	maxi <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;					<span style="color:#75715e">//记录client数组中最后一个非-1数所占的序号
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> FD_SETSIZE; i<span style="color:#f92672">++</span>)
+		client[i] <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;		<span style="color:#75715e">//初始化client数组，为-1表示该项可用
+</span><span style="color:#75715e"></span>	FD_ZERO(<span style="color:#f92672">&amp;</span>allset);
+	FD_SET(listenfd, <span style="color:#f92672">&amp;</span>allset);
 
 
-	for ( ; ; ) {
-		rset = allset;	//初始化描述符集
-		nready = Select(maxfd+1, &amp;rset, NULL, NULL, NULL);//注意此处为最大描述符编号+1，返回已准备好的描述符个数
-
-		if (FD_ISSET(listenfd, &amp;rset)) {	//检测到有新客户连接
-			clilen = sizeof(cliaddr);
-			connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;clilen);//连接新客户，获得已连接套接字
-#ifdef	NOTDEF
-			printf(&quot;new client: %s, port %d\n&quot;,
-					Inet_ntop(AF_INET, &amp;cliaddr.sin_addr, 4, NULL),
+	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		rset <span style="color:#f92672">=</span> allset;	<span style="color:#75715e">//初始化描述符集
+</span><span style="color:#75715e"></span>		nready <span style="color:#f92672">=</span> Select(maxfd<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">&amp;</span>rset, NULL, NULL, NULL);<span style="color:#75715e">//注意此处为最大描述符编号+1，返回已准备好的描述符个数
+</span><span style="color:#75715e"></span>
+		<span style="color:#66d9ef">if</span> (FD_ISSET(listenfd, <span style="color:#f92672">&amp;</span>rset)) {	<span style="color:#75715e">//检测到有新客户连接
+</span><span style="color:#75715e"></span>			clilen <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);
+			connfd <span style="color:#f92672">=</span> Accept(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, <span style="color:#f92672">&amp;</span>clilen);<span style="color:#75715e">//连接新客户，获得已连接套接字
+</span><span style="color:#75715e"></span><span style="color:#75715e">#ifdef	NOTDEF
+</span><span style="color:#75715e"></span>			printf(<span style="color:#e6db74">&#34;new client: %s, port %d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,
+					Inet_ntop(AF_INET, <span style="color:#f92672">&amp;</span>cliaddr.sin_addr, <span style="color:#ae81ff">4</span>, NULL),
 					ntohs(cliaddr.sin_port));
-#endif
-
-			for (i = 0; i &lt; FD_SETSIZE; i++)
-				if (client[i] &lt; 0) {//找到第一个可用项
-					client[i] = connfd;	//存储套接字描述符
-					break;
+<span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span>
+			<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> FD_SETSIZE; i<span style="color:#f92672">++</span>)
+				<span style="color:#66d9ef">if</span> (client[i] <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {<span style="color:#75715e">//找到第一个可用项
+</span><span style="color:#75715e"></span>					client[i] <span style="color:#f92672">=</span> connfd;	<span style="color:#75715e">//存储套接字描述符
+</span><span style="color:#75715e"></span>					<span style="color:#66d9ef">break</span>;
 				}
-			if (i == FD_SETSIZE)//限制最大连接个数
-				err_quit(&quot;too many clients&quot;);
+			<span style="color:#66d9ef">if</span> (i <span style="color:#f92672">==</span> FD_SETSIZE)<span style="color:#75715e">//限制最大连接个数
+</span><span style="color:#75715e"></span>				err_quit(<span style="color:#e6db74">&#34;too many clients&#34;</span>);
 
-			FD_SET(connfd, &amp;allset);	/* add new descriptor to set */
-			if (connfd &gt; maxfd)
-				maxfd = connfd;		//重置maxfd为最大描述符编号+1
-			if (i &gt; maxi)
-				maxi = i;				//client数组中最后一个描述符所占的序号
+			FD_SET(connfd, <span style="color:#f92672">&amp;</span>allset);	<span style="color:#75715e">/* add new descriptor to set */</span>
+			<span style="color:#66d9ef">if</span> (connfd <span style="color:#f92672">&gt;</span> maxfd)
+				maxfd <span style="color:#f92672">=</span> connfd;		<span style="color:#75715e">//重置maxfd为最大描述符编号+1
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> (i <span style="color:#f92672">&gt;</span> maxi)
+				maxi <span style="color:#f92672">=</span> i;				<span style="color:#75715e">//client数组中最后一个描述符所占的序号
+</span><span style="color:#75715e"></span>
+			<span style="color:#66d9ef">if</span> (<span style="color:#f92672">--</span>nready <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>)
+				<span style="color:#66d9ef">continue</span>;				<span style="color:#75715e">//没有已连接套接字了
+</span><span style="color:#75715e"></span>		}
 
-			if (--nready &lt;= 0)
-				continue;				//没有已连接套接字了
-		}
-
-		for (i = 0; i &lt;= maxi; i++) {	/* check all clients for data */
-			if ( (sockfd = client[i]) &lt; 0)
-				continue;
-			if (FD_ISSET(sockfd, &amp;rset)) {
-				if ( (n = Read(sockfd, buf, MAXLINE)) == 0) {
-						/*connection closed by client */
-					Close(sockfd);//直接关闭套接字
-					FD_CLR(sockfd, &amp;allset);
-					client[i] = -1;
-				} else
+		<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;=</span> maxi; i<span style="color:#f92672">++</span>) {	<span style="color:#75715e">/* check all clients for data */</span>
+			<span style="color:#66d9ef">if</span> ( (sockfd <span style="color:#f92672">=</span> client[i]) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+				<span style="color:#66d9ef">continue</span>;
+			<span style="color:#66d9ef">if</span> (FD_ISSET(sockfd, <span style="color:#f92672">&amp;</span>rset)) {
+				<span style="color:#66d9ef">if</span> ( (n <span style="color:#f92672">=</span> Read(sockfd, buf, MAXLINE)) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+						<span style="color:#75715e">/*connection closed by client */</span>
+					Close(sockfd);<span style="color:#75715e">//直接关闭套接字
+</span><span style="color:#75715e"></span>					FD_CLR(sockfd, <span style="color:#f92672">&amp;</span>allset);
+					client[i] <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+				} <span style="color:#66d9ef">else</span>
 					Writen(sockfd, buf, n);
 
-				if (--nready &lt;= 0)
-					break;				//没有已连接套接字了
-			}
+				<span style="color:#66d9ef">if</span> (<span style="color:#f92672">--</span>nready <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>)
+					<span style="color:#66d9ef">break</span>;				<span style="color:#75715e">//没有已连接套接字了
+</span><span style="color:#75715e"></span>			}
 		}
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="五-pselect函数">五、pselect函数</h1>
 
 <p>pselect函数由POSIX发明，是select的变种。</p>
-
-<pre><code class="language-cpp">#include &lt;sys/select.h&gt;
-int pselect(int maxfdp1,fd_set *restrict readfds,fd_set *restrict writefds,fd_set *restrict exceptfds,const struct timespec *restrict tsptr,const sigset_t *restrict sigmask);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/select.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">pselect</span>(<span style="color:#66d9ef">int</span> maxfdp1,fd_set <span style="color:#f92672">*</span><span style="color:#66d9ef">restrict</span> readfds,fd_set <span style="color:#f92672">*</span><span style="color:#66d9ef">restrict</span> writefds,fd_set <span style="color:#f92672">*</span><span style="color:#66d9ef">restrict</span> exceptfds,<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> timespec <span style="color:#f92672">*</span><span style="color:#66d9ef">restrict</span> tsptr,<span style="color:#66d9ef">const</span> sigset_t <span style="color:#f92672">*</span><span style="color:#66d9ef">restrict</span> sigmask);
+</code></pre></div>
 <p>相对于select函数，pselect函数有如下几点不同：</p>
 
 <p>(1) pselect使用timespec结构，新结构的tv_nsec指定纳秒数，而原结构里的tv_usec指定微妙级</p>
@@ -571,21 +552,16 @@ int pselect(int maxfdp1,fd_set *restrict readfds,fd_set *restrict writefds,fd_se
 <h1 id="六-poll函数">六、poll函数</h1>
 
 <p>poll函数的功能与select相似，不过在处理流设备时，它能够提供额外的信息。</p>
-
-<pre><code class="language-cpp">#include &lt;poll.h&gt;
-int poll(struct pollfd *fdarray,nfds_t nfds,int timeout);//若有就绪描述符就返回其数目，如超时则返回0，若出错就返回-1
-
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;poll.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">poll</span>(<span style="color:#66d9ef">struct</span> pollfd <span style="color:#f92672">*</span>fdarray,nfds_t nfds,<span style="color:#66d9ef">int</span> timeout);<span style="color:#75715e">//若有就绪描述符就返回其数目，如超时则返回0，若出错就返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>对于第一个参数：为指向一个结构数组第一个元素的指针，每个数组元素都是一个pollfd结构，用于指定测试某个给定描述符fd的条件。</p>
-
-<pre><code class="language-cpp">struct pollfd {
-        int   fd;         /* file descriptor */
-        short events;     /* requested events */
-        short revents;    /* returned events */
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> pollfd {
+        <span style="color:#66d9ef">int</span>   fd;         <span style="color:#75715e">/* file descriptor */</span>
+        <span style="color:#66d9ef">short</span> events;     <span style="color:#75715e">/* requested events */</span>
+        <span style="color:#66d9ef">short</span> revents;    <span style="color:#75715e">/* returned events */</span>
 };
-</code></pre>
-
+</code></pre></div>
 <p>要测试的条件由events成员指定，函数在相应的revents成员中返回该描述符的状态。</p>
 
 <p>这里每个描述符都有两个变量，一个为调用值，一个为返回结果，避免了使用值结果参数。</p>
@@ -641,95 +617,94 @@ int poll(struct pollfd *fdarray,nfds_t nfds,int timeout);//若有就绪描述符
 <p>在select函数中，FD_SETSIZE以及每个描述符集中最大描述符数目这些都涉及到固定值。但是在poll函数中分配一个pollfd数组并把该数组中元素的数据通知内核成了调用者的责任，内核不再需要知道这些固定大小的数据类型。</p>
 
 <h1 id="七-tcp回射服务器再修改版">七、TCP回射服务器再修改版</h1>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-#include	&lt;limits.h&gt;		/* for OPEN_MAX */
-
-int
-main(int argc, char **argv)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span>	<span style="color:#75715e">&lt;limits.h&gt;		/* for OPEN_MAX */</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">int</span>
+<span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-	int					i, maxi, listenfd, connfd, sockfd;
-	int					nready;
+	<span style="color:#66d9ef">int</span>					i, maxi, listenfd, connfd, sockfd;
+	<span style="color:#66d9ef">int</span>					nready;
 	ssize_t				n;
-	char				buf[MAXLINE];
+	<span style="color:#66d9ef">char</span>				buf[MAXLINE];
 	socklen_t			clilen;
-	struct pollfd		client[OPEN_MAX];
-	struct sockaddr_in	cliaddr, servaddr;
+	<span style="color:#66d9ef">struct</span> pollfd		client[OPEN_MAX];
+	<span style="color:#66d9ef">struct</span> sockaddr_in	cliaddr, servaddr;
 
-	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+	listenfd <span style="color:#f92672">=</span> Socket(AF_INET, SOCK_STREAM, <span style="color:#ae81ff">0</span>);
 
-	bzero(&amp;servaddr, sizeof(servaddr));
-	servaddr.sin_family      = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(SERV_PORT);
+	bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
+	servaddr.sin_family      <span style="color:#f92672">=</span> AF_INET;
+	servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);
+	servaddr.sin_port        <span style="color:#f92672">=</span> htons(SERV_PORT);
 
-	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+	Bind(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
 
 	Listen(listenfd, LISTENQ);
 
-	client[0].fd = listenfd;
-	client[0].events = POLLRDNORM;
-	for (i = 1; i &lt; OPEN_MAX; i++)//由调用者指定OPEN_MAX
-		client[i].fd = -1;		//初始化为-1，表示可用
-	maxi = 0;				//client数组中已用项的最大序号
-	for ( ; ; ) {
-		nready = Poll(client, maxi+1, INFTIM);
+	client[<span style="color:#ae81ff">0</span>].fd <span style="color:#f92672">=</span> listenfd;
+	client[<span style="color:#ae81ff">0</span>].events <span style="color:#f92672">=</span> POLLRDNORM;
+	<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&lt;</span> OPEN_MAX; i<span style="color:#f92672">++</span>)<span style="color:#75715e">//由调用者指定OPEN_MAX
+</span><span style="color:#75715e"></span>		client[i].fd <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;		<span style="color:#75715e">//初始化为-1，表示可用
+</span><span style="color:#75715e"></span>	maxi <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;				<span style="color:#75715e">//client数组中已用项的最大序号
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		nready <span style="color:#f92672">=</span> Poll(client, maxi<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>, INFTIM);
 
-		if (client[0].revents &amp; POLLRDNORM) {//新客户连接
-			clilen = sizeof(cliaddr);
-			connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;clilen);//返回已连接客户套接字
-#ifdef	NOTDEF
-			printf(&quot;new client: %s\n&quot;, Sock_ntop((SA *) &amp;cliaddr, clilen));
-#endif
-
-			for (i = 1; i &lt; OPEN_MAX; i++)//与select不同，这里的最大值均由调用者指定
-				if (client[i].fd &lt; 0) {//找到第一个可用项
-					client[i].fd = connfd;	//保存已连接套接字描述符
-					break;
+		<span style="color:#66d9ef">if</span> (client[<span style="color:#ae81ff">0</span>].revents <span style="color:#f92672">&amp;</span> POLLRDNORM) {<span style="color:#75715e">//新客户连接
+</span><span style="color:#75715e"></span>			clilen <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);
+			connfd <span style="color:#f92672">=</span> Accept(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, <span style="color:#f92672">&amp;</span>clilen);<span style="color:#75715e">//返回已连接客户套接字
+</span><span style="color:#75715e"></span><span style="color:#75715e">#ifdef	NOTDEF
+</span><span style="color:#75715e"></span>			printf(<span style="color:#e6db74">&#34;new client: %s</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, Sock_ntop((SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, clilen));
+<span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span>
+			<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&lt;</span> OPEN_MAX; i<span style="color:#f92672">++</span>)<span style="color:#75715e">//与select不同，这里的最大值均由调用者指定
+</span><span style="color:#75715e"></span>				<span style="color:#66d9ef">if</span> (client[i].fd <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {<span style="color:#75715e">//找到第一个可用项
+</span><span style="color:#75715e"></span>					client[i].fd <span style="color:#f92672">=</span> connfd;	<span style="color:#75715e">//保存已连接套接字描述符
+</span><span style="color:#75715e"></span>					<span style="color:#66d9ef">break</span>;
 				}
-			if (i == OPEN_MAX)
-				err_quit(&quot;too many clients&quot;);
+			<span style="color:#66d9ef">if</span> (i <span style="color:#f92672">==</span> OPEN_MAX)
+				err_quit(<span style="color:#e6db74">&#34;too many clients&#34;</span>);
 
-			client[i].events = POLLRDNORM;
-			if (i &gt; maxi)
-				maxi = i;			//更新已用项的最大序号值
+			client[i].events <span style="color:#f92672">=</span> POLLRDNORM;
+			<span style="color:#66d9ef">if</span> (i <span style="color:#f92672">&gt;</span> maxi)
+				maxi <span style="color:#f92672">=</span> i;			<span style="color:#75715e">//更新已用项的最大序号值
+</span><span style="color:#75715e"></span>
+			<span style="color:#66d9ef">if</span> (<span style="color:#f92672">--</span>nready <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>)
+				<span style="color:#66d9ef">continue</span>;			<span style="color:#75715e">//没有已连接套接字了
+</span><span style="color:#75715e"></span>		}
 
-			if (--nready &lt;= 0)
-				continue;			//没有已连接套接字了
-		}
-
-		for (i = 1; i &lt;= maxi; i++) {	//检查client数组中所有项
-			if ( (sockfd = client[i].fd) &lt; 0)
-				continue;
-			//有些实现在一个连接上接收到RST时返回的时POLLERR事件，而其他实现返回的只是POLLRDNORM事件
-			if (client[i].revents &amp; (POLLRDNORM | POLLERR)) {//查看返回的revents状态
-				if ( (n = read(sockfd, buf, MAXLINE)) &lt; 0) {
-					if (errno == ECONNRESET) {
-							//由用户来关闭该套接字
-#ifdef	NOTDEF
-						printf(&quot;client[%d] aborted connection\n&quot;, i);
-#endif
-						Close(sockfd);
-						client[i].fd = -1;
-					} else
-						err_sys(&quot;read error&quot;);
-				} else if (n == 0) {
-						//由用户来关闭该套接字
-#ifdef	NOTDEF
-					printf(&quot;client[%d] closed connection\n&quot;, i);
-#endif
-					Close(sockfd);
-					client[i].fd = -1;
-				} else
+		<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&lt;=</span> maxi; i<span style="color:#f92672">++</span>) {	<span style="color:#75715e">//检查client数组中所有项
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> ( (sockfd <span style="color:#f92672">=</span> client[i].fd) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+				<span style="color:#66d9ef">continue</span>;
+			<span style="color:#75715e">//有些实现在一个连接上接收到RST时返回的时POLLERR事件，而其他实现返回的只是POLLRDNORM事件
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> (client[i].revents <span style="color:#f92672">&amp;</span> (POLLRDNORM <span style="color:#f92672">|</span> POLLERR)) {<span style="color:#75715e">//查看返回的revents状态
+</span><span style="color:#75715e"></span>				<span style="color:#66d9ef">if</span> ( (n <span style="color:#f92672">=</span> read(sockfd, buf, MAXLINE)) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {
+					<span style="color:#66d9ef">if</span> (errno <span style="color:#f92672">==</span> ECONNRESET) {
+							<span style="color:#75715e">//由用户来关闭该套接字
+</span><span style="color:#75715e"></span><span style="color:#75715e">#ifdef	NOTDEF
+</span><span style="color:#75715e"></span>						printf(<span style="color:#e6db74">&#34;client[%d] aborted connection</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, i);
+<span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span>						Close(sockfd);
+						client[i].fd <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+					} <span style="color:#66d9ef">else</span>
+						err_sys(<span style="color:#e6db74">&#34;read error&#34;</span>);
+				} <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+						<span style="color:#75715e">//由用户来关闭该套接字
+</span><span style="color:#75715e"></span><span style="color:#75715e">#ifdef	NOTDEF
+</span><span style="color:#75715e"></span>					printf(<span style="color:#e6db74">&#34;client[%d] closed connection</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, i);
+<span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span>					Close(sockfd);
+					client[i].fd <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+				} <span style="color:#66d9ef">else</span>
 					Writen(sockfd, buf, n);
 
-				if (--nready &lt;= 0)
-					break;				//没有已连接套接字了
-			}
+				<span style="color:#66d9ef">if</span> (<span style="color:#f92672">--</span>nready <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>)
+					<span style="color:#66d9ef">break</span>;				<span style="color:#75715e">//没有已连接套接字了
+</span><span style="color:#75715e"></span>			}
 		}
 	}
 }
-</code></pre>
+</code></pre></div>
 		</div>
 		
 <div class="post__tags tags clearfix">

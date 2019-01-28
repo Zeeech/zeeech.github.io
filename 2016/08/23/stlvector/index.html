@@ -36,9 +36,11 @@ STL实现了一个Vector容器，该容器就是来改善数组的缺点。vecto
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -71,7 +73,6 @@ STL实现了一个Vector容器，该容器就是来改善数组的缺点。vecto
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -132,38 +133,34 @@ STL实现了一个Vector容器，该容器就是来改善数组的缺点。vecto
 <h1 id="vector的数据结构">Vector的数据结构</h1>
 
 <p>我们从最简单的开始，Vector的数据结构相当简单，由于需要判断内存是否够用，所以要用到三个指针，分别指向头，目前使用空间的尾，目前可用空间的尾。其源代码如下：</p>
-
-<pre><code class="language-cpp">template &lt;class T, class Alloc = alloc&gt;//alloc是STL的空间配置器
-class vector
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span><span style="color:#75715e">//alloc是STL的空间配置器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">vector</span>
 {
-	// 这里提供STL标准的allocator接口
-  typedef simple_alloc&lt;value_type, Alloc&gt; data_allocator;
+	<span style="color:#75715e">// 这里提供STL标准的allocator接口
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> simple_alloc<span style="color:#f92672">&lt;</span>value_type, Alloc<span style="color:#f92672">&gt;</span> data_allocator;
 
-  iterator start;               // 内存空间起始点
-  iterator finish;              // 当前使用的内存空间结束点
-  iterator end_of_storage;      // 实际分配内存空间的结束点
-}
-</code></pre>
-
+  iterator start;               <span style="color:#75715e">// 内存空间起始点
+</span><span style="color:#75715e"></span>  iterator finish;              <span style="color:#75715e">// 当前使用的内存空间结束点
+</span><span style="color:#75715e"></span>  iterator end_of_storage;      <span style="color:#75715e">// 实际分配内存空间的结束点
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>每当初始化一个vector的时候，先分配一段内存，称为目前可用空间，大小为end_of_storage - start + 1，当往vector里面加入数据的时候，finish就往后移，代表目前已使用的空间，这样做的好处是，不用频繁的扩充空间和转移数据，使得时间成本下降。</p>
 
 <p>在上述代码中，我们看到vector采用了STL标准的空间配置其接口，关于空间配置器的知识在<a href="http://zcheng.ren/2016/08/17/STLAllocater/">带你深入理解STL之空间配置器(思维导图+源码)</a>一文中有讲解，如有疑惑，可以跳转复习一下再来！</p>
 
 <p>vector提供了如下函数来支持获取其数据结构中的相关参数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//获取指向vector首元素的迭代器
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">begin</span>() { <span style="color:#66d9ef">return</span> start; }
 
-<pre><code class="language-cpp">//获取指向vector首元素的迭代器
-iterator begin() { return start; }
+<span style="color:#75715e">//获取指向vector尾元素的迭代器
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">end</span>() { <span style="color:#66d9ef">return</span> finish; }
 
-//获取指向vector尾元素的迭代器
-iterator end() { return finish; }
+<span style="color:#75715e">// 返回当前对象个数，即已使用空间的大小
+</span><span style="color:#75715e"></span>size_type <span style="color:#a6e22e">size</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> size_type(end() <span style="color:#f92672">-</span> begin()); }
 
-// 返回当前对象个数，即已使用空间的大小
-size_type size() const { return size_type(end() - begin()); }
-
-// 返回重新分配内存前最多能存储的对象个数，即目前可用空间的大小
-size_type capacity() const { return size_type(end_of_storage - begin()); }
-</code></pre>
-
+<span style="color:#75715e">// 返回重新分配内存前最多能存储的对象个数，即目前可用空间的大小
+</span><span style="color:#75715e"></span>size_type <span style="color:#a6e22e">capacity</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> size_type(end_of_storage <span style="color:#f92672">-</span> begin()); }
+</code></pre></div>
 <h1 id="vector的迭代器">Vector的迭代器</h1>
 
 <p>既然是STL的容器，必须要满足迭代器的相关要求，如对迭代器有疑惑的，参考<a href="http://zcheng.ren/2016/08/23/STLIterator/">带你深入理解STL之迭代器和Traits技法
@@ -172,254 +169,238 @@ size_type capacity() const { return size_type(end_of_storage - begin()); }
 <p>vector维护的是一段连续的内存空间，所以不论容器中元素的型别为何，普通指针都可以作为vector的迭代器而满足所有必要的条件。vector支持随机存取，所以vector提供的是Random Access Iterator。</p>
 
 <p>下面来看看vector关于迭代器的源码：</p>
-
-<pre><code class="language-cpp">template &lt;class T, class Alloc = alloc&gt;
-class vector
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">vector</span>
 {
-public:
-	// vector内部是连续内存空间，所以迭代器采用原生指针即可
-  typedef value_type* iterator;  								
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// vector内部是连续内存空间，所以迭代器采用原生指针即可
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> value_type<span style="color:#f92672">*</span> iterator;  								
 
-  //以下为满足Traits功能定义的内嵌型别
-  typedef T value_type;
-  typedef value_type* pointer;                  
-  typedef const value_type* const_pointer;
-  typedef const value_type* const_iterator;
-  typedef value_type&amp; reference;                
-  typedef const value_type&amp; const_reference;
-  typedef ptrdiff_t difference_type;  
+  <span style="color:#75715e">//以下为满足Traits功能定义的内嵌型别
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> T value_type;
+  <span style="color:#66d9ef">typedef</span> value_type<span style="color:#f92672">*</span> pointer;                  
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">*</span> const_pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">*</span> const_iterator;
+  <span style="color:#66d9ef">typedef</span> value_type<span style="color:#f92672">&amp;</span> reference;                
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> const_reference;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t difference_type;  
 
-  typedef size_t size_type;         
+  <span style="color:#66d9ef">typedef</span> size_t size_type;         
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="vector的构造函数">vector的构造函数</h1>
 
 <h2 id="默认构造函数">默认构造函数</h2>
 
 <p>在使用vector的时候，我们通常会有如下定义：</p>
-
-<pre><code class="language-cpp">#include &lt;vector&gt;
-
-vector&lt;int&gt; vec;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;vector&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> vec;
+</code></pre></div>
 <p>在上述定义中，调用了vector的默认构造函数，其默认不分配内存空间，如下：</p>
-
-<pre><code class="language-cpp">// vector的默认构造函数默认不分配内存空间
-vector() : start(0), finish(0), end_of_storage(0) {}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// vector的默认构造函数默认不分配内存空间
+</span><span style="color:#75715e"></span>vector() <span style="color:#f92672">:</span> start(<span style="color:#ae81ff">0</span>), finish(<span style="color:#ae81ff">0</span>), end_of_storage(<span style="color:#ae81ff">0</span>) {}
+</code></pre></div>
 <h2 id="带参构造函数">带参构造函数</h2>
 
 <p>通常，vector的初始化可以指定元素个数和初始化类型。如下：</p>
-
-<pre><code class="language-cpp">vector&lt;int&gt; vec(10,1); // 将vec初始化为10个1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> vec(<span style="color:#ae81ff">10</span>,<span style="color:#ae81ff">1</span>); <span style="color:#75715e">// 将vec初始化为10个1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>vector提供下面的构造函数以支持上述初始化操作：</p>
 
 <p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkg2cxastj30iu0dg0u0.jpg" alt="带参构造函数" /></center></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 构造函数，允许指定vector的元素个数和初值
+</span><span style="color:#75715e"></span>vector(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value) { fill_initialize(n, value); }
+vector(<span style="color:#66d9ef">int</span> n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value) { fill_initialize(n, value); }
+vector(<span style="color:#66d9ef">long</span> n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value) { fill_initialize(n, value); }
 
-<pre><code class="language-cpp">// 构造函数，允许指定vector的元素个数和初值
-vector(size_type n, const T&amp; value) { fill_initialize(n, value); }
-vector(int n, const T&amp; value) { fill_initialize(n, value); }
-vector(long n, const T&amp; value) { fill_initialize(n, value); }
+<span style="color:#75715e">// 需要对象提供默认构造函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">explicit</span> vector(size_type n) { fill_initialize(n, T()); }
 
-// 需要对象提供默认构造函数
-explicit vector(size_type n) { fill_initialize(n, T()); }
-
-/**
- * 填充并予以初始化
- */
-void fill_initialize(size_type n, const T&amp; value)
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 填充并予以初始化
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">void</span> fill_initialize(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value)
 {
-  start = allocate_and_fill(n, value);
-  finish = start + n;                         // 设置当前使用内存空间的结束点
-
-  //这里不过多的分配内存
-  end_of_storage = finish;
+  start <span style="color:#f92672">=</span> allocate_and_fill(n, value);
+  finish <span style="color:#f92672">=</span> start <span style="color:#f92672">+</span> n;                         <span style="color:#75715e">// 设置当前使用内存空间的结束点
+</span><span style="color:#75715e"></span>
+  <span style="color:#75715e">//这里不过多的分配内存
+</span><span style="color:#75715e"></span>  end_of_storage <span style="color:#f92672">=</span> finish;
 }
 
-/**
- * 配置一块大小为n的内存空间，并予以填充
- */
-iterator allocate_and_fill(size_type n, const T&amp; x)
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 配置一块大小为n的内存空间，并予以填充
+</span><span style="color:#75715e"> */</span>
+iterator allocate_and_fill(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-	// 调用STL的空间配置器配置一块大小为n的内存空间
-  iterator result = data_allocator::allocate(n); 
+	<span style="color:#75715e">// 调用STL的空间配置器配置一块大小为n的内存空间
+</span><span style="color:#75715e"></span>  iterator result <span style="color:#f92672">=</span> data_allocator<span style="color:#f92672">::</span>allocate(n); 
 
-  // 调用底层函数uninitialized_fill_n予以填充
-  uninitialized_fill_n(result, n, x);
-  return result;
+  <span style="color:#75715e">// 调用底层函数uninitialized_fill_n予以填充
+</span><span style="color:#75715e"></span>  uninitialized_fill_n(result, n, x);
+  <span style="color:#66d9ef">return</span> result;
 }
-</code></pre>
-
+</code></pre></div>
 <p>这里面调用了uninitialized_fill_n函数，这个函数是STL的内存基本处理函数，存放在stl_uninitialized.h中，下面来看看它的源码：</p>
-
-<pre><code class="language-cpp">// 如果copy construction和operator =等效, 并且destructor is trivial
-// 那么就可以使用本函数
-template &lt;class ForwardIterator, class Size, class T&gt;
-inline ForwardIterator
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 如果copy construction和operator =等效, 并且destructor is trivial
+</span><span style="color:#75715e">// 那么就可以使用本函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Size</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> ForwardIterator
 __uninitialized_fill_n_aux(ForwardIterator first, Size n,
-                           const T&amp; x, __true_type)
+                           <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x, __true_type)
 {
-  return fill_n(first, n, x);
+  <span style="color:#66d9ef">return</span> fill_n(first, n, x);
 }
-// 不是POD类型使用以下函数
-template &lt;class ForwardIterator, class Size, class T&gt;
+<span style="color:#75715e">// 不是POD类型使用以下函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Size</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
 ForwardIterator
 __uninitialized_fill_n_aux(ForwardIterator first, Size n,
-                           const T&amp; x, __false_type)
+                           <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x, __false_type)
 {
-  ForwardIterator cur = first;
-  for ( ; n &gt; 0; --n, ++cur)
-    construct(&amp;*cur, x);
-  return cur;
+  ForwardIterator cur <span style="color:#f92672">=</span> first;
+  <span style="color:#66d9ef">for</span> ( ; n <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>; <span style="color:#f92672">--</span>n, <span style="color:#f92672">++</span>cur)
+    construct(<span style="color:#f92672">&amp;*</span>cur, x);
+  <span style="color:#66d9ef">return</span> cur;
 }
-// 利用type_traits来判断是否是POD类型
-template &lt;class ForwardIterator, class Size, class T, class T1&gt;
-inline ForwardIterator __uninitialized_fill_n(ForwardIterator first, Size n,
-    const T&amp; x, T1*)
+<span style="color:#75715e">// 利用type_traits来判断是否是POD类型
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Size</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T1</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> ForwardIterator __uninitialized_fill_n(ForwardIterator first, Size n,
+    <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x, T1<span style="color:#f92672">*</span>)
 {
-  typedef typename __type_traits&lt;T1&gt;::is_POD_type is_POD;
-  return __uninitialized_fill_n_aux(first, n, x, is_POD());
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> __type_traits<span style="color:#f92672">&lt;</span>T1<span style="color:#f92672">&gt;::</span>is_POD_type is_POD;
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">__uninitialized_fill_n_aux</span>(first, n, x, is_POD());
 
 }
-// 利用Iterator_traits来萃取出其值类型
-template &lt;class ForwardIterator, class Size, class T&gt;
-inline ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n,
-    const T&amp; x)
+<span style="color:#75715e">// 利用Iterator_traits来萃取出其值类型
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Size</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n,
+    <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-  return __uninitialized_fill_n(first, n, x, value_type(first));
+  <span style="color:#66d9ef">return</span> __uninitialized_fill_n(first, n, x, value_type(first));
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="vector的元素操作函数">vector的元素操作函数</h1>
 
 <h2 id="push-back">push_back()</h2>
 
 <p>push_back()函数将新元素插入于vector的尾部，该函数再完成这一操作的时候，先检查是否还有备用空间，如果有直接再备用空间上构造函数；如果没有就扩充空间，通过重新配置一块大空间，移动数据，释放原空间的操作来完成push_back操作。其源代码如下：</p>
-
-<pre><code class="language-cpp">////////////////////////////////////////////////////////////////////////////////
-// 向容器尾追加一个元素, 可能导致内存重新分配
-////////////////////////////////////////////////////////////////////////////////
-//                          push_back(const T&amp; x)
-//                                   |
-//                                   |---------------- 容量已满?
-//                                   |
-//               ----------------------------
-//           No  |                          |  Yes
-//               |                          |
-//               ↓                          ↓
-//      construct(finish, x);       insert_aux(end(), x);
-//      ++finish;                           |
-//                                          |------ 内存不足, 重新分配
-//                                          |       大小为原来的2倍
-//      new_finish = data_allocator::allocate(len);       &lt;stl_alloc.h&gt;
-//      uninitialized_copy(start, position, new_start);   &lt;stl_uninitialized.h&gt;
-//      construct(new_finish, x);                         &lt;stl_construct.h&gt;
-//      ++new_finish;
-//      uninitialized_copy(position, finish, new_finish); &lt;stl_uninitialized.h&gt;
-////////////////////////////////////////////////////////////////////////////////
-void push_back(const T&amp; x)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">// 向容器尾追加一个元素, 可能导致内存重新分配
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">//                          push_back(const T&amp; x)
+</span><span style="color:#75715e">//                                   |
+</span><span style="color:#75715e">//                                   |---------------- 容量已满?
+</span><span style="color:#75715e">//                                   |
+</span><span style="color:#75715e">//               ----------------------------
+</span><span style="color:#75715e">//           No  |                          |  Yes
+</span><span style="color:#75715e">//               |                          |
+</span><span style="color:#75715e">//               ↓                          ↓
+</span><span style="color:#75715e">//      construct(finish, x);       insert_aux(end(), x);
+</span><span style="color:#75715e">//      ++finish;                           |
+</span><span style="color:#75715e">//                                          |------ 内存不足, 重新分配
+</span><span style="color:#75715e">//                                          |       大小为原来的2倍
+</span><span style="color:#75715e">//      new_finish = data_allocator::allocate(len);       &lt;stl_alloc.h&gt;
+</span><span style="color:#75715e">//      uninitialized_copy(start, position, new_start);   &lt;stl_uninitialized.h&gt;
+</span><span style="color:#75715e">//      construct(new_finish, x);                         &lt;stl_construct.h&gt;
+</span><span style="color:#75715e">//      ++new_finish;
+</span><span style="color:#75715e">//      uninitialized_copy(position, finish, new_finish); &lt;stl_uninitialized.h&gt;
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">push_back</span>(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-  // 内存满足条件则直接追加元素, 否则需要重新分配内存空间
-  if (finish != end_of_storage) {
+  <span style="color:#75715e">// 内存满足条件则直接追加元素, 否则需要重新分配内存空间
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (finish <span style="color:#f92672">!=</span> end_of_storage) {
     construct(finish, x);
-    ++finish;
+    <span style="color:#f92672">++</span>finish;
   }
-  else
+  <span style="color:#66d9ef">else</span>
     insert_aux(end(), x);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// 提供插入操作
-////////////////////////////////////////////////////////////////////////////////
-//                 insert_aux(iterator position, const T&amp; x)
-//                                   |
-//                                   |---------------- 容量是否足够?
-//                                   ↓
-//              -----------------------------------------
-//        Yes   |                                       | No
-//              |                                       |
-//              ↓                                       |
-// 从opsition开始, 整体向后移动一个位置                     |
-// construct(finish, *(finish - 1));                    |
-// ++finish;                                            |
-// T x_copy = x;                                        |
-// copy_backward(position, finish - 2, finish - 1);     |
-// *position = x_copy;                                  |
-//                                                      ↓
-//                            data_allocator::allocate(len);
-//                            uninitialized_copy(start, position, new_start);
-//                            construct(new_finish, x);
-//                            ++new_finish;
-//                            uninitialized_copy(position, finish, new_finish);
-//                            destroy(begin(), end());
-//                            deallocate();
-////////////////////////////////////////////////////////////////////////////////
-template &lt;class T, class Alloc&gt;
-void vector&lt;T, Alloc&gt;::insert_aux(iterator position, const T&amp; x)
+<span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">// 提供插入操作
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">//                 insert_aux(iterator position, const T&amp; x)
+</span><span style="color:#75715e">//                                   |
+</span><span style="color:#75715e">//                                   |---------------- 容量是否足够?
+</span><span style="color:#75715e">//                                   ↓
+</span><span style="color:#75715e">//              -----------------------------------------
+</span><span style="color:#75715e">//        Yes   |                                       | No
+</span><span style="color:#75715e">//              |                                       |
+</span><span style="color:#75715e">//              ↓                                       |
+</span><span style="color:#75715e">// 从opsition开始, 整体向后移动一个位置                     |
+</span><span style="color:#75715e">// construct(finish, *(finish - 1));                    |
+</span><span style="color:#75715e">// ++finish;                                            |
+</span><span style="color:#75715e">// T x_copy = x;                                        |
+</span><span style="color:#75715e">// copy_backward(position, finish - 2, finish - 1);     |
+</span><span style="color:#75715e">// *position = x_copy;                                  |
+</span><span style="color:#75715e">//                                                      ↓
+</span><span style="color:#75715e">//                            data_allocator::allocate(len);
+</span><span style="color:#75715e">//                            uninitialized_copy(start, position, new_start);
+</span><span style="color:#75715e">//                            construct(new_finish, x);
+</span><span style="color:#75715e">//                            ++new_finish;
+</span><span style="color:#75715e">//                            uninitialized_copy(position, finish, new_finish);
+</span><span style="color:#75715e">//                            destroy(begin(), end());
+</span><span style="color:#75715e">//                            deallocate();
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> vector<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>insert_aux(iterator position, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-  if (finish != end_of_storage) {       // 还有剩余内存
-    construct(finish, *(finish - 1));
-    ++finish;
-    T x_copy = x;
-    copy_backward(position, finish - 2, finish - 1);
-    *position = x_copy;
+  <span style="color:#66d9ef">if</span> (finish <span style="color:#f92672">!=</span> end_of_storage) {       <span style="color:#75715e">// 还有剩余内存
+</span><span style="color:#75715e"></span>    construct(finish, <span style="color:#f92672">*</span>(finish <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>));
+    <span style="color:#f92672">++</span>finish;
+    T x_copy <span style="color:#f92672">=</span> x;
+    copy_backward(position, finish <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>, finish <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>);
+    <span style="color:#f92672">*</span>position <span style="color:#f92672">=</span> x_copy;
   }
-  else {        
-    // 内存不足, 需要重新分配
-    const size_type old_size = size();
-    //配置原则：如果原大小为0，就配置1个元素大小
-    //        如果原大小不为0，就配置原大小的两倍
-    //				前半段用来放置原数据，后半段用来放置新数据
-    const size_type len = old_size != 0 ? 2 * old_size : 1;
-    iterator new_start = data_allocator::allocate(len);
-    iterator new_finish = new_start;
-    // 将内存重新配置
-    __STL_TRY {
-    	// 将原vector的内容拷贝到新vector
-      new_finish = uninitialized_copy(start, position, new_start);
-      // 构造新元素并赋值为x
-      construct(new_finish, x);
-      // 调整finish的位置
-      ++new_finish;
-      // 将安插点的原内容也拷贝过来
-      new_finish = uninitialized_copy(position, finish, new_finish);
+  <span style="color:#66d9ef">else</span> {        
+    <span style="color:#75715e">// 内存不足, 需要重新分配
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> size_type old_size <span style="color:#f92672">=</span> size();
+    <span style="color:#75715e">//配置原则：如果原大小为0，就配置1个元素大小
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//        如果原大小不为0，就配置原大小的两倍
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//				前半段用来放置原数据，后半段用来放置新数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> size_type len <span style="color:#f92672">=</span> old_size <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> old_size : <span style="color:#ae81ff">1</span>;
+    iterator new_start <span style="color:#f92672">=</span> data_allocator<span style="color:#f92672">::</span>allocate(len);
+    iterator new_finish <span style="color:#f92672">=</span> new_start;
+    <span style="color:#75715e">// 将内存重新配置
+</span><span style="color:#75715e"></span>    __STL_TRY {
+    	<span style="color:#75715e">// 将原vector的内容拷贝到新vector
+</span><span style="color:#75715e"></span>      new_finish <span style="color:#f92672">=</span> uninitialized_copy(start, position, new_start);
+      <span style="color:#75715e">// 构造新元素并赋值为x
+</span><span style="color:#75715e"></span>      construct(new_finish, x);
+      <span style="color:#75715e">// 调整finish的位置
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">++</span>new_finish;
+      <span style="color:#75715e">// 将安插点的原内容也拷贝过来
+</span><span style="color:#75715e"></span>      new_finish <span style="color:#f92672">=</span> uninitialized_copy(position, finish, new_finish);
     }
-		// 分配失败则抛出异常
-    catch (...) {
+		<span style="color:#75715e">// 分配失败则抛出异常
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">catch</span> (...) {
       destroy(new_start, new_finish);
-      data_allocator::deallocate(new_start, len);
-      throw;
+      data_allocator<span style="color:#f92672">::</span>deallocate(new_start, len);
+      <span style="color:#66d9ef">throw</span>;
     }
-    // 析构原容器中的对象
-    destroy(begin(), end());
-    // 释放原容器分配的内存
-    deallocate();
-    // 调整内存指针状态
-    start = new_start;
-    finish = new_finish;
-    end_of_storage = new_start + len;
+    <span style="color:#75715e">// 析构原容器中的对象
+</span><span style="color:#75715e"></span>    destroy(begin(), end());
+    <span style="color:#75715e">// 释放原容器分配的内存
+</span><span style="color:#75715e"></span>    deallocate();
+    <span style="color:#75715e">// 调整内存指针状态
+</span><span style="color:#75715e"></span>    start <span style="color:#f92672">=</span> new_start;
+    finish <span style="color:#f92672">=</span> new_finish;
+    end_of_storage <span style="color:#f92672">=</span> new_start <span style="color:#f92672">+</span> len;
   }
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="pop-back-函数">pop_back()函数</h2>
 
 <p>pop_back函数弹出当前尾端元素。其源代码比较简单，如下：</p>
-
-<pre><code class="language-cpp">void pop_back()
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pop_back</span>()
 {
-	//调整finish
-  --finish;
-  //释放调弹出的元素
-  destroy(finish);
+	<span style="color:#75715e">//调整finish
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">--</span>finish;
+  <span style="color:#75715e">//释放调弹出的元素
+</span><span style="color:#75715e"></span>  destroy(finish);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="erase-函数">erase()函数</h2>
 
 <p>erase函数支持两个版本：</p>
@@ -427,139 +408,131 @@ void vector&lt;T, Alloc&gt;::insert_aux(iterator position, const T&amp; x)
 <ul>
 <li>清除某个位置上的元素</li>
 </ul>
-
-<pre><code class="language-cpp">iterator erase(iterator position)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">iterator <span style="color:#a6e22e">erase</span>(iterator position)
 {
-  if (position + 1 != end())
-    copy(position + 1, finish, position); //将[position+1,finish]移到[position,finish]
-  --finish;
+  <span style="color:#66d9ef">if</span> (position <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">!=</span> end())
+    copy(position <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, finish, position); <span style="color:#75715e">//将[position+1,finish]移到[position,finish]
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">--</span>finish;
   destroy(finish);
-  return position;//返回删除点的迭代器
-}
-</code></pre>
-
+  <span style="color:#66d9ef">return</span> position;<span style="color:#75715e">//返回删除点的迭代器
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <ul>
 <li>清除某个区间上的所有函数</li>
 </ul>
-
-<pre><code class="language-cpp">iterator erase(iterator first, iterator last)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">iterator <span style="color:#a6e22e">erase</span>(iterator first, iterator last)
 {
-  iterator i = copy(last, finish, first);//关于copy函数的源码分析在以后的博文中会提到
-  // 析构掉需要析构的元素
-  destroy(i, finish);
-  finish = finish - (last - first);
-  return first;
+  iterator i <span style="color:#f92672">=</span> copy(last, finish, first);<span style="color:#75715e">//关于copy函数的源码分析在以后的博文中会提到
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 析构掉需要析构的元素
+</span><span style="color:#75715e"></span>  destroy(i, finish);
+  finish <span style="color:#f92672">=</span> finish <span style="color:#f92672">-</span> (last <span style="color:#f92672">-</span> first);
+  <span style="color:#66d9ef">return</span> first;
 }
-</code></pre>
-
+</code></pre></div>
 <p>这里放上两张《STL源码剖析》中的图，便于理解这一过程：</p>
 
 <p><center><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkg2eirlej30fz0c7dgm.jpg" alt="erase函数" /></center></p>
 
 <p>有上述erase函数，可以衍生出一个函数，用来清除迭代器中所有的元素</p>
-
-<pre><code class="language-cpp">void clear() { erase(begin(), end()); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">clear</span>() { erase(begin(), end()); }
+</code></pre></div>
 <h2 id="insert-函数">insert()函数</h2>
 
 <p>insert函数实现的功能是：从position开始，插入n个元素，元素的初值均为x。其源码如下：</p>
-
-<pre><code class="language-cpp">////////////////////////////////////////////////////////////////////////////////
-// 在指定位置插入n个元素
-////////////////////////////////////////////////////////////////////////////////
-//             insert(iterator position, size_type n, const T&amp; x)
-//                                   |
-//                                   |---------------- 插入元素个数是否为0?
-//                                   ↓
-//              -----------------------------------------
-//        No    |                                       | Yes
-//              |                                       |
-//              |                                       ↓
-//              |                                    return;
-//              |----------- 内存是否足够?
-//              |
-//      -------------------------------------------------
-//  Yes |                                               | No
-//      |                                               |
-//      |------ (finish - position) &gt; n?                |
-//      |       分别调整指针                              |
-//      ↓                                               |
-//    ----------------------------                      |
-// No |                          | Yes                  |
-//    |                          |                      |
-//    ↓                          ↓                      |
-// 插入操作, 调整指针           插入操作, 调整指针           |
-//                                                      ↓
-//            data_allocator::allocate(len);
-//            new_finish = uninitialized_copy(start, position, new_start);
-//            new_finish = uninitialized_fill_n(new_finish, n, x);
-//            new_finish = uninitialized_copy(position, finish, new_finish);
-//            destroy(start, finish);
-//            deallocate();
-////////////////////////////////////////////////////////////////////////////////
-template &lt;class T, class Alloc&gt;
-void vector&lt;T, Alloc&gt;::insert(iterator position, size_type n, const T&amp; x)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">// 在指定位置插入n个元素
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">//             insert(iterator position, size_type n, const T&amp; x)
+</span><span style="color:#75715e">//                                   |
+</span><span style="color:#75715e">//                                   |---------------- 插入元素个数是否为0?
+</span><span style="color:#75715e">//                                   ↓
+</span><span style="color:#75715e">//              -----------------------------------------
+</span><span style="color:#75715e">//        No    |                                       | Yes
+</span><span style="color:#75715e">//              |                                       |
+</span><span style="color:#75715e">//              |                                       ↓
+</span><span style="color:#75715e">//              |                                    return;
+</span><span style="color:#75715e">//              |----------- 内存是否足够?
+</span><span style="color:#75715e">//              |
+</span><span style="color:#75715e">//      -------------------------------------------------
+</span><span style="color:#75715e">//  Yes |                                               | No
+</span><span style="color:#75715e">//      |                                               |
+</span><span style="color:#75715e">//      |------ (finish - position) &gt; n?                |
+</span><span style="color:#75715e">//      |       分别调整指针                              |
+</span><span style="color:#75715e">//      ↓                                               |
+</span><span style="color:#75715e">//    ----------------------------                      |
+</span><span style="color:#75715e">// No |                          | Yes                  |
+</span><span style="color:#75715e">//    |                          |                      |
+</span><span style="color:#75715e">//    ↓                          ↓                      |
+</span><span style="color:#75715e">// 插入操作, 调整指针           插入操作, 调整指针           |
+</span><span style="color:#75715e">//                                                      ↓
+</span><span style="color:#75715e">//            data_allocator::allocate(len);
+</span><span style="color:#75715e">//            new_finish = uninitialized_copy(start, position, new_start);
+</span><span style="color:#75715e">//            new_finish = uninitialized_fill_n(new_finish, n, x);
+</span><span style="color:#75715e">//            new_finish = uninitialized_copy(position, finish, new_finish);
+</span><span style="color:#75715e">//            destroy(start, finish);
+</span><span style="color:#75715e">//            deallocate();
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> vector<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>insert(iterator position, size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-  // 如果n为0则不进行任何操作
-  if (n != 0) {
-    if (size_type(end_of_storage - finish) &gt;= n) {      // 剩下的内存够分配
-      T x_copy = x;
-      const size_type elems_after = finish - position; // 计算插入点之后的现有元素个数
-      iterator old_finish = finish;
-      if (elems_after &gt; n) {  // 插入点之后的现有元素个数大于新增元素个数，见下图1
-      	// 先复制尾部n个元素到尾部
-        uninitialized_copy(finish - n, finish, finish);
-        finish += n; // 调整新的finish
-        // 从后往前复制剩余的旧元素
-        copy_backward(position, old_finish - n, old_finish);
-        // 从position开始填充新元素
-        fill(position, position + n, x_copy);
+  <span style="color:#75715e">// 如果n为0则不进行任何操作
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+    <span style="color:#66d9ef">if</span> (size_type(end_of_storage <span style="color:#f92672">-</span> finish) <span style="color:#f92672">&gt;=</span> n) {      <span style="color:#75715e">// 剩下的内存够分配
+</span><span style="color:#75715e"></span>      T x_copy <span style="color:#f92672">=</span> x;
+      <span style="color:#66d9ef">const</span> size_type elems_after <span style="color:#f92672">=</span> finish <span style="color:#f92672">-</span> position; <span style="color:#75715e">// 计算插入点之后的现有元素个数
+</span><span style="color:#75715e"></span>      iterator old_finish <span style="color:#f92672">=</span> finish;
+      <span style="color:#66d9ef">if</span> (elems_after <span style="color:#f92672">&gt;</span> n) {  <span style="color:#75715e">// 插入点之后的现有元素个数大于新增元素个数，见下图1
+</span><span style="color:#75715e"></span>      	<span style="color:#75715e">// 先复制尾部n个元素到尾部
+</span><span style="color:#75715e"></span>        uninitialized_copy(finish <span style="color:#f92672">-</span> n, finish, finish);
+        finish <span style="color:#f92672">+=</span> n; <span style="color:#75715e">// 调整新的finish
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 从后往前复制剩余的旧元素
+</span><span style="color:#75715e"></span>        copy_backward(position, old_finish <span style="color:#f92672">-</span> n, old_finish);
+        <span style="color:#75715e">// 从position开始填充新元素
+</span><span style="color:#75715e"></span>        fill(position, position <span style="color:#f92672">+</span> n, x_copy);
       }
-      else {
-      	// 插入点之后的现有元素个数小于新增元素个数，见下图2
-      	// 先在尾部填充n - elems_after个新增元素
-        uninitialized_fill_n(finish, n - elems_after, x_copy);
-        // 调整新的finish
-        finish += n - elems_after;
-        // 复制[position,old_finish]区间的数到新的finish之后
-        uninitialized_copy(position, old_finish, finish);
-        // 调整finish
-        finish += elems_after;
-        // 从position开始填充新增元素
-        fill(position, old_finish, x_copy);
+      <span style="color:#66d9ef">else</span> {
+      	<span style="color:#75715e">// 插入点之后的现有元素个数小于新增元素个数，见下图2
+</span><span style="color:#75715e"></span>      	<span style="color:#75715e">// 先在尾部填充n - elems_after个新增元素
+</span><span style="color:#75715e"></span>        uninitialized_fill_n(finish, n <span style="color:#f92672">-</span> elems_after, x_copy);
+        <span style="color:#75715e">// 调整新的finish
+</span><span style="color:#75715e"></span>        finish <span style="color:#f92672">+=</span> n <span style="color:#f92672">-</span> elems_after;
+        <span style="color:#75715e">// 复制[position,old_finish]区间的数到新的finish之后
+</span><span style="color:#75715e"></span>        uninitialized_copy(position, old_finish, finish);
+        <span style="color:#75715e">// 调整finish
+</span><span style="color:#75715e"></span>        finish <span style="color:#f92672">+=</span> elems_after;
+        <span style="color:#75715e">// 从position开始填充新增元素
+</span><span style="color:#75715e"></span>        fill(position, old_finish, x_copy);
       }
     }
-    else {      // 剩下的内存不够分配, 需要重新分配
-      const size_type old_size = size();
-      const size_type len = old_size + max(old_size, n);
-      iterator new_start = data_allocator::allocate(len);
-      iterator new_finish = new_start;
+    <span style="color:#66d9ef">else</span> {      <span style="color:#75715e">// 剩下的内存不够分配, 需要重新分配
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">const</span> size_type old_size <span style="color:#f92672">=</span> size();
+      <span style="color:#66d9ef">const</span> size_type len <span style="color:#f92672">=</span> old_size <span style="color:#f92672">+</span> max(old_size, n);
+      iterator new_start <span style="color:#f92672">=</span> data_allocator<span style="color:#f92672">::</span>allocate(len);
+      iterator new_finish <span style="color:#f92672">=</span> new_start;
       __STL_TRY {
-      	// 将旧的vector中插入点之前的元素复制到新空间，见下图3
-        new_finish = uninitialized_copy(start, position, new_start);
-        // 将新增元素复制到新空间
-        new_finish = uninitialized_fill_n(new_finish, n, x);
-        // 将插入点之后的元素复制到新空间
-        new_finish = uninitialized_copy(position, finish, new_finish);
+      	<span style="color:#75715e">// 将旧的vector中插入点之前的元素复制到新空间，见下图3
+</span><span style="color:#75715e"></span>        new_finish <span style="color:#f92672">=</span> uninitialized_copy(start, position, new_start);
+        <span style="color:#75715e">// 将新增元素复制到新空间
+</span><span style="color:#75715e"></span>        new_finish <span style="color:#f92672">=</span> uninitialized_fill_n(new_finish, n, x);
+        <span style="color:#75715e">// 将插入点之后的元素复制到新空间
+</span><span style="color:#75715e"></span>        new_finish <span style="color:#f92672">=</span> uninitialized_copy(position, finish, new_finish);
       }
-      catch (...) {
+      <span style="color:#66d9ef">catch</span> (...) {
         destroy(new_start, new_finish);
-        data_allocator::deallocate(new_start, len);
-        throw;
+        data_allocator<span style="color:#f92672">::</span>deallocate(new_start, len);
+        <span style="color:#66d9ef">throw</span>;
       }
-      // 清除并释放原有vector
-      destroy(start, finish);
+      <span style="color:#75715e">// 清除并释放原有vector
+</span><span style="color:#75715e"></span>      destroy(start, finish);
       deallocate();
-      // 调整新的start和finish
-      start = new_start;
-      finish = new_finish;
-      end_of_storage = new_start + len;
+      <span style="color:#75715e">// 调整新的start和finish
+</span><span style="color:#75715e"></span>      start <span style="color:#f92672">=</span> new_start;
+      finish <span style="color:#f92672">=</span> new_finish;
+      end_of_storage <span style="color:#f92672">=</span> new_start <span style="color:#f92672">+</span> len;
     }
   }
 }
-</code></pre>
-
+</code></pre></div>
 <p>上述操作可以使插入操作达到最高的效率。配合以下图解更容易理解：</p>
 
 <ul>

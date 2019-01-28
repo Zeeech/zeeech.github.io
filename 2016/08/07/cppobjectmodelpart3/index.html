@@ -46,9 +46,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -81,7 +83,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -136,29 +137,23 @@
 <h1 id="无用-trivial-的构造函数">无用(trivial)的构造函数</h1>
 
 <p>一如前两篇的风格，先以一个例子来抛出一些疑惑，让读者带着问题来阅读，想来会事半功倍。如下面的程序代码，我定义了一个Cat类，里面包含两个参数，一个int型变量age和一个char型指针name。</p>
-
-<pre><code class="language-cpp">class Cat{
-public:
-	int age;
-	char* name;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Cat</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> age;
+	<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> name;
 };
-</code></pre>
-
+</code></pre></div>
 <p>然后，在运行如下的测试代码：</p>
-
-<pre><code class="language-cpp">int main(){
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
 	Cat cat;
-	cout&lt;&lt;“age=”&lt;&lt;cat.age&lt;&lt;endl;
-	cout&lt;&lt;&quot;name=&quot;&lt;&lt;(long long*)cat.name&lt;&lt;endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#960050;background-color:#1e0010">“</span>age<span style="color:#f92672">=</span><span style="color:#960050;background-color:#1e0010">”</span><span style="color:#f92672">&lt;&lt;</span>cat.age<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;name=&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)cat.name<span style="color:#f92672">&lt;&lt;</span>endl;
 }
-</code></pre>
-
+</code></pre></div>
 <p>上述测试代码输出如下：</p>
-
-<pre><code class="language-cpp">age=4196864		
-name=0x400800
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">age<span style="color:#f92672">=</span><span style="color:#ae81ff">4196864</span>		
+name<span style="color:#f92672">=</span><span style="color:#ae81ff">0x400800</span>
+</code></pre></div>
 <p>我们来看看输出，age和name输出的都是一些随机值。在分析输出之前，先理解如下两个概念</p>
 
 <ul>
@@ -179,139 +174,121 @@ name=0x400800
 <h2 id="带有默认构造函数的成员类对象">带有默认构造函数的成员类对象</h2>
 
 <p>如果一个类没有任何constructor，但它内含一个member object，后者还有一个default constructor，那么，编译器就会自动合成一个non-trivial constructor函数，不过这个合成操作只有在构造函数真正需要被调用的时候才合成。观察以下代码：</p>
-
-<pre><code class="language-cpp">class Cat{
-public:
-	Cat():age(0){
-		cout&lt;&lt;&quot;Cat has been initialized&quot;&lt;&lt;endl;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Cat</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	Cat()<span style="color:#f92672">:</span>age(<span style="color:#ae81ff">0</span>){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Cat has been initialized&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
-    int age;
+    <span style="color:#66d9ef">int</span> age;
 };
-class Animal{
-public:
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	Cat cat;
 };
-int main(){
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
 	Animal animal;
 }
-</code></pre>
-
+</code></pre></div>
 <p>在Animal类中声明了一个Cat实例，Cat类中有自己的空构造函数。接着我们可以运行一下这段代码，输出如下：</p>
-
-<pre><code class="language-cpp">Cat has been initialized //cat类对象被构造
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Cat has been initialized <span style="color:#75715e">//cat类对象被构造
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>从输出中可以看出，我们在main函数中声明了一个animal实例，然后animal类构造出了cat实例。可见，如果类的成员有其默认的构造函数，编译器就会合成一个non-trivial constructor，合成的空构造函数应该如下所示：</p>
-
-<pre><code class="language-cpp">Animal(){
-	Cat::Cat();
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Animal(){
+	Cat<span style="color:#f92672">::</span>Cat();
 }
-</code></pre>
-
+</code></pre></div>
 <p>如果一个类内含一个或多个成员类对象，那么编译器为这个类合成的默认构造函数会一次调用成员类的空构造函数，其调用顺序是声明顺序决定的。那么，如果类自己定义了空的构造函数怎么办？很简单，编译器会将这些成员类的构造代码安插在空构造函数里面，其摆放顺序也是按照声明顺序。</p>
 
 <p>如以下测试代码：</p>
-
-<pre><code class="language-cpp">class Dog{
-public:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	Dog(){
-		cout&lt;&lt;&quot;Dog has been initialized&quot;&lt;&lt;endl;
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog has been initialized&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
-class Cat{
-public:
-	Cat():age(0){
-		cout&lt;&lt;&quot;Cat has been initialized&quot;&lt;&lt;endl;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Cat</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	Cat()<span style="color:#f92672">:</span>age(<span style="color:#ae81ff">0</span>){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Cat has been initialized&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
-    int age;
+    <span style="color:#66d9ef">int</span> age;
 };
-class Animal{
-public:
-	Animal(){weight=0;}//按照声明顺序，cat和dog的构造会在weight之前
-	Cat cat;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	Animal(){weight<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>;}<span style="color:#75715e">//按照声明顺序，cat和dog的构造会在weight之前
+</span><span style="color:#75715e"></span>	Cat cat;
 	Dog dog;
-	int weight;
+	<span style="color:#66d9ef">int</span> weight;
 };
-int main(){
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
 	Animal animal;
 }
-</code></pre>
-
+</code></pre></div>
 <p>该测试代码的输出如下：</p>
-
-<pre><code class="language-cpp">Cat has been initialized //先构造cat类对象，因为声明顺序在前
-Dog has been initialized //再构造dog类对象
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Cat has been initialized <span style="color:#75715e">//先构造cat类对象，因为声明顺序在前
+</span><span style="color:#75715e"></span>Dog has been initialized <span style="color:#75715e">//再构造dog类对象
+</span><span style="color:#75715e"></span></code></pre></div>
 <h2 id="带有默认构造函数的基类">带有默认构造函数的基类</h2>
 
 <p>如果一个派生类没有任何自定义构造函数，但它的基类有默认的构造函数，那么派生类中默认合成的构造函数中会安插基类的构造函数代码（按照声明顺序）。</p>
 
 <p>如下例所示：</p>
-
-<pre><code class="language-cpp">class Animal{
-public:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	Animal(){
-		cout&lt;&lt;&quot;Animal has been initialized&quot;&lt;&lt;endl;
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal has been initialized&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-class Cat : public Animal{
-public:
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Cat</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	
 };
-int main(){
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
 	Cat cat;
 }
-</code></pre>
-
+</code></pre></div>
 <p>输出如下：</p>
-
-<pre><code class="language-cpp">Animal has been initialized //父类构造函数的输出
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Animal has been initialized <span style="color:#75715e">//父类构造函数的输出
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>输出结果显示子类合成的构造函数调用了父类的空构造函数。在继承关系中，我们知道构造顺序是先构造父类，如果有多个父类就按照声明的继承顺序依次构造，然后在构造子类。编译器在父类拥有空构造函数的情况下，会合成一个non-trivial constructor并在里面按顺序安插父类的空构造函数调用代码。</p>
 
 <p>那如果子类声明了多个构造函数，唯独没有空构造函数怎么办呢？编译器会合成一个空的构造函数吗？答案是否定的，编译器不会为它合成空构造函数，而是将父类的构造函数或者类对象的空构造函数依次安插在每个声明的构造函数内。</p>
 
 <p>上面一堆话可能比较绕口，举个小例子就很好理解了，请看下面的代码：</p>
-
-<pre><code class="language-cpp">class Dog{
-public:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	Dog(){
-		cout&lt;&lt;&quot;Dog has been initialized&quot;&lt;&lt;endl;
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog has been initialized&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-class Animal{
-public:
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	Animal(){
-		cout&lt;&lt;&quot;Animal has been initialized&quot;&lt;&lt;endl;
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal has been initialized&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-class Cat : public Animal{//Cat类继承于Animal类，并在类里面声明了dog类的实例
-public:
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Cat</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal{<span style="color:#75715e">//Cat类继承于Animal类，并在类里面声明了dog类的实例
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	Dog dog;
-	Cat(int a){//Cat类里面没有空构造函数
-		age = a;
+	Cat(<span style="color:#66d9ef">int</span> a){<span style="color:#75715e">//Cat类里面没有空构造函数
+</span><span style="color:#75715e"></span>		age <span style="color:#f92672">=</span> a;
 	}
-private:
-	int age;
+<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> age;
 };
 
-int main(){
-	//Cat cat;	//如果这样写的话，编译器会报错，因为编译器根本没有为Cat类合成空构造函数
-	Cat cat(1);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
+	<span style="color:#75715e">//Cat cat;	//如果这样写的话，编译器会报错，因为编译器根本没有为Cat类合成空构造函数
+</span><span style="color:#75715e"></span>	Cat cat(<span style="color:#ae81ff">1</span>);
 }
-</code></pre>
-
+</code></pre></div>
 <p>上述代码的输出如下：</p>
-
-<pre><code class="language-cpp">Animal has been initialized  //先构造基类
-Dog has been initialized	//再构造类中声明的类对象
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Animal has been initialized  <span style="color:#75715e">//先构造基类
+</span><span style="color:#75715e"></span>Dog has been initialized	<span style="color:#75715e">//再构造类中声明的类对象
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>所以，我们可以理一下编译器安插的构造函数的顺序：</p>
 
 <ul>
@@ -329,59 +306,53 @@ Dog has been initialized	//再构造类中声明的类对象
 <li>一个虚函数表会被编译器产生出来，里面存放这虚函数的地址</li>
 <li>在每一个类对象中，一个额外的虚表指针会被编译器合成出来，其指向上述生成的虚表</li>
 </ul>
-
-<pre><code class="language-cpp">typedef void(*Func)(void);
-class Animal{
-public:
-	virtual void eat(){
-		cout&lt;&lt;&quot;Animal eat&quot;&lt;&lt;endl;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#a6e22e">void</span>(<span style="color:#f92672">*</span>Func)(<span style="color:#66d9ef">void</span>);
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> eat(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-int main(){
-	Animal animal;//调用空构造函数
-	Fun pfun1 = (Fun)*((long long*)*(long long*)(&amp;animal));
-	pfun1();//执行函数，输出Animal eat
-}
-</code></pre>
-
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
+	Animal animal;<span style="color:#75715e">//调用空构造函数
+</span><span style="color:#75715e"></span>	Fun pfun1 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>animal));
+	pfun1();<span style="color:#75715e">//执行函数，输出Animal eat
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>在上例中，main函数中定义一个Animal类的对象animal，调用了编译器合成的空构造函数，接下来我们通过强制类型转换，首先提取虚表指针的地址，然后提取虚表的地址，将虚表的第一个函数赋给一个函数指针，最后运行该函数，输出Animal eat。因此，编译器确实按照上述两个步骤合成了一个non-trivial的空构造函数。</p>
 
 <h2 id="带有一个虚基类的子类">带有一个虚基类的子类</h2>
 
 <p>虚基类的实现方法有点复杂，我们首先来看看下面这个例子：</p>
-
-<pre><code class="language-cpp">class Animal{ 
-public:
-	int weight;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{ 
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> weight;
 };
 
-class Livestock : public virtual Animal{
-public: 
-	int color;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Livestock</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">virtual</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span> 
+	<span style="color:#66d9ef">int</span> color;
 };
 
-class Canidae : public virtual Animal{
-public:
-	int age;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Canidae</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">virtual</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> age;
 };
-class WatchDog :  public  Canidae , public  Livestock{
-public:
-	int breed;	
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">WatchDog</span> <span style="color:#f92672">:</span>  <span style="color:#66d9ef">public</span>  Canidae , <span style="color:#66d9ef">public</span>  Livestock{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> breed;	
 };
-</code></pre>
-
+</code></pre></div>
 <p>其中，Animal是一个基类，Livestock和Candiae类虚继承于Animal类，WatchDog类继承于Livestock和Candiae类。基于上述继承关系，我们执行一下测试代码；</p>
-
-<pre><code class="language-cpp">void setWeight(const Animal* a){//运行时绑定。在编译期间无法决定a-&gt;Animal::weight的位置
-	a-&gt;weight = 100;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">setWeight</span>(<span style="color:#66d9ef">const</span> Animal<span style="color:#f92672">*</span> a){<span style="color:#75715e">//运行时绑定。在编译期间无法决定a-&gt;Animal::weight的位置
+</span><span style="color:#75715e"></span>	a<span style="color:#f92672">-&gt;</span>weight <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span>;
 }
-int main(){
-	setWeight(new Livestock);
-	setWeight(new WatchDog);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
+	setWeight(<span style="color:#66d9ef">new</span> Livestock);
+	setWeight(<span style="color:#66d9ef">new</span> WatchDog);
 }
-</code></pre>
-
+</code></pre></div>
 <p>针对上述测试代码，编译器无法固定setWeight()中的a-&gt;weight的实际偏移位置，因为a的真正类型都没有确定，所以必须是在确定传入的指针类型之后才能确定，也称为运行时绑定。</p>
 
 <p>所有经由引用或者指针来存取一个虚基类的操作都可以通过指针来完成，那么，这个虚基类中weight变量的位置是如何确定的呢？想必你心里已有答案，没错</p>

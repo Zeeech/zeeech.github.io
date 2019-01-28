@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -421,18 +422,15 @@ J\left( {\theta_{0}},{\theta_{1}}...{\theta_{n}} \right)=\frac{1}{2m}\sum\limits
 其中，$h_{\theta}\left( x \right)=\theta^{T}X={\theta_{0}}+{\theta_{1}}{x_{1}}+{\theta_{2}}{x_{2}}+...+{\theta_{n}}{x_{n}}$</p>
 
 <p>用python来计算代价函数代码如下：</p>
-
-<pre><code class="language-python">def computeCostMulti(X, y, theta):
-    &quot;&quot;&quot;
-     Compute cost for linear regression with multiple variables
-       J = computeCost(X, y, theta) computes the cost of using theta as the
-       parameter for linear regression to fit the data points in X and y
-    &quot;&quot;&quot;
-    m = y.size
-    temp = np.dot(X , theta)
-    return np.sum(np.power(temp -y, 2)) / (2 * m)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">computeCostMulti</span>(X, y, theta):
+    <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">     Compute cost for linear regression with multiple variables
+</span><span style="color:#e6db74">       J = computeCost(X, y, theta) computes the cost of using theta as the
+</span><span style="color:#e6db74">       parameter for linear regression to fit the data points in X and y
+</span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+    m <span style="color:#f92672">=</span> y<span style="color:#f92672">.</span>size
+    temp <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(X , theta)
+    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>sum(np<span style="color:#f92672">.</span>power(temp <span style="color:#f92672">-</span>y, <span style="color:#ae81ff">2</span>)) <span style="color:#f92672">/</span> (<span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> m)</code></pre></div>
 <p>这样一来，我们的目标和一元线性回归问题一样，即找出是的代价函数最小的一系列参数。多元线性回归问题的批量梯度下降算法如下：</p>
 
 <p><span  class="math">\[
@@ -465,26 +463,23 @@ Y = \left[\begin{matrix}y^1 \\ y^2 \\ y^3 \\ y^4 \end{matrix}\right]
 \]</span></p>
 
 <p>于是$h_{\theta} \left({x}^{\left( i \right)} \right) - y {^\left(i\right)}$可以记为$X·\theta ^T - Y$，然后，$(X·\theta ^T - Y)^T · X$即可得到矩阵$\theta $ 。这里用Python实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">gradientDescentMulti</span>(X, y, theta, alpha, num_iters):
+    <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">     Performs gradient descent to learn theta
+</span><span style="color:#e6db74">       theta = gradientDescent(x, y, theta, alpha, num_iters) updates theta by
+</span><span style="color:#e6db74">       taking num_iters gradient steps with learning rate alpha
+</span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+    <span style="color:#75715e"># Initialize some useful values</span>
+    J_history <span style="color:#f92672">=</span> []
+    m <span style="color:#f92672">=</span> y<span style="color:#f92672">.</span>size  <span style="color:#75715e"># number of training examples</span>
 
-<pre><code class="language-python">def gradientDescentMulti(X, y, theta, alpha, num_iters):
-    &quot;&quot;&quot;
-     Performs gradient descent to learn theta
-       theta = gradientDescent(x, y, theta, alpha, num_iters) updates theta by
-       taking num_iters gradient steps with learning rate alpha
-    &quot;&quot;&quot;
-    # Initialize some useful values
-    J_history = []
-    m = y.size  # number of training examples
-
-    for i in range(num_iters):
-        temp = np.dot(X, theta)
-        theta = theta - alpha / m * (np.dot(temp - y, X))
-        # Save the cost J in every iteration
-        J_history.append(computeCostMulti(X, y, theta))
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(num_iters):
+        temp <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(X, theta)
+        theta <span style="color:#f92672">=</span> theta <span style="color:#f92672">-</span> alpha <span style="color:#f92672">/</span> m <span style="color:#f92672">*</span> (np<span style="color:#f92672">.</span>dot(temp <span style="color:#f92672">-</span> y, X))
+        <span style="color:#75715e"># Save the cost J in every iteration</span>
+        J_history<span style="color:#f92672">.</span>append(computeCostMulti(X, y, theta))
     
-    return theta, J_history
-</code></pre>
-
+    <span style="color:#66d9ef">return</span> theta, J_history</code></pre></div>
 <h2 id="33-特征缩放">3.3 特征缩放</h2>
 
 <p>在多元线性回归问题中，如果我们能保证这些特征都具有相似的尺度，这将使得梯度下降算法更快的收敛。</p>
@@ -520,23 +515,20 @@ Y = \left[\begin{matrix}y^1 \\ y^2 \\ y^3 \\ y^4 \end{matrix}\right]
 <p>梯度下降算法收敛所需要的迭代次数根据模型的不同而不同，从算法上来看，每次迭代下降的值受到学习率的影响，如果学习率太小，则达到收敛所需要的迭代次数就非常高；如果学习率太大，每次迭代可能不会减小代价函数，可能会越过局部最低点，导致无法收敛。</p>
 
 <p>特征缩放用python代码实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> numpy <span style="color:#f92672">as</span> np 
 
-<pre><code class="language-python">import numpy as np 
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">featureNormalize</span>(X):
+    <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">       returns a normalized version of X where
+</span><span style="color:#e6db74">       the mean value of each feature is 0 and the standard deviation
+</span><span style="color:#e6db74">       is 1. This is often a good preprocessing step to do when
+</span><span style="color:#e6db74">       working with learning algorithms.
+</span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+    mu <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(X, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+    sigma <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>std(X, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+    X_norm <span style="color:#f92672">=</span> (X <span style="color:#f92672">-</span> mu) <span style="color:#f92672">/</span> sigma
 
-def featureNormalize(X):
-    &quot;&quot;&quot;
-       returns a normalized version of X where
-       the mean value of each feature is 0 and the standard deviation
-       is 1. This is often a good preprocessing step to do when
-       working with learning algorithms.
-    &quot;&quot;&quot;
-    mu = np.mean(X, axis=0)
-    sigma = np.std(X, axis=0)
-    X_norm = (X - mu) / sigma
-
-    return X_norm, mu, sigma
-</code></pre>
-
+    <span style="color:#66d9ef">return</span> X_norm, mu, sigma</code></pre></div>
 <h2 id="34-特征和多项式回归">3.4 特征和多项式回归</h2>
 
 <p>还是以预测房价为例，现在数据集中提供两个特征，分别为$frontage$临街宽度和$depth$纵向深度，这样一来我们构建的$h _\theta(x)$函数如下图所示：</p>
@@ -688,19 +680,16 @@ tr ABC &=& trCBA
 <p>因此，在进行正规方程计算时，需要删除一些冗余特征或者当特征太多时，删除一些特征。这点非常重要。</p>
 
 <p>正规方程的python实现如下：</p>
-
-<pre><code class="language-python">import numpy as np  
-def normalEqn(X, y):
-    &quot;&quot;&quot; Computes the closed-form solution to linear regression
-       normalEqn(X,y) computes the closed-form solution to linear
-       regression using the normal equations.
-    &quot;&quot;&quot;
-    temp =  np.linalg.inv(np.dot(X.T, X))
-    temp1 = np.dot(temp, X.T)
-    theta = np.dot(temp1, y.T)
-    return theta
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> numpy <span style="color:#f92672">as</span> np  
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">normalEqn</span>(X, y):
+    <span style="color:#e6db74">&#34;&#34;&#34; Computes the closed-form solution to linear regression
+</span><span style="color:#e6db74">       normalEqn(X,y) computes the closed-form solution to linear
+</span><span style="color:#e6db74">       regression using the normal equations.
+</span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+    temp <span style="color:#f92672">=</span>  np<span style="color:#f92672">.</span>linalg<span style="color:#f92672">.</span>inv(np<span style="color:#f92672">.</span>dot(X<span style="color:#f92672">.</span>T, X))
+    temp1 <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(temp, X<span style="color:#f92672">.</span>T)
+    theta <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(temp1, y<span style="color:#f92672">.</span>T)
+    <span style="color:#66d9ef">return</span> theta</code></pre></div>
 <blockquote>
 <p>附赠：</p>
 

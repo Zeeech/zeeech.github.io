@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -123,27 +124,23 @@
 <h1 id="sdlist的数据结构">sdlist的数据结构</h1>
 
 <p>Redis为双端链表的每一个节点定义了如下的结构体。</p>
-
-<pre><code class="language-cpp">// 链表节点定义
-typedef struct listNode {
-    struct listNode *prev;  // 指向前一个节点
-    struct listNode *next;  // 指向后一个节点
-    void *value; // 节点值
-} listNode;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 链表节点定义
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> listNode {
+    <span style="color:#66d9ef">struct</span> listNode <span style="color:#f92672">*</span>prev;  <span style="color:#75715e">// 指向前一个节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> listNode <span style="color:#f92672">*</span>next;  <span style="color:#75715e">// 指向后一个节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value; <span style="color:#75715e">// 节点值
+</span><span style="color:#75715e"></span>} listNode;
+</code></pre></div>
 <p>与一般的双端链表无异，定义了链表节点的结构体之后，下面就定义链表的结构体，用来方便管理链表节点，其结构体定义如下：</p>
-
-<pre><code class="language-cpp">typedef struct list {
-    listNode *head;  // 指向链表头节点
-    listNode *tail;  // 指向链表尾节点
-    void *(*dup)(void *ptr); // 自定义节点值复制函数
-    void (*free)(void *ptr); // 自定义节点值释放函数
-    int (*match)(void *ptr, void *key); // 自定义节点值匹配函数
-    unsigned long len; // 链表长度
-} list;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> list {
+    listNode <span style="color:#f92672">*</span>head;  <span style="color:#75715e">// 指向链表头节点
+</span><span style="color:#75715e"></span>    listNode <span style="color:#f92672">*</span>tail;  <span style="color:#75715e">// 指向链表尾节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>(<span style="color:#f92672">*</span>dup)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr); <span style="color:#75715e">// 自定义节点值复制函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span>free)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr); <span style="color:#75715e">// 自定义节点值释放函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> (<span style="color:#f92672">*</span>match)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key); <span style="color:#75715e">// 自定义节点值匹配函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> len; <span style="color:#75715e">// 链表长度
+</span><span style="color:#75715e"></span>} list;
+</code></pre></div>
 <p>Redis在实现链表的时候，定义其为双端无环链表，其示意图如下：</p>
 
 <div style="text-align: center">
@@ -151,354 +148,320 @@ typedef struct listNode {
 </div>
 
 <p>此外，Redis对其结构体提供了一系列的宏定义函数，方便操作其结构体参数</p>
-
-<pre><code class="language-cpp">#define listLength(l) ((l)-&gt;len)  // 获取list长度
-#define listFirst(l) ((l)-&gt;head)  // 获取list头节点指针
-#define listLast(l) ((l)-&gt;tail)   // 获取list尾节点指针
-#define listPrevNode(n) ((n)-&gt;prev)  // 获取当前节点前一个节点
-#define listNextNode(n) ((n)-&gt;next)  // 获取当前节点后一个节点
-#define listNodeValue(n) ((n)-&gt;value) // 获取当前节点的值
-
-#define listSetDupMethod(l,m) ((l)-&gt;dup = (m))  // 设定节点值复制函数
-#define listSetFreeMethod(l,m) ((l)-&gt;free = (m))  // 设定节点值释放函数
-#define listSetMatchMethod(l,m) ((l)-&gt;match = (m))  // 设定节点值匹配函数
-
-#define listGetDupMethod(l) ((l)-&gt;dup) // 获取节点值赋值函数
-#define listGetFree(l) ((l)-&gt;free)  // 获取节点值释放函数
-#define listGetMatchMethod(l) ((l)-&gt;match)  // 获取节点值匹配函数
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define listLength(l) ((l)-&gt;len)  </span><span style="color:#75715e">// 获取list长度
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listFirst(l) ((l)-&gt;head)  </span><span style="color:#75715e">// 获取list头节点指针
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listLast(l) ((l)-&gt;tail)   </span><span style="color:#75715e">// 获取list尾节点指针
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listPrevNode(n) ((n)-&gt;prev)  </span><span style="color:#75715e">// 获取当前节点前一个节点
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listNextNode(n) ((n)-&gt;next)  </span><span style="color:#75715e">// 获取当前节点后一个节点
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listNodeValue(n) ((n)-&gt;value) </span><span style="color:#75715e">// 获取当前节点的值
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">#define listSetDupMethod(l,m) ((l)-&gt;dup = (m))  </span><span style="color:#75715e">// 设定节点值复制函数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listSetFreeMethod(l,m) ((l)-&gt;free = (m))  </span><span style="color:#75715e">// 设定节点值释放函数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listSetMatchMethod(l,m) ((l)-&gt;match = (m))  </span><span style="color:#75715e">// 设定节点值匹配函数
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">#define listGetDupMethod(l) ((l)-&gt;dup) </span><span style="color:#75715e">// 获取节点值赋值函数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listGetFree(l) ((l)-&gt;free)  </span><span style="color:#75715e">// 获取节点值释放函数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define listGetMatchMethod(l) ((l)-&gt;match)  </span><span style="color:#75715e">// 获取节点值匹配函数
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="sdlist迭代器结构">sdlist迭代器结构</h1>
 
 <p>Redis为sdlist定义了一个迭代器结构，其能正序和逆序的访问list结构。</p>
-
-<pre><code class="language-cpp">typedef struct listIter {
-    listNode *next; // 指向下一个节点
-    int direction; // 方向参数，正序和逆序
-} listIter;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> listIter {
+    listNode <span style="color:#f92672">*</span>next; <span style="color:#75715e">// 指向下一个节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> direction; <span style="color:#75715e">// 方向参数，正序和逆序
+</span><span style="color:#75715e"></span>} listIter;
+</code></pre></div>
 <p>对于direction参数，Redis提供了两个宏定义</p>
-
-<pre><code class="language-cpp">#define AL_START_HEAD 0  // 从头到尾
-#define AL_START_TAIL 1  // 从尾到头
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define AL_START_HEAD 0  </span><span style="color:#75715e">// 从头到尾
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define AL_START_TAIL 1  </span><span style="color:#75715e">// 从尾到头
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="sdlist基本操作">sdlist基本操作</h1>
 
 <h2 id="sdlist创建">sdlist创建</h2>
 
 <p>sdlist提供了listCreate函数来创建一个空的链表。</p>
-
-<pre><code class="language-cpp">list *listCreate(void)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">list <span style="color:#f92672">*</span><span style="color:#a6e22e">listCreate</span>(<span style="color:#66d9ef">void</span>)
 {
-    struct list *list; // 定义一个链表指针
-
-    if ((list = zmalloc(sizeof(*list))) == NULL) // 申请内存
-        return NULL; 
-    list-&gt;head = list-&gt;tail = NULL;  // 空链表的头指针和尾指针均为空
-    list-&gt;len = 0;  // 设定长度
-    list-&gt;dup = NULL;    // 自定义复制函数初始化
-    list-&gt;free = NULL;   // 自定义释放函数初始化
-    list-&gt;match = NULL;  // 自定义匹配函数初始化
-    return list;
+    <span style="color:#66d9ef">struct</span> list <span style="color:#f92672">*</span>list; <span style="color:#75715e">// 定义一个链表指针
+</span><span style="color:#75715e"></span>
+    <span style="color:#66d9ef">if</span> ((list <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>list))) <span style="color:#f92672">==</span> NULL) <span style="color:#75715e">// 申请内存
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span> NULL; 
+    list<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> NULL;  <span style="color:#75715e">// 空链表的头指针和尾指针均为空
+</span><span style="color:#75715e"></span>    list<span style="color:#f92672">-&gt;</span>len <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 设定长度
+</span><span style="color:#75715e"></span>    list<span style="color:#f92672">-&gt;</span>dup <span style="color:#f92672">=</span> NULL;    <span style="color:#75715e">// 自定义复制函数初始化
+</span><span style="color:#75715e"></span>    list<span style="color:#f92672">-&gt;</span>free <span style="color:#f92672">=</span> NULL;   <span style="color:#75715e">// 自定义释放函数初始化
+</span><span style="color:#75715e"></span>    list<span style="color:#f92672">-&gt;</span>match <span style="color:#f92672">=</span> NULL;  <span style="color:#75715e">// 自定义匹配函数初始化
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> list;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="sdlist释放">sdlist释放</h2>
 
 <p>sdlist提供了listRelease函数来释放整个链表</p>
-
-<pre><code class="language-cpp">void listRelease(list *list)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listRelease</span>(list <span style="color:#f92672">*</span>list)
 {
-    unsigned long len;
-    listNode *current, *next;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> len;
+    listNode <span style="color:#f92672">*</span>current, <span style="color:#f92672">*</span>next;
 
-    current = list-&gt;head;
-    len = list-&gt;len;
-    while(len--) {
-        next = current-&gt;next;
-        // 如果定义了节点值释放函数，需要调用
-        if (list-&gt;free) list-&gt;free(current-&gt;value);
-        zfree(current);  // 释放当前节点
-        current = next;
+    current <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>head;
+    len <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>len;
+    <span style="color:#66d9ef">while</span>(len<span style="color:#f92672">--</span>) {
+        next <span style="color:#f92672">=</span> current<span style="color:#f92672">-&gt;</span>next;
+        <span style="color:#75715e">// 如果定义了节点值释放函数，需要调用
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (list<span style="color:#f92672">-&gt;</span>free) list<span style="color:#f92672">-&gt;</span>free(current<span style="color:#f92672">-&gt;</span>value);
+        zfree(current);  <span style="color:#75715e">// 释放当前节点
+</span><span style="color:#75715e"></span>        current <span style="color:#f92672">=</span> next;
     }
-    zfree(list);  // 释放链表头
-}
-</code></pre>
-
+    zfree(list);  <span style="color:#75715e">// 释放链表头
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="插入节点">插入节点</h2>
 
 <p>sdlist提供了三个函数来完成向list中插入一个节点的功能。</p>
 
 <h3 id="向头部插入节点">向头部插入节点</h3>
-
-<pre><code class="language-cpp">// 该函数向list的头部插入一个节点
-list *listAddNodeHead(list *list, void *value)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 该函数向list的头部插入一个节点
+</span><span style="color:#75715e"></span>list <span style="color:#f92672">*</span><span style="color:#a6e22e">listAddNodeHead</span>(list <span style="color:#f92672">*</span>list, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value)
 {
-    listNode *node;
+    listNode <span style="color:#f92672">*</span>node;
 
-    if ((node = zmalloc(sizeof(*node))) == NULL)
-        return NULL;
-    node-&gt;value = value;
-    if (list-&gt;len == 0) { // 如果链表为空
-        list-&gt;head = list-&gt;tail = node;
-        node-&gt;prev = node-&gt;next = NULL;
-    } else {  // 如果链表非空
-        node-&gt;prev = NULL;
-        node-&gt;next = list-&gt;head;
-        list-&gt;head-&gt;prev = node;
-        list-&gt;head = node;
+    <span style="color:#66d9ef">if</span> ((node <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>node))) <span style="color:#f92672">==</span> NULL)
+        <span style="color:#66d9ef">return</span> NULL;
+    node<span style="color:#f92672">-&gt;</span>value <span style="color:#f92672">=</span> value;
+    <span style="color:#66d9ef">if</span> (list<span style="color:#f92672">-&gt;</span>len <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) { <span style="color:#75715e">// 如果链表为空
+</span><span style="color:#75715e"></span>        list<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> node;
+        node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> NULL;
+    } <span style="color:#66d9ef">else</span> {  <span style="color:#75715e">// 如果链表非空
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> NULL;
+        node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>head;
+        list<span style="color:#f92672">-&gt;</span>head<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node;
+        list<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">=</span> node;
     }
-    list-&gt;len++;  // 长度+1
-    return list;
+    list<span style="color:#f92672">-&gt;</span>len<span style="color:#f92672">++</span>;  <span style="color:#75715e">// 长度+1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> list;
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="向尾部添加节点">向尾部添加节点</h3>
-
-<pre><code class="language-cpp">// 该函数可以在list的尾部添加一个节点
-list *listAddNodeTail(list *list, void *value)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 该函数可以在list的尾部添加一个节点
+</span><span style="color:#75715e"></span>list <span style="color:#f92672">*</span><span style="color:#a6e22e">listAddNodeTail</span>(list <span style="color:#f92672">*</span>list, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value)
 {
-    listNode *node;
+    listNode <span style="color:#f92672">*</span>node;
 
-    if ((node = zmalloc(sizeof(*node))) == NULL)
-        return NULL;
-    node-&gt;value = value;
-    if (list-&gt;len == 0) { // 如果链表为空
-        list-&gt;head = list-&gt;tail = node;
-        node-&gt;prev = node-&gt;next = NULL;
-    } else {  // 如果链表非空
-        node-&gt;prev = list-&gt;tail;
-        node-&gt;next = NULL;
-        list-&gt;tail-&gt;next = node;
-        list-&gt;tail = node;
+    <span style="color:#66d9ef">if</span> ((node <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>node))) <span style="color:#f92672">==</span> NULL)
+        <span style="color:#66d9ef">return</span> NULL;
+    node<span style="color:#f92672">-&gt;</span>value <span style="color:#f92672">=</span> value;
+    <span style="color:#66d9ef">if</span> (list<span style="color:#f92672">-&gt;</span>len <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) { <span style="color:#75715e">// 如果链表为空
+</span><span style="color:#75715e"></span>        list<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> node;
+        node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> NULL;
+    } <span style="color:#66d9ef">else</span> {  <span style="color:#75715e">// 如果链表非空
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>tail;
+        node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> NULL;
+        list<span style="color:#f92672">-&gt;</span>tail<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> node;
+        list<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> node;
     }
-    list-&gt;len++;  // 长度+1
-    return list;
+    list<span style="color:#f92672">-&gt;</span>len<span style="color:#f92672">++</span>;  <span style="color:#75715e">// 长度+1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> list;
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="向任意位置插入节点">向任意位置插入节点</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 向任意位置插入节点
+</span><span style="color:#75715e">// 其中，old_node为插入位置
+</span><span style="color:#75715e">//      value为插入节点的值
+</span><span style="color:#75715e">//      after为0时表示插在old_node前面，为1时表示插在old_node后面
+</span><span style="color:#75715e"></span>list <span style="color:#f92672">*</span><span style="color:#a6e22e">listInsertNode</span>(list <span style="color:#f92672">*</span>list, listNode <span style="color:#f92672">*</span>old_node, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value, <span style="color:#66d9ef">int</span> after) {
+    listNode <span style="color:#f92672">*</span>node;
 
-<pre><code class="language-cpp">// 向任意位置插入节点
-// 其中，old_node为插入位置
-//      value为插入节点的值
-//      after为0时表示插在old_node前面，为1时表示插在old_node后面
-list *listInsertNode(list *list, listNode *old_node, void *value, int after) {
-    listNode *node;
-
-    if ((node = zmalloc(sizeof(*node))) == NULL)
-        return NULL;
-    node-&gt;value = value;
-    if (after) { // 向后插入
-        node-&gt;prev = old_node;
-        node-&gt;next = old_node-&gt;next;
-        // 如果old_node为尾节点的话需要改变tail
-        if (list-&gt;tail == old_node) {
-            list-&gt;tail = node;
+    <span style="color:#66d9ef">if</span> ((node <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>node))) <span style="color:#f92672">==</span> NULL)
+        <span style="color:#66d9ef">return</span> NULL;
+    node<span style="color:#f92672">-&gt;</span>value <span style="color:#f92672">=</span> value;
+    <span style="color:#66d9ef">if</span> (after) { <span style="color:#75715e">// 向后插入
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> old_node;
+        node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> old_node<span style="color:#f92672">-&gt;</span>next;
+        <span style="color:#75715e">// 如果old_node为尾节点的话需要改变tail
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (list<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">==</span> old_node) {
+            list<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> node;
         }
-    } else {  // 向前插入
-        node-&gt;next = old_node;
-        node-&gt;prev = old_node-&gt;prev;
-        // 如果old_node为头节点的话需要改变head
-        if (list-&gt;head == old_node) {
-            list-&gt;head = node;
+    } <span style="color:#66d9ef">else</span> {  <span style="color:#75715e">// 向前插入
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> old_node;
+        node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> old_node<span style="color:#f92672">-&gt;</span>prev;
+        <span style="color:#75715e">// 如果old_node为头节点的话需要改变head
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (list<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">==</span> old_node) {
+            list<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">=</span> node;
         }
     }
-    if (node-&gt;prev != NULL) {
-        node-&gt;prev-&gt;next = node;
+    <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">!=</span> NULL) {
+        node<span style="color:#f92672">-&gt;</span>prev<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> node;
     }
-    if (node-&gt;next != NULL) {
-        node-&gt;next-&gt;prev = node;
+    <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">!=</span> NULL) {
+        node<span style="color:#f92672">-&gt;</span>next<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node;
     }
-    list-&gt;len++;
-    return list;
+    list<span style="color:#f92672">-&gt;</span>len<span style="color:#f92672">++</span>;
+    <span style="color:#66d9ef">return</span> list;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="删除节点">删除节点</h2>
-
-<pre><code class="language-cpp">void listDelNode(list *list, listNode *node)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listDelNode</span>(list <span style="color:#f92672">*</span>list, listNode <span style="color:#f92672">*</span>node)
 {
-    if (node-&gt;prev) // 删除节点不为头节点
-        node-&gt;prev-&gt;next = node-&gt;next;
-    else // 删除节点为头节点需要改变head的指向
-        list-&gt;head = node-&gt;next;
-    if (node-&gt;next)  // 删除节点不为尾节点
-        node-&gt;next-&gt;prev = node-&gt;prev;
-    else // 删除节点为尾节点需要改变tail的指向
-        list-&gt;tail = node-&gt;prev;
-    if (list-&gt;free) list-&gt;free(node-&gt;value); // 释放节点值
-    zfree(node);  // 释放节点
-    list-&gt;len--;
+    <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>prev) <span style="color:#75715e">// 删除节点不为头节点
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>prev<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>next;
+    <span style="color:#66d9ef">else</span> <span style="color:#75715e">// 删除节点为头节点需要改变head的指向
+</span><span style="color:#75715e"></span>        list<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>next;
+    <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>next)  <span style="color:#75715e">// 删除节点不为尾节点
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>next<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>prev;
+    <span style="color:#66d9ef">else</span> <span style="color:#75715e">// 删除节点为尾节点需要改变tail的指向
+</span><span style="color:#75715e"></span>        list<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>prev;
+    <span style="color:#66d9ef">if</span> (list<span style="color:#f92672">-&gt;</span>free) list<span style="color:#f92672">-&gt;</span>free(node<span style="color:#f92672">-&gt;</span>value); <span style="color:#75715e">// 释放节点值
+</span><span style="color:#75715e"></span>    zfree(node);  <span style="color:#75715e">// 释放节点
+</span><span style="color:#75715e"></span>    list<span style="color:#f92672">-&gt;</span>len<span style="color:#f92672">--</span>;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="迭代器相关操作">迭代器相关操作</h2>
 
 <p>sdlist为其迭代器提供了一些操作，用来完成获取迭代器，释放迭代器，重置迭代器，获取下一个迭代器等操作，具体源码见如下分析。</p>
 
 <h3 id="获取迭代器">获取迭代器</h3>
-
-<pre><code class="language-cpp">listIter *listGetIterator(list *list, int direction)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">listIter <span style="color:#f92672">*</span><span style="color:#a6e22e">listGetIterator</span>(list <span style="color:#f92672">*</span>list, <span style="color:#66d9ef">int</span> direction)
 {
-    listIter *iter;  // 声明迭代器
-
-    if ((iter = zmalloc(sizeof(*iter))) == NULL) return NULL;
-    // 根据迭代方向来初始化iter
-    if (direction == AL_START_HEAD)
-        iter-&gt;next = list-&gt;head;
-    else
-        iter-&gt;next = list-&gt;tail;
-    iter-&gt;direction = direction;
-    return iter;
+    listIter <span style="color:#f92672">*</span>iter;  <span style="color:#75715e">// 声明迭代器
+</span><span style="color:#75715e"></span>
+    <span style="color:#66d9ef">if</span> ((iter <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>iter))) <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> NULL;
+    <span style="color:#75715e">// 根据迭代方向来初始化iter
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (direction <span style="color:#f92672">==</span> AL_START_HEAD)
+        iter<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>head;
+    <span style="color:#66d9ef">else</span>
+        iter<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>tail;
+    iter<span style="color:#f92672">-&gt;</span>direction <span style="color:#f92672">=</span> direction;
+    <span style="color:#66d9ef">return</span> iter;
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="释放迭代器">释放迭代器</h3>
-
-<pre><code class="language-cpp">void listReleaseIterator(listIter *iter) {
-    zfree(iter); // 直接调用zfree来释放
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listReleaseIterator</span>(listIter <span style="color:#f92672">*</span>iter) {
+    zfree(iter); <span style="color:#75715e">// 直接调用zfree来释放
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h3 id="重置迭代器">重置迭代器</h3>
 
 <p>重置迭代器分为两种，一种是重置正向迭代器，一种是重置为逆向迭代器</p>
-
-<pre><code class="language-cpp">// 重置为正向迭代器
-void listRewind(list *list, listIter *li) {
-    li-&gt;next = list-&gt;head;
-    li-&gt;direction = AL_START_HEAD;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 重置为正向迭代器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listRewind</span>(list <span style="color:#f92672">*</span>list, listIter <span style="color:#f92672">*</span>li) {
+    li<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>head;
+    li<span style="color:#f92672">-&gt;</span>direction <span style="color:#f92672">=</span> AL_START_HEAD;
 }
-// 重置为逆向迭代器
-void listRewindTail(list *list, listIter *li) {
-    li-&gt;next = list-&gt;tail;
-    li-&gt;direction = AL_START_TAIL;
+<span style="color:#75715e">// 重置为逆向迭代器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listRewindTail</span>(list <span style="color:#f92672">*</span>list, listIter <span style="color:#f92672">*</span>li) {
+    li<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>tail;
+    li<span style="color:#f92672">-&gt;</span>direction <span style="color:#f92672">=</span> AL_START_TAIL;
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="获取下一个迭代器">获取下一个迭代器</h3>
-
-<pre><code class="language-cpp">// 根据direction属性来获取下一个迭代器
-listNode *listNext(listIter *iter)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 根据direction属性来获取下一个迭代器
+</span><span style="color:#75715e"></span>listNode <span style="color:#f92672">*</span><span style="color:#a6e22e">listNext</span>(listIter <span style="color:#f92672">*</span>iter)
 {
-    listNode *current = iter-&gt;next;
+    listNode <span style="color:#f92672">*</span>current <span style="color:#f92672">=</span> iter<span style="color:#f92672">-&gt;</span>next;
 
-    if (current != NULL) {
-        if (iter-&gt;direction == AL_START_HEAD)
-            iter-&gt;next = current-&gt;next;
-        else
-            iter-&gt;next = current-&gt;prev;
+    <span style="color:#66d9ef">if</span> (current <span style="color:#f92672">!=</span> NULL) {
+        <span style="color:#66d9ef">if</span> (iter<span style="color:#f92672">-&gt;</span>direction <span style="color:#f92672">==</span> AL_START_HEAD)
+            iter<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> current<span style="color:#f92672">-&gt;</span>next;
+        <span style="color:#66d9ef">else</span>
+            iter<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> current<span style="color:#f92672">-&gt;</span>prev;
     }
-    return current;
+    <span style="color:#66d9ef">return</span> current;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="链表复制函数">链表复制函数</h2>
 
 <p>sdlist提供了listDup函数，用于复制整个链表。</p>
-
-<pre><code class="language-cpp">list *listDup(list *orig)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">list <span style="color:#f92672">*</span><span style="color:#a6e22e">listDup</span>(list <span style="color:#f92672">*</span>orig)
 {
-    list *copy;
+    list <span style="color:#f92672">*</span>copy;
     listIter iter;
-    listNode *node;
+    listNode <span style="color:#f92672">*</span>node;
 
-    if ((copy = listCreate()) == NULL)
-        return NULL;
-    // 复制节点值操作函数
-    copy-&gt;dup = orig-&gt;dup;
-    copy-&gt;free = orig-&gt;free;
-    copy-&gt;match = orig-&gt;match;
-    // 重置迭代器
-    listRewind(orig, &amp;iter);
-    while((node = listNext(&amp;iter)) != NULL) {
-        void *value;
-        // 复制节点
-        // 如果定义了dup函数，则按照dup函数来复制节点值
-        if (copy-&gt;dup) {
-            value = copy-&gt;dup(node-&gt;value);
-            if (value == NULL) {
+    <span style="color:#66d9ef">if</span> ((copy <span style="color:#f92672">=</span> listCreate()) <span style="color:#f92672">==</span> NULL)
+        <span style="color:#66d9ef">return</span> NULL;
+    <span style="color:#75715e">// 复制节点值操作函数
+</span><span style="color:#75715e"></span>    copy<span style="color:#f92672">-&gt;</span>dup <span style="color:#f92672">=</span> orig<span style="color:#f92672">-&gt;</span>dup;
+    copy<span style="color:#f92672">-&gt;</span>free <span style="color:#f92672">=</span> orig<span style="color:#f92672">-&gt;</span>free;
+    copy<span style="color:#f92672">-&gt;</span>match <span style="color:#f92672">=</span> orig<span style="color:#f92672">-&gt;</span>match;
+    <span style="color:#75715e">// 重置迭代器
+</span><span style="color:#75715e"></span>    listRewind(orig, <span style="color:#f92672">&amp;</span>iter);
+    <span style="color:#66d9ef">while</span>((node <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>iter)) <span style="color:#f92672">!=</span> NULL) {
+        <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value;
+        <span style="color:#75715e">// 复制节点
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 如果定义了dup函数，则按照dup函数来复制节点值
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (copy<span style="color:#f92672">-&gt;</span>dup) {
+            value <span style="color:#f92672">=</span> copy<span style="color:#f92672">-&gt;</span>dup(node<span style="color:#f92672">-&gt;</span>value);
+            <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">==</span> NULL) {
                 listRelease(copy);
-                return NULL;
+                <span style="color:#66d9ef">return</span> NULL;
             }
-        } else // 如果没有则直接赋值
-            value = node-&gt;value;
-        // 依次向尾部添加节点
-        if (listAddNodeTail(copy, value) == NULL) {
+        } <span style="color:#66d9ef">else</span> <span style="color:#75715e">// 如果没有则直接赋值
+</span><span style="color:#75715e"></span>            value <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>value;
+        <span style="color:#75715e">// 依次向尾部添加节点
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (listAddNodeTail(copy, value) <span style="color:#f92672">==</span> NULL) {
             listRelease(copy);
-            return NULL;
+            <span style="color:#66d9ef">return</span> NULL;
         }
     }
-    return copy;
+    <span style="color:#66d9ef">return</span> copy;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="查找函数">查找函数</h2>
 
 <p>sdlist提供了两种查找函数。其一是根据给定节点值，在链表中查找该节点</p>
-
-<pre><code class="language-cpp">listNode *listSearchKey(list *list, void *key)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">listNode <span style="color:#f92672">*</span><span style="color:#a6e22e">listSearchKey</span>(list <span style="color:#f92672">*</span>list, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key)
 {
     listIter iter;
-    listNode *node;
+    listNode <span style="color:#f92672">*</span>node;
 
-    listRewind(list, &amp;iter);
-    while((node = listNext(&amp;iter)) != NULL) {
-        if (list-&gt;match) { // 如果定义了match匹配函数，则利用该函数进行节点匹配
-            if (list-&gt;match(node-&gt;value, key)) {
-                return node;
+    listRewind(list, <span style="color:#f92672">&amp;</span>iter);
+    <span style="color:#66d9ef">while</span>((node <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>iter)) <span style="color:#f92672">!=</span> NULL) {
+        <span style="color:#66d9ef">if</span> (list<span style="color:#f92672">-&gt;</span>match) { <span style="color:#75715e">// 如果定义了match匹配函数，则利用该函数进行节点匹配
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (list<span style="color:#f92672">-&gt;</span>match(node<span style="color:#f92672">-&gt;</span>value, key)) {
+                <span style="color:#66d9ef">return</span> node;
             }
-        } else { // 如果没有定义match，则直接比较节点值
-            if (key == node-&gt;value) { // 找到该节点
-                return node;
+        } <span style="color:#66d9ef">else</span> { <span style="color:#75715e">// 如果没有定义match，则直接比较节点值
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (key <span style="color:#f92672">==</span> node<span style="color:#f92672">-&gt;</span>value) { <span style="color:#75715e">// 找到该节点
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">return</span> node;
             }
         }
     }
-    // 没有找到就返回NULL
-    return NULL;
+    <span style="color:#75715e">// 没有找到就返回NULL
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> NULL;
 }
-</code></pre>
-
+</code></pre></div>
 <p>其二是根据序号来查找节点</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">listNode <span style="color:#f92672">*</span><span style="color:#a6e22e">listIndex</span>(list <span style="color:#f92672">*</span>list, <span style="color:#66d9ef">long</span> index) {
+    listNode <span style="color:#f92672">*</span>n;
 
-<pre><code class="language-cpp">listNode *listIndex(list *list, long index) {
-    listNode *n;
-
-    if (index &lt; 0) {  // 序号为负，则倒序查找
-        index = (-index)-1;
-        n = list-&gt;tail;
-        while(index-- &amp;&amp; n) n = n-&gt;prev;
-    } else { // 正序查找
-        n = list-&gt;head;
-        while(index-- &amp;&amp; n) n = n-&gt;next;
+    <span style="color:#66d9ef">if</span> (index <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {  <span style="color:#75715e">// 序号为负，则倒序查找
+</span><span style="color:#75715e"></span>        index <span style="color:#f92672">=</span> (<span style="color:#f92672">-</span>index)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        n <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>tail;
+        <span style="color:#66d9ef">while</span>(index<span style="color:#f92672">--</span> <span style="color:#f92672">&amp;&amp;</span> n) n <span style="color:#f92672">=</span> n<span style="color:#f92672">-&gt;</span>prev;
+    } <span style="color:#66d9ef">else</span> { <span style="color:#75715e">// 正序查找
+</span><span style="color:#75715e"></span>        n <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>head;
+        <span style="color:#66d9ef">while</span>(index<span style="color:#f92672">--</span> <span style="color:#f92672">&amp;&amp;</span> n) n <span style="color:#f92672">=</span> n<span style="color:#f92672">-&gt;</span>next;
     }
-    return n;
+    <span style="color:#66d9ef">return</span> n;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="链表旋转函数">链表旋转函数</h2>
 
 <p>旋转操作其实就是讲表尾节点移除，然后插入到表头，成为新的表头</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">listRotate</span>(list <span style="color:#f92672">*</span>list) {
+    listNode <span style="color:#f92672">*</span>tail <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>tail;
 
-<pre><code class="language-cpp">void listRotate(list *list) {
-    listNode *tail = list-&gt;tail;
+    <span style="color:#66d9ef">if</span> (listLength(list) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span>;
 
-    if (listLength(list) &lt;= 1) return;
-
-    // 取出表尾指针
-    list-&gt;tail = tail-&gt;prev;
-    list-&gt;tail-&gt;next = NULL;
-    // 将其移动到表头并成为新的表头指针
-    list-&gt;head-&gt;prev = tail;
-    tail-&gt;prev = NULL;
-    tail-&gt;next = list-&gt;head;
-    list-&gt;head = tail;
+    <span style="color:#75715e">// 取出表尾指针
+</span><span style="color:#75715e"></span>    list<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> tail<span style="color:#f92672">-&gt;</span>prev;
+    list<span style="color:#f92672">-&gt;</span>tail<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> NULL;
+    <span style="color:#75715e">// 将其移动到表头并成为新的表头指针
+</span><span style="color:#75715e"></span>    list<span style="color:#f92672">-&gt;</span>head<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> tail;
+    tail<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> NULL;
+    tail<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> list<span style="color:#f92672">-&gt;</span>head;
+    list<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">=</span> tail;
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="sdlist小结">sdlist小结</h1>
 
 <p>分析完sdlist的源码，着实是把双向链表的基本操作都复习了一遍，Redis的作者还真是喜欢造轮子，不愧是轮子界的鼻祖啊！虽然这些基本操作很简单，但是可以学到一些优秀的设计，例如：sdlist迭代器的设计等，这些都对理解Redis的相关操作有着很大的帮助作用。</p>

@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -95,62 +96,41 @@
 <p>本以为用python可以轻轻松松搞定，没想到线上数据库没有python接口，只有java接口，可是这就能难道程序员？上网搜了半天加上组内导师的指导，找到了jython这个能在python里面用java接口的工具，然后加上运维大哥整理的依赖包和示例，折腾了一小会就把环境给布好了。貌似，说了这么多，有点跑题了，时区问题是在最后检查数据的时候发现的，临门一脚被打偏了，差点打脸，实在有点气愤，于是写篇博客缓解缓解。</p>
 
 <p>大体是这样的，首先需要根据传入的年、月参数初始化时间，得到这个月的第一天和最后一天，这有啥难的，一段代码敲下去。</p>
-
-<pre><code class="language-python">year = int(sys.argv[1])
-month = int(sys.argv[2])
-# 获取当月第一天的星期和当月的总天数
-firstDayWeekDay, monthRange = calendar.monthrange(year, month)
-# 获取当月的第一天
-firstDay = datetime.date(year=year, month=month, day=1)
-lastDay = datetime.date(year=year, month=month, day=monthRange)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">year <span style="color:#f92672">=</span> int(sys<span style="color:#f92672">.</span>argv[<span style="color:#ae81ff">1</span>])
+month <span style="color:#f92672">=</span> int(sys<span style="color:#f92672">.</span>argv[<span style="color:#ae81ff">2</span>])
+<span style="color:#75715e"># 获取当月第一天的星期和当月的总天数</span>
+firstDayWeekDay, monthRange <span style="color:#f92672">=</span> calendar<span style="color:#f92672">.</span>monthrange(year, month)
+<span style="color:#75715e"># 获取当月的第一天</span>
+firstDay <span style="color:#f92672">=</span> datetime<span style="color:#f92672">.</span>date(year<span style="color:#f92672">=</span>year, month<span style="color:#f92672">=</span>month, day<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+lastDay <span style="color:#f92672">=</span> datetime<span style="color:#f92672">.</span>date(year<span style="color:#f92672">=</span>year, month<span style="color:#f92672">=</span>month, day<span style="color:#f92672">=</span>monthRange)</code></pre></div>
 <p>calender这个库还是很实用了，monthrange函数可以返回这个月第一天是星期几，以及这个月总共有多少天，然后根据这个信息，得到当月的第一天和最后一天。</p>
 
 <p>当然，本需求还需要拿到当月最后一个小时的时间，利用datetime也可以轻松搞定。</p>
-
-<pre><code class="language-python">lastDayLastHour = datetime.datetime(year, month, monthRange,23)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">lastDayLastHour <span style="color:#f92672">=</span> datetime<span style="color:#f92672">.</span>datetime(year, month, monthRange,<span style="color:#ae81ff">23</span>)</code></pre></div>
 <p>虽然是在做需求，但是还是学习学习这个函数原型。</p>
-
-<pre><code class="language-python"># 根据年，月，日，小时，分钟，秒来初始化一个日期时间
-class datetime.datetime(year, month, day, hour=0, minute=0, second=0, microsecond=0)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># 根据年，月，日，小时，分钟，秒来初始化一个日期时间</span>
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">datetime</span><span style="color:#f92672">.</span>datetime(year, month, day, hour<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>, minute<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>, second<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>, microsecond<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)</code></pre></div>
 <p>输出的格式是这样的：</p>
-
-<pre><code class="language-shell">&gt;&gt;&gt; import datetime
-&gt;&gt;&gt; print(datetime.datetime(2018,8,1,0,0,0))
-2018-08-01 00:00:00
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt;&gt;&gt; import datetime
+&gt;&gt;&gt; print<span style="color:#f92672">(</span>datetime.datetime<span style="color:#f92672">(</span><span style="color:#ae81ff">2018</span>,8,1,0,0,0<span style="color:#f92672">))</span>
+<span style="color:#ae81ff">2018</span>-08-01 <span style="color:#ae81ff">00</span>:00:00</code></pre></div>
 <p>但是，数据库中一般存放的是时间戳，转换时间戳有很多种方式，本人省得麻烦，不想导入额外的库了，就选择了calendar里的函数，具体是这样的：</p>
-
-<pre><code class="language-python"># 获取时间戳
-startTime = calendar.timegm(firstDay.timetuple())
-endTime = calendar.timegm(lastDay.timetuple())
-lastDayHourTime = calendar.timegm(lastDayLastHour.timetuple)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># 获取时间戳</span>
+startTime <span style="color:#f92672">=</span> calendar<span style="color:#f92672">.</span>timegm(firstDay<span style="color:#f92672">.</span>timetuple())
+endTime <span style="color:#f92672">=</span> calendar<span style="color:#f92672">.</span>timegm(lastDay<span style="color:#f92672">.</span>timetuple())
+lastDayHourTime <span style="color:#f92672">=</span> calendar<span style="color:#f92672">.</span>timegm(lastDayLastHour<span style="color:#f92672">.</span>timetuple)</code></pre></div>
 <p>至此，就可以根据时间戳去数据库捞数据了。出于检查的目的，我都会打印出sql语句，以便能快速定位出问题。捞完数据后，本以为可以轻轻松松的交差了。就在最后，我隐约地觉得这时间戳有点怪怪的（一般人还真看不出来）</p>
-
-<pre><code class="language-sql">select * from xx where UNIX_TIMESTAMP(time)&gt;=1530403200 and UNIX_TIMESTAMP(time)&lt;=1533081600
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#66d9ef">select</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">from</span> xx <span style="color:#66d9ef">where</span> UNIX_TIMESTAMP(time)<span style="color:#f92672">&gt;=</span><span style="color:#ae81ff">1530403200</span> <span style="color:#66d9ef">and</span> UNIX_TIMESTAMP(time)<span style="color:#f92672">&lt;=</span><span style="color:#ae81ff">1533081600</span></code></pre></div>
 <p>随手一查</p>
 
 <p><img src="https://ws1.sinaimg.cn/large/73a1af36ly1fu3rt9mstej2170034t9a.jpg" alt="" /></p>
 
 <p>还真有问题！！！随手google了一下，<strong>原来calendar.timegm是按照UTC时区来算的，而中国时区是UTC+8，而且time.timetuple函数不会带上时区信息</strong>。本着弄清楚问题的态度，我做了如下测试：</p>
-
-<pre><code class="language-python">&gt;&gt;&gt; d = datetime.datetime(2018, 8, 10)
-&gt;&gt;&gt; calendar.timegm(d.timetuple())
-1533859200  ==&gt; 2018/8/10 8:0:0 北京时间	
-&gt;&gt;&gt; time.mktime(d.timetuple())
-1533830400.0  ==&gt; 2018/8/10 0:0:0 北京时间
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> d <span style="color:#f92672">=</span> datetime<span style="color:#f92672">.</span>datetime(<span style="color:#ae81ff">2018</span>, <span style="color:#ae81ff">8</span>, <span style="color:#ae81ff">10</span>)
+<span style="color:#f92672">&gt;&gt;&gt;</span> calendar<span style="color:#f92672">.</span>timegm(d<span style="color:#f92672">.</span>timetuple())
+<span style="color:#ae81ff">1533859200</span>  <span style="color:#f92672">==&gt;</span> <span style="color:#ae81ff">2018</span><span style="color:#f92672">/</span><span style="color:#ae81ff">8</span><span style="color:#f92672">/</span><span style="color:#ae81ff">10</span> <span style="color:#ae81ff">8</span>:<span style="color:#ae81ff">0</span>:<span style="color:#ae81ff">0</span> <span style="color:#960050;background-color:#1e0010">北京时间</span>	
+<span style="color:#f92672">&gt;&gt;&gt;</span> time<span style="color:#f92672">.</span>mktime(d<span style="color:#f92672">.</span>timetuple())
+<span style="color:#ae81ff">1533830400.0</span>  <span style="color:#f92672">==&gt;</span> <span style="color:#ae81ff">2018</span><span style="color:#f92672">/</span><span style="color:#ae81ff">8</span><span style="color:#f92672">/</span><span style="color:#ae81ff">10</span> <span style="color:#ae81ff">0</span>:<span style="color:#ae81ff">0</span>:<span style="color:#ae81ff">0</span> <span style="color:#960050;background-color:#1e0010">北京时间</span></code></pre></div>
 <p>可见，<strong>time.mktime假定传入的timetuple为本地时区，也就是UTC+8，而calendar.timegm假定传入的timetuple为UTC时区</strong>，所以要加上8个小时。以后还是尽量用time模块吧，不然遇到这种问题真的是坑啊。</p>
 
 <p>最后，说一下我的解决方案吧，并没有因此引入time包，而是转换出来的时间戳减去28800！！！就是这么皮！</p>

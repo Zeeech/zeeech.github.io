@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -131,21 +132,19 @@ Background append only file rewriting started
 <p>读取出来的文件看起来可能不那么直观，大致有<code>SELECT</code>、<code>SET</code>、<code>hello</code>和<code>world</code>这几个词，这么一来，感觉AOF文件中存放的是客户端操作数据的命令。没错，AOF文件中的确存放的是客户端对数据库执行了写操作命令，因为读操作不会修改到数据库，存下来也没有什么意义。</p>
 
 <p>有了上述简单的认识之后，我们在来一一分析一下AOF文件中的这些信息到底是什么。这次我们直接用文本编辑器打开，就能很直观的看到了。</p>
-
-<pre><code class="language-cpp">*2   	// *代表一个操作命令，2代表这个命令由两个参数
-$6  	// $代表后续命令或者数据的长度
-SELECT  // 操作名称，长度为6
-$1 		// 长度
-0  		// 表示切换到0号数据库
-*3 		// 接下来的命令由三个参数
-$3 		// 长度为3
-SET  	// SET操作
-$5  	// 长度为5
-hello  	// 键
-$5  	// 长度为5
-world  	// 值
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>   	<span style="color:#75715e">// *代表一个操作命令，2代表这个命令由两个参数
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">6</span>  	<span style="color:#75715e">// $代表后续命令或者数据的长度
+</span><span style="color:#75715e"></span>SELECT  <span style="color:#75715e">// 操作名称，长度为6
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">1</span> 		<span style="color:#75715e">// 长度
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">0</span>  		<span style="color:#75715e">// 表示切换到0号数据库
+</span><span style="color:#75715e"></span><span style="color:#f92672">*</span><span style="color:#ae81ff">3</span> 		<span style="color:#75715e">// 接下来的命令由三个参数
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">3</span> 		<span style="color:#75715e">// 长度为3
+</span><span style="color:#75715e"></span>SET  	<span style="color:#75715e">// SET操作
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">5</span>  	<span style="color:#75715e">// 长度为5
+</span><span style="color:#75715e"></span>hello  	<span style="color:#75715e">// 键
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">5</span>  	<span style="color:#75715e">// 长度为5
+</span><span style="color:#75715e"></span>world  	<span style="color:#75715e">// 值
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>到这一步，大家基本上都能懂AOF持久化到底是存放什么了吧？接下来，我们深入到源码中去了解一下AOF持久化的具体执行过程。</p>
 
 <h1 id="aof写入步骤">AOF写入步骤</h1>
@@ -161,213 +160,202 @@ world  	// 值
 <h2 id="命令追加">命令追加</h2>
 
 <p>在<code>redis.conf</code>文件中，有一个参数<code>appendonly</code>是用来控制服务器是否开启AOF持久化功能的。当AOF持久化处于开启状态时，服务器每执行一个写命令之后，都会按照协议格式将被执行的写命令追加到服务器状态的<code>aof_buf</code>缓冲区的末尾。其中<code>aof_buf</code>定义如下：</p>
-
-<pre><code class="language-cpp">/* 在server.h文件中的redisServer结构体中 */
-struct redisServer { 
-  // ...
-  sds aof_buf;  // aof缓冲区
-  // ....
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 在server.h文件中的redisServer结构体中 */</span>
+<span style="color:#66d9ef">struct</span> redisServer { 
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  sds aof_buf;  <span style="color:#75715e">// aof缓冲区
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// ....
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>例如，在上例中，我们运行<code>SET hello world</code>命令的时候，其就往这个缓冲区中写入一下数据：</p>
-
-<pre><code class="language-cpp">*3\r\n$3\r\nSET\r\n$5\r\nhello\r\n$5\r\nworld\r\n
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">*</span><span style="color:#ae81ff">3</span><span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>n<span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">3</span><span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>nSET<span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>n<span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">5</span><span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>nhello<span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>n<span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">5</span><span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>nworld<span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>n
+</code></pre></div>
 <p>命令追加的函数由<code>feedAppendOnlyFile</code>函数执行，其源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 追加命令到aof_buf缓冲区 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">feedAppendOnlyFile</span>(<span style="color:#66d9ef">struct</span> redisCommand <span style="color:#f92672">*</span>cmd, <span style="color:#66d9ef">int</span> dictid, robj <span style="color:#f92672">**</span>argv, <span style="color:#66d9ef">int</span> argc) {
+    sds buf <span style="color:#f92672">=</span> sdsempty();
+    robj <span style="color:#f92672">*</span>tmpargv[<span style="color:#ae81ff">3</span>];
 
-<pre><code class="language-c">/* 追加命令到aof_buf缓冲区 */
-void feedAppendOnlyFile(struct redisCommand *cmd, int dictid, robj **argv, int argc) {
-    sds buf = sdsempty();
-    robj *tmpargv[3];
+    <span style="color:#75715e">// 确保切换到了正确的数据库，如果没有则追加切换数据库命令
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictid <span style="color:#f92672">!=</span> server.aof_selected_db) {
+        <span style="color:#66d9ef">char</span> seldb[<span style="color:#ae81ff">64</span>];
 
-    // 确保切换到了正确的数据库，如果没有则追加切换数据库命令
-    if (dictid != server.aof_selected_db) {
-        char seldb[64];
-
-        snprintf(seldb,sizeof(seldb),&quot;%d&quot;,dictid);
-        // 格式化命令数据
-        buf = sdscatprintf(buf,&quot;*2\r\n$6\r\nSELECT\r\n$%lu\r\n%s\r\n&quot;,
-            (unsigned long)strlen(seldb),seldb);
-        // 保存当前aof_buf执行的数据库
-        server.aof_selected_db = dictid;
+        snprintf(seldb,<span style="color:#66d9ef">sizeof</span>(seldb),<span style="color:#e6db74">&#34;%d&#34;</span>,dictid);
+        <span style="color:#75715e">// 格式化命令数据
+</span><span style="color:#75715e"></span>        buf <span style="color:#f92672">=</span> sdscatprintf(buf,<span style="color:#e6db74">&#34;*2</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$6</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">SELECT</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$%lu</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">%s</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>,
+            (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span>)strlen(seldb),seldb);
+        <span style="color:#75715e">// 保存当前aof_buf执行的数据库
+</span><span style="color:#75715e"></span>        server.aof_selected_db <span style="color:#f92672">=</span> dictid;
     }
 
-    if (cmd-&gt;proc == expireCommand || cmd-&gt;proc == pexpireCommand ||
-        cmd-&gt;proc == expireatCommand) {
-        // 追加过期键的命令
-        buf = catAppendOnlyExpireAtCommand(buf,cmd,argv[1],argv[2]);
-    } else if (cmd-&gt;proc == setexCommand || cmd-&gt;proc == psetexCommand) {
-        // 追加setex或psetex这样带有过期时间设置的命令
-        tmpargv[0] = createStringObject(&quot;SET&quot;,3);
-        tmpargv[1] = argv[1];
-        tmpargv[2] = argv[3];
-        buf = catAppendOnlyGenericCommand(buf,3,tmpargv);
-        decrRefCount(tmpargv[0]);
-        buf = catAppendOnlyExpireAtCommand(buf,cmd,argv[1],argv[2]);
-    } else {
-        // 追加其他一般的修改数据库操作的命令
-        buf = catAppendOnlyGenericCommand(buf,argc,argv);
+    <span style="color:#66d9ef">if</span> (cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> expireCommand <span style="color:#f92672">||</span> cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> pexpireCommand <span style="color:#f92672">||</span>
+        cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> expireatCommand) {
+        <span style="color:#75715e">// 追加过期键的命令
+</span><span style="color:#75715e"></span>        buf <span style="color:#f92672">=</span> catAppendOnlyExpireAtCommand(buf,cmd,argv[<span style="color:#ae81ff">1</span>],argv[<span style="color:#ae81ff">2</span>]);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> setexCommand <span style="color:#f92672">||</span> cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> psetexCommand) {
+        <span style="color:#75715e">// 追加setex或psetex这样带有过期时间设置的命令
+</span><span style="color:#75715e"></span>        tmpargv[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> createStringObject(<span style="color:#e6db74">&#34;SET&#34;</span>,<span style="color:#ae81ff">3</span>);
+        tmpargv[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> argv[<span style="color:#ae81ff">1</span>];
+        tmpargv[<span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> argv[<span style="color:#ae81ff">3</span>];
+        buf <span style="color:#f92672">=</span> catAppendOnlyGenericCommand(buf,<span style="color:#ae81ff">3</span>,tmpargv);
+        decrRefCount(tmpargv[<span style="color:#ae81ff">0</span>]);
+        buf <span style="color:#f92672">=</span> catAppendOnlyExpireAtCommand(buf,cmd,argv[<span style="color:#ae81ff">1</span>],argv[<span style="color:#ae81ff">2</span>]);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 追加其他一般的修改数据库操作的命令
+</span><span style="color:#75715e"></span>        buf <span style="color:#f92672">=</span> catAppendOnlyGenericCommand(buf,argc,argv);
     }
 
-    // 将格式化的命令字符串追加到AOF缓冲区中，AOF缓冲区中的数据会在重新进入时间循环前写入到磁盘中，相应的客户端也会受到关于此次操作的回复
-    if (server.aof_state == AOF_ON)
-        server.aof_buf = sdscatlen(server.aof_buf,buf,sdslen(buf));
+    <span style="color:#75715e">// 将格式化的命令字符串追加到AOF缓冲区中，AOF缓冲区中的数据会在重新进入时间循环前写入到磁盘中，相应的客户端也会受到关于此次操作的回复
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.aof_state <span style="color:#f92672">==</span> AOF_ON)
+        server.aof_buf <span style="color:#f92672">=</span> sdscatlen(server.aof_buf,buf,sdslen(buf));
 
-    if (server.aof_child_pid != -1)
-        // 如果正在执行后台重写aof文件，将命令追加到新的AOF文件中，避免重写的AOF文件与当前数据库有差异
-        aofRewriteBufferAppend((unsigned char*)buf,sdslen(buf));
+    <span style="color:#66d9ef">if</span> (server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+        <span style="color:#75715e">// 如果正在执行后台重写aof文件，将命令追加到新的AOF文件中，避免重写的AOF文件与当前数据库有差异
+</span><span style="color:#75715e"></span>        aofRewriteBufferAppend((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)buf,sdslen(buf));
     sdsfree(buf);
-}
-</code></pre>
-
+}</code></pre></div>
 <p>追加格式化命令的底层实现由<code>catAppendOnlyGenericCommand</code>函数实现，其按照之前概述中的格式化要求将命令写入缓冲区。</p>
-
-<pre><code class="language-cpp">/* 通用格式化命令并写入到AOF缓冲区函数 */
-sds catAppendOnlyGenericCommand(sds dst, int argc, robj **argv) {
-    char buf[32];
-    int len, j;
-    robj *o;
-	// 初始化命令参数个数
-    buf[0] = '*';
-    len = 1+ll2string(buf+1,sizeof(buf)-1,argc);
-    buf[len++] = '\r';
-    buf[len++] = '\n';
-    dst = sdscatlen(dst,buf,len);
-	// 遍历每一个参数，并追加到aof缓冲区中
-    for (j = 0; j &lt; argc; j++) {
-        o = getDecodedObject(argv[j]);
-        buf[0] = '$';
-        len = 1+ll2string(buf+1,sizeof(buf)-1,sdslen(o-&gt;ptr));
-        buf[len++] = '\r';
-        buf[len++] = '\n';
-        dst = sdscatlen(dst,buf,len);
-        dst = sdscatlen(dst,o-&gt;ptr,sdslen(o-&gt;ptr));
-        dst = sdscatlen(dst,&quot;\r\n&quot;,2);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 通用格式化命令并写入到AOF缓冲区函数 */</span>
+sds <span style="color:#a6e22e">catAppendOnlyGenericCommand</span>(sds dst, <span style="color:#66d9ef">int</span> argc, robj <span style="color:#f92672">**</span>argv) {
+    <span style="color:#66d9ef">char</span> buf[<span style="color:#ae81ff">32</span>];
+    <span style="color:#66d9ef">int</span> len, j;
+    robj <span style="color:#f92672">*</span>o;
+	<span style="color:#75715e">// 初始化命令参数个数
+</span><span style="color:#75715e"></span>    buf[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;*&#39;</span>;
+    len <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>ll2string(buf<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,<span style="color:#66d9ef">sizeof</span>(buf)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,argc);
+    buf[len<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\r&#39;</span>;
+    buf[len<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\n&#39;</span>;
+    dst <span style="color:#f92672">=</span> sdscatlen(dst,buf,len);
+	<span style="color:#75715e">// 遍历每一个参数，并追加到aof缓冲区中
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> argc; j<span style="color:#f92672">++</span>) {
+        o <span style="color:#f92672">=</span> getDecodedObject(argv[j]);
+        buf[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;$&#39;</span>;
+        len <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>ll2string(buf<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,<span style="color:#66d9ef">sizeof</span>(buf)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,sdslen(o<span style="color:#f92672">-&gt;</span>ptr));
+        buf[len<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\r&#39;</span>;
+        buf[len<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\n&#39;</span>;
+        dst <span style="color:#f92672">=</span> sdscatlen(dst,buf,len);
+        dst <span style="color:#f92672">=</span> sdscatlen(dst,o<span style="color:#f92672">-&gt;</span>ptr,sdslen(o<span style="color:#f92672">-&gt;</span>ptr));
+        dst <span style="color:#f92672">=</span> sdscatlen(dst,<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>,<span style="color:#ae81ff">2</span>);
         decrRefCount(o);
     }
-    return dst;
+    <span style="color:#66d9ef">return</span> dst;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="文件写入">文件写入</h2>
 
 <p>Redis将格式化的命令存入缓冲区之后，等待服务器的指示，然后将这些命令写入到AOF文件中，写入文件的操作由<code>flushAppendOnlyFile</code>函数完成，这里简要的列出其源码：</p>
-
-<pre><code class="language-cpp">/* 将缓冲区的数据写入AOF文件中 */
-void flushAppendOnlyFile(int force) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 将缓冲区的数据写入AOF文件中 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">flushAppendOnlyFile</span>(<span style="color:#66d9ef">int</span> force) {
     ssize_t nwritten;
-    int sync_in_progress = 0;
+    <span style="color:#66d9ef">int</span> sync_in_progress <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
     mstime_t latency;
-	// 缓冲区为空
-    if (sdslen(server.aof_buf) == 0) return;
+	<span style="color:#75715e">// 缓冲区为空
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (sdslen(server.aof_buf) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span>;
   
-	// ①...
-    // 此处省略了一些同步方面的代码，将在下一节分析
-  
-    // 调用write命令将缓冲区的数据写入磁盘文件中，此处还监听了延迟
-    latencyStartMonitor(latency);
-    nwritten = write(server.aof_fd,server.aof_buf,sdslen(server.aof_buf));
+	<span style="color:#75715e">// ①...
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 此处省略了一些同步方面的代码，将在下一节分析
+</span><span style="color:#75715e"></span>  
+    <span style="color:#75715e">// 调用write命令将缓冲区的数据写入磁盘文件中，此处还监听了延迟
+</span><span style="color:#75715e"></span>    latencyStartMonitor(latency);
+    nwritten <span style="color:#f92672">=</span> write(server.aof_fd,server.aof_buf,sdslen(server.aof_buf));
     latencyEndMonitor(latency);
-	// 如果同步正在进行
-    if (sync_in_progress) {
-        latencyAddSampleIfNeeded(&quot;aof-write-pending-fsync&quot;,latency);
-    } else if (server.aof_child_pid != -1 || server.rdb_child_pid != -1) {
-        latencyAddSampleIfNeeded(&quot;aof-write-active-child&quot;,latency);
-    } else {
-        latencyAddSampleIfNeeded(&quot;aof-write-alone&quot;,latency);
+	<span style="color:#75715e">// 如果同步正在进行
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (sync_in_progress) {
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-write-pending-fsync&#34;</span>,latency);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span> server.rdb_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-write-active-child&#34;</span>,latency);
+    } <span style="color:#66d9ef">else</span> {
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-write-alone&#34;</span>,latency);
     }
-    latencyAddSampleIfNeeded(&quot;aof-write&quot;,latency);
+    latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-write&#34;</span>,latency);
 
-    // 重置aof写入的延迟时间
-    server.aof_flush_postponed_start = 0;
-	// 写操作出现错误，需要进行修复
-    if (nwritten != (signed)sdslen(server.aof_buf)) {
-                static time_t last_write_error_log = 0;
-        int can_log = 0;
-        // 将日志的记录频率限制在每行AOF_WRITE_LOG_ERROR_RATE 秒
-        if ((server.unixtime - last_write_error_log) &gt; AOF_WRITE_LOG_ERROR_RATE) {
-            can_log = 1;
-            last_write_error_log = server.unixtime;
+    <span style="color:#75715e">// 重置aof写入的延迟时间
+</span><span style="color:#75715e"></span>    server.aof_flush_postponed_start <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#75715e">// 写操作出现错误，需要进行修复
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (nwritten <span style="color:#f92672">!=</span> (<span style="color:#66d9ef">signed</span>)sdslen(server.aof_buf)) {
+                <span style="color:#66d9ef">static</span> time_t last_write_error_log <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        <span style="color:#66d9ef">int</span> can_log <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        <span style="color:#75715e">// 将日志的记录频率限制在每行AOF_WRITE_LOG_ERROR_RATE 秒
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> ((server.unixtime <span style="color:#f92672">-</span> last_write_error_log) <span style="color:#f92672">&gt;</span> AOF_WRITE_LOG_ERROR_RATE) {
+            can_log <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+            last_write_error_log <span style="color:#f92672">=</span> server.unixtime;
         }
-        // 如果写入出错，那么尝试将出错情况写入日志
-        if (nwritten == -1) {
-            if (can_log) {
-                serverLog(LL_WARNING,&quot;Error writing to the AOF file: %s&quot;,
+        <span style="color:#75715e">// 如果写入出错，那么尝试将出错情况写入日志
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (nwritten <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+            <span style="color:#66d9ef">if</span> (can_log) {
+                serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Error writing to the AOF file: %s&#34;</span>,
                     strerror(errno));
-                server.aof_last_write_errno = errno;
+                server.aof_last_write_errno <span style="color:#f92672">=</span> errno;
             }
-        } else {
-            if (can_log) {
-                serverLog(LL_WARNING,&quot;Short write while writing to &quot;
-                                       &quot;the AOF file: (nwritten=%lld, &quot;
-                                       &quot;expected=%lld)&quot;,
-                                       (long long)nwritten,
-                                       (long long)sdslen(server.aof_buf));
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#66d9ef">if</span> (can_log) {
+                serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Short write while writing to &#34;</span>
+                                       <span style="color:#e6db74">&#34;the AOF file: (nwritten=%lld, &#34;</span>
+                                       <span style="color:#e6db74">&#34;expected=%lld)&#34;</span>,
+                                       (<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span>)nwritten,
+                                       (<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span>)sdslen(server.aof_buf));
             }
-			// 尝试移除新追加的不完整内容
-            if (ftruncate(server.aof_fd, server.aof_current_size) == -1) {
-                if (can_log) {
-                    serverLog(LL_WARNING, &quot;Could not remove short write &quot;
-                             &quot;from the append-only file.  Redis may refuse &quot;
-                             &quot;to load the AOF the next time it starts.  &quot;
-                             &quot;ftruncate: %s&quot;, strerror(errno));
+			<span style="color:#75715e">// 尝试移除新追加的不完整内容
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (ftruncate(server.aof_fd, server.aof_current_size) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+                <span style="color:#66d9ef">if</span> (can_log) {
+                    serverLog(LL_WARNING, <span style="color:#e6db74">&#34;Could not remove short write &#34;</span>
+                             <span style="color:#e6db74">&#34;from the append-only file.  Redis may refuse &#34;</span>
+                             <span style="color:#e6db74">&#34;to load the AOF the next time it starts.  &#34;</span>
+                             <span style="color:#e6db74">&#34;ftruncate: %s&#34;</span>, strerror(errno));
                 }
-            } else {
-                /* If the ftruncate() succeeded we can set nwritten to
-                 * -1 since there is no longer partial data into the AOF. */
-                nwritten = -1;
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#75715e">/* If the ftruncate() succeeded we can set nwritten to
+</span><span style="color:#75715e">                 * -1 since there is no longer partial data into the AOF. */</span>
+                nwritten <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
             }
-            server.aof_last_write_errno = ENOSPC;
+            server.aof_last_write_errno <span style="color:#f92672">=</span> ENOSPC;
         }
 
-        // 处理写入AOF文件时出现的错误
-        if (server.aof_fsync == AOF_FSYNC_ALWAYS) {
-            /* We can't recover when the fsync policy is ALWAYS since the
-             * reply for the client is already in the output buffers, and we
-             * have the contract with the user that on acknowledged write data
-             * is synced on disk. */
-            serverLog(LL_WARNING,&quot;Can't recover from AOF write error when the AOF fsync policy is 'always'. Exiting...&quot;);
-            exit(1);
-        } else {
-            /* Recover from failed write leaving data into the buffer. However
-             * set an error to stop accepting writes as long as the error
-             * condition is not cleared. */
-            server.aof_last_write_status = C_ERR;
+        <span style="color:#75715e">// 处理写入AOF文件时出现的错误
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_ALWAYS) {
+            <span style="color:#75715e">/* We can&#39;t recover when the fsync policy is ALWAYS since the
+</span><span style="color:#75715e">             * reply for the client is already in the output buffers, and we
+</span><span style="color:#75715e">             * have the contract with the user that on acknowledged write data
+</span><span style="color:#75715e">             * is synced on disk. */</span>
+            serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Can&#39;t recover from AOF write error when the AOF fsync policy is &#39;always&#39;. Exiting...&#34;</span>);
+            exit(<span style="color:#ae81ff">1</span>);
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">/* Recover from failed write leaving data into the buffer. However
+</span><span style="color:#75715e">             * set an error to stop accepting writes as long as the error
+</span><span style="color:#75715e">             * condition is not cleared. */</span>
+            server.aof_last_write_status <span style="color:#f92672">=</span> C_ERR;
 
-            /* Trim the sds buffer if there was a partial write, and there
-             * was no way to undo it with ftruncate(2). */
-            if (nwritten &gt; 0) {
-                server.aof_current_size += nwritten;
-                sdsrange(server.aof_buf,nwritten,-1);
+            <span style="color:#75715e">/* Trim the sds buffer if there was a partial write, and there
+</span><span style="color:#75715e">             * was no way to undo it with ftruncate(2). */</span>
+            <span style="color:#66d9ef">if</span> (nwritten <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+                server.aof_current_size <span style="color:#f92672">+=</span> nwritten;
+                sdsrange(server.aof_buf,nwritten,<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
             }
-            return; /* We'll try again on the next call... */
+            <span style="color:#66d9ef">return</span>; <span style="color:#75715e">/* We&#39;ll try again on the next call... */</span>
         }
-    } else {
-        // 写入成功，更新最后写入状态
-        if (server.aof_last_write_status == C_ERR) {
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 写入成功，更新最后写入状态
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (server.aof_last_write_status <span style="color:#f92672">==</span> C_ERR) {
             serverLog(LL_WARNING,
-                &quot;AOF write error looks solved, Redis can write again.&quot;);
-            server.aof_last_write_status = C_OK;
+                <span style="color:#e6db74">&#34;AOF write error looks solved, Redis can write again.&#34;</span>);
+            server.aof_last_write_status <span style="color:#f92672">=</span> C_OK;
         }
     }
-    // 更新aof文件的当前大小
-    server.aof_current_size += nwritten;
+    <span style="color:#75715e">// 更新aof文件的当前大小
+</span><span style="color:#75715e"></span>    server.aof_current_size <span style="color:#f92672">+=</span> nwritten;
 
-    // 当缓冲区使用量很小时，可以考虑重用缓冲区
-    if ((sdslen(server.aof_buf)+sdsavail(server.aof_buf)) &lt; 4000) {
+    <span style="color:#75715e">// 当缓冲区使用量很小时，可以考虑重用缓冲区
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((sdslen(server.aof_buf)<span style="color:#f92672">+</span>sdsavail(server.aof_buf)) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">4000</span>) {
         sdsclear(server.aof_buf);
-    } else {
+    } <span style="color:#66d9ef">else</span> {
         sdsfree(server.aof_buf);
-        server.aof_buf = sdsempty();
+        server.aof_buf <span style="color:#f92672">=</span> sdsempty();
     }
 
-  	// ②...
-    // 后续为同步方面的代码，我们下一小节来分析
-}
-</code></pre>
-
+  	<span style="color:#75715e">// ②...
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 后续为同步方面的代码，我们下一小节来分析
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="文件同步">文件同步</h2>
 
 <p>上述文件写入操作采用write函数来执行，但是在操作系统中，当用户将数据写入一个文件中时，为了提高效率，操作系统往往会将待写入的数据存放在一个缓冲区，等到缓冲区满或者超过规定的时间后才真正将缓冲区的内容写入到磁盘文件中。用户可以调用<code>fsync()</code>函数强制让操作系统将缓冲区的数据写入到磁盘文件中，这就称为文件同步。Redis对AOF文件的同步提供了一下三种策略。</p>
@@ -377,59 +365,56 @@ void flushAppendOnlyFile(int force) {
 <li>AOF_FSYNC_EVERSEC  每个事件循环都要将aof_buf缓冲区的所有内容都写入AOF文件，并且每隔1秒就要在子进程中对AOF文件进行一次同步</li>
 <li>AOF_FSYNC_NO  每个事件循环都要将aof_buf缓冲区的所有内容都写入AOF文件，至于何时对AOF文件进行同步，则由操作系统控制。</li>
 </ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 将缓冲区的数据写入AOF文件中 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">flushAppendOnlyFile</span>(<span style="color:#66d9ef">int</span> force) {
+  	<span style="color:#75715e">// ...文件写入中已分析
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 从标记为①开始
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_EVERYSEC)
+        sync_in_progress <span style="color:#f92672">=</span> bioPendingJobsOfType(BIO_AOF_FSYNC) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>;
 
-<pre><code class="language-c">/* 将缓冲区的数据写入AOF文件中 */
-void flushAppendOnlyFile(int force) {
-  	// ...文件写入中已分析
-    // 从标记为①开始
-    if (server.aof_fsync == AOF_FSYNC_EVERYSEC)
-        sync_in_progress = bioPendingJobsOfType(BIO_AOF_FSYNC) != 0;
-
-    if (server.aof_fsync == AOF_FSYNC_EVERYSEC &amp;&amp; !force) {
-        /* With this append fsync policy we do background fsyncing.
-         * If the fsync is still in progress we can try to delay
-         * the write for a couple of seconds. */
-        if (sync_in_progress) {
-            if (server.aof_flush_postponed_start == 0) {
-                /* No previous write postponing, remember that we are
-                 * postponing the flush and return. */
-                server.aof_flush_postponed_start = server.unixtime;
-                return;
-            } else if (server.unixtime - server.aof_flush_postponed_start &lt; 2) {
-                /* We were already waiting for fsync to finish, but for less
-                 * than two seconds this is still ok. Postpone again. */
-                return;
+    <span style="color:#66d9ef">if</span> (server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_EVERYSEC <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>force) {
+        <span style="color:#75715e">/* With this append fsync policy we do background fsyncing.
+</span><span style="color:#75715e">         * If the fsync is still in progress we can try to delay
+</span><span style="color:#75715e">         * the write for a couple of seconds. */</span>
+        <span style="color:#66d9ef">if</span> (sync_in_progress) {
+            <span style="color:#66d9ef">if</span> (server.aof_flush_postponed_start <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+                <span style="color:#75715e">/* No previous write postponing, remember that we are
+</span><span style="color:#75715e">                 * postponing the flush and return. */</span>
+                server.aof_flush_postponed_start <span style="color:#f92672">=</span> server.unixtime;
+                <span style="color:#66d9ef">return</span>;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (server.unixtime <span style="color:#f92672">-</span> server.aof_flush_postponed_start <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">2</span>) {
+                <span style="color:#75715e">/* We were already waiting for fsync to finish, but for less
+</span><span style="color:#75715e">                 * than two seconds this is still ok. Postpone again. */</span>
+                <span style="color:#66d9ef">return</span>;
             }
-            /* Otherwise fall trough, and go write since we can't wait
-             * over two seconds. */
-            server.aof_delayed_fsync++;
-            serverLog(LL_NOTICE,&quot;Asynchronous AOF fsync is taking too long (disk is busy?). Writing the AOF buffer without waiting for fsync to complete, this may slow down Redis.&quot;);
+            <span style="color:#75715e">/* Otherwise fall trough, and go write since we can&#39;t wait
+</span><span style="color:#75715e">             * over two seconds. */</span>
+            server.aof_delayed_fsync<span style="color:#f92672">++</span>;
+            serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;Asynchronous AOF fsync is taking too long (disk is busy?). Writing the AOF buffer without waiting for fsync to complete, this may slow down Redis.&#34;</span>);
         }
     }
-    // ....文件写入中已分析
-  
-    // 从标记为②处开始
-    // 根据同步设定执行文件同步
-    // 如果设定为NO，即不主动同步，由操作系统决定
-	if (server.aof_no_fsync_on_rewrite &amp;&amp;
-        (server.aof_child_pid != -1 || server.rdb_child_pid != -1))
-            return;
-    if (server.aof_fsync == AOF_FSYNC_ALWAYS) {
-        // 如果设定为ALWAYS，则每次时间循环都要同步
-        latencyStartMonitor(latency);
-        aof_fsync(server.aof_fd); // 执行同步，写入到磁盘文件中
-        latencyEndMonitor(latency);
-        latencyAddSampleIfNeeded(&quot;aof-fsync-always&quot;,latency);
-        server.aof_last_fsync = server.unixtime;
-    } else if ((server.aof_fsync == AOF_FSYNC_EVERYSEC &amp;&amp;
-                server.unixtime &gt; server.aof_last_fsync)) {
-      	// 如果设定为EVERYSEC，每秒执行一次同步，则判断时间然后执行同步
-        if (!sync_in_progress) aof_background_fsync(server.aof_fd);
-        server.aof_last_fsync = server.unixtime;  // 更新上一次同步时间
-    }
-}
-</code></pre>
-
+    <span style="color:#75715e">// ....文件写入中已分析
+</span><span style="color:#75715e"></span>  
+    <span style="color:#75715e">// 从标记为②处开始
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 根据同步设定执行文件同步
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 如果设定为NO，即不主动同步，由操作系统决定
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> (server.aof_no_fsync_on_rewrite <span style="color:#f92672">&amp;&amp;</span>
+        (server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span> server.rdb_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>))
+            <span style="color:#66d9ef">return</span>;
+    <span style="color:#66d9ef">if</span> (server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_ALWAYS) {
+        <span style="color:#75715e">// 如果设定为ALWAYS，则每次时间循环都要同步
+</span><span style="color:#75715e"></span>        latencyStartMonitor(latency);
+        aof_fsync(server.aof_fd); <span style="color:#75715e">// 执行同步，写入到磁盘文件中
+</span><span style="color:#75715e"></span>        latencyEndMonitor(latency);
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-fsync-always&#34;</span>,latency);
+        server.aof_last_fsync <span style="color:#f92672">=</span> server.unixtime;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> ((server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_EVERYSEC <span style="color:#f92672">&amp;&amp;</span>
+                server.unixtime <span style="color:#f92672">&gt;</span> server.aof_last_fsync)) {
+      	<span style="color:#75715e">// 如果设定为EVERYSEC，每秒执行一次同步，则判断时间然后执行同步
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>sync_in_progress) aof_background_fsync(server.aof_fd);
+        server.aof_last_fsync <span style="color:#f92672">=</span> server.unixtime;  <span style="color:#75715e">// 更新上一次同步时间
+</span><span style="color:#75715e"></span>    }
+}</code></pre></div>
 <p>从源码中，可以看出根据设定的同步策略，Redis都做了相应的处理，<code>aof_fsync</code>函数用来强制将缓冲区的数据写入到磁盘文件。分析这三种同步方式，其中，</p>
 
 <ul>
@@ -441,203 +426,193 @@ void flushAppendOnlyFile(int force) {
 <h1 id="aof数据载入">AOF数据载入</h1>
 
 <p>当数据存储在AOF文件中后，服务器在下一次重启需要载入数据，AOF数据载入比较有意思，其会开一个伪Redis客户端，然后模仿客户端对服务器执行命令的过程，将AOF中存储的命令一一执行，执行完毕后服务器数据库中的数据就和上次一样了。这里我简要的用伪码来表示一下整个过程。</p>
-
-<pre><code class="language-python"># AOF数据载入 
-def loadAppendOnlyFile(char *filename):
-  fakeClient = createRedisCli() # 创建伪客户端
-     while True:
-  command = getFromAof()  # 从AOF文件中取出命令
-  flag = fakeClient(command) # 伪客户端执行命令
-  if finish():  # 如果命令执行完，就退出
-     return E_OK
-  # 没有就继续执行
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># AOF数据载入 </span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">loadAppendOnlyFile</span>(char <span style="color:#f92672">*</span>filename):
+  fakeClient <span style="color:#f92672">=</span> createRedisCli() <span style="color:#75715e"># 创建伪客户端</span>
+     <span style="color:#66d9ef">while</span> True:
+  command <span style="color:#f92672">=</span> getFromAof()  <span style="color:#75715e"># 从AOF文件中取出命令</span>
+  flag <span style="color:#f92672">=</span> fakeClient(command) <span style="color:#75715e"># 伪客户端执行命令</span>
+  <span style="color:#66d9ef">if</span> finish():  <span style="color:#75715e"># 如果命令执行完，就退出</span>
+     <span style="color:#66d9ef">return</span> E_OK
+  <span style="color:#75715e"># 没有就继续执行</span></code></pre></div>
 <h1 id="aof重写">AOF重写</h1>
 
 <p>现在我们来分析一种情况，假设服务器执行了以下两个命令：</p>
-
-<pre><code class="language-cpp">SET key value
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">SET key value
 DEL key
-</code></pre>
-
+</code></pre></div>
 <p>如果上述两个命令都执行成功了，AOF中必然会增加两条命令字符串，然而这对数据库根本没什么影响，如果服务器执行了大量这样的命令对，AOF是只能追加不能删除的，所以其文件体积会无限增大。考虑周全的Redis为客户提供了重写操作，用来重写AOF文件，剔除掉里面的无效命令对。</p>
 
 <p>要执行AOF重写，最简单的步骤就是：遍历服务器每一个数据库中的数据，将每一个key对应的对象，都用一条命令来表达，并存储在AOF文件中。</p>
 
 <p>有了这个思路，我们就去源码中看看，AOF重写的功能由<code>rewriteAppendOnlyFile</code>函数实现。</p>
-
-<pre><code class="language-c">/* AOF重写功能实现 */
-int rewriteAppendOnlyFile(char *filename) {
-    dictIterator *di = NULL;
-    dictEntry *de;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* AOF重写功能实现 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rewriteAppendOnlyFile</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>filename) {
+    dictIterator <span style="color:#f92672">*</span>di <span style="color:#f92672">=</span> NULL;
+    dictEntry <span style="color:#f92672">*</span>de;
     rio aof;
-    FILE *fp;
-    char tmpfile[256];
-    int j;
-    long long now = mstime();
-    char byte;
-    size_t processed = 0;
+    FILE <span style="color:#f92672">*</span>fp;
+    <span style="color:#66d9ef">char</span> tmpfile[<span style="color:#ae81ff">256</span>];
+    <span style="color:#66d9ef">int</span> j;
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> now <span style="color:#f92672">=</span> mstime();
+    <span style="color:#66d9ef">char</span> byte;
+    size_t processed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
 
-    /* Note that we have to use a different temp name here compared to the
-     * one used by rewriteAppendOnlyFileBackground() function. */
-    // 创建临时文件
-    snprintf(tmpfile,256,&quot;temp-rewriteaof-%d.aof&quot;, (int) getpid());
-    fp = fopen(tmpfile,&quot;w&quot;);
-    if (!fp) {
-        serverLog(LL_WARNING, &quot;Opening the temp file for AOF rewrite in rewriteAppendOnlyFile(): %s&quot;, strerror(errno));
-        return C_ERR;
+    <span style="color:#75715e">/* Note that we have to use a different temp name here compared to the
+</span><span style="color:#75715e">     * one used by rewriteAppendOnlyFileBackground() function. */</span>
+    <span style="color:#75715e">// 创建临时文件
+</span><span style="color:#75715e"></span>    snprintf(tmpfile,<span style="color:#ae81ff">256</span>,<span style="color:#e6db74">&#34;temp-rewriteaof-%d.aof&#34;</span>, (<span style="color:#66d9ef">int</span>) getpid());
+    fp <span style="color:#f92672">=</span> fopen(tmpfile,<span style="color:#e6db74">&#34;w&#34;</span>);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>fp) {
+        serverLog(LL_WARNING, <span style="color:#e6db74">&#34;Opening the temp file for AOF rewrite in rewriteAppendOnlyFile(): %s&#34;</span>, strerror(errno));
+        <span style="color:#66d9ef">return</span> C_ERR;
     }
 
-    server.aof_child_diff = sdsempty();
-  	// 获取文件描述符
-    rioInitWithFile(&amp;aof,fp);
-    if (server.aof_rewrite_incremental_fsync)
-        rioSetAutoSync(&amp;aof,AOF_AUTOSYNC_BYTES);
-    // 遍历服务器的每一个数据库
-    for (j = 0; j &lt; server.dbnum; j++) {
-        char selectcmd[] = &quot;*2\r\n$6\r\nSELECT\r\n&quot;;
-        redisDb *db = server.db+j;
-        dict *d = db-&gt;dict;
-        if (dictSize(d) == 0) continue;
-        di = dictGetSafeIterator(d);
-        if (!di) {
+    server.aof_child_diff <span style="color:#f92672">=</span> sdsempty();
+  	<span style="color:#75715e">// 获取文件描述符
+</span><span style="color:#75715e"></span>    rioInitWithFile(<span style="color:#f92672">&amp;</span>aof,fp);
+    <span style="color:#66d9ef">if</span> (server.aof_rewrite_incremental_fsync)
+        rioSetAutoSync(<span style="color:#f92672">&amp;</span>aof,AOF_AUTOSYNC_BYTES);
+    <span style="color:#75715e">// 遍历服务器的每一个数据库
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> server.dbnum; j<span style="color:#f92672">++</span>) {
+        <span style="color:#66d9ef">char</span> selectcmd[] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;*2</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$6</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">SELECT</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>;
+        redisDb <span style="color:#f92672">*</span>db <span style="color:#f92672">=</span> server.db<span style="color:#f92672">+</span>j;
+        dict <span style="color:#f92672">*</span>d <span style="color:#f92672">=</span> db<span style="color:#f92672">-&gt;</span>dict;
+        <span style="color:#66d9ef">if</span> (dictSize(d) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">continue</span>;
+        di <span style="color:#f92672">=</span> dictGetSafeIterator(d);
+        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>di) {
             fclose(fp);
-            return C_ERR;
+            <span style="color:#66d9ef">return</span> C_ERR;
         }
 
-        // 写入SELECT语句
-        if (rioWrite(&amp;aof,selectcmd,sizeof(selectcmd)-1) == 0) goto werr;
-        if (rioWriteBulkLongLong(&amp;aof,j) == 0) goto werr;
+        <span style="color:#75715e">// 写入SELECT语句
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (rioWrite(<span style="color:#f92672">&amp;</span>aof,selectcmd,<span style="color:#66d9ef">sizeof</span>(selectcmd)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+        <span style="color:#66d9ef">if</span> (rioWriteBulkLongLong(<span style="color:#f92672">&amp;</span>aof,j) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
 
-        // 迭代当前数据库中的每一个键，并转换成命令字符串写入AOF文件
-        while((de = dictNext(di)) != NULL) {
+        <span style="color:#75715e">// 迭代当前数据库中的每一个键，并转换成命令字符串写入AOF文件
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span>((de <span style="color:#f92672">=</span> dictNext(di)) <span style="color:#f92672">!=</span> NULL) {
             sds keystr;
-            robj key, *o;
-            long long expiretime;
+            robj key, <span style="color:#f92672">*</span>o;
+            <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> expiretime;
 
-            keystr = dictGetKey(de);
-            o = dictGetVal(de);
+            keystr <span style="color:#f92672">=</span> dictGetKey(de);
+            o <span style="color:#f92672">=</span> dictGetVal(de);
             initStaticStringObject(key,keystr);
 
-            expiretime = getExpire(db,&amp;key);
+            expiretime <span style="color:#f92672">=</span> getExpire(db,<span style="color:#f92672">&amp;</span>key);
 
-            // 如果此键过期，就跳过
-            if (expiretime != -1 &amp;&amp; expiretime &lt; now) continue;
+            <span style="color:#75715e">// 如果此键过期，就跳过
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (expiretime <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span> expiretime <span style="color:#f92672">&lt;</span> now) <span style="color:#66d9ef">continue</span>;
 
-            // 保存该键以及对应的值
-            if (o-&gt;type == OBJ_STRING) {
-                // 重写字符串对象
-                char cmd[]=&quot;*3\r\n$3\r\nSET\r\n&quot;;
-                if (rioWrite(&amp;aof,cmd,sizeof(cmd)-1) == 0) goto werr;
-                // 写入键值
-                if (rioWriteBulkObject(&amp;aof,&amp;key) == 0) goto werr;
-                if (rioWriteBulkObject(&amp;aof,o) == 0) goto werr;
-            } else if (o-&gt;type == OBJ_LIST) {
-                // 重写列表对象
-                if (rewriteListObject(&amp;aof,&amp;key,o) == 0) goto werr;
-            } else if (o-&gt;type == OBJ_SET) {
-                // 重写集合对象
-                if (rewriteSetObject(&amp;aof,&amp;key,o) == 0) goto werr;
-            } else if (o-&gt;type == OBJ_ZSET) {
-                // 重写有序集合对象
-                if (rewriteSortedSetObject(&amp;aof,&amp;key,o) == 0) goto werr;
-            } else if (o-&gt;type == OBJ_HASH) {
-                // 重写哈希对象
-                if (rewriteHashObject(&amp;aof,&amp;key,o) == 0) goto werr;
-            } else {
-                serverPanic(&quot;Unknown object type&quot;);
+            <span style="color:#75715e">// 保存该键以及对应的值
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_STRING) {
+                <span style="color:#75715e">// 重写字符串对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">char</span> cmd[]<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;*3</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$3</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">SET</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>;
+                <span style="color:#66d9ef">if</span> (rioWrite(<span style="color:#f92672">&amp;</span>aof,cmd,<span style="color:#66d9ef">sizeof</span>(cmd)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+                <span style="color:#75715e">// 写入键值
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rioWriteBulkObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+                <span style="color:#66d9ef">if</span> (rioWriteBulkObject(<span style="color:#f92672">&amp;</span>aof,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_LIST) {
+                <span style="color:#75715e">// 重写列表对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rewriteListObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_SET) {
+                <span style="color:#75715e">// 重写集合对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rewriteSetObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_ZSET) {
+                <span style="color:#75715e">// 重写有序集合对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rewriteSortedSetObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_HASH) {
+                <span style="color:#75715e">// 重写哈希对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rewriteHashObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> {
+                serverPanic(<span style="color:#e6db74">&#34;Unknown object type&#34;</span>);
             }
-            // 保存过期时间信息
-            if (expiretime != -1) {
-                char cmd[]=&quot;*3\r\n$9\r\nPEXPIREAT\r\n&quot;;
-                if (rioWrite(&amp;aof,cmd,sizeof(cmd)-1) == 0) goto werr;
-                if (rioWriteBulkObject(&amp;aof,&amp;key) == 0) goto werr;
-                if (rioWriteBulkLongLong(&amp;aof,expiretime) == 0) goto werr;
+            <span style="color:#75715e">// 保存过期时间信息
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (expiretime <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+                <span style="color:#66d9ef">char</span> cmd[]<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;*3</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$9</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">PEXPIREAT</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>;
+                <span style="color:#66d9ef">if</span> (rioWrite(<span style="color:#f92672">&amp;</span>aof,cmd,<span style="color:#66d9ef">sizeof</span>(cmd)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+                <span style="color:#66d9ef">if</span> (rioWriteBulkObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+                <span style="color:#66d9ef">if</span> (rioWriteBulkLongLong(<span style="color:#f92672">&amp;</span>aof,expiretime) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
             }
-            /* Read some diff from the parent process from time to time. */
-            if (aof.processed_bytes &gt; processed+1024*10) {
-                processed = aof.processed_bytes;
+            <span style="color:#75715e">/* Read some diff from the parent process from time to time. */</span>
+            <span style="color:#66d9ef">if</span> (aof.processed_bytes <span style="color:#f92672">&gt;</span> processed<span style="color:#f92672">+</span><span style="color:#ae81ff">1024</span><span style="color:#f92672">*</span><span style="color:#ae81ff">10</span>) {
+                processed <span style="color:#f92672">=</span> aof.processed_bytes;
                 aofReadDiffFromParent();
             }
         }
         dictReleaseIterator(di);
-        di = NULL;
+        di <span style="color:#f92672">=</span> NULL;
     }
 
-    /* Do an initial slow fsync here while the parent is still sending
-     * data, in order to make the next final fsync faster. */
-    if (fflush(fp) == EOF) goto werr;
-    if (fsync(fileno(fp)) == -1) goto werr;
+    <span style="color:#75715e">/* Do an initial slow fsync here while the parent is still sending
+</span><span style="color:#75715e">     * data, in order to make the next final fsync faster. */</span>
+    <span style="color:#66d9ef">if</span> (fflush(fp) <span style="color:#f92672">==</span> EOF) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (fsync(fileno(fp)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
 
-    /* Read again a few times to get more data from the parent.
-     * We can't read forever (the server may receive data from clients
-     * faster than it is able to send data to the child), so we try to read
-     * some more data in a loop as soon as there is a good chance more data
-     * will come. If it looks like we are wasting time, we abort (this
-     * happens after 20 ms without new data). */
-    int nodata = 0;
-    mstime_t start = mstime();
-    while(mstime()-start &lt; 1000 &amp;&amp; nodata &lt; 20) {
-        if (aeWait(server.aof_pipe_read_data_from_parent, AE_READABLE, 1) &lt;= 0)
+    <span style="color:#75715e">/* Read again a few times to get more data from the parent.
+</span><span style="color:#75715e">     * We can&#39;t read forever (the server may receive data from clients
+</span><span style="color:#75715e">     * faster than it is able to send data to the child), so we try to read
+</span><span style="color:#75715e">     * some more data in a loop as soon as there is a good chance more data
+</span><span style="color:#75715e">     * will come. If it looks like we are wasting time, we abort (this
+</span><span style="color:#75715e">     * happens after 20 ms without new data). */</span>
+    <span style="color:#66d9ef">int</span> nodata <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    mstime_t start <span style="color:#f92672">=</span> mstime();
+    <span style="color:#66d9ef">while</span>(mstime()<span style="color:#f92672">-</span>start <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">1000</span> <span style="color:#f92672">&amp;&amp;</span> nodata <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">20</span>) {
+        <span style="color:#66d9ef">if</span> (aeWait(server.aof_pipe_read_data_from_parent, AE_READABLE, <span style="color:#ae81ff">1</span>) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>)
         {
-            nodata++;
-            continue;
+            nodata<span style="color:#f92672">++</span>;
+            <span style="color:#66d9ef">continue</span>;
         }
-        nodata = 0; /* Start counting from zero, we stop on N *contiguous*
-                       timeouts. */
+        nodata <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">/* Start counting from zero, we stop on N *contiguous*
+</span><span style="color:#75715e">                       timeouts. */</span>
         aofReadDiffFromParent();
     }
-	// 以下是读取在重写AOF文件时，服务器新加入的数据
-    // 告诉父进程停止增加数据
-    if (write(server.aof_pipe_write_ack_to_parent,&quot;!&quot;,1) != 1) goto werr;
-    if (anetNonBlock(NULL,server.aof_pipe_read_ack_from_parent) != ANET_OK)
-        goto werr;
-    /* We read the ACK from the server using a 10 seconds timeout. Normally
-     * it should reply ASAP, but just in case we lose its reply, we are sure
-     * the child will eventually get terminated. */
-    if (syncRead(server.aof_pipe_read_ack_from_parent,&amp;byte,1,5000) != 1 ||
-        byte != '!') goto werr;
-    serverLog(LL_NOTICE,&quot;Parent agreed to stop sending diffs. Finalizing AOF...&quot;);
+	<span style="color:#75715e">// 以下是读取在重写AOF文件时，服务器新加入的数据
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 告诉父进程停止增加数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (write(server.aof_pipe_write_ack_to_parent,<span style="color:#e6db74">&#34;!&#34;</span>,<span style="color:#ae81ff">1</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (anetNonBlock(NULL,server.aof_pipe_read_ack_from_parent) <span style="color:#f92672">!=</span> ANET_OK)
+        <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#75715e">/* We read the ACK from the server using a 10 seconds timeout. Normally
+</span><span style="color:#75715e">     * it should reply ASAP, but just in case we lose its reply, we are sure
+</span><span style="color:#75715e">     * the child will eventually get terminated. */</span>
+    <span style="color:#66d9ef">if</span> (syncRead(server.aof_pipe_read_ack_from_parent,<span style="color:#f92672">&amp;</span>byte,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">5000</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span>
+        byte <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#39;!&#39;</span>) <span style="color:#66d9ef">goto</span> werr;
+    serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;Parent agreed to stop sending diffs. Finalizing AOF...&#34;</span>);
 
-    // 读取最终的差异数据
-    aofReadDiffFromParent();
+    <span style="color:#75715e">// 读取最终的差异数据
+</span><span style="color:#75715e"></span>    aofReadDiffFromParent();
 
-    /* Write the received diff to the file. */
+    <span style="color:#75715e">/* Write the received diff to the file. */</span>
     serverLog(LL_NOTICE,
-        &quot;Concatenating %.2f MB of AOF diff received from parent.&quot;,
-        (double) sdslen(server.aof_child_diff) / (1024*1024));
-    if (rioWrite(&amp;aof,server.aof_child_diff,sdslen(server.aof_child_diff)) == 0)
-        goto werr;
+        <span style="color:#e6db74">&#34;Concatenating %.2f MB of AOF diff received from parent.&#34;</span>,
+        (<span style="color:#66d9ef">double</span>) sdslen(server.aof_child_diff) <span style="color:#f92672">/</span> (<span style="color:#ae81ff">1024</span><span style="color:#f92672">*</span><span style="color:#ae81ff">1024</span>));
+    <span style="color:#66d9ef">if</span> (rioWrite(<span style="color:#f92672">&amp;</span>aof,server.aof_child_diff,sdslen(server.aof_child_diff)) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+        <span style="color:#66d9ef">goto</span> werr;
 
-    // 保证系统不会残留在IO输出缓冲区
-    if (fflush(fp) == EOF) goto werr;
-    if (fsync(fileno(fp)) == -1) goto werr;
-    if (fclose(fp) == EOF) goto werr;
+    <span style="color:#75715e">// 保证系统不会残留在IO输出缓冲区
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (fflush(fp) <span style="color:#f92672">==</span> EOF) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (fsync(fileno(fp)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (fclose(fp) <span style="color:#f92672">==</span> EOF) <span style="color:#66d9ef">goto</span> werr;
 
-    // 重命名AOF文件
-    if (rename(tmpfile,filename) == -1) {
-        serverLog(LL_WARNING,&quot;Error moving temp append only file on the final destination: %s&quot;, strerror(errno));
+    <span style="color:#75715e">// 重命名AOF文件
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (rename(tmpfile,filename) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Error moving temp append only file on the final destination: %s&#34;</span>, strerror(errno));
         unlink(tmpfile);
-        return C_ERR;
+        <span style="color:#66d9ef">return</span> C_ERR;
     }
-    serverLog(LL_NOTICE,&quot;SYNC append only file rewrite performed&quot;);
-    return C_OK;
-// 出错处理
-werr:
-    serverLog(LL_WARNING,&quot;Write error writing append only file on disk: %s&quot;, strerror(errno));
+    serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;SYNC append only file rewrite performed&#34;</span>);
+    <span style="color:#66d9ef">return</span> C_OK;
+<span style="color:#75715e">// 出错处理
+</span><span style="color:#75715e"></span>werr:
+    serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Write error writing append only file on disk: %s&#34;</span>, strerror(errno));
     fclose(fp);
     unlink(tmpfile);
-    if (di) dictReleaseIterator(di);
-    return C_ERR;
-}
-</code></pre>
-
+    <span style="color:#66d9ef">if</span> (di) dictReleaseIterator(di);
+    <span style="color:#66d9ef">return</span> C_ERR;
+}</code></pre></div>
 <p>上述，具体到每一个键对应的值对象重写时，可能没有想象的那么简单，因为可能该值里面存放的数据较多，如果还是在一条命令中执行的话会造成缓冲区溢出。于是，Redis提供了如下参数：</p>
-
-<pre><code class="language-cpp">REDIS_AOF_REWRITE_ITEMS_PER_CMD  64
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">REDIS_AOF_REWRITE_ITEMS_PER_CMD  <span style="color:#ae81ff">64</span>
+</code></pre></div>
 <p>如果这些值对象中的数据超过64个（默认值），系统会将其拆分成多个命令来执行，即每个命令最多能操作64个元素。</p>
 
 <h2 id="aof后台重写">AOF后台重写</h2>
@@ -647,15 +622,13 @@ werr:
 <p>很明显，提到后台重写就需要创建一个子进程，来执行AOF重写操作，这样就可以避免主线程被阻塞，服务器长时间无法工作。</p>
 
 <p>但是，子进程在执行AOF重写的时候，服务器当前还在发生数据变化，为此，Redis提供了一个AOF后台重写缓冲区，用来存放子进程在执行AOF重写过程中插入的新数据。</p>
-
-<pre><code class="language-cpp">#define AOF_RW_BUF_BLOCK_SIZE (1024*1024*10)    // 每个块最多10M
-// 之所以规定每个块的大小是因为不知道新加入的字符串命令的个数
-typedef struct aofrwblock {
-    unsigned long used, free;  // 已使用和空闲的
-    char buf[AOF_RW_BUF_BLOCK_SIZE];  // 字符串命令
-} aofrwblock;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define AOF_RW_BUF_BLOCK_SIZE (1024*1024*10)    </span><span style="color:#75715e">// 每个块最多10M
+</span><span style="color:#75715e">// 之所以规定每个块的大小是因为不知道新加入的字符串命令的个数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> aofrwblock {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> used, free;  <span style="color:#75715e">// 已使用和空闲的
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span> buf[AOF_RW_BUF_BLOCK_SIZE];  <span style="color:#75715e">// 字符串命令
+</span><span style="color:#75715e"></span>} aofrwblock;
+</code></pre></div>
 <p>这样一来，在子进程执行AOF命令的时候，服务器如果有新数据到来，其字符串命令会添加到两个缓冲区，</p>
 
 <ul>
@@ -672,59 +645,55 @@ typedef struct aofrwblock {
 </ul>
 
 <p>AOF后台重写操作由如下两个函数完成，这里就不列出源码了。代码太多了而且都差不多。</p>
-
-<pre><code class="language-cpp">// 后台执行AOF重写操作
-int rewriteAppendOnlyFileBackground(void);
-// 执行AOF后台重写缓冲区内数据的重写和更名操作，完成整个AOF后台重写功能
-void backgroundRewriteDoneHandler(int exitcode, int bysignal);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 后台执行AOF重写操作
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rewriteAppendOnlyFileBackground</span>(<span style="color:#66d9ef">void</span>);
+<span style="color:#75715e">// 执行AOF后台重写缓冲区内数据的重写和更名操作，完成整个AOF后台重写功能
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">backgroundRewriteDoneHandler</span>(<span style="color:#66d9ef">int</span> exitcode, <span style="color:#66d9ef">int</span> bysignal);
+</code></pre></div>
 <p>最后，只剩下最后一个问题了，除了显示运行命令执行，Redis还在什么时候执行后台重写操作，我一路追溯到这段代码：</p>
-
-<pre><code class="language-cpp">/* 此段代码截取自server.c文件中的serverCron函数中 */
-// 如果后台没有执行rdb，aof，以及aof重写操作，而且aof文件的大于执行BGREWRITEAOF所需的最小大小
-if (server.rdb_child_pid == -1 &amp;&amp;
-    server.aof_child_pid == -1 &amp;&amp;
-    server.aof_rewrite_perc &amp;&amp;
-    server.aof_current_size &gt; server.aof_rewrite_min_size)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 此段代码截取自server.c文件中的serverCron函数中 */</span>
+<span style="color:#75715e">// 如果后台没有执行rdb，aof，以及aof重写操作，而且aof文件的大于执行BGREWRITEAOF所需的最小大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">if</span> (server.rdb_child_pid <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
+    server.aof_child_pid <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
+    server.aof_rewrite_perc <span style="color:#f92672">&amp;&amp;</span>
+    server.aof_current_size <span style="color:#f92672">&gt;</span> server.aof_rewrite_min_size)
 {
-  // 上一次完成AOF写入之后，AOF文件的大小
-  long long base = server.aof_rewrite_base_size ?
-    	server.aof_rewrite_base_size : 1;
-  // AOF文件当前的体积相对于base的体积百分比
-  long long growth = (server.aof_current_size*100/base) - 100;
-  // 如果增长百分比超过了规定的aof_rewrite_perc，那么执行BGREWRITEAOF
-  if (growth &gt;= server.aof_rewrite_perc) {
-    serverLog(LL_NOTICE,&quot;Starting automatic rewriting of AOF on %lld%% 			growth&quot;,growth);
+  <span style="color:#75715e">// 上一次完成AOF写入之后，AOF文件的大小
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> base <span style="color:#f92672">=</span> server.aof_rewrite_base_size <span style="color:#f92672">?</span>
+    	server.aof_rewrite_base_size : <span style="color:#ae81ff">1</span>;
+  <span style="color:#75715e">// AOF文件当前的体积相对于base的体积百分比
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> growth <span style="color:#f92672">=</span> (server.aof_current_size<span style="color:#f92672">*</span><span style="color:#ae81ff">100</span><span style="color:#f92672">/</span>base) <span style="color:#f92672">-</span> <span style="color:#ae81ff">100</span>;
+  <span style="color:#75715e">// 如果增长百分比超过了规定的aof_rewrite_perc，那么执行BGREWRITEAOF
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (growth <span style="color:#f92672">&gt;=</span> server.aof_rewrite_perc) {
+    serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;Starting automatic rewriting of AOF on %lld%% 			growth&#34;</span>,growth);
     rewriteAppendOnlyFileBackground();
   }
 }
 
-/* 此段代码截取自server.c文件中的serverCron函数中 */
-// 接收子进程发来的信号，非阻塞
-if ((pid = wait3(&amp;statloc,WNOHANG,NULL)) != 0) {
-  int exitcode = WEXITSTATUS(statloc);
-  int bysignal = 0;
+<span style="color:#75715e">/* 此段代码截取自server.c文件中的serverCron函数中 */</span>
+<span style="color:#75715e">// 接收子进程发来的信号，非阻塞
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">if</span> ((pid <span style="color:#f92672">=</span> wait3(<span style="color:#f92672">&amp;</span>statloc,WNOHANG,NULL)) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+  <span style="color:#66d9ef">int</span> exitcode <span style="color:#f92672">=</span> WEXITSTATUS(statloc);
+  <span style="color:#66d9ef">int</span> bysignal <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
 
-  if (WIFSIGNALED(statloc)) bysignal = WTERMSIG(statloc);
+  <span style="color:#66d9ef">if</span> (WIFSIGNALED(statloc)) bysignal <span style="color:#f92672">=</span> WTERMSIG(statloc);
 
-  // BGSAVE 执行完毕
-  if (pid == server.rdb_child_pid) {
+  <span style="color:#75715e">// BGSAVE 执行完毕
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (pid <span style="color:#f92672">==</span> server.rdb_child_pid) {
     backgroundSaveDoneHandler(exitcode,bysignal);
 
-    // BGREWRITEAOF 执行完毕
-  } else if (pid == server.aof_child_pid) {
+    <span style="color:#75715e">// BGREWRITEAOF 执行完毕
+</span><span style="color:#75715e"></span>  } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (pid <span style="color:#f92672">==</span> server.aof_child_pid) {
     backgroundRewriteDoneHandler(exitcode,bysignal);
 
-  } else {
+  } <span style="color:#66d9ef">else</span> {
     redisLog(REDIS_WARNING,
-             &quot;Warning, detected child with unmatched pid: %ld&quot;,
-             (long)pid);
+             <span style="color:#e6db74">&#34;Warning, detected child with unmatched pid: %ld&#34;</span>,
+             (<span style="color:#66d9ef">long</span>)pid);
   }
   updateDictResizePolicy();
 }
-</code></pre>
-
+</code></pre></div>
 <p>如源代码中显示的，先判断当前aof文件的大小是否大于执行BGREWRITEAOF所需的最小大小，如果大于，再判断其增长系数是否超过了规定，如超过，就执行AOF后台重写操作。并在服务器定期事件中判断AOF后台重写是否完成，如完成，将AOF后台重写缓冲区的数据写入临时AOF文件，最后覆盖原来的AOF文件，完美的完成替换操作！Over！</p>
 
 <h1 id="aof小结">AOF小结</h1>

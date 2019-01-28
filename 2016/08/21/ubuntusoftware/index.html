@@ -30,9 +30,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -65,7 +67,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -136,31 +137,23 @@
 <h2 id="系统更新">系统更新</h2>
 
 <p>安装完系统之后，需要更新一些补丁。Ctrl+Alt+T调出终端，执行一下代码：</p>
-
-<pre><code class="language-cpp">sudo apt-get update 
-sudo apt-get upgrade
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get update 
+sudo apt<span style="color:#f92672">-</span>get upgrade
+</code></pre></div>
 <h2 id="卸载libreoffice">卸载libreOffice</h2>
 
 <p>libreoffice事ubuntu自带的开源office软件，体验效果不如windows上的office，于是选择用WPS来替代（wps的安装后面会提到）</p>
-
-<pre><code class="language-cpp">sudo apt-get remove libreoffice-common  
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get remove libreoffice<span style="color:#f92672">-</span>common  
+</code></pre></div>
 <h2 id="删除amazon的链接">删除Amazon的链接</h2>
-
-<pre><code class="language-cpp">sudo apt-get remove unity-webapps-common 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get remove unity<span style="color:#f92672">-</span>webapps<span style="color:#f92672">-</span>common 
+</code></pre></div>
 <h2 id="删除不常用的软件">删除不常用的软件</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get remove thunderbird totem rhythmbox empathy brasero simple<span style="color:#f92672">-</span>scan gnome<span style="color:#f92672">-</span>mahjongg aisleriot 
+sudo apt<span style="color:#f92672">-</span>get remove gnome<span style="color:#f92672">-</span>mines cheese transmission<span style="color:#f92672">-</span>common gnome<span style="color:#f92672">-</span>orca webbrowser<span style="color:#f92672">-</span>app gnome<span style="color:#f92672">-</span>sudoku  landscape<span style="color:#f92672">-</span>client<span style="color:#f92672">-</span>ui<span style="color:#f92672">-</span>install  
 
-<pre><code class="language-cpp">sudo apt-get remove thunderbird totem rhythmbox empathy brasero simple-scan gnome-mahjongg aisleriot 
-sudo apt-get remove gnome-mines cheese transmission-common gnome-orca webbrowser-app gnome-sudoku  landscape-client-ui-install  
-
-sudo apt-get remove onboard deja-dup 
-</code></pre>
-
+sudo apt<span style="color:#f92672">-</span>get remove onboard deja<span style="color:#f92672">-</span>dup 
+</code></pre></div>
 <p>做完上面这些，系统应该干净了，下面我们来安装一些必要的软件。</p>
 
 <h1 id="修改hosts篇">修改hosts篇</h1>
@@ -172,11 +165,9 @@ sudo apt-get remove onboard deja-dup
 <p><a href="https://laod.org/hosts/2016-google-hosts.html">老D的博客</a>讲的很清楚怎么修改hosts，下载地址：<a href="https://laod.org/hosts/2016-google-hosts.html">戳我</a></p>
 
 <p>下载完之后，解压会得到一个hosts文件。</p>
-
-<pre><code class="language-cpp">cd ./Downloads
-mv -f hosts /etc/hosts
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">cd .<span style="color:#f92672">/</span>Downloads
+mv <span style="color:#f92672">-</span>f hosts <span style="color:#f92672">/</span>etc<span style="color:#f92672">/</span>hosts
+</code></pre></div>
 <h1 id="主题美化篇">主题美化篇</h1>
 
 <p>ubuntu自带的主题简直不敢恭维，这里博主将它美化了一番，心情瞬间都好了一大截，码代码也会飞起！！先放一张我美化后的效果。</p>
@@ -188,10 +179,8 @@ mv -f hosts /etc/hosts
 <h2 id="unity-tweak-tool">unity-tweak-tool</h2>
 
 <p>调整 Unity 桌面环境，还是推荐使用Unity Tweak Tool，这是一个非常好用的 Unity 图形化管理工具，可以修改工作区数量、热区等。</p>
-
-<pre><code class="language-cpp">sudo apt-get install unity-tweak-tool 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install unity<span style="color:#f92672">-</span>tweak<span style="color:#f92672">-</span>tool 
+</code></pre></div>
 <p>安装完后界面如下：
 <center><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkgfwk3znj30ok0i3jsp.jpg" alt="unity-tweak-tool" /></center></p>
 
@@ -200,19 +189,15 @@ mv -f hosts /etc/hosts
 <p>Flatabulous主题是一款ubuntu下扁平化主题，也是我试过众多主题中最喜欢的一个！最终效果如上述图所示。</p>
 
 <p>执行以下命令安装Flatabulous主题：</p>
-
-<pre><code class="language-cpp">sudo add-apt-repository ppa:noobslab/themes
-sudo apt-get update
-sudo apt-get install flatabulous-theme
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo add<span style="color:#f92672">-</span>apt<span style="color:#f92672">-</span>repository ppa:noobslab<span style="color:#f92672">/</span>themes
+sudo apt<span style="color:#f92672">-</span>get update
+sudo apt<span style="color:#f92672">-</span>get install flatabulous<span style="color:#f92672">-</span>theme
+</code></pre></div>
 <p>该主题有配套的图标，安装方式如下：</p>
-
-<pre><code class="language-cpp">sudo add-apt-repository ppa:noobslab/icons
-sudo apt-get update
-sudo apt-get install ultra-flat-icons
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo add<span style="color:#f92672">-</span>apt<span style="color:#f92672">-</span>repository ppa:noobslab<span style="color:#f92672">/</span>icons
+sudo apt<span style="color:#f92672">-</span>get update
+sudo apt<span style="color:#f92672">-</span>get install ultra<span style="color:#f92672">-</span>flat<span style="color:#f92672">-</span>icons
+</code></pre></div>
 <p>安装完成后，打开unity-tweak-tool软件，修改主题和图标：</p>
 
 <p>进入Theme，修改为Flatabulous</p>
@@ -230,10 +215,8 @@ sudo apt-get install ultra-flat-icons
 <p>终端采用zsh和oh-my-zsh，既美观又简单易用，主要是能提高你的逼格！！！</p>
 
 <p>首先，安装zsh：</p>
-
-<pre><code class="language-cpp">sudo apt-get install zsh
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install zsh
+</code></pre></div>
 <p>接下来我们需要下载 oh-my-zsh 项目来帮我们配置 zsh，采用wget安装</p>
 
 <hr />
@@ -246,15 +229,11 @@ sudo apt-get install ultra-flat-icons
 <p>sudo wget <a href="https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh">https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh</a> -O - | sh</p>
 
 <hr />
-
-<pre><code class="language-cpp">wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | sh
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">wget https:<span style="color:#75715e">//github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | sh
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>所以这时的zsh 基本已经配置完成,你需要一行命令就可以切换到 zsh 模式，终端下输入以下命令</p>
-
-<pre><code class="language-cpp">chsh -s /usr/local/bin/zsh
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">chsh <span style="color:#f92672">-</span>s <span style="color:#f92672">/</span>usr<span style="color:#f92672">/</span>local<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>zsh
+</code></pre></div>
 <p>最后，修改以下配色，会让你的终端样式看起来更舒服，在终端任意地方右键，进入配置文件(profile)-&gt;外观配置(profile Preferences)，弹出如下界面，进入colors一栏：</p>
 
 <p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkgfzl9e5j30go0bhgmk.jpg" alt="配置" /></center></p>
@@ -266,10 +245,8 @@ sudo apt-get install ultra-flat-icons
 <h2 id="字体">字体</h2>
 
 <p>ubuntu自带的字体不太好看，所以采用文泉译微米黑字体替代，效果会比较好，毕竟是国产字体！</p>
-
-<pre><code class="language-cpp">sudo apt-get install fonts-wqy-microhei
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install fonts<span style="color:#f92672">-</span>wqy<span style="color:#f92672">-</span>microhei
+</code></pre></div>
 <p>然后通过unity-tweak-tool来替换字体：</p>
 
 <p><center><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkgfy0a7ij30oh0i375e.jpg" alt="替换字体" /></center></p>
@@ -281,21 +258,17 @@ sudo apt-get install ultra-flat-icons
 <h2 id="vim">vim</h2>
 
 <p>系统并没有集成vim，可以执行以下代码安装：</p>
-
-<pre><code class="language-cpp">sudo apt-get install vim
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install vim
+</code></pre></div>
 <h2 id="sublime-text3">sublime-text3</h2>
 
 <p>由于本人比较习惯使用sublime作为主编辑器，所以再vim方面没有做更多的插件安装，sublime加上一些必要插件，绝对够用而且更美观。</p>
 
 <p>执行以下命令安装：</p>
-
-<pre><code class="language-cpp">sudo add-apt-repository ppa:webupd8team/sublime-text-3    
-sudo apt-get update    
-sudo apt-get install sublime-text
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo add<span style="color:#f92672">-</span>apt<span style="color:#f92672">-</span>repository ppa:webupd8team<span style="color:#f92672">/</span>sublime<span style="color:#f92672">-</span>text<span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>    
+sudo apt<span style="color:#f92672">-</span>get update    
+sudo apt<span style="color:#f92672">-</span>get install sublime<span style="color:#f92672">-</span>text
+</code></pre></div>
 <p>安装插件，下面是本人用到的一些常用插件：</p>
 
 <h3 id="package-control">Package Control</h3>
@@ -303,10 +276,8 @@ sudo apt-get install sublime-text
 <p>Package Control是一个用来进行在线安装插件的工具，在使用前需要先安装。安装方式如下：</p>
 
 <p>点击菜单中的 “View”–“Show Console”调出 Console。然后把下面的代码粘贴进去后回车即可，需稍微等待一段时间。</p>
-
-<pre><code class="language-cpp">import urllib.request,os,hashlib; h = '2915d1851351e5ee549c20394736b442' + '8bc59f460fa1548d1514676163dafc88'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">import urllib.request,os,hashlib; h <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#ae81ff">2915</span>d1851351e5ee549c20394736b442<span style="color:#960050;background-color:#1e0010">&#39;</span> <span style="color:#f92672">+</span> <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#ae81ff">8</span>bc59f460fa1548d1514676163dafc88<span style="color:#960050;background-color:#1e0010">&#39;</span>; pf <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">&#39;</span>Package Control.sublime<span style="color:#f92672">-</span>package<span style="color:#960050;background-color:#1e0010">&#39;</span>; ipp <span style="color:#f92672">=</span> sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by <span style="color:#f92672">=</span> urllib.request.urlopen( <span style="color:#960050;background-color:#1e0010">&#39;</span>http:<span style="color:#75715e">//packagecontrol.io/&#39; + pf.replace(&#39; &#39;, &#39;%20&#39;)).read(); dh = hashlib.sha256(by).hexdigest(); print(&#39;Error validating download (got %s instead of %s), please try manual install&#39; % (dh, h)) if dh != h else open(os.path.join( ipp, pf), &#39;wb&#39; ).write(by)
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>插件的安装方式，以Material Theme(一款暗黑系扁平主题)为例</p>
 
 <ul>
@@ -354,10 +325,8 @@ sudo apt-get install sublime-text
 </ul>
 
 <p>可以在文档中快速插入时间，初始快捷键是Ctrl+F5。效果如下</p>
-
-<pre><code class="language-cpp">Sun 21 Aug 2016 12:51:48 PM CST
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Sun <span style="color:#ae81ff">21</span> Aug <span style="color:#ae81ff">2016</span> <span style="color:#ae81ff">12</span><span style="color:#f92672">:</span><span style="color:#ae81ff">51</span><span style="color:#f92672">:</span><span style="color:#ae81ff">48</span> PM CST
+</code></pre></div>
 <ul>
 <li>OmniMarkupPreviewer</li>
 </ul>
@@ -371,17 +340,15 @@ sudo apt-get install sublime-text
 </ul>
 
 <p>一款支持自动生成注释的插件，比如下面给main函数添加注释，先按/**后敲击回车，会出现如下注释：</p>
-
-<pre><code class="language-cpp">/**
- * [main description]
- * @param  {[type]} int a             [description]
- * @return {[type]}     [description]
- */
-int main(int a){
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/**
+</span><span style="color:#75715e"> * [main description]
+</span><span style="color:#75715e"> * @param  {[type]} int a             [description]
+</span><span style="color:#75715e"> * @return {[type]}     [description]
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> a){
 	
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="解决中文输入问题">解决中文输入问题</h3>
 
 <p>可以参考博主的这篇博客：<a href="http://blog.csdn.net/terence1212/article/details/51803123">Sublime Text3支持GB2312和GBK编码以及中文输入法</a></p>
@@ -391,68 +358,50 @@ int main(int a){
 <p>去<a href="http://linux.wps.cn/">wps官网</a>下载wps for linux。</p>
 
 <p>下载后，打开终端，运行一下命令</p>
-
-<pre><code class="language-cpp">sudo dpkg -i wps-office_10.1.0.5672~a21_amd64.deb
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo dpkg <span style="color:#f92672">-</span>i wps<span style="color:#f92672">-</span>office_10<span style="color:#ae81ff">.1.0.5672</span><span style="color:#f92672">~</span>a21_amd64.deb
+</code></pre></div>
 <p>如果缺少依赖包，可以先执行一下命令(后面的软件安装过程中如出现依赖包问题，一样可以采用这种方式解决)</p>
-
-<pre><code class="language-cpp">sudo apt-get install -f
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install <span style="color:#f92672">-</span>f
+</code></pre></div>
 <h2 id="chrome">chrome</h2>
 
 <p>去<a href="https://www.google.com/chrome/browser/desktop/index.html">chrome官网</a>下载linux版的chrome。</p>
 
 <p>执行一下命令，</p>
-
-<pre><code class="language-cpp">sudo dpkg -i google-chrome-stable_current_amd64.deb
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo dpkg <span style="color:#f92672">-</span>i google<span style="color:#f92672">-</span>chrome<span style="color:#f92672">-</span>stable_current_amd64.deb
+</code></pre></div>
 <h2 id="gcc-gdb">GCC &amp;&amp; GDB</h2>
 
 <p>安装GCC编译器和GDB调试器，写C程序必备</p>
-
-<pre><code class="language-cpp">sudo apt-get install gcc &amp;&amp; gdb
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install gcc <span style="color:#f92672">&amp;&amp;</span> gdb
+</code></pre></div>
 <h2 id="为知笔记">为知笔记</h2>
 
 <p>一款linux下强大的笔记软件</p>
-
-<pre><code class="language-cpp">sudo add-apt-repository ppa:wiznote-team
-sudo apt-get update
-sudo apt-get install wiznote
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo add<span style="color:#f92672">-</span>apt<span style="color:#f92672">-</span>repository ppa:wiznote<span style="color:#f92672">-</span>team
+sudo apt<span style="color:#f92672">-</span>get update
+sudo apt<span style="color:#f92672">-</span>get install wiznote
+</code></pre></div>
 <h2 id="xmind">xmind</h2>
 
 <p>一款思维导图软件，再<a href="http://www.xmindchina.net/xiazai.html">xmind官网</a>下载deb安装包</p>
-
-<pre><code class="language-cpp">sudo dpkg -i xmind-7.5-linux_amd64.deb
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo dpkg <span style="color:#f92672">-</span>i xmind<span style="color:#f92672">-</span><span style="color:#ae81ff">7.5</span><span style="color:#f92672">-</span>linux_amd64.deb
+</code></pre></div>
 <h2 id="shutter">shutter</h2>
 
 <p>ubuntu下很强大的一款截图软件</p>
-
-<pre><code class="language-cpp">sudo apt-get install shutter
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install shutter
+</code></pre></div>
 <h2 id="git">git</h2>
 
 <p>这个不用多说，github程序猿必备。</p>
-
-<pre><code class="language-cpp">sudo apt-get install git
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install git
+</code></pre></div>
 <h2 id="压缩软件rar">压缩软件RAR</h2>
 
 <p>用于压缩和解压缩RAR文件</p>
-
-<pre><code class="language-cpp">sudo apt-get install rar
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo apt<span style="color:#f92672">-</span>get install rar
+</code></pre></div>
 <p>本篇博客就介绍到这里，如果后续发现更好用的软件，会持续推荐给大家！</p>
 		</div>
 		

@@ -32,9 +32,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -67,7 +69,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -120,23 +121,19 @@
 <p>我以一个简单的例子来开始本篇博文，这个例子也会贯穿整篇博文，让大家一步一步对C++对象模型有一个全面的了解。</p>
 
 <p>假设此时需要设计一个Animal类，包含动物名，体重和一些常见行为，设计如下：</p>
-
-<pre><code class="language-cpp">class Animal{
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
 	Animal(){}
-	~Animal(){}
-	char name[10];//动物名字
-	int weight;//体重
-	virtual void eat(){};//动物都需要吃，所以将eat设为虚函数，方便后面继承
-	virtual void sleep(){};//同上
-}
-</code></pre>
-
+	<span style="color:#f92672">~</span>Animal(){}
+	<span style="color:#66d9ef">char</span> name[<span style="color:#ae81ff">10</span>];<span style="color:#75715e">//动物名字
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">int</span> weight;<span style="color:#75715e">//体重
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){};<span style="color:#75715e">//动物都需要吃，所以将eat设为虚函数，方便后面继承
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sleep</span>(){};<span style="color:#75715e">//同上
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>设计者很关注的一个问题就是，封装的布局成本，也就是这个类会占有多大的空间。于是，我很自然的运行了如下程序。</p>
-
-<pre><code class="language-cpp">Animal animal;
-cout&lt;&lt;sizeof(animal)&lt;&lt;endl;//输出24(注：本测试机为ubuntu15.10,64位操作系统)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Animal animal;
+cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#66d9ef">sizeof</span>(animal)<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//输出24(注：本测试机为ubuntu15.10,64位操作系统)
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>那么，为什么会输出24呢？下面就一一为大家分析和讲解。</p>
 
 <h1 id="常见对象模型">常见对象模型</h1>
@@ -212,76 +209,72 @@ cout&lt;&lt;sizeof(animal)&lt;&lt;endl;//输出24(注：本测试机为ubuntu15.
 <p>讲到这里，似乎还是不能理解C++对象底层的布局。这一切都是以概念为主，没有深究到底层。</p>
 
 <p>于是，我写了如下的测试代码，让我们一起去探究一下整个C++对象的底层布局。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
 
-<pre><code class="language-cpp">#include &lt;stdio.h&gt;
-#include &lt;iostream&gt;
-#include &lt;string.h&gt;
-using namespace std;
+<span style="color:#66d9ef">typedef</span> <span style="color:#a6e22e">void</span>(<span style="color:#f92672">*</span>Fun)(<span style="color:#66d9ef">void</span>);
 
-typedef void(*Fun)(void);
-
-class Animal{
-public:
-	char name[10];//动物名字
-	int weight;//体重
-	virtual void eat();
-	virtual void sleep();
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">char</span> name[<span style="color:#ae81ff">10</span>];<span style="color:#75715e">//动物名字
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">int</span> weight;<span style="color:#75715e">//体重
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>();
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sleep</span>();
 };
 
-void Animal::eat(){//eat函数的实现
-	cout&lt;&lt;&quot;Please let me eat&quot;&lt;&lt;endl;
+<span style="color:#66d9ef">void</span> Animal<span style="color:#f92672">::</span>eat(){<span style="color:#75715e">//eat函数的实现
+</span><span style="color:#75715e"></span>	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Please let me eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 }
 
-void Animal::sleep(){//sleep函数的实现
-	cout&lt;&lt;&quot;Please let me sleep&quot;&lt;&lt;endl;
+<span style="color:#66d9ef">void</span> Animal<span style="color:#f92672">::</span>sleep(){<span style="color:#75715e">//sleep函数的实现
+</span><span style="color:#75715e"></span>	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Please let me sleep&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 }
 
-int main(){
+<span style="color:#66d9ef">int</span> main(){
     Animal animal;
-    strcpy(animal.name,&quot;hello&quot;);
-    animal.weight = 10;
-    cout&lt;&lt;&quot;虚指针vptr的地址:&quot;&lt;&lt;&amp;animal&lt;&lt;endl;//虚指针vptr的地址
-    for (int i = 0; i &lt; 10; ++i)
+    strcpy(animal.name,<span style="color:#e6db74">&#34;hello&#34;</span>);
+    animal.weight <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;虚指针vptr的地址:&#34;</span><span style="color:#f92672">&lt;&lt;&amp;</span>animal<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//虚指针vptr的地址
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">10</span>; <span style="color:#f92672">++</span>i)
     {
-    	cout&lt;&lt;&quot;name[&quot;&lt;&lt;i&lt;&lt;&quot;]的地址为：&quot;&lt;&lt;(long long *)&amp;(animal.name[i])&lt;&lt;endl;//name每个参数的地址
-    }
-    cout&lt;&lt;&quot;weight的地址为：&quot;&lt;&lt;&amp;(animal.weight)&lt;&lt;endl;//weight的地址
+    	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;name[&#34;</span><span style="color:#f92672">&lt;&lt;</span>i<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;]的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(animal.name[i])<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//name每个参数的地址
+</span><span style="color:#75715e"></span>    }
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;weight的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;&amp;</span>(animal.weight)<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//weight的地址
+</span><span style="color:#75715e"></span>
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;虚表的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)(<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>animal))<span style="color:#f92672">&lt;&lt;</span>endl;
 
-    cout&lt;&lt;&quot;虚表的地址：&quot;&lt;&lt;(long long *)(*((long long*)&amp;animal))&lt;&lt;endl;
-
-    Fun pfun1 = NULL;
-    Fun pfun2 = NULL;
-    pfun1 = (Fun)*((long long*)*(long long*)(&amp;animal));//通过强制转换，验证虚函数的地址是否正确
-    pfun1();
-    pfun2 = (Fun)*((long long*)*(long long*)(&amp;animal)+1);//通过强制转换，验证虚函数的地址是否正确
-    pfun2();
-    return 0;
+    Fun pfun1 <span style="color:#f92672">=</span> NULL;
+    Fun pfun2 <span style="color:#f92672">=</span> NULL;
+    pfun1 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>animal));<span style="color:#75715e">//通过强制转换，验证虚函数的地址是否正确
+</span><span style="color:#75715e"></span>    pfun1();
+    pfun2 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>animal)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);<span style="color:#75715e">//通过强制转换，验证虚函数的地址是否正确
+</span><span style="color:#75715e"></span>    pfun2();
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }
-</code></pre>
-
+</code></pre></div>
 <blockquote>
 <p>由于我的测试机为64位操作系统，所以指针类型必须强制转换为long long*，各位如果是32位或者VS上32位程序的，记得将此改为int*。</p>
 </blockquote>
 
 <p>上述测试案例输出结果如下：</p>
-
-<pre><code class="language-cpp">虚指针vptr的地址:0x7ffe378125e0
-name[0]的地址为：0x7ffe378125e8
-name[1]的地址为：0x7ffe378125e9
-name[2]的地址为：0x7ffe378125ea
-name[3]的地址为：0x7ffe378125eb
-name[4]的地址为：0x7ffe378125ec
-name[5]的地址为：0x7ffe378125ed
-name[6]的地址为：0x7ffe378125ee
-name[7]的地址为：0x7ffe378125ef
-name[8]的地址为：0x7ffe378125f0
-name[9]的地址为：0x7ffe378125f1
-weight的地址为：0x7ffe378125f4
-虚表的地址：0x400d58
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">虚指针</span>vptr的地址:<span style="color:#ae81ff">0x7ffe378125e0</span>
+name[<span style="color:#ae81ff">0</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125e8</span>
+name[<span style="color:#ae81ff">1</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125e9</span>
+name[<span style="color:#ae81ff">2</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125ea</span>
+name[<span style="color:#ae81ff">3</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125eb</span>
+name[<span style="color:#ae81ff">4</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125ec</span>
+name[<span style="color:#ae81ff">5</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125ed</span>
+name[<span style="color:#ae81ff">6</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125ee</span>
+name[<span style="color:#ae81ff">7</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125ef</span>
+name[<span style="color:#ae81ff">8</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125f0</span>
+name[<span style="color:#ae81ff">9</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffe378125f1</span>
+weight的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffe378125f4</span>
+<span style="color:#960050;background-color:#1e0010">虚表的地址：</span><span style="color:#ae81ff">0x400d58</span>
 Please let me eat
 Please let me sleep
-</code></pre>
-
+</code></pre></div>
 <p>分析结果之前，先解释一下为什么64位操作系统的指针是48位，因为现在的硬件还用不到完整的64位寻址，所以硬件也没必要支持那么多位的地址。（也有可能时我的机子太老了，囧！）</p>
 
 <p>上述问题不影响我们分析结果，从输出的地址可以看出</p>

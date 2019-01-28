@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -119,13 +120,10 @@ g(z) = \frac {1} {1 + e^{-z}}
 \]</span></p>
 
 <p>其用python代码实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> numpy <span style="color:#f92672">import</span> e
 
-<pre><code class="language-python">from numpy import e
-
-def sigmoid(z):
-    return 1/(1+pow(e,-z))
-</code></pre>
-
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">sigmoid</span>(z):
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">/</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>pow(e,<span style="color:#f92672">-</span>z))</code></pre></div>
 <p>其函数图像如下：</p>
 
 <p><figure><img src="https://ws1.sinaimg.cn/large/73a1af36ly1fzcty1jf5gj20hs0dcglu.jpg" alt=""></figure></p>
@@ -207,23 +205,20 @@ J(\theta) = -\frac{1}{m} [\sum\limits _{i =1}^{m} (y ^{(i)}logh _\theta(x^{(i)})
 \]</span></p>
 
 <p>代价函数用python实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> numpy <span style="color:#f92672">import</span> log
+<span style="color:#f92672">from</span> sigmoid <span style="color:#f92672">import</span> sigmoid  <span style="color:#75715e"># sigmoid上面有实现</span>
 
-<pre><code class="language-python">from numpy import log
-from sigmoid import sigmoid  # sigmoid上面有实现
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">costFunction</span>(theta, X,y):
+    <span style="color:#e6db74">&#34;&#34;&#34; computes the cost of using theta as the
+</span><span style="color:#e6db74">    parameter for logistic regression and the
+</span><span style="color:#e6db74">    gradient of the cost w.r.t. to the parameters.&#34;&#34;&#34;</span>
 
-def costFunction(theta, X,y):
-    &quot;&quot;&quot; computes the cost of using theta as the
-    parameter for logistic regression and the
-    gradient of the cost w.r.t. to the parameters.&quot;&quot;&quot;
-
-    # Initialize some useful values
-    m = y.size # number of training examples
-    h = sigmoid(X.dot(theta))
-    temp = 1-y
-    J = 1/m * (-y.dot(log(h)) - temp.dot(log(1- h)))
-    return J
-</code></pre>
-
+    <span style="color:#75715e"># Initialize some useful values</span>
+    m <span style="color:#f92672">=</span> y<span style="color:#f92672">.</span>size <span style="color:#75715e"># number of training examples</span>
+    h <span style="color:#f92672">=</span> sigmoid(X<span style="color:#f92672">.</span>dot(theta))
+    temp <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">-</span>y
+    J <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">/</span>m <span style="color:#f92672">*</span> (<span style="color:#f92672">-</span>y<span style="color:#f92672">.</span>dot(log(h)) <span style="color:#f92672">-</span> temp<span style="color:#f92672">.</span>dot(log(<span style="color:#ae81ff">1</span><span style="color:#f92672">-</span> h)))
+    <span style="color:#66d9ef">return</span> J</code></pre></div>
 <p>接下来，我们就可以用梯度下降的方式来求解使代价函数最小的参数了，算法表示如下：</p>
 
 <p>Repeat { $\theta_j := \theta_j - \alpha \frac{\partial}{\partial\theta_j} J(\theta)$ (simultaneously update all ) }</p>
@@ -282,17 +277,14 @@ def costFunction(theta, X,y):
 </ul>
 
 <p>在python中，可以使用scipy提供的优化函数库optimize中的minimize函数来实现对$J(\theta)$求取最优值参数。代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> scipy.optimize <span style="color:#f92672">import</span> minimize
 
-<pre><code class="language-python">from scipy.optimize import minimize
-
-res = minimize(costFunction, initial_theta, method='TNC', jac=False, args=(X, y), options={'gtol': 1e-3, 'disp': True, 'maxiter': 1000})
-theta = res.x
-cost = res.fun
-# Print theta to screen
-print('Cost at theta found by scipy: %f' % cost)
-print('theta:', [&quot;%0.4f&quot; % i for i in theta])
-</code></pre>
-
+res <span style="color:#f92672">=</span> minimize(costFunction, initial_theta, method<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;TNC&#39;</span>, jac<span style="color:#f92672">=</span>False, args<span style="color:#f92672">=</span>(X, y), options<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;gtol&#39;</span>: <span style="color:#ae81ff">1e-3</span>, <span style="color:#e6db74">&#39;disp&#39;</span>: True, <span style="color:#e6db74">&#39;maxiter&#39;</span>: <span style="color:#ae81ff">1000</span>})
+theta <span style="color:#f92672">=</span> res<span style="color:#f92672">.</span>x
+cost <span style="color:#f92672">=</span> res<span style="color:#f92672">.</span>fun
+<span style="color:#75715e"># Print theta to screen</span>
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#39;Cost at theta found by scipy: </span><span style="color:#e6db74">%f</span><span style="color:#e6db74">&#39;</span> <span style="color:#f92672">%</span> cost)
+<span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#39;theta:&#39;</span>, [<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%0.4f</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> i <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> theta])</code></pre></div>
 <h2 id="16-多元分类问题">1.6 多元分类问题</h2>
 
 <p>对于多元分类问题，我们可以将其转换成多个二分类问题。如下图所示：</p>

@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -108,59 +109,53 @@
 <h1 id="sds数据结构定义">sds数据结构定义</h1>
 
 <p>在sds.h文件中，我们可以找到sds的数据结构定义如下：</p>
-
-<pre><code class="language-cpp">typedef char *sds;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>sds;
+</code></pre></div>
 <p>看到这里可能大家都疑惑了，这不就是char*嘛？的确，Redis采用一整段连续的内存来存储sds结构，char*类型正好可以和传统的C语言字符串类型兼容。但是，sds和char*并不等同，sds是二进制安全的，它可以存储任意二进制数据，不能像C语言字符串那样以‘\0’来标识字符串结束，因此它必然存在一个长度字段，那么这个字段在哪呢？请看下面的代码：</p>
-
-<pre><code class="language-cpp">/* Note: sdshdr5 is never used, we just access the flags byte directly.
- * However is here to document the layout of type 5 SDS strings. */
-struct __attribute__ ((__packed__)) sdshdr5 {
-    unsigned char flags; /* 3 lsb of type, and 5 msb of string length */
-    char buf[];
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* Note: sdshdr5 is never used, we just access the flags byte directly.
+</span><span style="color:#75715e"> * However is here to document the layout of type 5 SDS strings. */</span>
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">__attribute__</span> ((__packed__)) sdshdr5 {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> flags; <span style="color:#75715e">/* 3 lsb of type, and 5 msb of string length */</span>
+    <span style="color:#66d9ef">char</span> buf[];
 };
-struct __attribute__ ((__packed__)) sdshdr8 {
-    uint8_t len; /* used */
-    uint8_t alloc; /* excluding the header and null terminator */
-    unsigned char flags; /* 3 lsb of type, 5 unused bits */
-    char buf[];
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">__attribute__</span> ((__packed__)) sdshdr8 {
+    uint8_t len; <span style="color:#75715e">/* used */</span>
+    uint8_t alloc; <span style="color:#75715e">/* excluding the header and null terminator */</span>
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> flags; <span style="color:#75715e">/* 3 lsb of type, 5 unused bits */</span>
+    <span style="color:#66d9ef">char</span> buf[];
 };
-struct __attribute__ ((__packed__)) sdshdr16 {
-    uint16_t len; /* used */
-    uint16_t alloc; /* excluding the header and null terminator */
-    unsigned char flags; /* 3 lsb of type, 5 unused bits */
-    char buf[];
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">__attribute__</span> ((__packed__)) sdshdr16 {
+    uint16_t len; <span style="color:#75715e">/* used */</span>
+    uint16_t alloc; <span style="color:#75715e">/* excluding the header and null terminator */</span>
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> flags; <span style="color:#75715e">/* 3 lsb of type, 5 unused bits */</span>
+    <span style="color:#66d9ef">char</span> buf[];
 };
-struct __attribute__ ((__packed__)) sdshdr32 {
-    uint32_t len; /* used */
-    uint32_t alloc; /* excluding the header and null terminator */
-    unsigned char flags; /* 3 lsb of type, 5 unused bits */
-    char buf[];
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">__attribute__</span> ((__packed__)) sdshdr32 {
+    uint32_t len; <span style="color:#75715e">/* used */</span>
+    uint32_t alloc; <span style="color:#75715e">/* excluding the header and null terminator */</span>
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> flags; <span style="color:#75715e">/* 3 lsb of type, 5 unused bits */</span>
+    <span style="color:#66d9ef">char</span> buf[];
 };
-struct __attribute__ ((__packed__)) sdshdr64 {
-    uint64_t len; /* used */
-    uint64_t alloc; /* excluding the header and null terminator */
-    unsigned char flags; /* 3 lsb of type, 5 unused bits */
-    char buf[];
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">__attribute__</span> ((__packed__)) sdshdr64 {
+    uint64_t len; <span style="color:#75715e">/* used */</span>
+    uint64_t alloc; <span style="color:#75715e">/* excluding the header and null terminator */</span>
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> flags; <span style="color:#75715e">/* 3 lsb of type, 5 unused bits */</span>
+    <span style="color:#66d9ef">char</span> buf[];
 };
-</code></pre>
-
+</code></pre></div>
 <p>sds结构一共有五种Header定义，其目的是为了满足不同长度的字符串可以使用不同大小的Header，从而节省内存。</p>
 
 <p>Header部分主要包含以下几个部分：
 + len：表示字符串真正的长度，不包含空终止字符
 + alloc：表示字符串的最大容量，不包含Header和最后的空终止字符
 + flags：表示header的类型</p>
-
-<pre><code class="language-cpp">// 五种header类型，flags取值为0~4
-#define SDS_TYPE_5  0
-#define SDS_TYPE_8  1
-#define SDS_TYPE_16 2
-#define SDS_TYPE_32 3
-#define SDS_TYPE_64 4
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 五种header类型，flags取值为0~4
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define SDS_TYPE_5  0
+</span><span style="color:#75715e">#define SDS_TYPE_8  1
+</span><span style="color:#75715e">#define SDS_TYPE_16 2
+</span><span style="color:#75715e">#define SDS_TYPE_32 3
+</span><span style="color:#75715e">#define SDS_TYPE_64 4
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>由于sds是采用一段连续的内存空间来存储动态字符串，那么，我们进一步来分析一下sds在内存中的布局。下图是字符串&rdquo;redis&rdquo;在内存的布局示例图，
 <div style="text-align: center">
 <img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkgcuq6xwj30b603z74i.jpg"/>
@@ -173,14 +168,12 @@ struct __attribute__ ((__packed__)) sdshdr64 {
 </blockquote>
 
 <p>获取了header的类型之后，我们就可以依照每个类型header的定义来获取sds的长度，最大容量等属性了。Redis定义了如下几个宏定义来操作header</p>
-
-<pre><code class="language-cpp">#define SDS_TYPE_MASK 7   // 类型掩码
-#define SDS_TYPE_BITS 3    
-#define SDS_HDR_VAR(T,s) struct sdshdr##T *sh = (void*)((s)-(sizeof(struct sdshdr##T))); // 获取header头指针
-#define SDS_HDR(T,s) ((struct sdshdr##T *)((s)-(sizeof(struct sdshdr##T))))   // 获取header头指针
-#define SDS_TYPE_5_LEN(f) ((f)&gt;&gt;SDS_TYPE_BITS) // 获取sdshdr5的长度
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define SDS_TYPE_MASK 7   </span><span style="color:#75715e">// 类型掩码
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define SDS_TYPE_BITS 3    
+</span><span style="color:#75715e">#define SDS_HDR_VAR(T,s) struct sdshdr##T *sh = (void*)((s)-(sizeof(struct sdshdr##T))); </span><span style="color:#75715e">// 获取header头指针
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define SDS_HDR(T,s) ((struct sdshdr##T *)((s)-(sizeof(struct sdshdr##T))))   </span><span style="color:#75715e">// 获取header头指针
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define SDS_TYPE_5_LEN(f) ((f)&gt;&gt;SDS_TYPE_BITS) </span><span style="color:#75715e">// 获取sdshdr5的长度
+</span><span style="color:#75715e"></span></code></pre></div>
 <blockquote>
 <p>这里需要注意宏定义中的##是将两个符号连接成一个，如sdshdr和8（T为8）合成sdshdr8</p>
 </blockquote>
@@ -194,197 +187,185 @@ struct __attribute__ ((__packed__)) sdshdr64 {
 <h2 id="sds创建函数">sds创建函数</h2>
 
 <p>Redis在创建sds时，会为其申请一段连续的内存空间，其中包含sds的header和数据部分buf[]。其创建函数如下：</p>
-
-<pre><code class="language-cpp">sds sdsnewlen(const void *init, size_t initlen) {
-    void *sh;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sds <span style="color:#a6e22e">sdsnewlen</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>init, size_t initlen) {
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>sh;
     sds s;
-    char type = sdsReqType(initlen);
-    // 空的字符串通常被创建成type 8，因为type 5已经不实用了。
-    if (type == SDS_TYPE_5 &amp;&amp; initlen == 0) type = SDS_TYPE_8;
-    // 得到sds的header的大小
-    int hdrlen = sdsHdrSize(type);
-    unsigned char *fp; // flags字段的指针
-    // s_malloc等同于zmalloc，+1代表字符串结束符
-    sh = s_malloc(hdrlen+initlen+1);
-    if (!init)
-        memset(sh, 0, hdrlen+initlen+1);
-    if (sh == NULL) return NULL;
-    // s为数据部分的起始指针
-    s = (char*)sh+hdrlen;
-    fp = ((unsigned char*)s)-1; // 得到flags的指针
-    // 根据字符串类型来设定header中的字段
-    switch(type) {
-        case SDS_TYPE_5: {
-            *fp = type | (initlen &lt;&lt; SDS_TYPE_BITS);
-            break;
+    <span style="color:#66d9ef">char</span> type <span style="color:#f92672">=</span> sdsReqType(initlen);
+    <span style="color:#75715e">// 空的字符串通常被创建成type 8，因为type 5已经不实用了。
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (type <span style="color:#f92672">==</span> SDS_TYPE_5 <span style="color:#f92672">&amp;&amp;</span> initlen <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) type <span style="color:#f92672">=</span> SDS_TYPE_8;
+    <span style="color:#75715e">// 得到sds的header的大小
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> hdrlen <span style="color:#f92672">=</span> sdsHdrSize(type);
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>fp; <span style="color:#75715e">// flags字段的指针
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// s_malloc等同于zmalloc，+1代表字符串结束符
+</span><span style="color:#75715e"></span>    sh <span style="color:#f92672">=</span> s_malloc(hdrlen<span style="color:#f92672">+</span>initlen<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>init)
+        memset(sh, <span style="color:#ae81ff">0</span>, hdrlen<span style="color:#f92672">+</span>initlen<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">if</span> (sh <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> NULL;
+    <span style="color:#75715e">// s为数据部分的起始指针
+</span><span style="color:#75715e"></span>    s <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)sh<span style="color:#f92672">+</span>hdrlen;
+    fp <span style="color:#f92672">=</span> ((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)s)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; <span style="color:#75715e">// 得到flags的指针
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 根据字符串类型来设定header中的字段
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">switch</span>(type) {
+        <span style="color:#66d9ef">case</span> SDS_TYPE_5: {
+            <span style="color:#f92672">*</span>fp <span style="color:#f92672">=</span> type <span style="color:#f92672">|</span> (initlen <span style="color:#f92672">&lt;&lt;</span> SDS_TYPE_BITS);
+            <span style="color:#66d9ef">break</span>;
         }
-        case SDS_TYPE_8: {
-            SDS_HDR_VAR(8,s); 
-            sh-&gt;len = initlen; // 设定字符串长度
-            sh-&gt;alloc = initlen; // 设定字符串的最大容量
-            *fp = type;
-            break;
+        <span style="color:#66d9ef">case</span> SDS_TYPE_8: {
+            SDS_HDR_VAR(<span style="color:#ae81ff">8</span>,s); 
+            sh<span style="color:#f92672">-&gt;</span>len <span style="color:#f92672">=</span> initlen; <span style="color:#75715e">// 设定字符串长度
+</span><span style="color:#75715e"></span>            sh<span style="color:#f92672">-&gt;</span>alloc <span style="color:#f92672">=</span> initlen; <span style="color:#75715e">// 设定字符串的最大容量
+</span><span style="color:#75715e"></span>            <span style="color:#f92672">*</span>fp <span style="color:#f92672">=</span> type;
+            <span style="color:#66d9ef">break</span>;
         }
-        case SDS_TYPE_16: {
-            SDS_HDR_VAR(16,s);
-            sh-&gt;len = initlen;
-            sh-&gt;alloc = initlen;
-            *fp = type;
-            break;
+        <span style="color:#66d9ef">case</span> SDS_TYPE_16: {
+            SDS_HDR_VAR(<span style="color:#ae81ff">16</span>,s);
+            sh<span style="color:#f92672">-&gt;</span>len <span style="color:#f92672">=</span> initlen;
+            sh<span style="color:#f92672">-&gt;</span>alloc <span style="color:#f92672">=</span> initlen;
+            <span style="color:#f92672">*</span>fp <span style="color:#f92672">=</span> type;
+            <span style="color:#66d9ef">break</span>;
         }
-        case SDS_TYPE_32: {
-            SDS_HDR_VAR(32,s);
-            sh-&gt;len = initlen;
-            sh-&gt;alloc = initlen;
-            *fp = type;
-            break;
+        <span style="color:#66d9ef">case</span> SDS_TYPE_32: {
+            SDS_HDR_VAR(<span style="color:#ae81ff">32</span>,s);
+            sh<span style="color:#f92672">-&gt;</span>len <span style="color:#f92672">=</span> initlen;
+            sh<span style="color:#f92672">-&gt;</span>alloc <span style="color:#f92672">=</span> initlen;
+            <span style="color:#f92672">*</span>fp <span style="color:#f92672">=</span> type;
+            <span style="color:#66d9ef">break</span>;
         }
-        case SDS_TYPE_64: {
-            SDS_HDR_VAR(64,s);
-            sh-&gt;len = initlen;
-            sh-&gt;alloc = initlen;
-            *fp = type;
-            break;
+        <span style="color:#66d9ef">case</span> SDS_TYPE_64: {
+            SDS_HDR_VAR(<span style="color:#ae81ff">64</span>,s);
+            sh<span style="color:#f92672">-&gt;</span>len <span style="color:#f92672">=</span> initlen;
+            sh<span style="color:#f92672">-&gt;</span>alloc <span style="color:#f92672">=</span> initlen;
+            <span style="color:#f92672">*</span>fp <span style="color:#f92672">=</span> type;
+            <span style="color:#66d9ef">break</span>;
         }
     }
-    if (initlen &amp;&amp; init)
-        memcpy(s, init, initlen); // 拷贝数据部分
-    s[initlen] = '\0'; // 与C字符串兼容
-    return s; // 返回创建的sds字符串指针
-}
-</code></pre>
-
+    <span style="color:#66d9ef">if</span> (initlen <span style="color:#f92672">&amp;&amp;</span> init)
+        memcpy(s, init, initlen); <span style="color:#75715e">// 拷贝数据部分
+</span><span style="color:#75715e"></span>    s[initlen] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\0&#39;</span>; <span style="color:#75715e">// 与C字符串兼容
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> s; <span style="color:#75715e">// 返回创建的sds字符串指针
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="sds释放函数">sds释放函数</h2>
 
 <p>sds的释放采用zfree来释放内存。其实现代码如下：</p>
-
-<pre><code class="language-cpp">void sdsfree(sds s) {
-    if (s == NULL) return; 
-    // 得到内存的真正其实位置，然后释放内存
-    s_free((char*)s-sdsHdrSize(s[-1]));
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sdsfree</span>(sds s) {
+    <span style="color:#66d9ef">if</span> (s <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span>; 
+    <span style="color:#75715e">// 得到内存的真正其实位置，然后释放内存
+</span><span style="color:#75715e"></span>    s_free((<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)s<span style="color:#f92672">-</span>sdsHdrSize(s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]));
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="sds动态调整函数">sds动态调整函数</h2>
 
 <p>sds最重要的性能就是动态调整，Redis提供了扩展sds容量的函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 在原有的字符串中取得更大的空间，并返回扩展空间后的字符串
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdsMakeRoomFor</span>(sds s, size_t addlen) {
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>sh, <span style="color:#f92672">*</span>newsh;
+    size_t avail <span style="color:#f92672">=</span> sdsavail(s); <span style="color:#75715e">// 获取sds的剩余空间
+</span><span style="color:#75715e"></span>    size_t len, newlen;
+    <span style="color:#66d9ef">char</span> type, oldtype <span style="color:#f92672">=</span> s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">&amp;</span> SDS_TYPE_MASK;
+    <span style="color:#66d9ef">int</span> hdrlen;
 
-<pre><code class="language-cpp">// 在原有的字符串中取得更大的空间，并返回扩展空间后的字符串
-sds sdsMakeRoomFor(sds s, size_t addlen) {
-    void *sh, *newsh;
-    size_t avail = sdsavail(s); // 获取sds的剩余空间
-    size_t len, newlen;
-    char type, oldtype = s[-1] &amp; SDS_TYPE_MASK;
-    int hdrlen;
+    <span style="color:#75715e">// 如果剩余空间足够，则直接返回
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (avail <span style="color:#f92672">&gt;=</span> addlen) <span style="color:#66d9ef">return</span> s;
 
-    // 如果剩余空间足够，则直接返回
-    if (avail &gt;= addlen) return s;
+    len <span style="color:#f92672">=</span> sdslen(s);
+    sh <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)s<span style="color:#f92672">-</span>sdsHdrSize(oldtype);
+    newlen <span style="color:#f92672">=</span> (len<span style="color:#f92672">+</span>addlen);
+    <span style="color:#75715e">// sds规定：如果扩展后的字符串总长度小于1M则新字符串长度为扩展后的两倍
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 如果大于1M，则新的总长度为扩展后的总长度加上1M
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 这样做的目的是减少Redis内存分配的次数，同时尽量节省空间
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (newlen <span style="color:#f92672">&lt;</span> SDS_MAX_PREALLOC) <span style="color:#75715e">// SDS_MAX_PREALLOC = 1024*1024
+</span><span style="color:#75715e"></span>        newlen <span style="color:#f92672">*=</span> <span style="color:#ae81ff">2</span>;
+    <span style="color:#66d9ef">else</span>
+        newlen <span style="color:#f92672">+=</span> SDS_MAX_PREALLOC;
+    <span style="color:#75715e">// 根据sds的长度来调整类型
+</span><span style="color:#75715e"></span>    type <span style="color:#f92672">=</span> sdsReqType(newlen);
 
-    len = sdslen(s);
-    sh = (char*)s-sdsHdrSize(oldtype);
-    newlen = (len+addlen);
-    // sds规定：如果扩展后的字符串总长度小于1M则新字符串长度为扩展后的两倍
-    // 如果大于1M，则新的总长度为扩展后的总长度加上1M
-    // 这样做的目的是减少Redis内存分配的次数，同时尽量节省空间
-    if (newlen &lt; SDS_MAX_PREALLOC) // SDS_MAX_PREALLOC = 1024*1024
-        newlen *= 2;
-    else
-        newlen += SDS_MAX_PREALLOC;
-    // 根据sds的长度来调整类型
-    type = sdsReqType(newlen);
-
-    // 不使用SDS_TYPE_5，一律按SDS_TYPE_8处理
-    if (type == SDS_TYPE_5) type = SDS_TYPE_8;
-    // 获取新类型的头长度
-    hdrlen = sdsHdrSize(type);
-    if (oldtype==type) {
-        // 如果与原类型相同，直接调用realloc函数扩充内存
-        newsh = s_realloc(sh, hdrlen+newlen+1);
-        if (newsh == NULL) return NULL;
-        s = (char*)newsh+hdrlen;
-    } else {
-        // 如果类型调整了，header的大小就需要调整
-        // 这时就需要移动buf[]部分，所以不能使用realloc
-        newsh = s_malloc(hdrlen+newlen+1);
-        if (newsh == NULL) return NULL;
-        memcpy((char*)newsh+hdrlen, s, len+1);
+    <span style="color:#75715e">// 不使用SDS_TYPE_5，一律按SDS_TYPE_8处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (type <span style="color:#f92672">==</span> SDS_TYPE_5) type <span style="color:#f92672">=</span> SDS_TYPE_8;
+    <span style="color:#75715e">// 获取新类型的头长度
+</span><span style="color:#75715e"></span>    hdrlen <span style="color:#f92672">=</span> sdsHdrSize(type);
+    <span style="color:#66d9ef">if</span> (oldtype<span style="color:#f92672">==</span>type) {
+        <span style="color:#75715e">// 如果与原类型相同，直接调用realloc函数扩充内存
+</span><span style="color:#75715e"></span>        newsh <span style="color:#f92672">=</span> s_realloc(sh, hdrlen<span style="color:#f92672">+</span>newlen<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (newsh <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> NULL;
+        s <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)newsh<span style="color:#f92672">+</span>hdrlen;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果类型调整了，header的大小就需要调整
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 这时就需要移动buf[]部分，所以不能使用realloc
+</span><span style="color:#75715e"></span>        newsh <span style="color:#f92672">=</span> s_malloc(hdrlen<span style="color:#f92672">+</span>newlen<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (newsh <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> NULL;
+        memcpy((<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)newsh<span style="color:#f92672">+</span>hdrlen, s, len<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
         s_free(sh);
-        s = (char*)newsh+hdrlen; // 更新s
-        s[-1] = type; // 设定新的flags参数
-        sdssetlen(s, len); // 更新len
-    }
-    sdssetalloc(s, newlen); // 更新sds的容量
-    return s;
+        s <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)newsh<span style="color:#f92672">+</span>hdrlen; <span style="color:#75715e">// 更新s
+</span><span style="color:#75715e"></span>        s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> type; <span style="color:#75715e">// 设定新的flags参数
+</span><span style="color:#75715e"></span>        sdssetlen(s, len); <span style="color:#75715e">// 更新len
+</span><span style="color:#75715e"></span>    }
+    sdssetalloc(s, newlen); <span style="color:#75715e">// 更新sds的容量
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> s;
 }
-</code></pre>
-
+</code></pre></div>
 <p>另外，Redis还提供了回收sds空余空间的函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 用来回收sds空余空间，压缩内存，函数调用后，s会无效
+</span><span style="color:#75715e">// 实际上，就是重新分配一块内存，将原有数据拷贝到新内存上，并释放原有空间
+</span><span style="color:#75715e">// 新内存的大小比原来小了alloc-len大小
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdsRemoveFreeSpace</span>(sds s) {
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>sh, <span style="color:#f92672">*</span>newsh;
+    <span style="color:#66d9ef">char</span> type, oldtype <span style="color:#f92672">=</span> s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">&amp;</span> SDS_TYPE_MASK;
+    <span style="color:#66d9ef">int</span> hdrlen;
+    size_t len <span style="color:#f92672">=</span> sdslen(s); <span style="color:#75715e">// 获取字符串的实际大小
+</span><span style="color:#75715e"></span>    sh <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)s<span style="color:#f92672">-</span>sdsHdrSize(oldtype);
 
-<pre><code class="language-cpp">// 用来回收sds空余空间，压缩内存，函数调用后，s会无效
-// 实际上，就是重新分配一块内存，将原有数据拷贝到新内存上，并释放原有空间
-// 新内存的大小比原来小了alloc-len大小
-sds sdsRemoveFreeSpace(sds s) {
-    void *sh, *newsh;
-    char type, oldtype = s[-1] &amp; SDS_TYPE_MASK;
-    int hdrlen;
-    size_t len = sdslen(s); // 获取字符串的实际大小
-    sh = (char*)s-sdsHdrSize(oldtype);
-
-    type = sdsReqType(len);
-    hdrlen = sdsHdrSize(type);
-    if (oldtype==type) {
-        newsh = s_realloc(sh, hdrlen+len+1); // 申请的内存大小为hdrlen+len，原有的空余空间不算
-        if (newsh == NULL) return NULL;
-        s = (char*)newsh+hdrlen;
-    } else {
-        newsh = s_malloc(hdrlen+len+1); // 如上
-        if (newsh == NULL) return NULL;
-        memcpy((char*)newsh+hdrlen, s, len+1);
+    type <span style="color:#f92672">=</span> sdsReqType(len);
+    hdrlen <span style="color:#f92672">=</span> sdsHdrSize(type);
+    <span style="color:#66d9ef">if</span> (oldtype<span style="color:#f92672">==</span>type) {
+        newsh <span style="color:#f92672">=</span> s_realloc(sh, hdrlen<span style="color:#f92672">+</span>len<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>); <span style="color:#75715e">// 申请的内存大小为hdrlen+len，原有的空余空间不算
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (newsh <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> NULL;
+        s <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)newsh<span style="color:#f92672">+</span>hdrlen;
+    } <span style="color:#66d9ef">else</span> {
+        newsh <span style="color:#f92672">=</span> s_malloc(hdrlen<span style="color:#f92672">+</span>len<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>); <span style="color:#75715e">// 如上
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (newsh <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> NULL;
+        memcpy((<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)newsh<span style="color:#f92672">+</span>hdrlen, s, len<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
         s_free(sh);
-        s = (char*)newsh+hdrlen;
-        s[-1] = type;
+        s <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)newsh<span style="color:#f92672">+</span>hdrlen;
+        s[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> type;
         sdssetlen(s, len);
     }
     sdssetalloc(s, len);
-    return s;
+    <span style="color:#66d9ef">return</span> s;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="sds连接操作函数">sds连接操作函数</h2>
 
 <p>sds提供了字符串的连接函数，用来连接两个字符串</p>
-
-<pre><code class="language-cpp">sds sdscatlen(sds s, const void *t, size_t len) {
-    size_t curlen = sdslen(s); // 获取当前字符串的长度
-
-    s = sdsMakeRoomFor(s,len); // 扩展空间
-    if (s == NULL) return NULL; 
-    memcpy(s+curlen, t, len); // 连接新字符串
-    sdssetlen(s, curlen+len); // 设定连接后字符串长度
-    s[curlen+len] = '\0'; 
-    return s;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sds <span style="color:#a6e22e">sdscatlen</span>(sds s, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>t, size_t len) {
+    size_t curlen <span style="color:#f92672">=</span> sdslen(s); <span style="color:#75715e">// 获取当前字符串的长度
+</span><span style="color:#75715e"></span>
+    s <span style="color:#f92672">=</span> sdsMakeRoomFor(s,len); <span style="color:#75715e">// 扩展空间
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (s <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> NULL; 
+    memcpy(s<span style="color:#f92672">+</span>curlen, t, len); <span style="color:#75715e">// 连接新字符串
+</span><span style="color:#75715e"></span>    sdssetlen(s, curlen<span style="color:#f92672">+</span>len); <span style="color:#75715e">// 设定连接后字符串长度
+</span><span style="color:#75715e"></span>    s[curlen<span style="color:#f92672">+</span>len] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\0&#39;</span>; 
+    <span style="color:#66d9ef">return</span> s;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="sds其他操作函数">sds其他操作函数</h2>
 
 <p>sds还提供了一系列的操作函数，这里就不列出源码，只说明其用途。</p>
-
-<pre><code class="language-cpp">sds sdsempty(void); // 清空sds
-sds sdsdup(const sds s); // 复制字符串
-sds sdsgrowzero(sds s, size_t len); // 扩展字符串到指定长度
-sds sdscpylen(sds s, const char *t, size_t len); // 字符串的复制
-sds sdscpy(sds s, const char *t); // 字符串的复制
-sds sdscatfmt(sds s, char const *fmt, ...);   //字符串格式化输出
-sds sdstrim(sds s, const char *cset);       //字符串缩减
-void sdsrange(sds s, int start, int end);   //字符串截取函数
-void sdsupdatelen(sds s);   //更新字符串最新的长度
-void sdsclear(sds s);   //字符串清空操作
-void sdstolower(sds s);    //sds字符转小写表示
-void sdstoupper(sds s);    //sds字符统一转大写
-sds sdsjoin(char **argv, int argc, char *sep);   //以分隔符连接字符串子数组构成新的字符串
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sds <span style="color:#a6e22e">sdsempty</span>(<span style="color:#66d9ef">void</span>); <span style="color:#75715e">// 清空sds
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdsdup</span>(<span style="color:#66d9ef">const</span> sds s); <span style="color:#75715e">// 复制字符串
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdsgrowzero</span>(sds s, size_t len); <span style="color:#75715e">// 扩展字符串到指定长度
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdscpylen</span>(sds s, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>t, size_t len); <span style="color:#75715e">// 字符串的复制
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdscpy</span>(sds s, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>t); <span style="color:#75715e">// 字符串的复制
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdscatfmt</span>(sds s, <span style="color:#66d9ef">char</span> <span style="color:#66d9ef">const</span> <span style="color:#f92672">*</span>fmt, ...);   <span style="color:#75715e">//字符串格式化输出
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdstrim</span>(sds s, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>cset);       <span style="color:#75715e">//字符串缩减
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sdsrange</span>(sds s, <span style="color:#66d9ef">int</span> start, <span style="color:#66d9ef">int</span> end);   <span style="color:#75715e">//字符串截取函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sdsupdatelen</span>(sds s);   <span style="color:#75715e">//更新字符串最新的长度
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sdsclear</span>(sds s);   <span style="color:#75715e">//字符串清空操作
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sdstolower</span>(sds s);    <span style="color:#75715e">//sds字符转小写表示
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sdstoupper</span>(sds s);    <span style="color:#75715e">//sds字符统一转大写
+</span><span style="color:#75715e"></span>sds <span style="color:#a6e22e">sdsjoin</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv, <span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>sep);   <span style="color:#75715e">//以分隔符连接字符串子数组构成新的字符串
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="sds小结">sds小结</h1>
 
 <p>sds是Redis中最基本的数据结构，使用一整段连续的内存来存储sds头信息和数据信息。其中，字符串的header包括了sds的字符串长度，字符串的最大容量以及sds的类型这三大信息。这样做的好处有很多，能让很多操作的复杂度降低，比如获取sds中字符串长度的操作，只需要O(1)即可，比strlen的O(N)好很多。</p>

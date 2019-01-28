@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -121,20 +122,17 @@
 <h1 id="如何获取redis源码">如何获取Redis源码？</h1>
 
 <p>redis是完全开源的，其源代码可以在直接在官网上获取（目前最新版本是3.2.5）。执行以下指令：</p>
-
-<pre><code class="language-cpp">cd ... // 这里打开你存放redis的文件夹
-wget http://download.redis.io/releases/redis-3.2.5.tar.gz
-tar zxvf redis-3.2.5.tar.gz
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">cd ... <span style="color:#75715e">// 这里打开你存放redis的文件夹
+</span><span style="color:#75715e"></span>wget http:<span style="color:#75715e">//download.redis.io/releases/redis-3.2.5.tar.gz
+</span><span style="color:#75715e"></span>tar zxvf redis<span style="color:#f92672">-</span><span style="color:#ae81ff">3.2.5</span>.tar.gz
+</code></pre></div>
 <p>此时，进入解压后的redis目录下的src文件夹，redis的所有源代码都存放在此。</p>
-
-<pre><code class="language-cpp">[root@VM_123_20_centos redis-3.2.5]# cd src/
-[root@VM_123_20_centos src]# ls
-Makefile      crc64.h        mkreleasehdr.sh    redis-cli.o     sort.o
-Makefile.dep  crc64.o        multi.c            redis-sentinel  sparkline.c
-adlist.c      db.c           multi.o            redis-server    sparkline.h
-adlist.h      db.o           networking.c       redis-trib.rb   sparkline.o
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">[root<span style="color:#960050;background-color:#1e0010">@</span>VM_123_20_centos redis<span style="color:#f92672">-</span><span style="color:#ae81ff">3.2.5</span>]<span style="color:#75715e"># cd src/
+</span><span style="color:#75715e"></span>[root<span style="color:#960050;background-color:#1e0010">@</span>VM_123_20_centos src]<span style="color:#75715e"># ls
+</span><span style="color:#75715e"></span>Makefile      crc64.h        mkreleasehdr.sh    redis<span style="color:#f92672">-</span>cli.o     sort.o
+Makefile.dep  crc64.o        multi.c            redis<span style="color:#f92672">-</span>sentinel  sparkline.c
+adlist.c      db.c           multi.o            redis<span style="color:#f92672">-</span>server    sparkline.h
+adlist.h      db.o           networking.c       redis<span style="color:#f92672">-</span>trib.rb   sparkline.o
 adlist.o      debug.c        networking.o       redisassert.h   syncio.c
 ae.c          debug.o        notify.c           release.c       syncio.o
 ae.h          debugmacro.h   notify.o           release.h       t_hash.c
@@ -154,19 +152,18 @@ bio.h         hyperloglog.o  rand.o             sentinel.c      util.o
 bio.o         intset.c       rdb.c              sentinel.o      valgrind.sup
 bitops.c      intset.h       rdb.h              server.c        version.h
 bitops.o      intset.o       rdb.o              server.h        ziplist.c
-blocked.c     latency.c      redis-benchmark    server.o        ziplist.h
-blocked.o     latency.h      redis-benchmark.c  setproctitle.c  ziplist.o
-cluster.c     latency.o      redis-benchmark.o  setproctitle.o  zipmap.c
-cluster.h     lzf.h          redis-check-aof    sha1.c          zipmap.h
-cluster.o     lzfP.h         redis-check-aof.c  sha1.h          zipmap.o
-config.c      lzf_c.c        redis-check-aof.o  sha1.o          zmalloc.c
-config.h      lzf_c.o        redis-check-rdb    slowlog.c       zmalloc.h
-config.o      lzf_d.c        redis-check-rdb.c  slowlog.h       zmalloc.o
-crc16.c       lzf_d.o        redis-check-rdb.o  slowlog.o
-crc16.o       memtest.c      redis-cli          solarisfixes.h
-crc64.c       memtest.o      redis-cli.c        sort.c
-</code></pre>
-
+blocked.c     latency.c      redis<span style="color:#f92672">-</span>benchmark    server.o        ziplist.h
+blocked.o     latency.h      redis<span style="color:#f92672">-</span>benchmark.c  setproctitle.c  ziplist.o
+cluster.c     latency.o      redis<span style="color:#f92672">-</span>benchmark.o  setproctitle.o  zipmap.c
+cluster.h     lzf.h          redis<span style="color:#f92672">-</span>check<span style="color:#f92672">-</span>aof    sha1.c          zipmap.h
+cluster.o     lzfP.h         redis<span style="color:#f92672">-</span>check<span style="color:#f92672">-</span>aof.c  sha1.h          zipmap.o
+config.c      lzf_c.c        redis<span style="color:#f92672">-</span>check<span style="color:#f92672">-</span>aof.o  sha1.o          zmalloc.c
+config.h      lzf_c.o        redis<span style="color:#f92672">-</span>check<span style="color:#f92672">-</span>rdb    slowlog.c       zmalloc.h
+config.o      lzf_d.c        redis<span style="color:#f92672">-</span>check<span style="color:#f92672">-</span>rdb.c  slowlog.h       zmalloc.o
+crc16.c       lzf_d.o        redis<span style="color:#f92672">-</span>check<span style="color:#f92672">-</span>rdb.o  slowlog.o
+crc16.o       memtest.c      redis<span style="color:#f92672">-</span>cli          solarisfixes.h
+crc64.c       memtest.o      redis<span style="color:#f92672">-</span>cli.c        sort.c
+</code></pre></div>
 <h1 id="源代码结构解析">源代码结构解析</h1>
 
 <p>看了上面src目录下的文件，简直让人眼花缭乱。这里不得不批评以下redis的作者啊，都没有整理一下源代码，统统都放在一个文件夹下。</p>

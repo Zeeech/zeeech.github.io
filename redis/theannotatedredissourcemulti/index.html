@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -148,19 +149,17 @@
 </table>
 
 <p>为了更好的分析Redis事务功能，我们先来实验感受一下如何使用事务功能及它的功效！</p>
-
-<pre><code class="language-cpp">~ redis-cli 
-127.0.0.1:6379&gt; MULTI     // 开启一个事务  
-OK
-127.0.0.1:6379&gt; SET key value   // 添加命令
-QUEUED   // 将命令添加到命令队列
-127.0.0.1:6379&gt; SADD key1 value1
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>cli 
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> MULTI     <span style="color:#75715e">// 开启一个事务  
+</span><span style="color:#75715e"></span>OK
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SET key value   <span style="color:#75715e">// 添加命令
+</span><span style="color:#75715e"></span>QUEUED   <span style="color:#75715e">// 将命令添加到命令队列
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SADD key1 value1
 QUEUED 
-127.0.0.1:6379&gt; EXEC  // 执行事务
-1) OK
-2) (integer) 1
-</code></pre>
-
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> EXEC  <span style="color:#75715e">// 执行事务
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">1</span>) OK
+<span style="color:#ae81ff">2</span>) (integer) <span style="color:#ae81ff">1</span>
+</code></pre></div>
 <p>如上，我们先开启了一个事务，然后添加了两条命令，最后执行此事务，两条命令全部执行并收到了回复。我们就从这个简单的事务处理过程，来一步一步分析Redis事务的具体实现过程。</p>
 
 <h1 id="事务实现">事务实现</h1>
@@ -170,162 +169,150 @@ QUEUED
 <h2 id="事务开始">事务开始</h2>
 
 <p>当我们发送<code>MULTI</code>命令是，表示客户端需要执行一个事务。客户端定义了几个参数，来标记事务是否开始。</p>
-
-<pre><code class="language-cpp">int flags; // 客户端当前事件标记
-#define CLIENT_MULTI (1&lt;&lt;3)  // 客户端事务标记
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> flags; <span style="color:#75715e">// 客户端当前事件标记
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define CLIENT_MULTI (1&lt;&lt;3)  </span><span style="color:#75715e">// 客户端事务标记
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>客户端通过<code>flags |= CLIENT_MULTI</code>语句来标记事务开启与否，然后服务器在执行命令的时候只需要检查flags参数，就能知道事务是否开启。下面是<code>MULTI</code>命令的源码实现：</p>
-
-<pre><code class="language-cpp">void multiCommand(client *c) {
-    if (c-&gt;flags &amp; CLIENT_MULTI) {  // 检查是否开启了事务
-        addReplyError(c,&quot;MULTI calls can not be nested&quot;);
-        return;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">multiCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI) {  <span style="color:#75715e">// 检查是否开启了事务
+</span><span style="color:#75715e"></span>        addReplyError(c,<span style="color:#e6db74">&#34;MULTI calls can not be nested&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
     }
-    c-&gt;flags |= CLIENT_MULTI;  // 标记事务已经开启
-    addReply(c,shared.ok);  // 回复客户端
-}
-</code></pre>
-
+    c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">|=</span> CLIENT_MULTI;  <span style="color:#75715e">// 标记事务已经开启
+</span><span style="color:#75715e"></span>    addReply(c,shared.ok);  <span style="color:#75715e">// 回复客户端
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="事务队列">事务队列</h2>
 
 <p>既然事务中包含了一系列的操作，这些操作不能立即被执行，Redis必然会找个位置来存放这些命令。于是Redis定义了下面的结构体：</p>
-
-<pre><code class="language-cpp">/* 客户端结构体 */
-struct client {
-  	// ....
-  	multiState mstate;
-    // ....
-}
-/* 事务状态 */
-typedef struct multiState {
-    multiCmd *commands;     // 事务队列，存放命令，FIFO结构
-    int count;              // 事务中所有命令的个数
-    int minreplicas;        // 用于同步复制
-    time_t minreplicas_timeout; // 超时时间
-} multiState;
-/* 命令队列 */
-typedef struct multiCmd {
-    robj **argv; // 参数
-    int argc; // 参数个数
-    struct redisCommand *cmd; // 命令指针
-} multiCmd;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 客户端结构体 */</span>
+<span style="color:#66d9ef">struct</span> client {
+  	<span style="color:#75715e">// ....
+</span><span style="color:#75715e"></span>  	multiState mstate;
+    <span style="color:#75715e">// ....
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">/* 事务状态 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> multiState {
+    multiCmd <span style="color:#f92672">*</span>commands;     <span style="color:#75715e">// 事务队列，存放命令，FIFO结构
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> count;              <span style="color:#75715e">// 事务中所有命令的个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> minreplicas;        <span style="color:#75715e">// 用于同步复制
+</span><span style="color:#75715e"></span>    time_t minreplicas_timeout; <span style="color:#75715e">// 超时时间
+</span><span style="color:#75715e"></span>} multiState;
+<span style="color:#75715e">/* 命令队列 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> multiCmd {
+    robj <span style="color:#f92672">**</span>argv; <span style="color:#75715e">// 参数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> argc; <span style="color:#75715e">// 参数个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> redisCommand <span style="color:#f92672">*</span>cmd; <span style="color:#75715e">// 命令指针
+</span><span style="color:#75715e"></span>} multiCmd;
+</code></pre></div>
 <p>其中，所有在事务期间的命令都存放在事务队列中，也就是<code>commands</code>指针内。Redis在<code>processCommand</code>执行命令的函数里面判断此时是否开启了一个事务，如开启，则将命令压入命令队列，等待事务来处理。</p>
-
-<pre><code class="language-cpp">/* Redis的命令处理函数 */
-int processCommand(client *c){
-    // ...
-  	// 检查此时是否开启的事务，检查当前执行的命令不是EXEC、DISCARD、MULTI和WATCH
-    if (c-&gt;flags &amp; CLIENT_MULTI &amp;&amp;
-        c-&gt;cmd-&gt;proc != execCommand &amp;&amp; c-&gt;cmd-&gt;proc != discardCommand &amp;&amp;
-        c-&gt;cmd-&gt;proc != multiCommand &amp;&amp; c-&gt;cmd-&gt;proc != watchCommand)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* Redis的命令处理函数 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">processCommand</span>(client <span style="color:#f92672">*</span>c){
+    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  	<span style="color:#75715e">// 检查此时是否开启的事务，检查当前执行的命令不是EXEC、DISCARD、MULTI和WATCH
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI <span style="color:#f92672">&amp;&amp;</span>
+        c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">!=</span> execCommand <span style="color:#f92672">&amp;&amp;</span> c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">!=</span> discardCommand <span style="color:#f92672">&amp;&amp;</span>
+        c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">!=</span> multiCommand <span style="color:#f92672">&amp;&amp;</span> c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">!=</span> watchCommand)
     {
-        // 执行命令入队
-        queueMultiCommand(c);
+        <span style="color:#75715e">// 执行命令入队
+</span><span style="color:#75715e"></span>        queueMultiCommand(c);
         addReply(c,shared.queued);
     }
-    // ...
-}
-</code></pre>
-
+    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>事务命令入队的功能由<code>queueMultiCommand</code>函数执行，其源码如下：</p>
-
-<pre><code class="language-cpp">/* 添加命令到事务队列 */
-void queueMultiCommand(client *c) {
-    multiCmd *mc;
-    int j;
-    // 重新申请内存
-    c-&gt;mstate.commands = zrealloc(c-&gt;mstate.commands,
-            sizeof(multiCmd)*(c-&gt;mstate.count+1));
-    // 找到新命令存放的位置
-    mc = c-&gt;mstate.commands+c-&gt;mstate.count;
-    // 存放命令
-    mc-&gt;cmd = c-&gt;cmd;
-    mc-&gt;argc = c-&gt;argc; // 存放参数个数
-    mc-&gt;argv = zmalloc(sizeof(robj*)*c-&gt;argc);  // 存放参数
-    memcpy(mc-&gt;argv,c-&gt;argv,sizeof(robj*)*c-&gt;argc); // 拷贝参数
-    for (j = 0; j &lt; c-&gt;argc; j++)  // 引用计数加1
-        incrRefCount(mc-&gt;argv[j]);
-    c-&gt;mstate.count++;  // 命令个数加1
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 添加命令到事务队列 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">queueMultiCommand</span>(client <span style="color:#f92672">*</span>c) {
+    multiCmd <span style="color:#f92672">*</span>mc;
+    <span style="color:#66d9ef">int</span> j;
+    <span style="color:#75715e">// 重新申请内存
+</span><span style="color:#75715e"></span>    c<span style="color:#f92672">-&gt;</span>mstate.commands <span style="color:#f92672">=</span> zrealloc(c<span style="color:#f92672">-&gt;</span>mstate.commands,
+            <span style="color:#66d9ef">sizeof</span>(multiCmd)<span style="color:#f92672">*</span>(c<span style="color:#f92672">-&gt;</span>mstate.count<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>));
+    <span style="color:#75715e">// 找到新命令存放的位置
+</span><span style="color:#75715e"></span>    mc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>mstate.commands<span style="color:#f92672">+</span>c<span style="color:#f92672">-&gt;</span>mstate.count;
+    <span style="color:#75715e">// 存放命令
+</span><span style="color:#75715e"></span>    mc<span style="color:#f92672">-&gt;</span>cmd <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>cmd;
+    mc<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argc; <span style="color:#75715e">// 存放参数个数
+</span><span style="color:#75715e"></span>    mc<span style="color:#f92672">-&gt;</span>argv <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(robj<span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>c<span style="color:#f92672">-&gt;</span>argc);  <span style="color:#75715e">// 存放参数
+</span><span style="color:#75715e"></span>    memcpy(mc<span style="color:#f92672">-&gt;</span>argv,c<span style="color:#f92672">-&gt;</span>argv,<span style="color:#66d9ef">sizeof</span>(robj<span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>c<span style="color:#f92672">-&gt;</span>argc); <span style="color:#75715e">// 拷贝参数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>)  <span style="color:#75715e">// 引用计数加1
+</span><span style="color:#75715e"></span>        incrRefCount(mc<span style="color:#f92672">-&gt;</span>argv[j]);
+    c<span style="color:#f92672">-&gt;</span>mstate.count<span style="color:#f92672">++</span>;  <span style="color:#75715e">// 命令个数加1
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="事务执行">事务执行</h2>
 
 <p>前面事务开始后的命令都存放在命令队列中，当客户端执行<code>EXEC</code>命令时，服务器会将事务队列中存放的命令以『先进先出』的方式一一执行，然后回复给客户端。</p>
-
-<pre><code class="language-cpp">void execCommand(client *c) {
-    int j;
-    robj **orig_argv;
-    int orig_argc;
-    struct redisCommand *orig_cmd;
-    int must_propagate = 0; // 是否需要将MULTI/EXEC命令传播给slave节点或AOF
-	// 如果客户端不处于事务状态，直接报错
-    if (!(c-&gt;flags &amp; CLIENT_MULTI)) {
-        addReplyError(c,&quot;EXEC without MULTI&quot;);
-        return;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">execCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">int</span> j;
+    robj <span style="color:#f92672">**</span>orig_argv;
+    <span style="color:#66d9ef">int</span> orig_argc;
+    <span style="color:#66d9ef">struct</span> redisCommand <span style="color:#f92672">*</span>orig_cmd;
+    <span style="color:#66d9ef">int</span> must_propagate <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">// 是否需要将MULTI/EXEC命令传播给slave节点或AOF
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 如果客户端不处于事务状态，直接报错
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI)) {
+        addReplyError(c,<span style="color:#e6db74">&#34;EXEC without MULTI&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
     }
-    // 检查是否需要终止EXEC操作，因为：
-    // (1) 有被监控的键被修改
-    // (2) 命令入队时发生错误
-    // 第一种情况会返回多个nil空对象，准确地说这不是一个错误而是一种特殊行为
-    // 第二种情况会返回一个EXECABORT错误
-    if (c-&gt;flags &amp; (CLIENT_DIRTY_CAS|CLIENT_DIRTY_EXEC)) {
-        addReply(c, c-&gt;flags &amp; CLIENT_DIRTY_EXEC ? shared.execaborterr :
+    <span style="color:#75715e">// 检查是否需要终止EXEC操作，因为：
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (1) 有被监控的键被修改
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (2) 命令入队时发生错误
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 第一种情况会返回多个nil空对象，准确地说这不是一个错误而是一种特殊行为
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 第二种情况会返回一个EXECABORT错误
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> (CLIENT_DIRTY_CAS<span style="color:#f92672">|</span>CLIENT_DIRTY_EXEC)) {
+        addReply(c, c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_DIRTY_EXEC <span style="color:#f92672">?</span> shared.execaborterr :
                                                   shared.nullmultibulk);
-        // 取消事务，Redis不支持事务回滚
-        discardTransaction(c);
-        goto handle_monitor;
+        <span style="color:#75715e">// 取消事务，Redis不支持事务回滚
+</span><span style="color:#75715e"></span>        discardTransaction(c);
+        <span style="color:#66d9ef">goto</span> handle_monitor;
     }
 
-    unwatchAllKeys(c); // 取消所有对键的监控	
-    // 先备份一次命令队列中的命令
-    orig_argv = c-&gt;argv;
-    orig_argc = c-&gt;argc;
-    orig_cmd = c-&gt;cmd;
-    addReplyMultiBulkLen(c,c-&gt;mstate.count);
-    // 遍历事务中的命令，一一交给客户端处理
-    for (j = 0; j &lt; c-&gt;mstate.count; j++) {
-        c-&gt;argc = c-&gt;mstate.commands[j].argc;
-        c-&gt;argv = c-&gt;mstate.commands[j].argv;
-        c-&gt;cmd = c-&gt;mstate.commands[j].cmd;
+    unwatchAllKeys(c); <span style="color:#75715e">// 取消所有对键的监控	
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 先备份一次命令队列中的命令
+</span><span style="color:#75715e"></span>    orig_argv <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argv;
+    orig_argc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argc;
+    orig_cmd <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>cmd;
+    addReplyMultiBulkLen(c,c<span style="color:#f92672">-&gt;</span>mstate.count);
+    <span style="color:#75715e">// 遍历事务中的命令，一一交给客户端处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>mstate.count; j<span style="color:#f92672">++</span>) {
+        c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>mstate.commands[j].argc;
+        c<span style="color:#f92672">-&gt;</span>argv <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>mstate.commands[j].argv;
+        c<span style="color:#f92672">-&gt;</span>cmd <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>mstate.commands[j].cmd;
 
-        // 当我们第一次遇到写命令的时候，传播MULTI命令
-        // 这里我们MULTI/.../EXEC当做一个整体传输，保证服务器和AOF以及附属节点的一致性
-        if (!must_propagate &amp;&amp; !(c-&gt;cmd-&gt;flags &amp; CMD_READONLY)) {
+        <span style="color:#75715e">// 当我们第一次遇到写命令的时候，传播MULTI命令
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 这里我们MULTI/.../EXEC当做一个整体传输，保证服务器和AOF以及附属节点的一致性
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>must_propagate <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>(c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CMD_READONLY)) {
             execCommandPropagateMulti(c);
-            must_propagate = 1;
+            must_propagate <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
         }
-		// 执行命令
-        call(c,CMD_CALL_FULL);
+		<span style="color:#75715e">// 执行命令
+</span><span style="color:#75715e"></span>        call(c,CMD_CALL_FULL);
 
-        // 命令执行后可能会被修改，需要更新操作
-        c-&gt;mstate.commands[j].argc = c-&gt;argc;
-        c-&gt;mstate.commands[j].argv = c-&gt;argv;
-        c-&gt;mstate.commands[j].cmd = c-&gt;cmd;
+        <span style="color:#75715e">// 命令执行后可能会被修改，需要更新操作
+</span><span style="color:#75715e"></span>        c<span style="color:#f92672">-&gt;</span>mstate.commands[j].argc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argc;
+        c<span style="color:#f92672">-&gt;</span>mstate.commands[j].argv <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argv;
+        c<span style="color:#f92672">-&gt;</span>mstate.commands[j].cmd <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>cmd;
     }
-    // 回复原命令
-    c-&gt;argv = orig_argv;
-    c-&gt;argc = orig_argc;
-    c-&gt;cmd = orig_cmd;
-    // 消除事务状态
-    scardTransaction(c);
-    // 确保MULTI命令确实被传播了
-    if (must_propagate) server.dirty++;
+    <span style="color:#75715e">// 回复原命令
+</span><span style="color:#75715e"></span>    c<span style="color:#f92672">-&gt;</span>argv <span style="color:#f92672">=</span> orig_argv;
+    c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">=</span> orig_argc;
+    c<span style="color:#f92672">-&gt;</span>cmd <span style="color:#f92672">=</span> orig_cmd;
+    <span style="color:#75715e">// 消除事务状态
+</span><span style="color:#75715e"></span>    scardTransaction(c);
+    <span style="color:#75715e">// 确保MULTI命令确实被传播了
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (must_propagate) server.dirty<span style="color:#f92672">++</span>;
 
 handle_monitor:
-    /* Send EXEC to clients waiting data from MONITOR. We do it here
-     * since the natural order of commands execution is actually:
-     * MUTLI, EXEC, ... commands inside transaction ...
-     * Instead EXEC is flagged as CMD_SKIP_MONITOR in the command
-     * table, and we do it here with correct ordering. */
-    if (listLength(server.monitors) &amp;&amp; !server.loading)
-        replicationFeedMonitors(c,server.monitors,c-&gt;db-&gt;id,c-&gt;argv,c-&gt;argc);
+    <span style="color:#75715e">/* Send EXEC to clients waiting data from MONITOR. We do it here
+</span><span style="color:#75715e">     * since the natural order of commands execution is actually:
+</span><span style="color:#75715e">     * MUTLI, EXEC, ... commands inside transaction ...
+</span><span style="color:#75715e">     * Instead EXEC is flagged as CMD_SKIP_MONITOR in the command
+</span><span style="color:#75715e">     * table, and we do it here with correct ordering. */</span>
+    <span style="color:#66d9ef">if</span> (listLength(server.monitors) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>server.loading)
+        replicationFeedMonitors(c,server.monitors,c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id,c<span style="color:#f92672">-&gt;</span>argv,c<span style="color:#f92672">-&gt;</span>argc);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="事务取消">事务取消</h2>
 
 <p>Redis提供了<code>DISCARD</code>函数来取消当前客户端的事务状态，其主要操作是：</p>
@@ -338,172 +325,154 @@ handle_monitor:
 </ul>
 
 <p>它的实现很简单，源码如下：</p>
-
-<pre><code class="language-c">/* 取消事务 */
-void discardCommand(client *c) {
-    // 如果当前不处在事务状态，则报错
-    if (!(c-&gt;flags &amp; CLIENT_MULTI)) {
-        addReplyError(c,&quot;DISCARD without MULTI&quot;);
-        return;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 取消事务 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">discardCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#75715e">// 如果当前不处在事务状态，则报错
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI)) {
+        addReplyError(c,<span style="color:#e6db74">&#34;DISCARD without MULTI&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
     }
     discardTransaction(c);
     addReply(c,shared.ok);
 }
-/* 取消事务的底层实现 */
-void discardTransaction(client *c) {
-    freeClientMultiState(c); // 释放事务队列
-    initClientMultiState(c);  // 初始化事务队列
-    // 取消所有有关事务的标记
-    c-&gt;flags &amp;= ~(CLIENT_MULTI|CLIENT_DIRTY_CAS|CLIENT_DIRTY_EXEC);
-    // 取消所有被监视的键
-    unwatchAllKeys(c);
-}
-</code></pre>
-
+<span style="color:#75715e">/* 取消事务的底层实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">discardTransaction</span>(client <span style="color:#f92672">*</span>c) {
+    freeClientMultiState(c); <span style="color:#75715e">// 释放事务队列
+</span><span style="color:#75715e"></span>    initClientMultiState(c);  <span style="color:#75715e">// 初始化事务队列
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 取消所有有关事务的标记
+</span><span style="color:#75715e"></span>    c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;=</span> <span style="color:#f92672">~</span>(CLIENT_MULTI<span style="color:#f92672">|</span>CLIENT_DIRTY_CAS<span style="color:#f92672">|</span>CLIENT_DIRTY_EXEC);
+    <span style="color:#75715e">// 取消所有被监视的键
+</span><span style="color:#75715e"></span>    unwatchAllKeys(c);
+}</code></pre></div>
 <h1 id="watch实现">WATCH实现</h1>
 
 <p>事务功能中还提供了监视键的功能，当我们对某个键执行了监视之后，如果事务执行期间该键被修改，则不执行该事务。同样，先看个小例子来试试<code>WATCH</code>的功能。</p>
-
-<pre><code class="language-cpp">/* 客户端一，执行监视和事务*/
-~ redis-cli
-127.0.0.1:6379&gt; WATCH key1  // 监视key1
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 客户端一，执行监视和事务*/</span>
+<span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>cli
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> WATCH key1  <span style="color:#75715e">// 监视key1
+</span><span style="color:#75715e"></span>OK
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> MULTI
 OK
-127.0.0.1:6379&gt; MULTI
-OK
-127.0.0.1:6379&gt; SET key1 value1
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SET key1 value1
 QUEUED
-/* 客户端二，执行修改 */
-~ redis-cli
-127.0.0.1:6379&gt; SET key1 value2
+<span style="color:#75715e">/* 客户端二，执行修改 */</span>
+<span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>cli
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SET key1 value2
 OK
-</code></pre>
-
+</code></pre></div>
 <p>当客户端一执行<code>EXEC</code>时，其返回结果如下：</p>
-
-<pre><code class="language-cpp">127.0.0.1:6379&gt; EXEC
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> EXEC
 (nil)
-</code></pre>
-
+</code></pre></div>
 <p>表示该事务没有被执行，进一步验证了<code>WATCH</code>的功能。接下来，就去源码里真正理解它是如何工作的吧。为了实现<code>WATCH/UNWATCH</code>功能，Redis在服务器的数据库结构中定义了一个字典结构用来存放被监听的键及其相应的客户端。</p>
-
-<pre><code class="language-cpp">/* redisDB数据库结构体 
- * | key1 | —— | client1 | -&gt; | client2 |-&gt; | client3 |
- * | key2 | —— | client4 |
- * | key3 | —— | client5 | -&gt; | client6 |
- * 该字典结构的键为被监视的键，值为链表，保存监视该键的所有客户端
- */
-typedef struct redisDb {
-	// ...
-    dict *watched_keys;      // 保存所有被监视的键及相应客户端
-    // ...
-} redisDb;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* redisDB数据库结构体 
+</span><span style="color:#75715e"> * | key1 | —— | client1 | -&gt; | client2 |-&gt; | client3 |
+</span><span style="color:#75715e"> * | key2 | —— | client4 |
+</span><span style="color:#75715e"> * | key3 | —— | client5 | -&gt; | client6 |
+</span><span style="color:#75715e"> * 该字典结构的键为被监视的键，值为链表，保存监视该键的所有客户端
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> redisDb {
+	<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>    dict <span style="color:#f92672">*</span>watched_keys;      <span style="color:#75715e">// 保存所有被监视的键及相应客户端
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>} redisDb;
+</code></pre></div>
 <p>另外，在客户端结构中，也定义了一个链表结构，用来保存该客户端所有监视的键，该链表的每一个接待都是一个<code>watchedKey</code>结构。</p>
-
-<pre><code class="language-cpp">/* 客户端结构 */
-typedef struct client {
-    // ...
-    list *watched_keys;  // 保存该客户端所有被监视的键
-    // ...
-}
-/* 被监视的键结构体 */
-typedef struct watchedKey {
-    robj *key;  // 保存键
-    redisDb *db;  // 保存键所在的数据库
-} watchedKey;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 客户端结构 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> client {
+    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>    list <span style="color:#f92672">*</span>watched_keys;  <span style="color:#75715e">// 保存该客户端所有被监视的键
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">/* 被监视的键结构体 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> watchedKey {
+    robj <span style="color:#f92672">*</span>key;  <span style="color:#75715e">// 保存键
+</span><span style="color:#75715e"></span>    redisDb <span style="color:#f92672">*</span>db;  <span style="color:#75715e">// 保存键所在的数据库
+</span><span style="color:#75715e"></span>} watchedKey;
+</code></pre></div>
 <p>这么做的原因是，当客户端添加监视键的时候，能快速判断该键是否已经被监视；而且，当客户端取消所有被监视键的时候，可以快速找到该键所在的数据库，从而在<code>redisDb-&gt;watched_keys</code>删除该被监视的键。下面来看看添加监视键和取消监视键的源码实现。</p>
-
-<pre><code class="language-c">/* 监视一个或多个键 */
-void watchForKey(client *c, robj *key) {
-    list *clients = NULL;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 监视一个或多个键 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">watchForKey</span>(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">*</span>key) {
+    list <span style="color:#f92672">*</span>clients <span style="color:#f92672">=</span> NULL;
     listIter li;
-    listNode *ln;
-    watchedKey *wk;
+    listNode <span style="color:#f92672">*</span>ln;
+    watchedKey <span style="color:#f92672">*</span>wk;
 
-    // 检查该键是否已经被监视
-    listRewind(c-&gt;watched_keys,&amp;li);
-    while((ln = listNext(&amp;li))) {
-        wk = listNodeValue(ln);
-        if (wk-&gt;db == c-&gt;db &amp;&amp; equalStringObjects(key,wk-&gt;key))
-            return; // 已经被监视直接返回
-    }
-    // 该键没有被监视，添加该键
-    clients = dictFetchValue(c-&gt;db-&gt;watched_keys,key);
-    if (!clients) {
-        clients = listCreate();
-        dictAdd(c-&gt;db-&gt;watched_keys,key,clients);
+    <span style="color:#75715e">// 检查该键是否已经被监视
+</span><span style="color:#75715e"></span>    listRewind(c<span style="color:#f92672">-&gt;</span>watched_keys,<span style="color:#f92672">&amp;</span>li);
+    <span style="color:#66d9ef">while</span>((ln <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>li))) {
+        wk <span style="color:#f92672">=</span> listNodeValue(ln);
+        <span style="color:#66d9ef">if</span> (wk<span style="color:#f92672">-&gt;</span>db <span style="color:#f92672">==</span> c<span style="color:#f92672">-&gt;</span>db <span style="color:#f92672">&amp;&amp;</span> equalStringObjects(key,wk<span style="color:#f92672">-&gt;</span>key))
+            <span style="color:#66d9ef">return</span>; <span style="color:#75715e">// 已经被监视直接返回
+</span><span style="color:#75715e"></span>    }
+    <span style="color:#75715e">// 该键没有被监视，添加该键
+</span><span style="color:#75715e"></span>    clients <span style="color:#f92672">=</span> dictFetchValue(c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>watched_keys,key);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>clients) {
+        clients <span style="color:#f92672">=</span> listCreate();
+        dictAdd(c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>watched_keys,key,clients);
         incrRefCount(key);
     }
     listAddNodeTail(clients,c);
-    // 添加新键到客户端的watched_keys链表中
-    wk = zmalloc(sizeof(*wk));
-    wk-&gt;key = key;
-    wk-&gt;db = c-&gt;db;
+    <span style="color:#75715e">// 添加新键到客户端的watched_keys链表中
+</span><span style="color:#75715e"></span>    wk <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>wk));
+    wk<span style="color:#f92672">-&gt;</span>key <span style="color:#f92672">=</span> key;
+    wk<span style="color:#f92672">-&gt;</span>db <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>db;
     incrRefCount(key);
-    listAddNodeTail(c-&gt;watched_keys,wk);
+    listAddNodeTail(c<span style="color:#f92672">-&gt;</span>watched_keys,wk);
 }
-/* 取消对所有键的监视 */
-void unwatchAllKeys(client *c) {
+<span style="color:#75715e">/* 取消对所有键的监视 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">unwatchAllKeys</span>(client <span style="color:#f92672">*</span>c) {
     listIter li;
-    listNode *ln;
-	// 当前没有监视的键，直接返回
-    if (listLength(c-&gt;watched_keys) == 0) return;
-    // 遍历所有监视的键，并一一取消监视
-    listRewind(c-&gt;watched_keys,&amp;li);
-    while((ln = listNext(&amp;li))) {
-        list *clients;
-        watchedKey *wk;
+    listNode <span style="color:#f92672">*</span>ln;
+	<span style="color:#75715e">// 当前没有监视的键，直接返回
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (listLength(c<span style="color:#f92672">-&gt;</span>watched_keys) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span>;
+    <span style="color:#75715e">// 遍历所有监视的键，并一一取消监视
+</span><span style="color:#75715e"></span>    listRewind(c<span style="color:#f92672">-&gt;</span>watched_keys,<span style="color:#f92672">&amp;</span>li);
+    <span style="color:#66d9ef">while</span>((ln <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>li))) {
+        list <span style="color:#f92672">*</span>clients;
+        watchedKey <span style="color:#f92672">*</span>wk;
 
-        // 在db-&gt;watched_keys中查找该键，并在客户端链表中删除该客户端
-        wk = listNodeValue(ln);
-        clients = dictFetchValue(wk-&gt;db-&gt;watched_keys, wk-&gt;key);
-        serverAssertWithInfo(c,NULL,clients != NULL);
+        <span style="color:#75715e">// 在db-&gt;watched_keys中查找该键，并在客户端链表中删除该客户端
+</span><span style="color:#75715e"></span>        wk <span style="color:#f92672">=</span> listNodeValue(ln);
+        clients <span style="color:#f92672">=</span> dictFetchValue(wk<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>watched_keys, wk<span style="color:#f92672">-&gt;</span>key);
+        serverAssertWithInfo(c,NULL,clients <span style="color:#f92672">!=</span> NULL);
         listDelNode(clients,listSearchKey(clients,c));
-        // 如果没有客户端监视该键了，直接删除键
-        if (listLength(clients) == 0)
-            dictDelete(wk-&gt;db-&gt;watched_keys, wk-&gt;key);
-        // 从客户端的watched_keys链表中移除监视的键
-        listDelNode(c-&gt;watched_keys,ln);
-        decrRefCount(wk-&gt;key);
+        <span style="color:#75715e">// 如果没有客户端监视该键了，直接删除键
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (listLength(clients) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+            dictDelete(wk<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>watched_keys, wk<span style="color:#f92672">-&gt;</span>key);
+        <span style="color:#75715e">// 从客户端的watched_keys链表中移除监视的键
+</span><span style="color:#75715e"></span>        listDelNode(c<span style="color:#f92672">-&gt;</span>watched_keys,ln);
+        decrRefCount(wk<span style="color:#f92672">-&gt;</span>key);
         zfree(wk);
     }
-}
-</code></pre>
-
+}</code></pre></div>
 <p>以上源码就是对字典结构和链表结构的添加和删除操作，很好理解。那么服务器运行过程中，在哪里判断该键有没有被修改呢？我们找到了<code>touchWatchedKey</code>函数。</p>
-
-<pre><code class="language-cpp">/* 标记被监视的键已被修改 */
-void touchWatchedKey(redisDb *db, robj *key) {
-    list *clients;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 标记被监视的键已被修改 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">touchWatchedKey</span>(redisDb <span style="color:#f92672">*</span>db, robj <span style="color:#f92672">*</span>key) {
+    list <span style="color:#f92672">*</span>clients;
     listIter li;
-    listNode *ln;
+    listNode <span style="color:#f92672">*</span>ln;
 
-    if (dictSize(db-&gt;watched_keys) == 0) return;
-    // 获取监视key的所有客户端
-    clients = dictFetchValue(db-&gt;watched_keys, key);
-    if (!clients) return;
+    <span style="color:#66d9ef">if</span> (dictSize(db<span style="color:#f92672">-&gt;</span>watched_keys) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span>;
+    <span style="color:#75715e">// 获取监视key的所有客户端
+</span><span style="color:#75715e"></span>    clients <span style="color:#f92672">=</span> dictFetchValue(db<span style="color:#f92672">-&gt;</span>watched_keys, key);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>clients) <span style="color:#66d9ef">return</span>;
 
-    // 标记监视key的所有客户端为CLIENT_DIRTY_CAS
-    listRewind(clients,&amp;li);
-    while((ln = listNext(&amp;li))) {
-        client *c = listNodeValue(ln);
-		// 在flag变量中标记
-        c-&gt;flags |= CLIENT_DIRTY_CAS;
+    <span style="color:#75715e">// 标记监视key的所有客户端为CLIENT_DIRTY_CAS
+</span><span style="color:#75715e"></span>    listRewind(clients,<span style="color:#f92672">&amp;</span>li);
+    <span style="color:#66d9ef">while</span>((ln <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>li))) {
+        client <span style="color:#f92672">*</span>c <span style="color:#f92672">=</span> listNodeValue(ln);
+		<span style="color:#75715e">// 在flag变量中标记
+</span><span style="color:#75715e"></span>        c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">|=</span> CLIENT_DIRTY_CAS;
     }
 }
-</code></pre>
-
+</code></pre></div>
 <p>当然，这只是对所有被修改键的客户端进行标记，还是没有弄清楚在什么时候标记这些客户端。于是，继续追溯，发现这个函数通常被<code>signalModifyKey() </code>函数进行封装，这下又见到了我们的『老朋友』了，这个总是在键被修改的函数里调用的函数。</p>
-
-<pre><code class="language-cpp">/* 标记被修改的键 */
-void signalModifiedKey(redisDb *db, robj *key) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 标记被修改的键 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">signalModifiedKey</span>(redisDb <span style="color:#f92672">*</span>db, robj <span style="color:#f92672">*</span>key) {
     touchWatchedKey(db,key);
 }
-</code></pre>
-
+</code></pre></div>
 <p>这么一来算是理清了<code>WATCH</code>命令的整个实现流程。</p>
 
 <h1 id="事务小结">事务小结</h1>

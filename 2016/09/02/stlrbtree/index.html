@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -178,47 +179,45 @@
 <h1 id="红黑树的节点结构">红黑树的节点结构</h1>
 
 <p>红黑树的节点在二叉树的节点结构上增加了颜色属性，而且，为了更好的进行插入和删除操作，进而增加了指向父节点的指针。为了更好的弹性，STL红黑树的节点采用双层设计，将不依赖模板的参数提取出来，作为base结构，然后用带模板的节点结构取继承它。下面是红黑树节点结构的源码：</p>
-
-<pre><code class="language-cpp">typedef bool __rb_tree_color_type;
-const __rb_tree_color_type __rb_tree_red = false;  // 紅色為 0
-const __rb_tree_color_type __rb_tree_black = true; // 黑色為 1
-
-struct __rb_tree_node_base
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">bool</span> __rb_tree_color_type;
+<span style="color:#66d9ef">const</span> __rb_tree_color_type __rb_tree_red <span style="color:#f92672">=</span> false;  <span style="color:#75715e">// 紅色為 0
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> __rb_tree_color_type __rb_tree_black <span style="color:#f92672">=</span> true; <span style="color:#75715e">// 黑色為 1
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">struct</span> __rb_tree_node_base
 {
-  typedef __rb_tree_color_type color_type;
-  typedef __rb_tree_node_base* base_ptr;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_color_type color_type;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_node_base<span style="color:#f92672">*</span> base_ptr;
 
-  color_type color;	// 节点颜色
-  base_ptr parent;	// 指向父节点
-  base_ptr left;		// 指向左子节点
-  base_ptr right;		// 指向右子节点
-
-  // 一直往左走，就能找到红黑树的最小值节点
-  // 二叉搜索树的性质
-  static base_ptr minimum(base_ptr x)
+  color_type color;	<span style="color:#75715e">// 节点颜色
+</span><span style="color:#75715e"></span>  base_ptr parent;	<span style="color:#75715e">// 指向父节点
+</span><span style="color:#75715e"></span>  base_ptr left;		<span style="color:#75715e">// 指向左子节点
+</span><span style="color:#75715e"></span>  base_ptr right;		<span style="color:#75715e">// 指向右子节点
+</span><span style="color:#75715e"></span>
+  <span style="color:#75715e">// 一直往左走，就能找到红黑树的最小值节点
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 二叉搜索树的性质
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">static</span> base_ptr <span style="color:#a6e22e">minimum</span>(base_ptr x)
   {
-    while (x-&gt;left != 0) x = x-&gt;left;
-    return x;
+    <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>left;
+    <span style="color:#66d9ef">return</span> x;
   }
-  // 一直往右走，就能找到红黑树的最大值节点
-  // 二叉搜索树的性质
-  static base_ptr maximum(base_ptr x)
+  <span style="color:#75715e">// 一直往右走，就能找到红黑树的最大值节点
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 二叉搜索树的性质
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">static</span> base_ptr <span style="color:#a6e22e">maximum</span>(base_ptr x)
   {
-    while (x-&gt;right != 0) x = x-&gt;right;
-    return x;
+    <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>right;
+    <span style="color:#66d9ef">return</span> x;
   }
 };
 
-// 真正的节点定义，采用双层节点结构
-// 基类中不包含模板参数
-template &lt;class Value&gt;
-struct __rb_tree_node : public __rb_tree_node_base
+<span style="color:#75715e">// 真正的节点定义，采用双层节点结构
+</span><span style="color:#75715e">// 基类中不包含模板参数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> __rb_tree_node : <span style="color:#66d9ef">public</span> __rb_tree_node_base
 {
-	typedef __rb_tree_node&lt;Value&gt;* link_type;
-	Value value_field;    // 節點實值
-};
-</code></pre>
-
+	<span style="color:#66d9ef">typedef</span> __rb_tree_node<span style="color:#f92672">&lt;</span>Value<span style="color:#f92672">&gt;*</span> link_type;
+	Value value_field;    <span style="color:#75715e">// 節點實值
+</span><span style="color:#75715e"></span>};
+</code></pre></div>
 <h1 id="红黑树的迭代器">红黑树的迭代器</h1>
 
 <p>为了将RBtree实现为一个泛型容器，迭代器的设计很关键。我们要考虑它的型别，以及前进(increment)、后退(devrement)、提领(dereference)和成员访问(member access)等操作。</p>
@@ -228,176 +227,172 @@ struct __rb_tree_node : public __rb_tree_node_base
 <p><center><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkfyhi8o9j30me0cdabl.jpg" alt="STLRbTreeNodeAndIterator" /></center></p>
 
 <p>将这些分开设计，可以保证对节点和迭代器的操作更具有弹性。下面来看迭代器的源码：</p>
-
-<pre><code class="language-cpp">struct __rb_tree_base_iterator
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> __rb_tree_base_iterator
 {
-  typedef __rb_tree_node_base::base_ptr base_ptr;
-  typedef bidirectional_iterator_tag iterator_category;
-  typedef ptrdiff_t difference_type;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_node_base<span style="color:#f92672">::</span>base_ptr base_ptr;
+  <span style="color:#66d9ef">typedef</span> bidirectional_iterator_tag iterator_category;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t difference_type;
 
-  base_ptr node;	// 用来连接红黑树的节点
-
-  // 寻找该节点的后继节点上
-  void increment()
+  base_ptr node;	<span style="color:#75715e">// 用来连接红黑树的节点
+</span><span style="color:#75715e"></span>
+  <span style="color:#75715e">// 寻找该节点的后继节点上
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">increment</span>()
   {
-    if (node-&gt;right != 0) {	// 如果存在右子节点
-      node = node-&gt;right;		// 直接跳到右子节点上
-      while (node-&gt;left != 0) // 然后一直往左子树走，直到左子树为空
-        node = node-&gt;left;
+    <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {	<span style="color:#75715e">// 如果存在右子节点
+</span><span style="color:#75715e"></span>      node <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>right;		<span style="color:#75715e">// 直接跳到右子节点上
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">while</span> (node<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) <span style="color:#75715e">// 然后一直往左子树走，直到左子树为空
+</span><span style="color:#75715e"></span>        node <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>left;
     }
-    else {                    // 没有右子节点
-      base_ptr y = node-&gt;parent;    // 找出父节点
-      while (node == y-&gt;right) {    // 如果该节点一直为它的父节点的右子节点
-        node = y;                		// 就一直往上找，直到不为右子节点为止
-        y = y-&gt;parent;
+    <span style="color:#66d9ef">else</span> {                    <span style="color:#75715e">// 没有右子节点
+</span><span style="color:#75715e"></span>      base_ptr y <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>parent;    <span style="color:#75715e">// 找出父节点
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">while</span> (node <span style="color:#f92672">==</span> y<span style="color:#f92672">-&gt;</span>right) {    <span style="color:#75715e">// 如果该节点一直为它的父节点的右子节点
+</span><span style="color:#75715e"></span>        node <span style="color:#f92672">=</span> y;                		<span style="color:#75715e">// 就一直往上找，直到不为右子节点为止
+</span><span style="color:#75715e"></span>        y <span style="color:#f92672">=</span> y<span style="color:#f92672">-&gt;</span>parent;
       }
-      if (node-&gt;right != y)      // 若此时该节点不为它的父节点的右子节点
-        node = y;                // 此时的父节点即为要找的后继节点
-                                 // 否则此时的node即为要找的后继节点，此为特殊情况，如下
-                                 // 我们要寻找根节点的下一个节点，而根节点没有右子节点
-                                 // 此种情况需要配合rbtree的header节点的特殊设计，后面会讲到
-    }                        
+      <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">!=</span> y)      <span style="color:#75715e">// 若此时该节点不为它的父节点的右子节点
+</span><span style="color:#75715e"></span>        node <span style="color:#f92672">=</span> y;                <span style="color:#75715e">// 此时的父节点即为要找的后继节点
+</span><span style="color:#75715e"></span>                                 <span style="color:#75715e">// 否则此时的node即为要找的后继节点，此为特殊情况，如下
+</span><span style="color:#75715e"></span>                                 <span style="color:#75715e">// 我们要寻找根节点的下一个节点，而根节点没有右子节点
+</span><span style="color:#75715e"></span>                                 <span style="color:#75715e">// 此种情况需要配合rbtree的header节点的特殊设计，后面会讲到
+</span><span style="color:#75715e"></span>    }                        
   }
 
-  // 寻找该节点你的前置节点
-  void decrement()
+  <span style="color:#75715e">// 寻找该节点你的前置节点
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">decrement</span>()
   {
-    if (node-&gt;color == __rb_tree_red &amp;&amp; // 如果此节点是红节点
-        node-&gt;parent-&gt;parent == node)		// 且父节点的父节点等于自己
-      node = node-&gt;right;								// 则其右子节点即为其前置节点
-    // 以上情况发生在node为header时，即node为end()时
-    // 注意：header的右子节点为mostright，指向整棵树的max节点，后面会有解释
-    else if (node-&gt;left != 0) {					// 如果存在左子节点
-      base_ptr y = node-&gt;left;					// 跳到左子节点上
-      while (y-&gt;right != 0)							// 然后一直往右找，知道右子树为空
-        y = y-&gt;right;			
-      node = y;													// 则找到前置节点
-    }
-    else {															// 如果该节点不存在左子节点
-      base_ptr y = node-&gt;parent;				// 跳到它的父节点上
-      while (node == y-&gt;left) {					// 如果它等于它的父子节点的左子节点
-        node = y;												// 则一直往上查找
-        y = y-&gt;parent;									
-      }																	// 直到它不为父节点的左子节点未知
-      node = y;													// 此时他的父节点即为要找的前置节点
-    }
+    <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">==</span> __rb_tree_red <span style="color:#f92672">&amp;&amp;</span> <span style="color:#75715e">// 如果此节点是红节点
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">==</span> node)		<span style="color:#75715e">// 且父节点的父节点等于自己
+</span><span style="color:#75715e"></span>      node <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>right;								<span style="color:#75715e">// 则其右子节点即为其前置节点
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 以上情况发生在node为header时，即node为end()时
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 注意：header的右子节点为mostright，指向整棵树的max节点，后面会有解释
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {					<span style="color:#75715e">// 如果存在左子节点
+</span><span style="color:#75715e"></span>      base_ptr y <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>left;					<span style="color:#75715e">// 跳到左子节点上
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">while</span> (y<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>)							<span style="color:#75715e">// 然后一直往右找，知道右子树为空
+</span><span style="color:#75715e"></span>        y <span style="color:#f92672">=</span> y<span style="color:#f92672">-&gt;</span>right;			
+      node <span style="color:#f92672">=</span> y;													<span style="color:#75715e">// 则找到前置节点
+</span><span style="color:#75715e"></span>    }
+    <span style="color:#66d9ef">else</span> {															<span style="color:#75715e">// 如果该节点不存在左子节点
+</span><span style="color:#75715e"></span>      base_ptr y <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>parent;				<span style="color:#75715e">// 跳到它的父节点上
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">while</span> (node <span style="color:#f92672">==</span> y<span style="color:#f92672">-&gt;</span>left) {					<span style="color:#75715e">// 如果它等于它的父子节点的左子节点
+</span><span style="color:#75715e"></span>        node <span style="color:#f92672">=</span> y;												<span style="color:#75715e">// 则一直往上查找
+</span><span style="color:#75715e"></span>        y <span style="color:#f92672">=</span> y<span style="color:#f92672">-&gt;</span>parent;									
+      }																	<span style="color:#75715e">// 直到它不为父节点的左子节点未知
+</span><span style="color:#75715e"></span>      node <span style="color:#f92672">=</span> y;													<span style="color:#75715e">// 此时他的父节点即为要找的前置节点
+</span><span style="color:#75715e"></span>    }
   }
 }
 
-template &lt;class Value, class Ref, class Ptr&gt;
-struct __rb_tree_iterator : public __rb_tree_base_iterator
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Ref</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Ptr</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> __rb_tree_iterator : <span style="color:#66d9ef">public</span> __rb_tree_base_iterator
 {
-	// 配合迭代器萃取机制的一些声明
-  typedef Value value_type;
-  typedef Ref reference;
-  typedef Ptr pointer;
-  typedef __rb_tree_iterator&lt;Value, Value&amp;, Value*&gt;     iterator;
-  typedef __rb_tree_iterator&lt;Value, const Value&amp;, const Value*&gt; const_iterator;
-  typedef __rb_tree_iterator&lt;Value, Ref, Ptr&gt;   self;
-  typedef __rb_tree_node&lt;Value&gt;* link_type;
-  // 迭代器的构造函数
-  __rb_tree_iterator() {}
-  __rb_tree_iterator(link_type x) { node = x; }
-  __rb_tree_iterator(const iterator&amp; it) { node = it.node; }
-  // 提领和成员访问函数，重载了*和-&gt;操作符
-  reference operator*() const { return link_type(node)-&gt;value_field; }
-  pointer operator-&gt;() const { return &amp;(operator*()); }
-  // 前置++和后置++
-  self&amp; operator++() { increment(); return *this; }
-  self operator++(int) {
-    self tmp = *this;
-    increment();		// 直接调用increment函数
-    return tmp;
+	<span style="color:#75715e">// 配合迭代器萃取机制的一些声明
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> Value value_type;
+  <span style="color:#66d9ef">typedef</span> Ref reference;
+  <span style="color:#66d9ef">typedef</span> Ptr pointer;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_iterator<span style="color:#f92672">&lt;</span>Value, Value<span style="color:#f92672">&amp;</span>, Value<span style="color:#f92672">*&gt;</span>     iterator;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_iterator<span style="color:#f92672">&lt;</span>Value, <span style="color:#66d9ef">const</span> Value<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> Value<span style="color:#f92672">*&gt;</span> const_iterator;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_iterator<span style="color:#f92672">&lt;</span>Value, Ref, Ptr<span style="color:#f92672">&gt;</span>   self;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_node<span style="color:#f92672">&lt;</span>Value<span style="color:#f92672">&gt;*</span> link_type;
+  <span style="color:#75715e">// 迭代器的构造函数
+</span><span style="color:#75715e"></span>  __rb_tree_iterator() {}
+  __rb_tree_iterator(link_type x) { node <span style="color:#f92672">=</span> x; }
+  __rb_tree_iterator(<span style="color:#66d9ef">const</span> iterator<span style="color:#f92672">&amp;</span> it) { node <span style="color:#f92672">=</span> it.node; }
+  <span style="color:#75715e">// 提领和成员访问函数，重载了*和-&gt;操作符
+</span><span style="color:#75715e"></span>  reference <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> link_type(node)<span style="color:#f92672">-&gt;</span>value_field; }
+  pointer <span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span>(<span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>()); }
+  <span style="color:#75715e">// 前置++和后置++
+</span><span style="color:#75715e"></span>  self<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">++</span>() { increment(); <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>; }
+  self <span style="color:#66d9ef">operator</span><span style="color:#f92672">++</span>(<span style="color:#66d9ef">int</span>) {
+    self tmp <span style="color:#f92672">=</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
+    increment();		<span style="color:#75715e">// 直接调用increment函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> tmp;
   }
-  // 前置--和后置--
-  self&amp; operator--() { decrement(); return *this; }
-  self operator--(int) {
-    self tmp = *this;
-    decrement();		// 直接调用decrement函数
-    return tmp;
+  <span style="color:#75715e">// 前置--和后置--
+</span><span style="color:#75715e"></span>  self<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">--</span>() { decrement(); <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>; }
+  self <span style="color:#66d9ef">operator</span><span style="color:#f92672">--</span>(<span style="color:#66d9ef">int</span>) {
+    self tmp <span style="color:#f92672">=</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
+    decrement();		<span style="color:#75715e">// 直接调用decrement函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> tmp;
   }
 };
-</code></pre>
-
+</code></pre></div>
 <p>在上述源代码中，一直提到STL RBTree特殊节点header的设计，这个会在RBTree结构中讲到，下面跟着我一起继续往下看吧。</p>
 
 <h1 id="红黑树的数据结构">红黑树的数据结构</h1>
 
 <p>有了上面的节点和迭代器设计，就能很好的定义出一颗RBTree了。废话不多说，一步一步来剖析源代码吧。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>,
+          <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">rb_tree</span> {
+<span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> void_pointer;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_node_base<span style="color:#f92672">*</span> base_ptr;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_node<span style="color:#f92672">&lt;</span>Value<span style="color:#f92672">&gt;</span> rb_tree_node;		
+  <span style="color:#66d9ef">typedef</span> simple_alloc<span style="color:#f92672">&lt;</span>rb_tree_node, Alloc<span style="color:#f92672">&gt;</span> rb_tree_node_allocator; <span style="color:#75715e">// 专属配置器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> __rb_tree_color_type color_type;
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// 一些类型声明
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> Key key_type;
+  <span style="color:#66d9ef">typedef</span> Value value_type;
+  <span style="color:#66d9ef">typedef</span> value_type<span style="color:#f92672">*</span> pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">*</span> const_pointer;
+  <span style="color:#66d9ef">typedef</span> value_type<span style="color:#f92672">&amp;</span> reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> const_reference;
+  <span style="color:#66d9ef">typedef</span> rb_tree_node<span style="color:#f92672">*</span> link_type;
+  <span style="color:#66d9ef">typedef</span> size_t size_type;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t difference_type;
+<span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+  <span style="color:#75715e">// RB-tree的数据结构
+</span><span style="color:#75715e"></span>  size_type node_count; <span style="color:#75715e">// 记录树的节点个数
+</span><span style="color:#75715e"></span>  link_type header;  		<span style="color:#75715e">// header节点设计
+</span><span style="color:#75715e"></span>  Compare key_compare;	<span style="color:#75715e">// 节点间的键值大小比较准则
+</span><span style="color:#75715e"></span>
+  <span style="color:#75715e">// 以下三个函数用来取得header的成员
+</span><span style="color:#75715e"></span>  link_type<span style="color:#f92672">&amp;</span> root() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>) header<span style="color:#f92672">-&gt;</span>parent; }
+  link_type<span style="color:#f92672">&amp;</span> leftmost() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>) header<span style="color:#f92672">-&gt;</span>left; }
+  link_type<span style="color:#f92672">&amp;</span> rightmost() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>) header<span style="color:#f92672">-&gt;</span>right; }
 
-<pre><code class="language-cpp">template &lt;class Key, class Value, class KeyOfValue, class Compare,
-          class Alloc = alloc&gt;
-class rb_tree {
-protected:
-  typedef void* void_pointer;
-  typedef __rb_tree_node_base* base_ptr;
-  typedef __rb_tree_node&lt;Value&gt; rb_tree_node;		
-  typedef simple_alloc&lt;rb_tree_node, Alloc&gt; rb_tree_node_allocator; // 专属配置器
-  typedef __rb_tree_color_type color_type;
-public:
-	// 一些类型声明
-  typedef Key key_type;
-  typedef Value value_type;
-  typedef value_type* pointer;
-  typedef const value_type* const_pointer;
-  typedef value_type&amp; reference;
-  typedef const value_type&amp; const_reference;
-  typedef rb_tree_node* link_type;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
-protected:
-  // RB-tree的数据结构
-  size_type node_count; // 记录树的节点个数
-  link_type header;  		// header节点设计
-  Compare key_compare;	// 节点间的键值大小比较准则
+  <span style="color:#75715e">// 以下六个函数用来取得节点的成员
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">static</span> link_type<span style="color:#f92672">&amp;</span> left(link_type x) { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>)(x<span style="color:#f92672">-&gt;</span>left); }
+  <span style="color:#66d9ef">static</span> link_type<span style="color:#f92672">&amp;</span> right(link_type x) { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>)(x<span style="color:#f92672">-&gt;</span>right); }
+  <span style="color:#66d9ef">static</span> link_type<span style="color:#f92672">&amp;</span> parent(link_type x) { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>)(x<span style="color:#f92672">-&gt;</span>parent); }
+  <span style="color:#66d9ef">static</span> reference value(link_type x) { <span style="color:#66d9ef">return</span> x<span style="color:#f92672">-&gt;</span>value_field; }
+  <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">const</span> Key<span style="color:#f92672">&amp;</span> key(link_type x) { <span style="color:#66d9ef">return</span> KeyOfValue()(value(x)); }
+  <span style="color:#66d9ef">static</span> color_type<span style="color:#f92672">&amp;</span> color(link_type x) { <span style="color:#66d9ef">return</span> (color_type<span style="color:#f92672">&amp;</span>)(x<span style="color:#f92672">-&gt;</span>color); }
 
-  // 以下三个函数用来取得header的成员
-  link_type&amp; root() const { return (link_type&amp;) header-&gt;parent; }
-  link_type&amp; leftmost() const { return (link_type&amp;) header-&gt;left; }
-  link_type&amp; rightmost() const { return (link_type&amp;) header-&gt;right; }
+  <span style="color:#75715e">// 以下六个函数用来取得节点的成员，由于双层设计，导致这里需要两个定义
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">static</span> link_type<span style="color:#f92672">&amp;</span> left(base_ptr x) { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>)(x<span style="color:#f92672">-&gt;</span>left); }
+  <span style="color:#66d9ef">static</span> link_type<span style="color:#f92672">&amp;</span> right(base_ptr x) { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>)(x<span style="color:#f92672">-&gt;</span>right); }
+  <span style="color:#66d9ef">static</span> link_type<span style="color:#f92672">&amp;</span> parent(base_ptr x) { <span style="color:#66d9ef">return</span> (link_type<span style="color:#f92672">&amp;</span>)(x<span style="color:#f92672">-&gt;</span>parent); }
+  <span style="color:#66d9ef">static</span> reference value(base_ptr x) { <span style="color:#66d9ef">return</span> ((link_type)x)<span style="color:#f92672">-&gt;</span>value_field; }
+  <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">const</span> Key<span style="color:#f92672">&amp;</span> key(base_ptr x) { <span style="color:#66d9ef">return</span> KeyOfValue()(value(link_type(x)));} 
+  <span style="color:#66d9ef">static</span> color_type<span style="color:#f92672">&amp;</span> color(base_ptr x) { <span style="color:#66d9ef">return</span> (color_type<span style="color:#f92672">&amp;</span>)(link_type(x)<span style="color:#f92672">-&gt;</span>color); }
 
-  // 以下六个函数用来取得节点的成员
-  static link_type&amp; left(link_type x) { return (link_type&amp;)(x-&gt;left); }
-  static link_type&amp; right(link_type x) { return (link_type&amp;)(x-&gt;right); }
-  static link_type&amp; parent(link_type x) { return (link_type&amp;)(x-&gt;parent); }
-  static reference value(link_type x) { return x-&gt;value_field; }
-  static const Key&amp; key(link_type x) { return KeyOfValue()(value(x)); }
-  static color_type&amp; color(link_type x) { return (color_type&amp;)(x-&gt;color); }
-
-  // 以下六个函数用来取得节点的成员，由于双层设计，导致这里需要两个定义
-  static link_type&amp; left(base_ptr x) { return (link_type&amp;)(x-&gt;left); }
-  static link_type&amp; right(base_ptr x) { return (link_type&amp;)(x-&gt;right); }
-  static link_type&amp; parent(base_ptr x) { return (link_type&amp;)(x-&gt;parent); }
-  static reference value(base_ptr x) { return ((link_type)x)-&gt;value_field; }
-  static const Key&amp; key(base_ptr x) { return KeyOfValue()(value(link_type(x)));} 
-  static color_type&amp; color(base_ptr x) { return (color_type&amp;)(link_type(x)-&gt;color); }
-
-  // 求取极大值和极小值，这里直接调用节点结构的函数极可
-  static link_type minimum(link_type x) { 
-    return (link_type)  __rb_tree_node_base::minimum(x);
+  <span style="color:#75715e">// 求取极大值和极小值，这里直接调用节点结构的函数极可
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">static</span> link_type minimum(link_type x) { 
+    <span style="color:#66d9ef">return</span> (link_type)  __rb_tree_node_base<span style="color:#f92672">::</span>minimum(x);
   }
-  static link_type maximum(link_type x) {
-    return (link_type) __rb_tree_node_base::maximum(x);
+  <span style="color:#66d9ef">static</span> link_type maximum(link_type x) {
+    <span style="color:#66d9ef">return</span> (link_type) __rb_tree_node_base<span style="color:#f92672">::</span>maximum(x);
   }
 
-public:
-	// RBTree的迭代器定义
-  typedef __rb_tree_iterator&lt;value_type, reference, pointer&gt; iterator;
-  typedef __rb_tree_iterator&lt;value_type, const_reference, const_pointer&gt; 
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// RBTree的迭代器定义
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> __rb_tree_iterator<span style="color:#f92672">&lt;</span>value_type, reference, pointer<span style="color:#f92672">&gt;</span> iterator;
+  <span style="color:#66d9ef">typedef</span> __rb_tree_iterator<span style="color:#f92672">&lt;</span>value_type, const_reference, const_pointer<span style="color:#f92672">&gt;</span> 
           const_iterator;
-public:
-  Compare key_comp() const { return key_compare; }	// 由于红黑树自带排序功能，所以必须传入一个比较器函数
-  iterator begin() { return leftmost(); }        // RBTree的起始节点为左边最小值节点
-  const_iterator begin() const { return leftmost(); }
-  iterator end() { return header; }							// RBTree的终止节点为右边最大值节点
-  const_iterator end() const { return header; }
-  bool empty() const { return node_count == 0; }	// 判断红黑树是否为空	
-  size_type size() const { return node_count; }		// 获取红黑树的节点个数
-  size_type max_size() const { return size_type(-1); }	// 获取红黑树的最大节点个数，
-																												// 没有容量的概念，故为sizetype最大值
-};
-</code></pre>
-
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  Compare key_comp() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> key_compare; }	<span style="color:#75715e">// 由于红黑树自带排序功能，所以必须传入一个比较器函数
+</span><span style="color:#75715e"></span>  iterator begin() { <span style="color:#66d9ef">return</span> leftmost(); }        <span style="color:#75715e">// RBTree的起始节点为左边最小值节点
+</span><span style="color:#75715e"></span>  const_iterator begin() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> leftmost(); }
+  iterator end() { <span style="color:#66d9ef">return</span> header; }							<span style="color:#75715e">// RBTree的终止节点为右边最大值节点
+</span><span style="color:#75715e"></span>  const_iterator end() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> header; }
+  <span style="color:#66d9ef">bool</span> empty() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> node_count <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>; }	<span style="color:#75715e">// 判断红黑树是否为空	
+</span><span style="color:#75715e"></span>  size_type size() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> node_count; }		<span style="color:#75715e">// 获取红黑树的节点个数
+</span><span style="color:#75715e"></span>  size_type max_size() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> size_type(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>); }	<span style="color:#75715e">// 获取红黑树的最大节点个数，
+</span><span style="color:#75715e"></span>																												<span style="color:#75715e">// 没有容量的概念，故为sizetype最大值
+</span><span style="color:#75715e"></span>};
+</code></pre></div>
 <p>我们看到，在RBTree的数据结构中，定义了RBTree节点和迭代器，然后添加了header节点，以及node_count参数，其他都是一下简单的函数声明和类型声明。除此之外，并没有过多的增加东西。这里理解起来还是比较简单，至于header有什么作用，请继续往下看。</p>
 
 <h1 id="红黑树的构造与内存管理">红黑树的构造与内存管理</h1>
@@ -409,140 +404,136 @@ public:
 <p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfynyzckj30ha0acdgd.jpg" alt="STLRBTreeInit" /></center></p>
 
 <p>下面来看看它的构造函数代码吧：</p>
-
-<pre><code class="language-cpp">template &lt;class Key, class Value, class KeyOfValue, class Compare,
-          class Alloc = alloc&gt;
-class rb_tree {
-	// 这部分代码是从红黑树的结构定义中提取出来的
-protected:
-	typedef simple_alloc&lt;rb_tree_node, Alloc&gt; rb_tree_node_allocator; // 专属配置器
-
-  link_type get_node() { return rb_tree_node_allocator::allocate(); } // 配置空间
-
-  link_type create_node(const value_type&amp; x) {
-    link_type tmp = get_node();            // 配置空間
-    __STL_TRY {
-      construct(&amp;tmp-&gt;value_field, x);    // 构造内容
-    }
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>,
+          <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">rb_tree</span> {
+	<span style="color:#75715e">// 这部分代码是从红黑树的结构定义中提取出来的
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">typedef</span> simple_alloc<span style="color:#f92672">&lt;</span>rb_tree_node, Alloc<span style="color:#f92672">&gt;</span> rb_tree_node_allocator; <span style="color:#75715e">// 专属配置器
+</span><span style="color:#75715e"></span>
+  link_type <span style="color:#a6e22e">get_node</span>() { <span style="color:#66d9ef">return</span> rb_tree_node_allocator<span style="color:#f92672">::</span>allocate(); } <span style="color:#75715e">// 配置空间
+</span><span style="color:#75715e"></span>
+  link_type <span style="color:#a6e22e">create_node</span>(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x) {
+    link_type tmp <span style="color:#f92672">=</span> get_node();            <span style="color:#75715e">// 配置空間
+</span><span style="color:#75715e"></span>    __STL_TRY {
+      construct(<span style="color:#f92672">&amp;</span>tmp<span style="color:#f92672">-&gt;</span>value_field, x);    <span style="color:#75715e">// 构造内容
+</span><span style="color:#75715e"></span>    }
     __STL_UNWIND(put_node(tmp));
-    return tmp;
+    <span style="color:#66d9ef">return</span> tmp;
   }
-  // 初始化函数，用来初始化一棵RBTree
-  void init() {
-    header = get_node();    // 产生一个节点空间，令header指向它
-    color(header) = __rb_tree_red; // 令header为红色，用来区分header和root
-    root() = 0;
-    leftmost() = header;    // 令header的左子节点为其自己
-    rightmost() = header;    // 令header的右子节点为其自己
-  }
-  // 真正的默认构造函数
-  rb_tree(const Compare&amp; comp = Compare())
-  : node_count(0), key_compare(comp) { init(); }	// 直接调用初始化函数
-
-  // 带参构造函数，以另一棵RBTree为初值来初始化
-  rb_tree(const rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;&amp; x) 
-    : node_count(0), key_compare(x.key_compare)
+  <span style="color:#75715e">// 初始化函数，用来初始化一棵RBTree
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">init</span>() {
+    header <span style="color:#f92672">=</span> get_node();    <span style="color:#75715e">// 产生一个节点空间，令header指向它
+</span><span style="color:#75715e"></span>    color(header) <span style="color:#f92672">=</span> __rb_tree_red; <span style="color:#75715e">// 令header为红色，用来区分header和root
+</span><span style="color:#75715e"></span>    root() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    leftmost() <span style="color:#f92672">=</span> header;    <span style="color:#75715e">// 令header的左子节点为其自己
+</span><span style="color:#75715e"></span>    rightmost() <span style="color:#f92672">=</span> header;    <span style="color:#75715e">// 令header的右子节点为其自己
+</span><span style="color:#75715e"></span>  }
+  <span style="color:#75715e">// 真正的默认构造函数
+</span><span style="color:#75715e"></span>  rb_tree(<span style="color:#66d9ef">const</span> Compare<span style="color:#f92672">&amp;</span> comp <span style="color:#f92672">=</span> Compare())
+  <span style="color:#f92672">:</span> node_count(<span style="color:#ae81ff">0</span>), key_compare(comp) { init(); }	<span style="color:#75715e">// 直接调用初始化函数
+</span><span style="color:#75715e"></span>
+  <span style="color:#75715e">// 带参构造函数，以另一棵RBTree为初值来初始化
+</span><span style="color:#75715e"></span>  rb_tree(<span style="color:#66d9ef">const</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;&amp;</span> x) 
+    <span style="color:#f92672">:</span> node_count(<span style="color:#ae81ff">0</span>), key_compare(x.key_compare)
   { 
-    header = get_node();    // 產生一個節點空間，令 header 指向它
-    color(header) = __rb_tree_red;    // 令 header 為紅色
-    if (x.root() == 0) {    //  如果 x 是個空白樹
-      root() = 0;
-      leftmost() = header;     // 令 header 的左子節點為自己。
-      rightmost() = header; // 令 header 的右子節點為自己。
-    }
-    else {    //  x 不是一個空白樹
-      __STL_TRY {
-        root() = __copy(x.root(), header);        //调用copy函数
-      }
+    header <span style="color:#f92672">=</span> get_node();    <span style="color:#75715e">// 產生一個節點空間，令 header 指向它
+</span><span style="color:#75715e"></span>    color(header) <span style="color:#f92672">=</span> __rb_tree_red;    <span style="color:#75715e">// 令 header 為紅色
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (x.root() <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {    <span style="color:#75715e">//  如果 x 是個空白樹
+</span><span style="color:#75715e"></span>      root() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+      leftmost() <span style="color:#f92672">=</span> header;     <span style="color:#75715e">// 令 header 的左子節點為自己。
+</span><span style="color:#75715e"></span>      rightmost() <span style="color:#f92672">=</span> header; <span style="color:#75715e">// 令 header 的右子節點為自己。
+</span><span style="color:#75715e"></span>    }
+    <span style="color:#66d9ef">else</span> {    <span style="color:#75715e">//  x 不是一個空白樹
+</span><span style="color:#75715e"></span>      __STL_TRY {
+        root() <span style="color:#f92672">=</span> __copy(x.root(), header);        <span style="color:#75715e">//调用copy函数
+</span><span style="color:#75715e"></span>      }
       __STL_UNWIND(put_node(header));
-      leftmost() = minimum(root());    // 令 header 的左子節點為最小節點
-      rightmost() = maximum(root());    // 令 header 的右子節點為最大節點
-    }
-    node_count = x.node_count;
+      leftmost() <span style="color:#f92672">=</span> minimum(root());    <span style="color:#75715e">// 令 header 的左子節點為最小節點
+</span><span style="color:#75715e"></span>      rightmost() <span style="color:#f92672">=</span> maximum(root());    <span style="color:#75715e">// 令 header 的右子節點為最大節點
+</span><span style="color:#75715e"></span>    }
+    node_count <span style="color:#f92672">=</span> x.node_count;
   }
-  // copy函数定义如下
-  template &lt;class K, class V, class KeyOfValue, class Compare, class Alloc&gt;
-	typename rb_tree&lt;K, V, KeyOfValue, Compare, Alloc&gt;::link_type 
-	rb_tree&lt;K, V, KeyOfValue, Compare, Alloc&gt;::__copy(link_type x, link_type p) {
-	  link_type top = clone_node(x); // 克隆root节点
-	  top-&gt;parent = p;	// 将root节点父节点指向p
-	 	// 以下为非递归的二叉树复制过程
-	  __STL_TRY {
-	    if (x-&gt;right)
-	      top-&gt;right = __copy(right(x), top); // 一直copy右子节点
-	    p = top;	
-	    x = left(x);	// 取左节点
-
-	    while (x != 0) {	// 左子节点不为空
-	      link_type y = clone_node(x);	// 克隆左子节点
-	      p-&gt;left = y;	// p的左子节点设为y
-	      y-&gt;parent = p;	// y的父节点设为p
-	      if (x-&gt;right)		// 如果左子节点还有右子节点，继续复制
-	        y-&gt;right = __copy(right(x), y);
-	      p = y;	// 直到没有左子节点
-	      x = left(x);
+  <span style="color:#75715e">// copy函数定义如下
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">K</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">V</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+	<span style="color:#66d9ef">typename</span> rb_tree<span style="color:#f92672">&lt;</span>K, V, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>link_type 
+	rb_tree<span style="color:#f92672">&lt;</span>K, V, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>__copy(link_type x, link_type p) {
+	  link_type top <span style="color:#f92672">=</span> clone_node(x); <span style="color:#75715e">// 克隆root节点
+</span><span style="color:#75715e"></span>	  top<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">=</span> p;	<span style="color:#75715e">// 将root节点父节点指向p
+</span><span style="color:#75715e"></span>	 	<span style="color:#75715e">// 以下为非递归的二叉树复制过程
+</span><span style="color:#75715e"></span>	  __STL_TRY {
+	    <span style="color:#66d9ef">if</span> (x<span style="color:#f92672">-&gt;</span>right)
+	      top<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">=</span> __copy(right(x), top); <span style="color:#75715e">// 一直copy右子节点
+</span><span style="color:#75715e"></span>	    p <span style="color:#f92672">=</span> top;	
+	    x <span style="color:#f92672">=</span> left(x);	<span style="color:#75715e">// 取左节点
+</span><span style="color:#75715e"></span>
+	    <span style="color:#66d9ef">while</span> (x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {	<span style="color:#75715e">// 左子节点不为空
+</span><span style="color:#75715e"></span>	      link_type y <span style="color:#f92672">=</span> clone_node(x);	<span style="color:#75715e">// 克隆左子节点
+</span><span style="color:#75715e"></span>	      p<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">=</span> y;	<span style="color:#75715e">// p的左子节点设为y
+</span><span style="color:#75715e"></span>	      y<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">=</span> p;	<span style="color:#75715e">// y的父节点设为p
+</span><span style="color:#75715e"></span>	      <span style="color:#66d9ef">if</span> (x<span style="color:#f92672">-&gt;</span>right)		<span style="color:#75715e">// 如果左子节点还有右子节点，继续复制
+</span><span style="color:#75715e"></span>	        y<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">=</span> __copy(right(x), y);
+	      p <span style="color:#f92672">=</span> y;	<span style="color:#75715e">// 直到没有左子节点
+</span><span style="color:#75715e"></span>	      x <span style="color:#f92672">=</span> left(x);
 	    }
 	  }
 	  __STL_UNWIND(__erase(top));
 
-	  return top;
+	  <span style="color:#66d9ef">return</span> top;
 	}
-	// clone一个节点函数
-  link_type clone_node(link_type x) {    // 複製一個節點（的值和色）
-	  link_type tmp = create_node(x-&gt;value_field);
-	  tmp-&gt;color = x-&gt;color;
-	  tmp-&gt;left = 0;
-	  tmp-&gt;right = 0;
-	  return tmp;
+	<span style="color:#75715e">// clone一个节点函数
+</span><span style="color:#75715e"></span>  link_type clone_node(link_type x) {    <span style="color:#75715e">// 複製一個節點（的值和色）
+</span><span style="color:#75715e"></span>	  link_type tmp <span style="color:#f92672">=</span> create_node(x<span style="color:#f92672">-&gt;</span>value_field);
+	  tmp<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>color;
+	  tmp<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	  tmp<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	  <span style="color:#66d9ef">return</span> tmp;
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="红黑树的析构函数">红黑树的析构函数</h2>
 
 <p>析构函数负责清除和释放红黑树上的每一个节点，并且初始化该红黑树为空树，即恢复header为初始状态</p>
-
-<pre><code class="language-cpp">template &lt;class Key, class Value, class KeyOfValue, class Compare,
-          class Alloc = alloc&gt;
-class rb_tree {
-	// 这部分代码是从红黑树的结构定义中提取出来的
-protected:
-	void put_node(link_type p) { rb_tree_node_allocator::deallocate(p); }
-	// 析构一个节点
-	void destroy_node(link_type p) {
-    destroy(&amp;p-&gt;value_field);        // 析构内容
-    put_node(p);                    // 释放空间 
-  }
-  // 析构函数
-  ~rb_tree() {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>,
+          <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">rb_tree</span> {
+	<span style="color:#75715e">// 这部分代码是从红黑树的结构定义中提取出来的
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">void</span> put_node(link_type p) { rb_tree_node_allocator<span style="color:#f92672">::</span>deallocate(p); }
+	<span style="color:#75715e">// 析构一个节点
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">void</span> destroy_node(link_type p) {
+    destroy(<span style="color:#f92672">&amp;</span>p<span style="color:#f92672">-&gt;</span>value_field);        <span style="color:#75715e">// 析构内容
+</span><span style="color:#75715e"></span>    put_node(p);                    <span style="color:#75715e">// 释放空间 
+</span><span style="color:#75715e"></span>  }
+  <span style="color:#75715e">// 析构函数
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">~</span>rb_tree() {
     clear();
     put_node(header);
   }
-  // 清除整棵树并初始化header节点
-  void clear() {
-    if (node_count != 0) {
+  <span style="color:#75715e">// 清除整棵树并初始化header节点
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> clear() {
+    <span style="color:#66d9ef">if</span> (node_count <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
       __erase(root());
-      // 初始化Header节点
-      leftmost() = header;
-      root() = 0;
-      rightmost() = header;
-      node_count = 0;
+      <span style="color:#75715e">// 初始化Header节点
+</span><span style="color:#75715e"></span>      leftmost() <span style="color:#f92672">=</span> header;
+      root() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+      rightmost() <span style="color:#f92672">=</span> header;
+      node_count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
     }
   }
-  // 清除RBTree的每个节点
-	template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-	void rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::__erase(link_type x) {
-	  // 直接清，不用调平衡
-	  while (x != 0) {
+  <span style="color:#75715e">// 清除RBTree的每个节点
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+	<span style="color:#66d9ef">void</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>__erase(link_type x) {
+	  <span style="color:#75715e">// 直接清，不用调平衡
+</span><span style="color:#75715e"></span>	  <span style="color:#66d9ef">while</span> (x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
 	    __erase(right(x));
-	    link_type y = left(x);
+	    link_type y <span style="color:#f92672">=</span> left(x);
 	    destroy_node(x);
-	    x = y;
+	    x <span style="color:#f92672">=</span> y;
 	  }
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="红黑树的插入">红黑树的插入</h1>
 
 <p>红黑树在插入节点的时候，会破坏其平衡，这时候需要旋转和变色来使红黑树重新达到平衡。这才是红黑树的精髓所在啊！所以这部分很长，大家耐心看，最好拿纸笔画一下。</p>
@@ -643,362 +634,342 @@ protected:
 <h2 id="红黑树的插入源代码分析">红黑树的插入源代码分析</h2>
 
 <p>红黑树的插入主要靠以下三个函数来实现：</p>
-
-<pre><code class="language-cpp">// 左旋函数
-inline void
-__rb_tree_rotate_left(__rb_tree_node_base* x, __rb_tree_node_base*&amp; root)
-// 右旋函数
-inline void
-__rb_tree_rotate_right(__rb_tree_node_base* x, __rb_tree_node_base*&amp; root)
-// 插入后调节平衡函数
-inline void
-__rb_tree_rebalance(__rb_tree_node_base* x, __rb_tree_node_base*&amp; root)
-// 插入的核心函数
-iterator __insert(base_ptr x, base_ptr y, const value_type&amp; v);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 左旋函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span>
+<span style="color:#a6e22e">__rb_tree_rotate_left</span>(__rb_tree_node_base<span style="color:#f92672">*</span> x, __rb_tree_node_base<span style="color:#f92672">*&amp;</span> root)
+<span style="color:#75715e">// 右旋函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span>
+__rb_tree_rotate_right(__rb_tree_node_base<span style="color:#f92672">*</span> x, __rb_tree_node_base<span style="color:#f92672">*&amp;</span> root)
+<span style="color:#75715e">// 插入后调节平衡函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span>
+__rb_tree_rebalance(__rb_tree_node_base<span style="color:#f92672">*</span> x, __rb_tree_node_base<span style="color:#f92672">*&amp;</span> root)
+<span style="color:#75715e">// 插入的核心函数
+</span><span style="color:#75715e"></span>iterator __insert(base_ptr x, base_ptr y, <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> v);
+</code></pre></div>
 <p>上述三个函数就代表了上一小节示例图中的左旋，右旋和变色的源代码接口。</p>
 
 <p>另外，STL还提供了两个个接口函数，如下：</p>
-
-<pre><code class="language-cpp">// 允许出现相同的值
-iterator insert_equal(const value_type&amp; x);
-// 不允许出现相同的值
-iterator insert_unique(iterator position, const value_type&amp; x);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 允许出现相同的值
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">insert_equal</span>(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x);
+<span style="color:#75715e">// 不允许出现相同的值
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">insert_unique</span>(iterator position, <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x);
+</code></pre></div>
 <p>下面就针对这五个函数一一来分析一下他们的源代码(以insert_unique为例)：</p>
-
-<pre><code class="language-cpp">// 此插入函数不允许重复
-// 返回的是一个pair，第一个元素为红黑树的迭代器，指向新增节点
-// 第二个元素表示插入操作是否成功的
-template&lt;class Key , class Value , class KeyOfValue , class Compare , class Alloc&gt;  
-pair&lt;typename rb_tree&lt;Key , Value , KeyOfValue , Compare , Alloc&gt;::iterator , bool&gt;  
-rb_tree&lt;Key , Value , KeyOfValue , Compare , Alloc&gt;::insert_unique(const Value &amp;v)  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 此插入函数不允许重复
+</span><span style="color:#75715e">// 返回的是一个pair，第一个元素为红黑树的迭代器，指向新增节点
+</span><span style="color:#75715e">// 第二个元素表示插入操作是否成功的
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>  
+pair<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> rb_tree<span style="color:#f92672">&lt;</span>Key , Value , KeyOfValue , Compare , Alloc<span style="color:#f92672">&gt;::</span>iterator , <span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span>  
+rb_tree<span style="color:#f92672">&lt;</span>Key , Value , KeyOfValue , Compare , Alloc<span style="color:#f92672">&gt;::</span>insert_unique(<span style="color:#66d9ef">const</span> Value <span style="color:#f92672">&amp;</span>v)  
 {  
-    rb_tree_node* y = header;    // 根节点root的父节点  
-    rb_tree_node* x = root();    // 从根节点开始  
-    bool comp = true;  
-    while(x != 0)  
+    rb_tree_node<span style="color:#f92672">*</span> y <span style="color:#f92672">=</span> header;    <span style="color:#75715e">// 根节点root的父节点  
+</span><span style="color:#75715e"></span>    rb_tree_node<span style="color:#f92672">*</span> x <span style="color:#f92672">=</span> root();    <span style="color:#75715e">// 从根节点开始  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">bool</span> comp <span style="color:#f92672">=</span> true;  
+    <span style="color:#66d9ef">while</span>(x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>)  
     {  
-        y = x;  
-        comp = key_compare(KeyOfValue()(v) , key(x));    // v键值小于目前节点之键值？  
-        x = comp ? left(x) : right(x);   // 遇“大”则往左，遇“小于或等于”则往右  
-    }  
-    // 离开while循环之后，y所指即插入点之父节点（此时的它必为叶节点）  
-    iterator j = iterator(y);     // 令迭代器j指向插入点之父节点y  
-    if(comp)     // 如果离开while循环时comp为真（表示遇“大”，将插入于左侧）  
-    {  
-        if(j == begin())    // 如果插入点之父节点为最左节点  
-            return pair&lt;iterator , bool&gt;(_insert(x , y , z) , true);// 调用_insert函数
-        else     // 否则（插入点之父节点不为最左节点）  
-            --j;   // 调整j，回头准备测试  
-    }  
-    if(key_compare(key(j.node) , KeyOfValue()(v) ))  
-        // 新键值不与既有节点之键值重复，于是以下执行安插操作  
-        return pair&lt;iterator , bool&gt;(_insert(x , y , z) , true);  
-    // 以上，x为新值插入点，y为插入点之父节点，v为新值  
-  
-    // 进行至此，表示新值一定与树中键值重复，那么就不应该插入新值  
-    return pair&lt;iterator , bool&gt;(j , false);  
+        y <span style="color:#f92672">=</span> x;  
+        comp <span style="color:#f92672">=</span> key_compare(KeyOfValue()(v) , key(x));    <span style="color:#75715e">// v键值小于目前节点之键值？  
+</span><span style="color:#75715e"></span>        x <span style="color:#f92672">=</span> comp <span style="color:#f92672">?</span> left(x) <span style="color:#f92672">:</span> right(x);   <span style="color:#75715e">// 遇“大”则往左，遇“小于或等于”则往右  
+</span><span style="color:#75715e"></span>    }  
+    <span style="color:#75715e">// 离开while循环之后，y所指即插入点之父节点（此时的它必为叶节点）  
+</span><span style="color:#75715e"></span>    iterator j <span style="color:#f92672">=</span> iterator(y);     <span style="color:#75715e">// 令迭代器j指向插入点之父节点y  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span>(comp)     <span style="color:#75715e">// 如果离开while循环时comp为真（表示遇“大”，将插入于左侧）  
+</span><span style="color:#75715e"></span>    {  
+        <span style="color:#66d9ef">if</span>(j <span style="color:#f92672">==</span> begin())    <span style="color:#75715e">// 如果插入点之父节点为最左节点  
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">return</span> pair<span style="color:#f92672">&lt;</span>iterator , <span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span>(_insert(x , y , z) , true);<span style="color:#75715e">// 调用_insert函数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">else</span>     <span style="color:#75715e">// 否则（插入点之父节点不为最左节点）  
+</span><span style="color:#75715e"></span>            <span style="color:#f92672">--</span>j;   <span style="color:#75715e">// 调整j，回头准备测试  
+</span><span style="color:#75715e"></span>    }  
+    <span style="color:#66d9ef">if</span>(key_compare(key(j.node) , KeyOfValue()(v) ))  
+        <span style="color:#75715e">// 新键值不与既有节点之键值重复，于是以下执行安插操作  
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span> pair<span style="color:#f92672">&lt;</span>iterator , <span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span>(_insert(x , y , z) , true);  
+    <span style="color:#75715e">// 以上，x为新值插入点，y为插入点之父节点，v为新值  
+</span><span style="color:#75715e"></span>  
+    <span style="color:#75715e">// 进行至此，表示新值一定与树中键值重复，那么就不应该插入新值  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> pair<span style="color:#f92672">&lt;</span>iterator , <span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span>(j , false);  
 } 
 
-// 真正地插入执行程序 _insert()  
-// 返回新插入节点的迭代器
-template&lt;class Key , class Value , class KeyOfValue , class Compare , class Alloc&gt;  
-typename&lt;Key , Value , KeyOfValue , Compare , Alloc&gt;::_insert(base_ptr x_ , base_ptr y_ , const Value &amp;v)  
+<span style="color:#75715e">// 真正地插入执行程序 _insert()  
+</span><span style="color:#75715e">// 返回新插入节点的迭代器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">typename</span><span style="color:#f92672">&lt;</span>Key , Value , KeyOfValue , Compare , Alloc<span style="color:#f92672">&gt;::</span>_insert(base_ptr x_ , base_ptr y_ , <span style="color:#66d9ef">const</span> Value <span style="color:#f92672">&amp;</span>v)  
 {  
-    // 参数x_ 为新值插入点，参数y_为插入点之父节点，参数v为新值  
-    link_type x = (link_type) x_;  
-    link_type y = (link_type) y_;  
+    <span style="color:#75715e">// 参数x_ 为新值插入点，参数y_为插入点之父节点，参数v为新值  
+</span><span style="color:#75715e"></span>    link_type x <span style="color:#f92672">=</span> (link_type) x_;  
+    link_type y <span style="color:#f92672">=</span> (link_type) y_;  
     link_type z;  
-    // key_compare 是键值大小比较准则。应该会是个function object  
-    if(y == header || x != 0 || key_compare(KeyOfValue()(v) , key(y) ))  
+    <span style="color:#75715e">// key_compare 是键值大小比较准则。应该会是个function object  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span>(y <span style="color:#f92672">==</span> header <span style="color:#f92672">||</span> x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">||</span> key_compare(KeyOfValue()(v) , key(y) ))  
     {  
-        z = create_node(v);    // 产生一个新节点  
-        left(y) = z;           // 这使得当y即为header时，leftmost() = z  
-        if(y == header)  
+        z <span style="color:#f92672">=</span> create_node(v);    <span style="color:#75715e">// 产生一个新节点  
+</span><span style="color:#75715e"></span>        left(y) <span style="color:#f92672">=</span> z;           <span style="color:#75715e">// 这使得当y即为header时，leftmost() = z  
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>(y <span style="color:#f92672">==</span> header)  
         {  
-            root() = z;  
-            rightmost() = z;  
+            root() <span style="color:#f92672">=</span> z;  
+            rightmost() <span style="color:#f92672">=</span> z;  
         }  
-        else if(y == leftmost())     // 如果y为最左节点  
-            leftmost() = z;          // 维护leftmost()，使它永远指向最左节点  
-    }  
-    else  
+        <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span>(y <span style="color:#f92672">==</span> leftmost())     <span style="color:#75715e">// 如果y为最左节点  
+</span><span style="color:#75715e"></span>            leftmost() <span style="color:#f92672">=</span> z;          <span style="color:#75715e">// 维护leftmost()，使它永远指向最左节点  
+</span><span style="color:#75715e"></span>    }  
+    <span style="color:#66d9ef">else</span>  
     {  
-        z = create_node(v);        // 产生一个新节点  
-        right(y) = z;              // 令新节点成为插入点之父节点y的右子节点  
-        if(y == rightmost())  
-            rightmost() = z;       // 维护rightmost()，使它永远指向最右节点  
-    }  
-    parent(z) = y;      // 设定新节点的父节点  
-    left(z) = 0;        // 设定新节点的左子节点  
-    right(z) = 0;       // 设定新节点的右子节点  
-    // 新节点的颜色将在_rb_tree_rebalance()设定（并调整）  
-    _rb_tree_rebalance(z , header-&gt;parent);      // 参数一为新增节点，参数二为根节点root  
-    ++node_count;       // 节点数累加  
-    return iterator(z);  // 返回一个迭代器，指向新增节点  
-}  
+        z <span style="color:#f92672">=</span> create_node(v);        <span style="color:#75715e">// 产生一个新节点  
+</span><span style="color:#75715e"></span>        right(y) <span style="color:#f92672">=</span> z;              <span style="color:#75715e">// 令新节点成为插入点之父节点y的右子节点  
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>(y <span style="color:#f92672">==</span> rightmost())  
+            rightmost() <span style="color:#f92672">=</span> z;       <span style="color:#75715e">// 维护rightmost()，使它永远指向最右节点  
+</span><span style="color:#75715e"></span>    }  
+    parent(z) <span style="color:#f92672">=</span> y;      <span style="color:#75715e">// 设定新节点的父节点  
+</span><span style="color:#75715e"></span>    left(z) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;        <span style="color:#75715e">// 设定新节点的左子节点  
+</span><span style="color:#75715e"></span>    right(z) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;       <span style="color:#75715e">// 设定新节点的右子节点  
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 新节点的颜色将在_rb_tree_rebalance()设定（并调整）  
+</span><span style="color:#75715e"></span>    _rb_tree_rebalance(z , header<span style="color:#f92672">-&gt;</span>parent);      <span style="color:#75715e">// 参数一为新增节点，参数二为根节点root  
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">++</span>node_count;       <span style="color:#75715e">// 节点数累加  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">iterator</span>(z);  <span style="color:#75715e">// 返回一个迭代器，指向新增节点  
+</span><span style="color:#75715e"></span>}  
 
-// 全局函数  
-// 重新令树形平衡（改变颜色及旋转树形）  
-// 参数一为新增节点，参数二为根节点root  
-inline void _rb_tree_rebalance(_rb_tree_node_base* x , _rb_tree_node_base*&amp; root)  
+<span style="color:#75715e">// 全局函数  
+</span><span style="color:#75715e">// 重新令树形平衡（改变颜色及旋转树形）  
+</span><span style="color:#75715e">// 参数一为新增节点，参数二为根节点root  
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> _rb_tree_rebalance(_rb_tree_node_base<span style="color:#f92672">*</span> x , _rb_tree_node_base<span style="color:#f92672">*&amp;</span> root)  
 {  
-    x-&gt;color = _rb_tree_red;    //新节点必为红  
-    while(x != root &amp;&amp; x-&gt;parent-&gt;color == _rb_tree_red)    // 父节点为红  
-    {  
-        if(x-&gt;parent == x-&gt;parent-&gt;parent-&gt;left)      // 父节点为祖父节点之左子节点  
-        {  
-            _rb_tree_node_base* y = x-&gt;parent-&gt;parent-&gt;right;    // 令y为伯父节点  
-            if(y &amp;&amp; y-&gt;color == _rb_tree_red)    // 伯父节点存在，且为红  
-            {  
-                x-&gt;parent-&gt;color = _rb_tree_black;           // 更改父节点为黑色  
-                y-&gt;color = _rb_tree_black;                   // 更改伯父节点为黑色  
-                x-&gt;parent-&gt;parent-&gt;color = _rb_tree_red;     // 更改祖父节点为红色  
-                x = x-&gt;parent-&gt;parent;  
+    x<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_red;    <span style="color:#75715e">//新节点必为红  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(x <span style="color:#f92672">!=</span> root <span style="color:#f92672">&amp;&amp;</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">==</span> _rb_tree_red)    <span style="color:#75715e">// 父节点为红  
+</span><span style="color:#75715e"></span>    {  
+        <span style="color:#66d9ef">if</span>(x<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">==</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>left)      <span style="color:#75715e">// 父节点为祖父节点之左子节点  
+</span><span style="color:#75715e"></span>        {  
+            _rb_tree_node_base<span style="color:#f92672">*</span> y <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>right;    <span style="color:#75715e">// 令y为伯父节点  
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span>(y <span style="color:#f92672">&amp;&amp;</span> y<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">==</span> _rb_tree_red)    <span style="color:#75715e">// 伯父节点存在，且为红  
+</span><span style="color:#75715e"></span>            {  
+                x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_black;           <span style="color:#75715e">// 更改父节点为黑色  
+</span><span style="color:#75715e"></span>                y<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_black;                   <span style="color:#75715e">// 更改伯父节点为黑色  
+</span><span style="color:#75715e"></span>                x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_red;     <span style="color:#75715e">// 更改祖父节点为红色  
+</span><span style="color:#75715e"></span>                x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent;  
             }  
-            else    // 无伯父节点，或伯父节点为黑色  
-            {  
-                if(x == x-&gt;parent-&gt;right)   // 如果新节点为父节点之右子节点  
-                {  
-                    x = x-&gt;parent;  
-                    _rb_tree_rotate_left(x , root);    // 第一个参数为左旋点  
-                }  
-                x-&gt;parent-&gt;color = _rb_tree_black;     // 改变颜色  
-                x-&gt;parent-&gt;parent-&gt;color = _rb_tree_red;  
-                _rb_tree_rotate_right(x-&gt;parent-&gt;parent , root);    // 第一个参数为右旋点  
-            }  
+            <span style="color:#66d9ef">else</span>    <span style="color:#75715e">// 无伯父节点，或伯父节点为黑色  
+</span><span style="color:#75715e"></span>            {  
+                <span style="color:#66d9ef">if</span>(x <span style="color:#f92672">==</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>right)   <span style="color:#75715e">// 如果新节点为父节点之右子节点  
+</span><span style="color:#75715e"></span>                {  
+                    x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>parent;  
+                    _rb_tree_rotate_left(x , root);    <span style="color:#75715e">// 第一个参数为左旋点  
+</span><span style="color:#75715e"></span>                }  
+                x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_black;     <span style="color:#75715e">// 改变颜色  
+</span><span style="color:#75715e"></span>                x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_red;  
+                _rb_tree_rotate_right(x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent , root);    <span style="color:#75715e">// 第一个参数为右旋点  
+</span><span style="color:#75715e"></span>            }  
         }  
-        else          // 父节点为祖父节点之右子节点  
-        {  
-            _rb_tree_node_base* y = x-&gt;parent-&gt;parent-&gt;left;    // 令y为伯父节点  
-            if(y &amp;&amp; y-&gt;color == _rb_tree_red)    // 有伯父节点，且为红  
-            {  
-                x-&gt;parent-&gt;color = _rb_tree_black;           // 更改父节点为黑色  
-                y-&gt;color = _rb_tree_black;                   // 更改伯父节点为黑色  
-                x-&gt;parent-&gt;parent-&gt;color = _rb_tree_red;     // 更改祖父节点为红色  
-                x = x-&gt;parent-&gt;parent;          // 准备继续往上层检查  
-            }  
-            else    // 无伯父节点，或伯父节点为黑色  
-            {  
-                if(x == x-&gt;parent-&gt;left)        // 如果新节点为父节点之左子节点  
-                {  
-                    x = x-&gt;parent;  
-                    _rb_tree_rotate_right(x , root);    // 第一个参数为右旋点  
-                }  
-                x-&gt;parent-&gt;color = _rb_tree_black;     // 改变颜色  
-                x-&gt;parent-&gt;parent-&gt;color = _rb_tree_red;  
-                _rb_tree_rotate_left(x-&gt;parent-&gt;parent , root);    // 第一个参数为左旋点  
-            }  
+        <span style="color:#66d9ef">else</span>          <span style="color:#75715e">// 父节点为祖父节点之右子节点  
+</span><span style="color:#75715e"></span>        {  
+            _rb_tree_node_base<span style="color:#f92672">*</span> y <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>left;    <span style="color:#75715e">// 令y为伯父节点  
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span>(y <span style="color:#f92672">&amp;&amp;</span> y<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">==</span> _rb_tree_red)    <span style="color:#75715e">// 有伯父节点，且为红  
+</span><span style="color:#75715e"></span>            {  
+                x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_black;           <span style="color:#75715e">// 更改父节点为黑色  
+</span><span style="color:#75715e"></span>                y<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_black;                   <span style="color:#75715e">// 更改伯父节点为黑色  
+</span><span style="color:#75715e"></span>                x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_red;     <span style="color:#75715e">// 更改祖父节点为红色  
+</span><span style="color:#75715e"></span>                x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent;          <span style="color:#75715e">// 准备继续往上层检查  
+</span><span style="color:#75715e"></span>            }  
+            <span style="color:#66d9ef">else</span>    <span style="color:#75715e">// 无伯父节点，或伯父节点为黑色  
+</span><span style="color:#75715e"></span>            {  
+                <span style="color:#66d9ef">if</span>(x <span style="color:#f92672">==</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>left)        <span style="color:#75715e">// 如果新节点为父节点之左子节点  
+</span><span style="color:#75715e"></span>                {  
+                    x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>parent;  
+                    _rb_tree_rotate_right(x , root);    <span style="color:#75715e">// 第一个参数为右旋点  
+</span><span style="color:#75715e"></span>                }  
+                x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_black;     <span style="color:#75715e">// 改变颜色  
+</span><span style="color:#75715e"></span>                x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_red;  
+                _rb_tree_rotate_left(x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>parent , root);    <span style="color:#75715e">// 第一个参数为左旋点  
+</span><span style="color:#75715e"></span>            }  
         }  
-    }//while  
-    root-&gt;color = _rb_tree_black;    // 根节点永远为黑色  
-}  
-// 左旋函数  
-inline void _rb_tree_rotate_left(_rb_tree_node_base* x , _rb_tree_node_base*&amp; root)  
+    }<span style="color:#75715e">//while  
+</span><span style="color:#75715e"></span>    root<span style="color:#f92672">-&gt;</span>color <span style="color:#f92672">=</span> _rb_tree_black;    <span style="color:#75715e">// 根节点永远为黑色  
+</span><span style="color:#75715e"></span>}  
+<span style="color:#75715e">// 左旋函数  
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> _rb_tree_rotate_left(_rb_tree_node_base<span style="color:#f92672">*</span> x , _rb_tree_node_base<span style="color:#f92672">*&amp;</span> root)  
 {  
-    // x 为旋转点  
-    _rb_tree_node_base* y = x-&gt;right;          // 令y为旋转点的右子节点  
-    x-&gt;right = y-&gt;left;  
-    if(y-&gt;left != 0)  
-        y-&gt;left-&gt;parent = x;           // 别忘了回马枪设定父节点  
-    y-&gt;parent = x-&gt;parent;  
+    <span style="color:#75715e">// x 为旋转点  
+</span><span style="color:#75715e"></span>    _rb_tree_node_base<span style="color:#f92672">*</span> y <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>right;          <span style="color:#75715e">// 令y为旋转点的右子节点  
+</span><span style="color:#75715e"></span>    x<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">=</span> y<span style="color:#f92672">-&gt;</span>left;  
+    <span style="color:#66d9ef">if</span>(y<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>)  
+        y<span style="color:#f92672">-&gt;</span>left<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">=</span> x;           <span style="color:#75715e">// 别忘了回马枪设定父节点  
+</span><span style="color:#75715e"></span>    y<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>parent;  
   
-    // 令y完全顶替x的地位（必须将x对其父节点的关系完全接收过来）  
-    if(x == root)    // x为根节点  
-        root = y;  
-    else if(x == x-&gt;parent-&gt;left)         // x为其父节点的左子节点  
-        x-&gt;parent-&gt;left = y;  
-    else                                  // x为其父节点的右子节点  
-        x-&gt;parent-&gt;right = y;  
-    y-&gt;left = x;  
-    x-&gt;parent = y;  
+    <span style="color:#75715e">// 令y完全顶替x的地位（必须将x对其父节点的关系完全接收过来）  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span>(x <span style="color:#f92672">==</span> root)    <span style="color:#75715e">// x为根节点  
+</span><span style="color:#75715e"></span>        root <span style="color:#f92672">=</span> y;  
+    <span style="color:#66d9ef">else</span> <span style="color:#a6e22e">if</span>(x <span style="color:#f92672">==</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>left)         <span style="color:#75715e">// x为其父节点的左子节点  
+</span><span style="color:#75715e"></span>        x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">=</span> y;  
+    <span style="color:#66d9ef">else</span>                                  <span style="color:#75715e">// x为其父节点的右子节点  
+</span><span style="color:#75715e"></span>        x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">=</span> y;  
+    y<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">=</span> x;  
+    x<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">=</span> y;  
 }  
-// 右旋函数  
-inline void _rb_tree_rotate_right(_rb_tree_node_base* x , _rb_tree_node_base*&amp; root)  
+<span style="color:#75715e">// 右旋函数  
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> _rb_tree_rotate_right(_rb_tree_node_base<span style="color:#f92672">*</span> x , _rb_tree_node_base<span style="color:#f92672">*&amp;</span> root)  
 {  
-    // x 为旋转点  
-    _rb_tree_node_base* y = x-&gt;left;          // 令y为旋转点的左子节点  
-    x-&gt;left = y-&gt;right;  
-    if(y-&gt;right != 0)  
-        y-&gt;right-&gt;parent = x;           // 别忘了回马枪设定父节点  
-    y-&gt;parent = x-&gt;parent;  
+    <span style="color:#75715e">// x 为旋转点  
+</span><span style="color:#75715e"></span>    _rb_tree_node_base<span style="color:#f92672">*</span> y <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>left;          <span style="color:#75715e">// 令y为旋转点的左子节点  
+</span><span style="color:#75715e"></span>    x<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">=</span> y<span style="color:#f92672">-&gt;</span>right;  
+    <span style="color:#66d9ef">if</span>(y<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>)  
+        y<span style="color:#f92672">-&gt;</span>right<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">=</span> x;           <span style="color:#75715e">// 别忘了回马枪设定父节点  
+</span><span style="color:#75715e"></span>    y<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>parent;  
   
-    // 令y完全顶替x的地位（必须将x对其父节点的关系完全接收过来）  
-    if(x == root)  
-        root = y;  
-    else if(x == x-&gt;parent-&gt;right)         // x为其父节点的右子节点  
-        x-&gt;parent-&gt;right = y;  
-    else                                  // x为其父节点的左子节点  
-        x-&gt;parent-&gt;left = y;  
-    y-&gt;right = x;  
-    x-&gt;parent = y;  
+    <span style="color:#75715e">// 令y完全顶替x的地位（必须将x对其父节点的关系完全接收过来）  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span>(x <span style="color:#f92672">==</span> root)  
+        root <span style="color:#f92672">=</span> y;  
+    <span style="color:#66d9ef">else</span> <span style="color:#a6e22e">if</span>(x <span style="color:#f92672">==</span> x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>right)         <span style="color:#75715e">// x为其父节点的右子节点  
+</span><span style="color:#75715e"></span>        x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">=</span> y;  
+    <span style="color:#66d9ef">else</span>                                  <span style="color:#75715e">// x为其父节点的左子节点  
+</span><span style="color:#75715e"></span>        x<span style="color:#f92672">-&gt;</span>parent<span style="color:#f92672">-&gt;</span>left <span style="color:#f92672">=</span> y;  
+    y<span style="color:#f92672">-&gt;</span>right <span style="color:#f92672">=</span> x;  
+    x<span style="color:#f92672">-&gt;</span>parent <span style="color:#f92672">=</span> y;  
 }  
-</code></pre>
-
+</code></pre></div>
 <h1 id="红黑树的删除">红黑树的删除</h1>
 
 <p>红黑树在删除节点后，需要调整以使得红黑树保持平衡，由于删除后调节平衡实在太复杂，本文就不做分析，只提供其接口函数。</p>
 
 <p>如果对其感兴趣的话，可以参考一下这篇博文：<a href="http://www.cnblogs.com/deliver/p/5392768.html">(图解）红黑树的插入和删除</a></p>
-
-<pre><code class="language-cpp">// 删除节点后调节平衡
-inline __rb_tree_node_base*
-__rb_tree_rebalance_for_erase(__rb_tree_node_base* z,
-                              __rb_tree_node_base*&amp; root,
-                              __rb_tree_node_base*&amp; leftmost,
-                              __rb_tree_node_base*&amp; rightmost);
-
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除节点后调节平衡
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">inline</span> __rb_tree_node_base<span style="color:#f92672">*</span>
+<span style="color:#a6e22e">__rb_tree_rebalance_for_erase</span>(__rb_tree_node_base<span style="color:#f92672">*</span> z,
+                              __rb_tree_node_base<span style="color:#f92672">*&amp;</span> root,
+                              __rb_tree_node_base<span style="color:#f92672">*&amp;</span> leftmost,
+                              __rb_tree_node_base<span style="color:#f92672">*&amp;</span> rightmost);
+</code></pre></div>
 <p>STL为红黑树提供了以下删除操作的节点函数：</p>
-
-<pre><code class="language-cpp">// 删除指定位置的节点
-void erase(iterator position);
-// 删除迭代器区间位置内的节点
-void erase(iterator first, iterator last);
-// 清除所有的节点
-void clear();
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除指定位置的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">erase</span>(iterator position);
+<span style="color:#75715e">// 删除迭代器区间位置内的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">erase</span>(iterator first, iterator last);
+<span style="color:#75715e">// 清除所有的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">clear</span>();
+</code></pre></div>
 <p>下面来看看它们的源码实现：</p>
-
-<pre><code class="language-cpp">
-// 删除指定位置的节点
-template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-inline void
-rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::erase(iterator position) {
-  // 删除节点后需要使其重新恢复平衡
-  link_type y = (link_type) __rb_tree_rebalance_for_erase(position.node,
-                                                          header-&gt;parent,
-                                                          header-&gt;left,
-                                                          header-&gt;right);
-  // 清除掉被删除的节点，释放内存
-  destroy_node(y);
-  --node_count;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除指定位置的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span>
+rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>erase(iterator position) {
+  <span style="color:#75715e">// 删除节点后需要使其重新恢复平衡
+</span><span style="color:#75715e"></span>  link_type y <span style="color:#f92672">=</span> (link_type) __rb_tree_rebalance_for_erase(position.node,
+                                                          header<span style="color:#f92672">-&gt;</span>parent,
+                                                          header<span style="color:#f92672">-&gt;</span>left,
+                                                          header<span style="color:#f92672">-&gt;</span>right);
+  <span style="color:#75715e">// 清除掉被删除的节点，释放内存
+</span><span style="color:#75715e"></span>  destroy_node(y);
+  <span style="color:#f92672">--</span>node_count;
 }
-// 清除掉区间内的节点
-template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-void rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::erase(iterator first, 
+<span style="color:#75715e">// 清除掉区间内的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>erase(iterator first, 
                                                             iterator last) {
-  if (first == begin() &amp;&amp; last == end())
+  <span style="color:#66d9ef">if</span> (first <span style="color:#f92672">==</span> begin() <span style="color:#f92672">&amp;&amp;</span> last <span style="color:#f92672">==</span> end())
     clear();
-  else
-    while (first != last) erase(first++);
+  <span style="color:#66d9ef">else</span>
+    <span style="color:#a6e22e">while</span> (first <span style="color:#f92672">!=</span> last) erase(first<span style="color:#f92672">++</span>);
 }
-// 清除所有的节点
-void clear() {
-  if (node_count != 0) {
-    // 这里不需要调用上面的__rb_tree_rebalance_for_erase
-    // 而是直接调用不需要调节平衡的删除节点函数，见下面
-    __erase(root()); 
-    leftmost() = header;
-    root() = 0;
-    rightmost() = header;
-    node_count = 0;
+<span style="color:#75715e">// 清除所有的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> clear() {
+  <span style="color:#66d9ef">if</span> (node_count <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+    <span style="color:#75715e">// 这里不需要调用上面的__rb_tree_rebalance_for_erase
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 而是直接调用不需要调节平衡的删除节点函数，见下面
+</span><span style="color:#75715e"></span>    __erase(root()); 
+    leftmost() <span style="color:#f92672">=</span> header;
+    root() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    rightmost() <span style="color:#f92672">=</span> header;
+    node_count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
   }
 } 
-// 删除红黑树的节点，删除过程中不需要调节平衡
-template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-void rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::__erase(link_type x) {
-  while (x != 0) {
+<span style="color:#75715e">// 删除红黑树的节点，删除过程中不需要调节平衡
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>__erase(link_type x) {
+  <span style="color:#66d9ef">while</span> (x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
     __erase(right(x));
-    link_type y = left(x);
+    link_type y <span style="color:#f92672">=</span> left(x);
     destroy_node(x);
-    x = y;
+    x <span style="color:#f92672">=</span> y;
   }
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="红黑树的元素搜寻">红黑树的元素搜寻</h1>
 
 <p>find函数用于查找是否存在键值为k的节点。</p>
-
-<pre><code class="language-cpp">// 寻找RBTree中是否存在键值为k的节点
-template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-typename rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::iterator 
-rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::find(const Key&amp; k) {
-  link_type y = header;        // Last node which is not less than k. 
-  link_type x = root();        // Current node. 
-
-  while (x != 0) 
-    // key_compare是节点键值大小比较函数
-    if (!key_compare(key(x), k)) 
-      // 如果节点x的键值大于k，则继续往左子树查找
-      y = x, x = left(x);    // 
-    else
-      // 如果节点x的键值小于k，则继续往右子树查找
-      x = right(x);
-  iterator j = iterator(y); 
-  // y的键值不小于k，返回的时候需要判断与k是相等还是小于  
-  return (j == end() || key_compare(k, key(j.node))) ? end() : j;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 寻找RBTree中是否存在键值为k的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">typename</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>iterator 
+rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>find(<span style="color:#66d9ef">const</span> Key<span style="color:#f92672">&amp;</span> k) {
+  link_type y <span style="color:#f92672">=</span> header;        <span style="color:#75715e">// Last node which is not less than k. 
+</span><span style="color:#75715e"></span>  link_type x <span style="color:#f92672">=</span> root();        <span style="color:#75715e">// Current node. 
+</span><span style="color:#75715e"></span>
+  <span style="color:#66d9ef">while</span> (x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) 
+    <span style="color:#75715e">// key_compare是节点键值大小比较函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>key_compare(key(x), k)) 
+      <span style="color:#75715e">// 如果节点x的键值大于k，则继续往左子树查找
+</span><span style="color:#75715e"></span>      y <span style="color:#f92672">=</span> x, x <span style="color:#f92672">=</span> left(x);    <span style="color:#75715e">// 
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">else</span>
+      <span style="color:#75715e">// 如果节点x的键值小于k，则继续往右子树查找
+</span><span style="color:#75715e"></span>      x <span style="color:#f92672">=</span> right(x);
+  iterator j <span style="color:#f92672">=</span> iterator(y); 
+  <span style="color:#75715e">// y的键值不小于k，返回的时候需要判断与k是相等还是小于  
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">return</span> (j <span style="color:#f92672">==</span> end() <span style="color:#f92672">||</span> key_compare(k, key(j.node))) <span style="color:#f92672">?</span> end() <span style="color:#f92672">:</span> j;
 }
-</code></pre>
-
+</code></pre></div>
 <p>另外，STL的红黑树还针对multiset和multimap提供了几个搜寻函数，分别如下：</p>
-
-<pre><code class="language-cpp">// 计算键值为x的节点的个数
-size_type count(const key_type&amp; x)
-// 提供了查询与某个键值相等的节点迭代器范围
-pair&lt;iterator,iterator&gt; equal_range(const key_type&amp; x);
-//返回不小于k的第一个节点迭代器
-iterator lower_bound(const key_type&amp; x);
-//返回大于k的第一个节点迭代器
-iterator upper_bound(const key_type&amp; x);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 计算键值为x的节点的个数
+</span><span style="color:#75715e"></span>size_type <span style="color:#a6e22e">count</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x)
+<span style="color:#75715e">// 提供了查询与某个键值相等的节点迭代器范围
+</span><span style="color:#75715e"></span>pair<span style="color:#f92672">&lt;</span>iterator,iterator<span style="color:#f92672">&gt;</span> equal_range(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x);
+<span style="color:#75715e">//返回不小于k的第一个节点迭代器
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">lower_bound</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x);
+<span style="color:#75715e">//返回大于k的第一个节点迭代器
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">upper_bound</span>(<span style="color:#66d9ef">const</span> key_type<span style="color:#f92672">&amp;</span> x);
+</code></pre></div>
 <p>其实现函数也一并贴出来，让大家好理解一下吧。</p>
-
-<pre><code class="language-cpp">// 计算RBTree的节点值为k的节点个数
-template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-typename rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::size_type 
-rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::count(const Key&amp; k) {
-  pair&lt;const_iterator, const_iterator&gt; p = equal_range(k);
-  size_type n = 0;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 计算RBTree的节点值为k的节点个数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">typename</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>size_type 
+rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>count(<span style="color:#66d9ef">const</span> Key<span style="color:#f92672">&amp;</span> k) {
+  pair<span style="color:#f92672">&lt;</span>const_iterator, const_iterator<span style="color:#f92672">&gt;</span> p <span style="color:#f92672">=</span> equal_range(k);
+  size_type n <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
   distance(p.first, p.second, n);
-  return n;
+  <span style="color:#66d9ef">return</span> n;
 }
-// 查询与键值k相等的节点迭代器范围
-template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-inline pair&lt;typename rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::iterator,
-            typename rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::iterator&gt;
-rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::equal_range(const Key&amp; k) {
-  return pair&lt;iterator, iterator&gt;(lower_bound(k), upper_bound(k));
+<span style="color:#75715e">// 查询与键值k相等的节点迭代器范围
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> pair<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>iterator,
+            <span style="color:#66d9ef">typename</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>iterator<span style="color:#f92672">&gt;</span>
+rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>equal_range(<span style="color:#66d9ef">const</span> Key<span style="color:#f92672">&amp;</span> k) {
+  <span style="color:#66d9ef">return</span> pair<span style="color:#f92672">&lt;</span>iterator, iterator<span style="color:#f92672">&gt;</span>(lower_bound(k), upper_bound(k));
 }
-//返回不小于k的第一个节点迭代器
-template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-typename rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::iterator 
-rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::lower_bound(const Key&amp; k) {
-  link_type y = header; /* Last node which is not less than k. */
-  link_type x = root(); /* Current node. */
+<span style="color:#75715e">//返回不小于k的第一个节点迭代器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">typename</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>iterator 
+rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>lower_bound(<span style="color:#66d9ef">const</span> Key<span style="color:#f92672">&amp;</span> k) {
+  link_type y <span style="color:#f92672">=</span> header; <span style="color:#75715e">/* Last node which is not less than k. */</span>
+  link_type x <span style="color:#f92672">=</span> root(); <span style="color:#75715e">/* Current node. */</span>
 
-  while (x != 0) 
-    if (!key_compare(key(x), k))
-      y = x, x = left(x);
-    else
-      x = right(x);
+  <span style="color:#66d9ef">while</span> (x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) 
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>key_compare(key(x), k))
+      y <span style="color:#f92672">=</span> x, x <span style="color:#f92672">=</span> left(x);
+    <span style="color:#66d9ef">else</span>
+      x <span style="color:#f92672">=</span> right(x);
 
-  return iterator(y);
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">iterator</span>(y);
 }
-//返回大于k的第一个节点迭代器
-template &lt;class Key, class Value, class KeyOfValue, class Compare, class Alloc&gt;
-typename rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::iterator 
-rb_tree&lt;Key, Value, KeyOfValue, Compare, Alloc&gt;::upper_bound(const Key&amp; k) {
-  link_type y = header; /* Last node which is greater than k. */
-  link_type x = root(); /* Current node. */
+<span style="color:#75715e">//返回大于k的第一个节点迭代器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Key</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Value</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">KeyOfValue</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Compare</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">typename</span> rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>iterator 
+rb_tree<span style="color:#f92672">&lt;</span>Key, Value, KeyOfValue, Compare, Alloc<span style="color:#f92672">&gt;::</span>upper_bound(<span style="color:#66d9ef">const</span> Key<span style="color:#f92672">&amp;</span> k) {
+  link_type y <span style="color:#f92672">=</span> header; <span style="color:#75715e">/* Last node which is greater than k. */</span>
+  link_type x <span style="color:#f92672">=</span> root(); <span style="color:#75715e">/* Current node. */</span>
 
-   while (x != 0) 
-     if (key_compare(k, key(x)))
-       y = x, x = left(x);
-     else
-       x = right(x);
+   <span style="color:#66d9ef">while</span> (x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) 
+     <span style="color:#66d9ef">if</span> (key_compare(k, key(x)))
+       y <span style="color:#f92672">=</span> x, x <span style="color:#f92672">=</span> left(x);
+     <span style="color:#66d9ef">else</span>
+       x <span style="color:#f92672">=</span> right(x);
 
-   return iterator(y);
+   <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">iterator</span>(y);
 }
-</code></pre>
-
+</code></pre></div>
 <p>参考：</p>
 
 <ul>

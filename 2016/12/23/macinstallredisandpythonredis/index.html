@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -115,83 +116,69 @@
 <h2 id="redis的安装">Redis的安装</h2>
 
 <p>本人实在macos 10.12.2系统上进行安装，事先机子上已经安装好了homebrew（跳转<a href="http://www.cnblogs.com/TankXiao/p/3247113.html">安装教程链接</a>）。所以，Redis的安装工作就是下面一行命令了。</p>
-
-<pre><code class="language-cpp">brew install redis
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">brew install redis
+</code></pre></div>
 <p>安装过程中你可能会遇到如下的报错信息，报错<a href="http://apple.stackexchange.com/questions/208944/upgrading-brew-in-el-capitan">解决办法原贴</a>。</p>
-
-<pre><code class="language-cpp">sudo chown -R $(whoami) /usr/local // 错误信息，需要修改权限
-/* 执行以下命令即可 */
-sudo chown -R $(whoami):admin /usr/local
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo chown <span style="color:#f92672">-</span>R <span style="color:#960050;background-color:#1e0010">$</span>(whoami) <span style="color:#f92672">/</span>usr<span style="color:#f92672">/</span>local <span style="color:#75715e">// 错误信息，需要修改权限
+</span><span style="color:#75715e"></span><span style="color:#75715e">/* 执行以下命令即可 */</span>
+sudo chown <span style="color:#f92672">-</span>R <span style="color:#960050;background-color:#1e0010">$</span>(whoami)<span style="color:#f92672">:</span>admin <span style="color:#f92672">/</span>usr<span style="color:#f92672">/</span>local
+</code></pre></div>
 <h2 id="redis的启动">Redis的启动</h2>
 
 <p>执行完上述安装之后，运行Redis需要首先启动服务器程序。直接终端输入如下命令。</p>
-
-<pre><code class="language-cpp">~ redis-server
-14176:C 23 Dec 20:32:09.386 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
-14176:M 23 Dec 20:32:09.388 * Increased maximum number of open files to 10032 (it was originally set to 256).
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>server
+<span style="color:#ae81ff">14176</span><span style="color:#f92672">:</span>C <span style="color:#ae81ff">23</span> Dec <span style="color:#ae81ff">20</span><span style="color:#f92672">:</span><span style="color:#ae81ff">32</span><span style="color:#f92672">:</span><span style="color:#ae81ff">09.386</span> <span style="color:#75715e"># Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">14176</span><span style="color:#f92672">:</span>M <span style="color:#ae81ff">23</span> Dec <span style="color:#ae81ff">20</span><span style="color:#f92672">:</span><span style="color:#ae81ff">32</span><span style="color:#f92672">:</span><span style="color:#ae81ff">09.388</span> <span style="color:#f92672">*</span> Increased maximum number of open files to <span style="color:#ae81ff">10032</span> (it was originally set to <span style="color:#ae81ff">256</span>).
                 _._                                                  
-           _.-``__ ''-._                                             
-      _.-``    `.  `_.  ''-._           Redis 3.2.3 (00000000/0) 64 bit
-  .-`` .-```.  ```\/    _.,_ ''-._                                   
- (    '      ,       .-`  | `,    )     Running in standalone mode
- |`-._`-...-` __...-.``-._|'` _.-'|     Port: 6379
- |    `-._   `._    /     _.-'    |     PID: 14176
-  `-._    `-._  `-./  _.-'    _.-'                                   
- |`-._`-._    `-.__.-'    _.-'_.-'|                                  
- |    `-._`-._        _.-'_.-'    |           http://redis.io        
-  `-._    `-._`-.__.-'_.-'    _.-'                                   
- |`-._`-._    `-.__.-'    _.-'_.-'|                                  
- |    `-._`-._        _.-'_.-'    |                                  
-  `-._    `-._`-.__.-'_.-'    _.-'                                   
-      `-._    `-.__.-'    _.-'                                       
-          `-._        _.-'                                           
-              `-.__.-'                                               
+           _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">``</span>__ <span style="color:#960050;background-color:#1e0010">&#39;&#39;</span><span style="color:#f92672">-</span>._                                             
+      _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">``</span>    <span style="color:#960050;background-color:#1e0010">`</span>.  <span style="color:#960050;background-color:#1e0010">`</span>_.  <span style="color:#960050;background-color:#1e0010">&#39;&#39;</span><span style="color:#f92672">-</span>._           Redis <span style="color:#ae81ff">3.2.3</span> (<span style="color:#ae81ff">00000000</span><span style="color:#f92672">/</span><span style="color:#ae81ff">0</span>) <span style="color:#ae81ff">64</span> bit
+  .<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">``</span> .<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">```</span>.  <span style="color:#960050;background-color:#1e0010">```\</span><span style="color:#f92672">/</span>    _.,_ <span style="color:#960050;background-color:#1e0010">&#39;&#39;</span><span style="color:#f92672">-</span>._                                   
+ (    <span style="color:#960050;background-color:#1e0010">&#39;</span>      ,       .<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">`</span>  <span style="color:#f92672">|</span> <span style="color:#960050;background-color:#1e0010">`</span>,    )     Running in standalone mode
+ <span style="color:#f92672">|</span><span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._<span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>...<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">`</span> __...<span style="color:#f92672">-</span>.<span style="color:#960050;background-color:#1e0010">``</span><span style="color:#f92672">-</span>._<span style="color:#f92672">|</span><span style="color:#960050;background-color:#1e0010">&#39;`</span> _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#f92672">|</span>     Port: <span style="color:#ae81ff">6379</span>
+ <span style="color:#f92672">|</span>    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._   <span style="color:#960050;background-color:#1e0010">`</span>._    <span style="color:#f92672">/</span>     _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    <span style="color:#f92672">|</span>     PID: <span style="color:#ae81ff">14176</span>
+  <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._  <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>.<span style="color:#f92672">/</span>  _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>                                   
+ <span style="color:#f92672">|</span><span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._<span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>.__.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>_.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#f92672">|</span>                                  
+ <span style="color:#f92672">|</span>    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._<span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._        _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>_.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    <span style="color:#f92672">|</span>           http:<span style="color:#75715e">//redis.io        
+</span><span style="color:#75715e"></span>  <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._<span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>.__.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>_.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>                                   
+ <span style="color:#f92672">|</span><span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._<span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>.__.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>_.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#f92672">|</span>                                  
+ <span style="color:#f92672">|</span>    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._<span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._        _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>_.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    <span style="color:#f92672">|</span>                                  
+  <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._<span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>.__.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>_.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>                                   
+      <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._    <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>.__.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>    _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>                                       
+          <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>._        _.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>                                           
+              <span style="color:#960050;background-color:#1e0010">`</span><span style="color:#f92672">-</span>.__.<span style="color:#f92672">-</span><span style="color:#960050;background-color:#1e0010">&#39;</span>                                               
 
-14176:M 23 Dec 20:32:09.389 # Server started, Redis version 3.2.3
-14176:M 23 Dec 20:32:09.389 * The server is now ready to accept connections on port 6379
-</code></pre>
-
+<span style="color:#ae81ff">14176</span><span style="color:#f92672">:</span>M <span style="color:#ae81ff">23</span> Dec <span style="color:#ae81ff">20</span><span style="color:#f92672">:</span><span style="color:#ae81ff">32</span><span style="color:#f92672">:</span><span style="color:#ae81ff">09.389</span> <span style="color:#75715e"># Server started, Redis version 3.2.3
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">14176</span><span style="color:#f92672">:</span>M <span style="color:#ae81ff">23</span> Dec <span style="color:#ae81ff">20</span><span style="color:#f92672">:</span><span style="color:#ae81ff">32</span><span style="color:#f92672">:</span><span style="color:#ae81ff">09.389</span> <span style="color:#f92672">*</span> The server is now ready to accept connections on port <span style="color:#ae81ff">6379</span>
+</code></pre></div>
 <p>其中，Redis的配置文件redis.conf存放在目录/usr/local/etc下，具体什么参数，日后再详细理解以下。如果需要带自定义配置文件启动的话，可以运行如下命令。</p>
-
-<pre><code class="language-cpp">/* 后面带上配置文件的目录 */
-redis-server /etc/redis.conf
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 后面带上配置文件的目录 */</span>
+redis<span style="color:#f92672">-</span>server <span style="color:#f92672">/</span>etc<span style="color:#f92672">/</span>redis.conf
+</code></pre></div>
 <h2 id="redis客户端">Redis客户端</h2>
 
 <p>服务器启动了之后，要想使用Redis，就需要开启客户端程序，也是一行命令完成。</p>
-
-<pre><code class="language-cpp">/* 由于是本机连接，所以默认ip为127.0.0.1，默认端口为6379*/
-~ redis-cli
-127.0.0.1:6379&gt; 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 由于是本机连接，所以默认ip为127.0.0.1，默认端口为6379*/</span>
+<span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>cli
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> 
+</code></pre></div>
 <p>接下来，试试常用的命令吧。</p>
-
-<pre><code class="language-cpp">/* 设定一个字符串键k1 其值为100*/
-127.0.0.1:6379&gt; SET k1 100
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 设定一个字符串键k1 其值为100*/</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SET k1 <span style="color:#ae81ff">100</span>
 OK
-/* 获取字符串键的值 */
-127.0.0.1:6379&gt; GET k1
-&quot;100&quot;
-</code></pre>
-
+<span style="color:#75715e">/* 获取字符串键的值 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> GET k1
+<span style="color:#e6db74">&#34;100&#34;</span>
+</code></pre></div>
 <h2 id="redis的退出">Redis的退出</h2>
 
 <p>刚刚开启了客户端和服务器的程序，接下来不用它们了，就果断退出。</p>
-
-<pre><code class="language-cpp">/* 客户端断开连接 */
-127.0.0.1:6379&gt; shutdown
-/* 退出客户端程序*/
-not connected&gt; exit
-/* 退出服务器 */
-kill redis // 按下TAB键然后运行
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 客户端断开连接 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> shutdown
+<span style="color:#75715e">/* 退出客户端程序*/</span>
+not connected<span style="color:#f92672">&gt;</span> exit
+<span style="color:#75715e">/* 退出服务器 */</span>
+kill redis <span style="color:#75715e">// 按下TAB键然后运行
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>退出服务器的操作需要安装oh-my-zsh，这个简直是神器，如果你的电脑没有安装的话，就需要先获取redis-server的PID号，然后kill掉它。为了避免这种麻烦，您还是去安装一个吧，不会后悔的。</p>
 
 <h1 id="安装python的redis库">安装Python的Redis库</h1>
@@ -201,52 +188,43 @@ kill redis // 按下TAB键然后运行
 <p>macos自带python2.6，所以不需要安装python，当然，如果你想进入3.0的世界，安装一个也无所谓。</p>
 
 <p>安装Python的Redis需要先安装pip，至于pip是个什么东西，官方解释：pip是一个以Python计算机程序语言写成的软件包管理系统，他可以安装和管理软件包。废话不多说，安装吧。</p>
-
-<pre><code class="language-cpp">sudo easy-install pip 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sudo easy<span style="color:#f92672">-</span>install pip 
+</code></pre></div>
 <p>测试一下，pip安装成功没有</p>
-
-<pre><code class="language-cpp">~ pip
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> pip
 
 Usage:   
-  pip &lt;command&gt; [options]
+  pip <span style="color:#f92672">&lt;</span>command<span style="color:#f92672">&gt;</span> [options]
 
 Commands:
   install                     Install packages.
   download                    Download packages.
-//  后面省略
-</code></pre>
-
+<span style="color:#75715e">//  后面省略
+</span><span style="color:#75715e"></span></code></pre></div>
 <h2 id="安装go">安装GO！</h2>
 
 <p>准备工作都做好了，接下来就开始安装python的Redis库了。</p>
-
-<pre><code class="language-cpp">~ sudo pip install redis  // 运行这个命令
-// 以下为输出
-The directory '/Users/zhangcheng/Library/Caches/pip/http' or its parent directory is not owned by the current user and the cache has been disabled. Please check the permissions and owner of that directory. If executing pip with sudo, you may want sudo's -H flag.
-The directory '/Users/zhangcheng/Library/Caches/pip' or its parent directory is not owned by the current user and caching wheels has been disabled. check the permissions and owner of that directory. If executing pip with sudo, you may want sudo's -H flag.
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> sudo pip install redis  <span style="color:#75715e">// 运行这个命令
+</span><span style="color:#75715e">// 以下为输出
+</span><span style="color:#75715e"></span>The directory <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#f92672">/</span>Users<span style="color:#f92672">/</span>zhangcheng<span style="color:#f92672">/</span>Library<span style="color:#f92672">/</span>Caches<span style="color:#f92672">/</span>pip<span style="color:#f92672">/</span>http<span style="color:#960050;background-color:#1e0010">&#39;</span> or its parent directory is not owned by the current user and the cache has been disabled. Please check the permissions and owner of that directory. If executing pip with sudo, you may want sudo<span style="color:#960050;background-color:#1e0010">&#39;</span>s <span style="color:#f92672">-</span>H flag.
+The directory <span style="color:#960050;background-color:#1e0010">&#39;</span><span style="color:#f92672">/</span>Users<span style="color:#f92672">/</span>zhangcheng<span style="color:#f92672">/</span>Library<span style="color:#f92672">/</span>Caches<span style="color:#f92672">/</span>pip<span style="color:#960050;background-color:#1e0010">&#39;</span> or its parent directory is not owned by the current user and caching wheels has been disabled. check the permissions and owner of that directory. If executing pip with sudo, you may want sudo<span style="color:#960050;background-color:#1e0010">&#39;</span>s <span style="color:#f92672">-</span>H flag.
 Collecting redis
-  Downloading redis-2.10.5-py2.py3-none-any.whl (60kB)
-    100% |████████████████████████████████| 61kB 53kB/s 
+  Downloading redis<span style="color:#f92672">-</span><span style="color:#ae81ff">2.10.5</span><span style="color:#f92672">-</span>py2.py3<span style="color:#f92672">-</span>none<span style="color:#f92672">-</span>any.whl (<span style="color:#ae81ff">60</span>kB)
+    <span style="color:#ae81ff">100</span><span style="color:#f92672">%</span> <span style="color:#f92672">|</span><span style="color:#960050;background-color:#1e0010">████████████████████████████████</span><span style="color:#f92672">|</span> <span style="color:#ae81ff">61</span>kB <span style="color:#ae81ff">53</span>kB<span style="color:#f92672">/</span>s 
 Installing collected packages: redis
-Successfully installed redis-2.10.5
-</code></pre>
-
+Successfully installed redis<span style="color:#f92672">-</span><span style="color:#ae81ff">2.10.5</span>
+</code></pre></div>
 <p>好了，大功告成！不对，还没有测试redis库能不能工作。</p>
-
-<pre><code class="language-python">&gt;&gt;&gt; import redis
-&gt;&gt;&gt; conn = redis.Redis()
-&gt;&gt;&gt; conn.set('key','1000')
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#f92672">import</span> redis
+<span style="color:#f92672">&gt;&gt;&gt;</span> conn <span style="color:#f92672">=</span> redis<span style="color:#f92672">.</span>Redis()
+<span style="color:#f92672">&gt;&gt;&gt;</span> conn<span style="color:#f92672">.</span>set(<span style="color:#e6db74">&#39;key&#39;</span>,<span style="color:#e6db74">&#39;1000&#39;</span>)
 True
-&gt;&gt;&gt; conn.hset('hash','key','value')
-1L
-&gt;&gt;&gt; conn.get('key')
-'1000'
-&gt;&gt;&gt; conn.hget('hash','key')
-'value'
-</code></pre>
-
+<span style="color:#f92672">&gt;&gt;&gt;</span> conn<span style="color:#f92672">.</span>hset(<span style="color:#e6db74">&#39;hash&#39;</span>,<span style="color:#e6db74">&#39;key&#39;</span>,<span style="color:#e6db74">&#39;value&#39;</span>)
+<span style="color:#ae81ff">1L</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> conn<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;key&#39;</span>)
+<span style="color:#e6db74">&#39;1000&#39;</span>
+<span style="color:#f92672">&gt;&gt;&gt;</span> conn<span style="color:#f92672">.</span>hget(<span style="color:#e6db74">&#39;hash&#39;</span>,<span style="color:#e6db74">&#39;key&#39;</span>)
+<span style="color:#e6db74">&#39;value&#39;</span></code></pre></div>
 <p>到了这一步，总算是完成了，整个配置过程相当简单和顺利，各位不妨也试一下？</p>
 
 <p>好了，不写了，我尽情地去撸python和Redis了。</p>

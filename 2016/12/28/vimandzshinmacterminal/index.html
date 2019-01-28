@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -139,64 +140,50 @@
 <p>mac下自带的vim是7.3版本的，而vim最强大的补全插件You Complete Me是要求vim7.4+，所以要配置vim环境的首要任务就是安装最新版本的vim。以前在ubuntu下用vim的时候，当时最新版的是7.4，现在不知不觉中更新到8.0了，真是一大喜讯啊，还说什么呢？赶紧去尝鲜咯。</p>
 
 <p>更新vim最方便的方法就是采用<a href="http://www.cnblogs.com/TankXiao/p/3247113.html">homebrew安装</a>。在终端下输入如下指令：</p>
-
-<pre><code class="language-cpp">/* 安装最新版的vim，并覆盖系统的vim */
-brew install vim –with-lua –with-override-system-vi
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 安装最新版的vim，并覆盖系统的vim */</span>
+brew install vim <span style="color:#960050;background-color:#1e0010">–</span>with<span style="color:#f92672">-</span>lua <span style="color:#960050;background-color:#1e0010">–</span>with<span style="color:#f92672">-</span><span style="color:#66d9ef">override</span><span style="color:#f92672">-</span>system<span style="color:#f92672">-</span>vi
+</code></pre></div>
 <p>安装过程中的信息如下：</p>
-
-<pre><code class="language-cpp">==&gt; Using the sandbox
-==&gt; Downloading https://github.com/vim/vim/archive/v8.0.0041.tar.gz
-==&gt; Downloading from https://codeload.github.com/vim/vim/tar.gz/v8.0.0041
-######################################################################## 100.0%
-==&gt; ./configure --prefix=/usr/local --mandir=/usr/local/Cellar/vim/8.0.0041/share/man --enable-multibyte --with-tlib=ncurses --enable-cscope --with-compiledby=Homebrew --enable-luainterp --enable-perlinterp --enable-pythoninterp --enable-
-==&gt; make
-==&gt; make install prefix=/usr/local/Cellar/vim/8.0.0041 STRIP=/usr/bin/true
-🍺  /usr/local/Cellar/vim/8.0.0041: 1,706 files, 23.3M, built in 5 minutes 16 seconds
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">==&gt;</span> Using the sandbox
+<span style="color:#f92672">==&gt;</span> Downloading https:<span style="color:#75715e">//github.com/vim/vim/archive/v8.0.0041.tar.gz
+</span><span style="color:#75715e"></span><span style="color:#f92672">==&gt;</span> Downloading from https:<span style="color:#75715e">//codeload.github.com/vim/vim/tar.gz/v8.0.0041
+</span><span style="color:#75715e"></span><span style="color:#75715e">######################################################################## 100.0%
+</span><span style="color:#75715e"></span><span style="color:#f92672">==&gt;</span> .<span style="color:#f92672">/</span>configure <span style="color:#f92672">--</span>prefix<span style="color:#f92672">=/</span>usr<span style="color:#f92672">/</span>local <span style="color:#f92672">--</span>mandir<span style="color:#f92672">=/</span>usr<span style="color:#f92672">/</span>local<span style="color:#f92672">/</span>Cellar<span style="color:#f92672">/</span>vim<span style="color:#f92672">/</span><span style="color:#ae81ff">8.0.0041</span><span style="color:#f92672">/</span>share<span style="color:#f92672">/</span>man <span style="color:#f92672">--</span>enable<span style="color:#f92672">-</span>multibyte <span style="color:#f92672">--</span>with<span style="color:#f92672">-</span>tlib<span style="color:#f92672">=</span>ncurses <span style="color:#f92672">--</span>enable<span style="color:#f92672">-</span>cscope <span style="color:#f92672">--</span>with<span style="color:#f92672">-</span>compiledby<span style="color:#f92672">=</span>Homebrew <span style="color:#f92672">--</span>enable<span style="color:#f92672">-</span>luainterp <span style="color:#f92672">--</span>enable<span style="color:#f92672">-</span>perlinterp <span style="color:#f92672">--</span>enable<span style="color:#f92672">-</span>pythoninterp <span style="color:#f92672">--</span>enable<span style="color:#f92672">-</span>
+<span style="color:#f92672">==&gt;</span> make
+<span style="color:#f92672">==&gt;</span> make install prefix<span style="color:#f92672">=/</span>usr<span style="color:#f92672">/</span>local<span style="color:#f92672">/</span>Cellar<span style="color:#f92672">/</span>vim<span style="color:#f92672">/</span><span style="color:#ae81ff">8.0.0041</span> STRIP<span style="color:#f92672">=/</span>usr<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>true
+<span style="color:#960050;background-color:#1e0010">🍺</span>  <span style="color:#f92672">/</span>usr<span style="color:#f92672">/</span>local<span style="color:#f92672">/</span>Cellar<span style="color:#f92672">/</span>vim<span style="color:#f92672">/</span><span style="color:#ae81ff">8.0.0041</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">706</span> files, <span style="color:#ae81ff">23.3</span>M, built in <span style="color:#ae81ff">5</span> minutes <span style="color:#ae81ff">16</span> seconds
+</code></pre></div>
 <p>我们通过检查vim的版本可以查看vim有没有成功更新。</p>
-
-<pre><code class="language-cpp">~ vim -version
-VIM - Vi IMproved 8.0 (2016 Sep 12, compiled Dec 25 2016 08:56:17)
-Garbage after option argument: &quot;-version&quot;
-More info with: &quot;vim -h&quot;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> vim <span style="color:#f92672">-</span>version
+VIM <span style="color:#f92672">-</span> Vi IMproved <span style="color:#ae81ff">8.0</span> (<span style="color:#ae81ff">2016</span> Sep <span style="color:#ae81ff">12</span>, compiled Dec <span style="color:#ae81ff">25</span> <span style="color:#ae81ff">2016</span> <span style="color:#ae81ff">08</span><span style="color:#f92672">:</span><span style="color:#ae81ff">56</span><span style="color:#f92672">:</span><span style="color:#ae81ff">17</span>)
+Garbage after option argument: <span style="color:#e6db74">&#34;-version&#34;</span>
+More info with: <span style="color:#e6db74">&#34;vim -h&#34;</span>
+</code></pre></div>
 <h1 id="安装zsh">安装zsh</h1>
 
 <p>zsh被称为是终极shell，其可配置性强，用户可以自定义配置，特别适合折腾党使用，一旦你用上了zsh，你再也回不去bash了。mac本身是自带zsh的，但是其版本比较低，我们可以先查看以下它的版本。</p>
-
-<pre><code class="language-cpp">~ zsh --version
-zsh 5.0.8 (x86_64-apple-darwin14.4.0)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> zsh <span style="color:#f92672">--</span>version
+zsh <span style="color:#ae81ff">5.0.8</span> (x86_64<span style="color:#f92672">-</span>apple<span style="color:#f92672">-</span>darwin14<span style="color:#ae81ff">.4.0</span>)
+</code></pre></div>
 <p>接下来，把它升级到最新版吧，追新党最喜欢的就是一有新版本就立马上，体验一番。</p>
-
-<pre><code class="language-cpp">/* 终端下运行如下指令安装最新版zsh */
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 终端下运行如下指令安装最新版zsh */</span>
 brew install zsh
-</code></pre>
-
+</code></pre></div>
 <p>安装完之后，需要将zsh设为系统默认的shell。新安装的zsh在<code>usr/local/bin</code>目录下，首先我们需要把这个添加到系统shells下面。</p>
-
-<pre><code class="language-cpp">/* 第一步，打开etc/shells 文件*/
-sudo vi /etc/shells
-/* 在文件末尾添加/usr/local/bin/zsh */
-/bin/bash
-/bin/csh
-/bin/ksh
-/bin/sh
-/bin/tcsh
-/bin/zsh  // 系统自带的zsh
-/usr/local/bin/zsh  // 添加安装的最新版zsh到shells文件中
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 第一步，打开etc/shells 文件*/</span>
+sudo vi <span style="color:#f92672">/</span>etc<span style="color:#f92672">/</span>shells
+<span style="color:#75715e">/* 在文件末尾添加/usr/local/bin/zsh */</span>
+<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>bash
+<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>csh
+<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>ksh
+<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>sh
+<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>tcsh
+<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>zsh  <span style="color:#75715e">// 系统自带的zsh
+</span><span style="color:#75715e"></span><span style="color:#f92672">/</span>usr<span style="color:#f92672">/</span>local<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>zsh  <span style="color:#75715e">// 添加安装的最新版zsh到shells文件中
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>修改完成后，需要启动最新版的zsh，运行如下指令：</p>
-
-<pre><code class="language-cpp">chsh -s /usr/local/bin/zsh
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">chsh <span style="color:#f92672">-</span>s <span style="color:#f92672">/</span>usr<span style="color:#f92672">/</span>local<span style="color:#f92672">/</span>bin<span style="color:#f92672">/</span>zsh
+</code></pre></div>
 <p>我一般都是只使用默认的在zsh配置，各位读者如果觉得想进一步diy的可以自己去搜一些资料来配置。</p>
 
 <h1 id="配置开发环境">配置开发环境</h1>
@@ -210,50 +197,42 @@ sudo vi /etc/shells
 <p>vim下最好用的插件管理器就是Vbundle，可以把它想象成是一个自动化仓库，专门用于管理各类插件。有了它，安装和更新插件这种事情，简直就是弹指一按间的事。</p>
 
 <p>安装vbundle也很简单，从github上下载，直接安装。</p>
-
-<pre><code class="language-cpp">git clone https://github.com/gmarik/Vundle.vim.git ~/.vim/bundle/Vundle.vim
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">git clone https:<span style="color:#75715e">//github.com/gmarik/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>运行完该命令之后，你的<code>~/.vim</code>文件夹下就多了一个bundle文件夹，这里就放置着你所有安装的插件。</p>
 
 <p>那么，怎么安装插件呢？首先，我们需要接触到vim的配置文件<code>.vimrc</code>。</p>
-
-<pre><code class="language-cpp">touch ~/.vimrc
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">touch <span style="color:#f92672">~/</span>.vimrc
+</code></pre></div>
 <p>在用户的home文件夹下创建一个<code>.vimrc</code>文件，接下来我们的工作全部都要操作这个文件，来对vim进行一个全面的配置。</p>
-
-<pre><code class="language-cpp">/* 第一步：打开.vimrc文件 */
-vim ~/.vimrc
-/* 添加vbundle管理配置 */
-&quot; *********************************************
-&quot; Vbundle插件管理                
-&quot; *********************************************
-set nocompatible              &quot; required
-filetype off                  &quot; required 
-   
-&quot; set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()        
- 
-&quot; alternatively, pass a path where Vundle should install plugins
-&quot;call vundle#begin('~/some/path/here')
- 
-&quot; let Vundle manage Vundle, required
-Plugin 'gmarik/Vundle.vim' 
-&quot; Add all your plugins here (note older versions of Vundle used Bundle instead of Plugin)
-&quot; All of your Plugins must be added before the following line                 
-call vundle#end()            &quot; required
-filetype plugin indent on    &quot; required
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 第一步：打开.vimrc文件 */</span>
+vim <span style="color:#f92672">~/</span>.vimrc
+<span style="color:#75715e">/* 添加vbundle管理配置 */</span>
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> Vbundle插件管理                
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">set nocompatible              &#34;</span> required
+filetype off                  <span style="color:#e6db74">&#34; required </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">   </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> set the runtime path to include Vundle and initialize
+set rtp<span style="color:#f92672">+=~/</span>.vim<span style="color:#f92672">/</span>bundle<span style="color:#f92672">/</span>Vundle.vim
+call vundle<span style="color:#75715e">#begin()        
+</span><span style="color:#75715e"></span> 
+<span style="color:#e6db74">&#34; alternatively, pass a path where Vundle should install plugins</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span>call vundle<span style="color:#75715e">#begin(&#39;~/some/path/here&#39;)
+</span><span style="color:#75715e"></span> 
+<span style="color:#e6db74">&#34; let Vundle manage Vundle, required</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">Plugin &#39;gmarik/Vundle.vim&#39; </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> Add all your plugins here (note older versions of Vundle used Bundle instead of Plugin)
+<span style="color:#e6db74">&#34; All of your Plugins must be added before the following line                 </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">call vundle#end()            &#34;</span> required
+filetype plugin indent on    <span style="color:#e6db74">&#34; required</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span></code></pre></div>
 <p>修改完<code>.vimrc</code>文件之后，就可以在vim中运行<code>:PluginInstall</code>来安装插件了。下面是vim的运行结果</p>
-
-<pre><code class="language-cpp">&quot; Installing plugins to /.vim/bundle&quot;
-. Plugin 'gmarik/Vundle.vim'
-* Helptags 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#e6db74">&#34; Installing plugins to /.vim/bundle&#34;</span>
+. Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>gmarik<span style="color:#f92672">/</span>Vundle.vim<span style="color:#960050;background-color:#1e0010">&#39;</span>
+<span style="color:#f92672">*</span> Helptags 
+</code></pre></div>
 <h2 id="主题安装">主题安装</h2>
 
 <p>默认的vim主题对于编程人员来说，伤眼又难看。作为一名码代码的，个人比较偏爱暗黑色的背景，所以选在隆重给大家推荐一款主题——<a href="https://github.com/chriskempson/tomorrow-theme">vim主题Tomorrow</a>。先放一张预览图，让大家决定是否选择它。</p>
@@ -261,11 +240,9 @@ filetype plugin indent on    &quot; required
 <p><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkckhwmurj30wv0mu420.jpg" alt="tomorrowThemes" /></p>
 
 <p>该主题的安装也非常简单。从github上下载tomorrow主题的源文件，导入主题就能用了。</p>
-
-<pre><code class="language-cpp">/* 从github上下载tomorrow主题 */
-git clone https://github.com/chriskempson/tomorrow-theme.git
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 从github上下载tomorrow主题 */</span>
+git clone https:<span style="color:#75715e">//github.com/chriskempson/tomorrow-theme.git
+</span><span style="color:#75715e"></span></code></pre></div>
 <h3 id="终端切换tomorrow主题">终端切换tomorrow主题</h3>
 
 <p>进入<code>tomorrow/OS X Terminal</code>双击<code>Tomorrow Night.terminal</code>即可导入暗黑色的tomorrow主题。</p>
@@ -277,27 +254,23 @@ git clone https://github.com/chriskempson/tomorrow-theme.git
 <h3 id="vim切换tomorrow主题">vim切换Tomorrow主题</h3>
 
 <p>vim切换tomorrow主题就没那么简单直接了，需要设置<code>.vimrc</code>配置文件和加入colors文件夹。</p>
-
-<pre><code class="language-cpp">/* 在.vim/bundle下新建文件夹 */
-~ cd ~/.vim/bundle
-~ mkdir colors
-/* 进入tomorrow文件夹中的vim配置文件夹 */
-~ cd tomorrow-theme/vim/colors
-/* 移动配置文件到.vim/bundle/colors文件夹 */
-~ mv Tomorrow-Night.vim ~/.vim/bundle
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 在.vim/bundle下新建文件夹 */</span>
+<span style="color:#f92672">~</span> cd <span style="color:#f92672">~/</span>.vim<span style="color:#f92672">/</span>bundle
+<span style="color:#f92672">~</span> mkdir colors
+<span style="color:#75715e">/* 进入tomorrow文件夹中的vim配置文件夹 */</span>
+<span style="color:#f92672">~</span> cd tomorrow<span style="color:#f92672">-</span>theme<span style="color:#f92672">/</span>vim<span style="color:#f92672">/</span>colors
+<span style="color:#75715e">/* 移动配置文件到.vim/bundle/colors文件夹 */</span>
+<span style="color:#f92672">~</span> mv Tomorrow<span style="color:#f92672">-</span>Night.vim <span style="color:#f92672">~/</span>.vim<span style="color:#f92672">/</span>bundle
+</code></pre></div>
 <p>接下来，修改<code>.vimrc</code>配置文件，使主题生效。</p>
-
-<pre><code class="language-cpp">/* 在配置文件中加入下面的配置 */
-&quot; *********************************************
-&quot; Tomorrow主题配置                
-&quot; *********************************************
-set t_Co=256
-set background=dark
-colorscheme Tomorrow-Night
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 在配置文件中加入下面的配置 */</span>
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> Tomorrow主题配置                
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">set t_Co=256</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">set background=dark</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">colorscheme Tomorrow-Night</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span></code></pre></div>
 <p>重启终端和vim试试，全新的tomorrow配色就这样生效了。！！！</p>
 
 <h2 id="分割布局">分割布局</h2>
@@ -305,26 +278,22 @@ colorscheme Tomorrow-Night
 <p>在写代码的时候，最喜欢的就是开两个窗口来浏览不同的代码，这点在vim中可以轻易的做到，所以，自从用了vim就再也不想用双屏来看代码了。</p>
 
 <p>为了配合快捷键来使用分割布局，我们需要在<code>.vimrc</code>文件中添加下面的配置。</p>
-
-<pre><code class="language-cpp">&quot; *********************************************
-&quot; 分割布局相关
-&quot; *********************************************
-set splitbelow
-set splitright
-&quot;快捷键，ctrl+l切换到左边布局，ctrl+h切换到右边布局
-&quot;ctrl+k切换到上面布局，ctrl+j切换到下面布局
-nnoremap &lt;C-J&gt; &lt;C-W&gt;&lt;C-J&gt;
-nnoremap &lt;C-K&gt; &lt;C-W&gt;&lt;C-K&gt;
-nnoremap &lt;C-L&gt; &lt;C-W&gt;&lt;C-L&gt;
-nnoremap &lt;C-H&gt; &lt;C-W&gt;&lt;C-H&gt;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> <span style="color:#960050;background-color:#1e0010">分割布局相关</span>
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">set splitbelow</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">set splitright</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span><span style="color:#960050;background-color:#1e0010">快捷键，</span>ctrl<span style="color:#f92672">+</span>l切换到左边布局<span style="color:#960050;background-color:#1e0010">，</span>ctrl<span style="color:#f92672">+</span>h切换到右边布局
+<span style="color:#e6db74">&#34;ctrl+k切换到上面布局，ctrl+j切换到下面布局</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">nnoremap &lt;C-J&gt; &lt;C-W&gt;&lt;C-J&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">nnoremap &lt;C-K&gt; &lt;C-W&gt;&lt;C-K&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">nnoremap &lt;C-L&gt; &lt;C-W&gt;&lt;C-L&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">nnoremap &lt;C-H&gt; &lt;C-W&gt;&lt;C-H&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span></code></pre></div>
 <p>保存退出，重新进入vim之后，就可以用命令来控制分割布局了。</p>
-
-<pre><code class="language-cpp">:split   // 水平分割打开一个新窗口
-:vsplit  // 垂直分割打开一个新窗口
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">:</span>split   <span style="color:#75715e">// 水平分割打开一个新窗口
+</span><span style="color:#75715e"></span><span style="color:#f92672">:</span>vsplit  <span style="color:#75715e">// 垂直分割打开一个新窗口
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>下面是分割成四个窗口的预览图，看看是不是很酷炫，效率一下子就提升了。另外，CTRL+H/J/K/L就可以切换到任意窗口进行编辑操作。</p>
 
 <p><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkckjm1ujj30wu0mwn38.jpg" alt="spliteVim" /></p>
@@ -334,19 +303,15 @@ nnoremap &lt;C-H&gt; &lt;C-W&gt;&lt;C-H&gt;
 <p>通常，在一些IDE里面都提供对代码进行折叠的操作，便于理清代码的思路。Vim当然不甘示弱，这么点小功能能难倒我，而且vim的折叠功能更加的可控和智能。</p>
 
 <p>同样，在<code>.vimrc</code>中添加如下配置来开启代码折叠功能。</p>
-
-<pre><code class="language-cpp">&quot; 开启代码折叠功能
-&quot; 根据当前代码行的缩进来进行代码折叠
-set foldmethod=indent 
-set foldlevel=99
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#e6db74">&#34; 开启代码折叠功能</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> <span style="color:#960050;background-color:#1e0010">根据当前代码行的缩进来进行代码折叠</span>
+set foldmethod<span style="color:#f92672">=</span>indent 
+set foldlevel<span style="color:#f92672">=</span><span style="color:#ae81ff">99</span>
+</code></pre></div>
 <p>这样一来，你在NORMAL模式下就可以输入<code>za</code>快捷键来进行代码折叠了。为了便于操作，我们可以将za快捷键换成空格键。所以，您的配置文件中还需要添加如下命令：</p>
-
-<pre><code class="language-cpp">&quot; 将za快捷键映射到space空格键上
-nnoremap &lt;space&gt; za
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#e6db74">&#34; 将za快捷键映射到space空格键上</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">nnoremap &lt;space&gt; za</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span></code></pre></div>
 <h2 id="目录树">目录树</h2>
 
 <p>按照当初的想法，是为了将vim配置成Python开发环境，那么开发环境中的文件目录当然少不了。得益于vim强大的插件系统，自然会有插件来带我们完成这个功能。于是，我们找到了NERDTree这个插件，先来看看实用效果吧。</p>
@@ -356,28 +321,22 @@ nnoremap &lt;space&gt; za
 <p>左边显示的就是NERTree插件生成的目录，是不是很心动，跃跃欲试！接下来就来一步一步安装它吧。</p>
 
 <p>第一步，在<code>vimrc</code>文件中添加如下代码，和Vbundle放在一起。</p>
-
-<pre><code class="language-cpp">Plugin 'gmarik/Vundle.vim'
-Plugin 'scrooloose/nerdtree'
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>gmarik<span style="color:#f92672">/</span>Vundle.vim<span style="color:#960050;background-color:#1e0010">&#39;</span>
+Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>scrooloose<span style="color:#f92672">/</span>nerdtree<span style="color:#960050;background-color:#1e0010">&#39;</span>
+</code></pre></div>
 <p>第二步，添加NERDTree目录树的相关配置，也是在<code>.vimrc</code>文件中</p>
-
-<pre><code class="language-cpp">&quot; *********************************************
-&quot; NERD插件属性
-&quot; *********************************************
-au vimenter * NERDTree   // 开启vim的时候默认开启NERDTree
-map &lt;F2&gt; :NERDTreeToggle&lt;CR&gt;  // 设置F2为开启NERDTree的快捷键
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> NERD插件属性
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">au vimenter * NERDTree   // 开启vim的时候默认开启NERDTree</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">map &lt;F2&gt; :NERDTreeToggle&lt;CR&gt;  // 设置F2为开启NERDTree的快捷键</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span></code></pre></div>
 <p>第三步，执行<code>:PluginInstall</code></p>
-
-<pre><code class="language-cpp">&quot; Installing plugins to /.vim/bundle&quot;
-. Plugin 'gmarik/Vundle.vim'
-+ Plugin 'scrooloose/nerdtree'   // 表示新添加的插件已经安装
-* Helptags 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#e6db74">&#34; Installing plugins to /.vim/bundle&#34;</span>
+. Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>gmarik<span style="color:#f92672">/</span>Vundle.vim<span style="color:#960050;background-color:#1e0010">&#39;</span>
+<span style="color:#f92672">+</span> Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>scrooloose<span style="color:#f92672">/</span>nerdtree<span style="color:#960050;background-color:#1e0010">&#39;</span>   <span style="color:#75715e">// 表示新添加的插件已经安装
+</span><span style="color:#75715e"></span><span style="color:#f92672">*</span> Helptags 
+</code></pre></div>
 <p>重启vim，你将会看到上面的预览图。</p>
 
 <h2 id="tagbar">Tagbar</h2>
@@ -385,19 +344,15 @@ map &lt;F2&gt; :NERDTreeToggle&lt;CR&gt;  // 设置F2为开启NERDTree的快捷�
 <p>Tagbar可以将正在编辑的文件生成一个大纲，包含类、方法、变量等，可以选中快速跳转到目标位置，编辑大文件的时候特别有用。</p>
 
 <p>Tagbar的安装需要Ctags的支持，我们首先需要安装用<code>brew</code>来安装Ctags，运行如下命令：</p>
-
-<pre><code class="language-cpp">~ brew install ctags
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> brew install ctags
+</code></pre></div>
 <p>然后，在<code>.vimrc</code>中添加相应的插件配置。</p>
-
-<pre><code class="language-cpp">Plugin 'majutsushi/tagbar'
-&quot; 启动时自动focus
-let g:tagbar_auto_faocus =1 
-&quot; 启动指定文件时自动开启tagbar
-autocmd BufReadPost *.cpp,*.c,*.h,*.hpp,*.cc,*.cxx call tagbar#autoopen()
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>majutsushi<span style="color:#f92672">/</span>tagbar<span style="color:#960050;background-color:#1e0010">&#39;</span>
+<span style="color:#e6db74">&#34; 启动时自动focus</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">let g:tagbar_auto_faocus =1 </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> <span style="color:#960050;background-color:#1e0010">启动指定文件时自动开启</span>tagbar
+autocmd BufReadPost <span style="color:#f92672">*</span>.cpp,<span style="color:#f92672">*</span>.c,<span style="color:#f92672">*</span>.h,<span style="color:#f92672">*</span>.hpp,<span style="color:#f92672">*</span>.cc,<span style="color:#f92672">*</span>.cxx call tagbar<span style="color:#75715e">#autoopen()
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>做完这些之后，执行<code>:PluginInstall</code>，可以看到如下界面：</p>
 
 <p><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkcknwmuxj313t0msjy1.jpg" alt="Tagbar" /></p>
@@ -407,34 +362,28 @@ autocmd BufReadPost *.cpp,*.c,*.h,*.hpp,*.cc,*.cxx call tagbar#autoopen()
 <p>在vim下，最好用的自动补全插件非YouCompleteMe莫属，这款插件支持C、C++、obj-C、C#和python语言的自动补全，有了它，补全各类代码都不用愁了。</p>
 
 <p>安装YCM需要cmake的支持，而且vim的版本需要在7.4以上。首先，我们来安装cmake。</p>
-
-<pre><code class="language-cpp">~ brew install cmake
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> brew install cmake
+</code></pre></div>
 <p>然后，按照插件的安装方法，向<code>.vimrc</code>中添加下列配置命令。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>Valloric<span style="color:#f92672">/</span>YouCompleteMe<span style="color:#960050;background-color:#1e0010">&#39;</span>
 
-<pre><code class="language-cpp">Plugin 'Valloric/YouCompleteMe'
-
-&quot; *********************************************
-&quot; YCM插件相关
-&quot; *********************************************
-let g:ycm_autoclose_preview_window_after_completion=1
-&quot; 跳转到定义处
-map &lt;leader&gt;g  :YcmCompleter GoToDefinitionElseDeclaration&lt;CR&gt;
-&quot; 默认tab、s-tab和自动补全冲突
-let g:ycm_key_list_select_completion = ['&lt;TAB&gt;', '&lt;c-n&gt;', '&lt;Down&gt;'] 
-let g:ycm_key_list_previous_completion = ['&lt;S-TAB&gt;', '&lt;c-p&gt;', '&lt;Up&gt;'] 
-let g:ycm_auto_trigger = 1 
-</code></pre>
-
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> YCM插件相关
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">let g:ycm_autoclose_preview_window_after_completion=1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> <span style="color:#960050;background-color:#1e0010">跳转到定义处</span>
+map <span style="color:#f92672">&lt;</span>leader<span style="color:#f92672">&gt;</span>g  :YcmCompleter GoToDefinitionElseDeclaration<span style="color:#f92672">&lt;</span>CR<span style="color:#f92672">&gt;</span>
+<span style="color:#e6db74">&#34; 默认tab、s-tab和自动补全冲突</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">let g:ycm_key_list_select_completion = [&#39;&lt;TAB&gt;&#39;, &#39;&lt;c-n&gt;&#39;, &#39;&lt;Down&gt;&#39;] </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">let g:ycm_key_list_previous_completion = [&#39;&lt;S-TAB&gt;&#39;, &#39;&lt;c-p&gt;&#39;, &#39;&lt;Up&gt;&#39;] </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">let g:ycm_auto_trigger = 1 </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span></code></pre></div>
 <p>最后，执行<code>:PluginInstall</code>，执行完之后，会提示YCM需要编译后才能使用，去YCM目录下执行编译工作吧。</p>
-
-<pre><code class="language-cpp">/* 进入ycm目录 */
-~ cd .vim/bundle/YouCompleteMe/
-/* 执行编译 */
-./install.sh --clang-completer
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 进入ycm目录 */</span>
+<span style="color:#f92672">~</span> cd .vim<span style="color:#f92672">/</span>bundle<span style="color:#f92672">/</span>YouCompleteMe<span style="color:#f92672">/</span>
+<span style="color:#75715e">/* 执行编译 */</span>
+.<span style="color:#f92672">/</span>install.sh <span style="color:#f92672">--</span>clang<span style="color:#f92672">-</span>completer
+</code></pre></div>
 <p>编译的过程有点慢，耐心等待之后，就可以在写代码的时候自动补全了，看如下示意图，补全python代码。</p>
 
 <p><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkckkv32ij30wr0lo0w1.jpg" alt="YCM" /></p>
@@ -446,32 +395,28 @@ let g:ycm_auto_trigger = 1
 <p>这个状态栏是由<code>vim-airline</code>插件提供，默认情况下，airline使用ASCII字符来作为状态栏的分隔符，  所以安装完后，会出现一些乱码的情况。具体的修改方法后面会讲到。</p>
 
 <p>首先，还是按照插件安装的方法，在<code>.vimrc</code>中添加如下配置命令。</p>
-
-<pre><code class="language-cpp">Plugin 'vim-airline/vim-airline'
-Plugin 'vim-airline/vim-airline-themes'
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>vim<span style="color:#f92672">-</span>airline<span style="color:#f92672">/</span>vim<span style="color:#f92672">-</span>airline<span style="color:#960050;background-color:#1e0010">&#39;</span>
+Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>vim<span style="color:#f92672">-</span>airline<span style="color:#f92672">/</span>vim<span style="color:#f92672">-</span>airline<span style="color:#f92672">-</span>themes<span style="color:#960050;background-color:#1e0010">&#39;</span>
   
-&quot; *********************************************
-&quot; vim-airline
-&quot; *********************************************
-&quot; 开启powerline字体
-let g:airline_powerline_fonts = 1
-&quot; 使用powerline包装过的字体
-set guifont=Source\ Code\ Pro\ for\ Powerline:h14 
-</code></pre>
-
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> vim<span style="color:#f92672">-</span>airline
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> <span style="color:#960050;background-color:#1e0010">开启</span>powerline字体
+let g:airline_powerline_fonts <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+<span style="color:#e6db74">&#34; 使用powerline包装过的字体</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">set guifont=Source\ Code\ Pro\ for\ Powerline:h14 </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span></code></pre></div>
 <p>然后，执行<code>:PluginInstall</code>，重启vim可能不会如你所愿，状态栏是这样的。</p>
 
 <p><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkckpxx5ej30wu01xmxj.jpg" alt="airlineError" /></p>
 
 <p>因为terminal使用的字体一般是menlo或者monaco，这些字体都没有对powerline的字符进行封装，所以状态栏的字符段会出现乱码，这个时候需要做的就是安装powerline字体。</p>
-
-<pre><code class="language-cpp">/* 从github下载字体文件 */
-git clone https://github.com/powerline/fonts.git
-/* 安装powerline字体 */
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 从github下载字体文件 */</span>
+git clone https:<span style="color:#75715e">//github.com/powerline/fonts.git
+</span><span style="color:#75715e"></span><span style="color:#75715e">/* 安装powerline字体 */</span>
 cd fonts
-./install.sh
-</code></pre>
-
+.<span style="color:#f92672">/</span>install.sh
+</code></pre></div>
 <p>等待脚本程序运行完之后，就成功安装好了powerline封装过的字体了。接下来，修改终端字体，个人比较偏爱Source Code Pro字体，所以讲终端字体修改为Source Code Pro for Powerline，然后重启vim就能看到正常显示的airline了。</p>
 
 <p><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkcklh8tmj30wp02q74p.jpg" alt="airline" /></p>
@@ -479,27 +424,23 @@ cd fonts
 <h2 id="支持utf-8编码">支持UTF-8编码</h2>
 
 <p>大部分情况下，进行Python开发时，你应该使用UTF-8编码，尤其是使用Python3的时候，为了使vim支持UTF-8编码需要在<code>.vimrc</code>中添加如下代码：</p>
-
-<pre><code class="language-cpp">set encoding=utf-8
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">set encoding<span style="color:#f92672">=</span>utf<span style="color:#f92672">-</span><span style="color:#ae81ff">8</span>
+</code></pre></div>
 <h2 id="文件跳转ctrlp">文件跳转ctrlp</h2>
 
 <p>在进行大项目的开发时，往往需要进行文件的跳转，有时我们队要跳转的文件名只记得部分，所以需要支持模糊查找，目录树跨文件夹跳转起来太不方便，于是ctrlp插件登场了，当逆向打开某个文件时，只需要按下ctrl+p输入要打开的文件名即可实现文件跳转，所有和这个文件名匹配的文件都会被按照优先级列出来。</p>
 
 <p>其安装步骤如下，在<code>.vimrc</code>中添加如下配置命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>kien<span style="color:#f92672">/</span>ctrlp.vim<span style="color:#960050;background-color:#1e0010">&#39;</span>
 
-<pre><code class="language-cpp">Plugin 'kien/ctrlp.vim'
-
-&quot; *********************************************
-&quot; ctrlp
-&quot; *********************************************
-let g:ctrlp_map = '&lt;c-p&gt;' 
-let g:ctrlp_cmd = 'CtrlP'
-&quot; 设置过滤不进行查找的后缀名 
-let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn|pyc)$' 
-</code></pre>
-
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> ctrlp
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">let g:ctrlp_map = &#39;&lt;c-p&gt;&#39; </span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">let g:ctrlp_cmd = &#39;CtrlP&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> <span style="color:#960050;background-color:#1e0010">设置过滤不进行查找的后缀名</span> 
+let g:ctrlp_custom_ignore <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">&#39;\</span>v[<span style="color:#960050;background-color:#1e0010">\</span><span style="color:#f92672">/</span>]<span style="color:#960050;background-color:#1e0010">\</span>.(git<span style="color:#f92672">|</span>hg<span style="color:#f92672">|</span>svn<span style="color:#f92672">|</span>pyc)<span style="color:#960050;background-color:#1e0010">$&#39;</span> 
+</code></pre></div>
 <p>最后，执行<code>:PluginInstall</code>，重启vim，按下CTRL+P，文件跳转就显示出来了。</p>
 
 <p><img src="https://ww1.sinaimg.cn/large/006tKfTcgw1fbkckh87s6j313z06x0ue.jpg" alt="ctrlp" /></p>
@@ -507,28 +448,21 @@ let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn|pyc)$'
 <h2 id="pep8风格">PEP8风格</h2>
 
 <p>对于Python代码而言，必须要支持PEP8风格的缩进，所以，需要在<code>.vim</code>文件中添加下面的配置文件。</p>
-
-<pre><code class="language-cpp">&quot; *********************************************
-&quot; python代码风格PEP8
-&quot; *********************************************
-au BufNewFile,BufRead *.py set tabstop=4 |set softtabstop=4|set shiftwidth=4|set textwidth=79|set expandtab|set autoindent|set fileformat=unix
-
-au BufNewFile,BufRead *.js, *.html, *.css set tabstop=2|set softtabstop=2|set shiftwidth=2
-
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">&#34;</span> python代码风格PEP8
+<span style="color:#e6db74">&#34; *********************************************</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">au BufNewFile,BufRead *.py set tabstop=4 |set softtabstop=4|set shiftwidth=4|set textwidth=79|set expandtab|set autoindent|set fileformat=unix</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#e6db74">au BufNewFile,BufRead *.js, *.html, *.css set tabstop=2|set softtabstop=2|set shiftwidth=2</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span></code></pre></div>
 <p>另外，如果需要自动缩进python代码的话，需要安装如下插件：</p>
-
-<pre><code class="language-cpp">Plugin 'vim-scripts/indentpython.vim'
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Plugin <span style="color:#960050;background-color:#1e0010">&#39;</span>vim<span style="color:#f92672">-</span>scripts<span style="color:#f92672">/</span>indentpython.vim<span style="color:#960050;background-color:#1e0010">&#39;</span>
+</code></pre></div>
 <h2 id="共享粘贴板">共享粘贴板</h2>
 
 <p>有时候需要从vim中复制一些代码出去，所以vim必须支持能够将代码复制到系统粘贴板上，要实现上述需求，只需要在<code>.vimrc</code>中添加如下配置参数。</p>
-
-<pre><code class="language-cpp">set clipboard=unnamed  
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">set clipboard<span style="color:#f92672">=</span>unnamed  
+</code></pre></div>
 <h1 id="小结">小结</h1>
 
 <p>vim的插件太多了，针对不同的需求都有相应的插件给予辅助。本篇博客只是按照自己的需求配置了相应的插件，具体的配置文件我已经上传到我的github了，<a href="https://github.com/Zeecoders/Vim/**.vimrc**">点击这里跳转</a>。后续可能还会增加一些插件来满足自己的开发要求，博客也会同步更新，欢迎大家和我一起来学习配置vim！如果疑惑或配置中出问题的请在下方留言。</p>

@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -173,127 +174,115 @@ $$ P(x \geq k)=(1-<sup>1</sup>&frasl;<sub>2</sub>^{k-1})^{n}$$</p>
 <h2 id="数据结构">数据结构</h2>
 
 <p>每个hyperloglog键由一下结构体组成：</p>
-
-<pre><code class="language-cpp">struct hllhdr {
-    char magic[4];      // 固定‘HYLL’，用于标识hyperloglog键
-    uint8_t encoding;   // 编码模式，有密集标识Dence和稀疏模式sparse
-    uint8_t notused[3]; // 未使用字段，留着日后用
-    uint8_t card[8];    // 基数缓存，存储上一次计算的基数
-    uint8_t registers[]; // 桶个数，用来存放数据，Redis中大小为16384
-};
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> hllhdr {
+    <span style="color:#66d9ef">char</span> magic[<span style="color:#ae81ff">4</span>];      <span style="color:#75715e">// 固定‘HYLL’，用于标识hyperloglog键
+</span><span style="color:#75715e"></span>    uint8_t encoding;   <span style="color:#75715e">// 编码模式，有密集标识Dence和稀疏模式sparse
+</span><span style="color:#75715e"></span>    uint8_t notused[<span style="color:#ae81ff">3</span>]; <span style="color:#75715e">// 未使用字段，留着日后用
+</span><span style="color:#75715e"></span>    uint8_t card[<span style="color:#ae81ff">8</span>];    <span style="color:#75715e">// 基数缓存，存储上一次计算的基数
+</span><span style="color:#75715e"></span>    uint8_t registers[]; <span style="color:#75715e">// 桶个数，用来存放数据，Redis中大小为16384
+</span><span style="color:#75715e"></span>};
+</code></pre></div>
 <h2 id="添加元素">添加元素</h2>
 
 <p>Redis提供一下命令来向hyperloglog键中添加数据。</p>
-
-<pre><code class="language-cpp">PFADD key element [element ...]
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">PFADD key element [element ...]
+</code></pre></div>
 <p>其源码实现如下：</p>
-
-<pre><code class="language-cpp">void pfaddCommand(client *c) {
-    robj *o = lookupKeyWrite(c-&gt;db,c-&gt;argv[1]);
-    struct hllhdr *hdr;
-    int updated = 0, j;
-    // 客户端交互部分，此处可以放着以后理解
-    if (o == NULL) { 
-        // 创建一个hyperloglog键
-        o = createHLLObject();
-        dbAdd(c-&gt;db,c-&gt;argv[1],o);
-        updated++;
-    } else {
-        // 判断是否是一个hyperloglog键，判断前四个字节是否为'HYLL'
-        if (isHLLObjectOrReply(c,o) != C_OK) return;
-        o = dbUnshareStringValue(c-&gt;db,c-&gt;argv[1],o);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pfaddCommand</span>(client <span style="color:#f92672">*</span>c) {
+    robj <span style="color:#f92672">*</span>o <span style="color:#f92672">=</span> lookupKeyWrite(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]);
+    <span style="color:#66d9ef">struct</span> hllhdr <span style="color:#f92672">*</span>hdr;
+    <span style="color:#66d9ef">int</span> updated <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, j;
+    <span style="color:#75715e">// 客户端交互部分，此处可以放着以后理解
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (o <span style="color:#f92672">==</span> NULL) { 
+        <span style="color:#75715e">// 创建一个hyperloglog键
+</span><span style="color:#75715e"></span>        o <span style="color:#f92672">=</span> createHLLObject();
+        dbAdd(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],o);
+        updated<span style="color:#f92672">++</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 判断是否是一个hyperloglog键，判断前四个字节是否为&#39;HYLL&#39;
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (isHLLObjectOrReply(c,o) <span style="color:#f92672">!=</span> C_OK) <span style="color:#66d9ef">return</span>;
+        o <span style="color:#f92672">=</span> dbUnshareStringValue(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],o);
     }
-    // 调用hllAdd函数来添加元素
-    for (j = 2; j &lt; c-&gt;argc; j++) {
-        int retval = hllAdd(o, (unsigned char*)c-&gt;argv[j]-&gt;ptr,
-                               sdslen(c-&gt;argv[j]-&gt;ptr));
-        switch(retval) {
-        case 1:
-            updated++;
-            break;
-        case -1:
+    <span style="color:#75715e">// 调用hllAdd函数来添加元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>) {
+        <span style="color:#66d9ef">int</span> retval <span style="color:#f92672">=</span> hllAdd(o, (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)c<span style="color:#f92672">-&gt;</span>argv[j]<span style="color:#f92672">-&gt;</span>ptr,
+                               sdslen(c<span style="color:#f92672">-&gt;</span>argv[j]<span style="color:#f92672">-&gt;</span>ptr));
+        <span style="color:#66d9ef">switch</span>(retval) {
+        <span style="color:#66d9ef">case</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">:</span>
+            updated<span style="color:#f92672">++</span>;
+            <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#f92672">:</span>
             addReplySds(c,sdsnew(invalid_hll_err));
-            return;
+            <span style="color:#66d9ef">return</span>;
         }
     }
-    hdr = o-&gt;ptr;
-    if (updated) {
-        signalModifiedKey(c-&gt;db,c-&gt;argv[1]);
-        notifyKeyspaceEvent(NOTIFY_STRING,&quot;pfadd&quot;,c-&gt;argv[1],c-&gt;db-&gt;id);
-        server.dirty++;
+    hdr <span style="color:#f92672">=</span> o<span style="color:#f92672">-&gt;</span>ptr;
+    <span style="color:#66d9ef">if</span> (updated) {
+        signalModifiedKey(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]);
+        notifyKeyspaceEvent(NOTIFY_STRING,<span style="color:#e6db74">&#34;pfadd&#34;</span>,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
+        server.dirty<span style="color:#f92672">++</span>;
         HLL_INVALIDATE_CACHE(hdr);
     }
-    // 客户端交互部分，此处可以放着以后理解
-    addReply(c, updated ? shared.cone : shared.czero);
+    <span style="color:#75715e">// 客户端交互部分，此处可以放着以后理解
+</span><span style="color:#75715e"></span>    addReply(c, updated <span style="color:#f92672">?</span> shared.cone : shared.czero);
 }
-</code></pre>
-
+</code></pre></div>
 <p>上述代码包含了很多与客户端交互的部分，此处可以先不看，添加元素主要由hllAdd函数实现。</p>
-
-<pre><code class="language-cpp">int hllAdd(robj *o, unsigned char *ele, size_t elesize) {
-    struct hllhdr *hdr = o-&gt;ptr;
-    switch(hdr-&gt;encoding) {
-    case HLL_DENSE: return hllDenseAdd(hdr-&gt;registers,ele,elesize);  // 密集模式添加元素
-    case HLL_SPARSE: return hllSparseAdd(o,ele,elesize); // 稀疏模式添加元素
-    default: return -1; // 非法模式
-    }
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">hllAdd</span>(robj <span style="color:#f92672">*</span>o, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>ele, size_t elesize) {
+    <span style="color:#66d9ef">struct</span> hllhdr <span style="color:#f92672">*</span>hdr <span style="color:#f92672">=</span> o<span style="color:#f92672">-&gt;</span>ptr;
+    <span style="color:#66d9ef">switch</span>(hdr<span style="color:#f92672">-&gt;</span>encoding) {
+    <span style="color:#66d9ef">case</span> HLL_DENSE: <span style="color:#66d9ef">return</span> hllDenseAdd(hdr<span style="color:#f92672">-&gt;</span>registers,ele,elesize);  <span style="color:#75715e">// 密集模式添加元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">case</span> HLL_SPARSE: <span style="color:#66d9ef">return</span> hllSparseAdd(o,ele,elesize); <span style="color:#75715e">// 稀疏模式添加元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; <span style="color:#75715e">// 非法模式
+</span><span style="color:#75715e"></span>    }
 }
-</code></pre>
-
+</code></pre></div>
 <p>以hllDenseAdd为例，首先计算待添加元素的第一次出现“1”的位置count和该元素添加到第index个桶内，然后查看registers部分，第index个桶内此时存放的第一次出现“1”的最大的位数oldcount，比较oldcount和count，如果前者大，则不处理；如果后者大，更新oldcount为count。</p>
-
-<pre><code class="language-cpp">// 密集模式添加元素
-int hllDenseAdd(uint8_t *registers, unsigned char *ele, size_t elesize) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 密集模式添加元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">hllDenseAdd</span>(uint8_t <span style="color:#f92672">*</span>registers, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>ele, size_t elesize) {
     uint8_t oldcount, count;
-    long index;
+    <span style="color:#66d9ef">long</span> index;
 
-    // 计算该元素第一个1出现的位置
-    count = hllPatLen(ele,elesize,&amp;index);
-    // 得到第index个桶内的count值
-    HLL_DENSE_GET_REGISTER(oldcount,registers,index);
-    if (count &gt; oldcount) {
-        // 如果比现有的最大值还大，则添加该值到数据部分
-        HLL_DENSE_SET_REGISTER(registers,index,count);
-        return 1;
-    } else {
-        // 如果小于现有的最大值，则不做处理，因为不影响基数
-        return 0;
+    <span style="color:#75715e">// 计算该元素第一个1出现的位置
+</span><span style="color:#75715e"></span>    count <span style="color:#f92672">=</span> hllPatLen(ele,elesize,<span style="color:#f92672">&amp;</span>index);
+    <span style="color:#75715e">// 得到第index个桶内的count值
+</span><span style="color:#75715e"></span>    HLL_DENSE_GET_REGISTER(oldcount,registers,index);
+    <span style="color:#66d9ef">if</span> (count <span style="color:#f92672">&gt;</span> oldcount) {
+        <span style="color:#75715e">// 如果比现有的最大值还大，则添加该值到数据部分
+</span><span style="color:#75715e"></span>        HLL_DENSE_SET_REGISTER(registers,index,count);
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果小于现有的最大值，则不做处理，因为不影响基数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
     }
 }
-// 用于计算hash后的值中，第一个出现1的位置
-int hllPatLen(unsigned char *ele, size_t elesize, long *regp) {
+<span style="color:#75715e">// 用于计算hash后的值中，第一个出现1的位置
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">hllPatLen</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>ele, size_t elesize, <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>regp) {
     uint64_t hash, bit, index;
-    int count;
-    // 利用MurmurHash64A哈希函数来计算该元素的hash值
-    hash = MurmurHash64A(ele,elesize,0xadc83b19ULL);
-    // 计算应该放在哪个桶
-    index = hash &amp; HLL_P_MASK;
-    // 为了保证循环能够终止
-    hash |= ((uint64_t)1&lt;&lt;63); 
-    bit = HLL_REGISTERS;
-    // 存储第一个1出现的位置
-    count = 1;
-    // 计算count
-    while((hash &amp; bit) == 0) {
-        count++;
-        bit &lt;&lt;= 1;
+    <span style="color:#66d9ef">int</span> count;
+    <span style="color:#75715e">// 利用MurmurHash64A哈希函数来计算该元素的hash值
+</span><span style="color:#75715e"></span>    hash <span style="color:#f92672">=</span> MurmurHash64A(ele,elesize,<span style="color:#ae81ff">0xadc83b19ULL</span>);
+    <span style="color:#75715e">// 计算应该放在哪个桶
+</span><span style="color:#75715e"></span>    index <span style="color:#f92672">=</span> hash <span style="color:#f92672">&amp;</span> HLL_P_MASK;
+    <span style="color:#75715e">// 为了保证循环能够终止
+</span><span style="color:#75715e"></span>    hash <span style="color:#f92672">|=</span> ((uint64_t)<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">63</span>); 
+    bit <span style="color:#f92672">=</span> HLL_REGISTERS;
+    <span style="color:#75715e">// 存储第一个1出现的位置
+</span><span style="color:#75715e"></span>    count <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+    <span style="color:#75715e">// 计算count
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>((hash <span style="color:#f92672">&amp;</span> bit) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+        count<span style="color:#f92672">++</span>;
+        bit <span style="color:#f92672">&lt;&lt;=</span> <span style="color:#ae81ff">1</span>;
     }
-    *regp = (int) index;
-    return count;
+    <span style="color:#f92672">*</span>regp <span style="color:#f92672">=</span> (<span style="color:#66d9ef">int</span>) index;
+    <span style="color:#66d9ef">return</span> count;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="计算基数">计算基数</h2>
 
 <p>Redis提供了下面的命令来计算数据集的基数。</p>
-
-<pre><code class="language-cpp">PFCOUNT key [key ...]
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">PFCOUNT key [key ...]
+</code></pre></div>
 <p>如果只有一个key则计算其基数即可；如果存在多个键，则需要合并所有的键（求并集），然后计算其基数。</p>
 
 <p>上述讲到了分桶统计来消除误差，hyperloglog在误差方面对上述只取最大值平均的方法做了很多优化，具体优化部分可以参考<a href="http://blog.codinglabs.org/articles/algorithms-for-cardinality-estimation-part-iv.html">解读Cardinality Estimation算法（第四部分：HyperLogLog Counting及Adaptive Counting）</a>。</p>
@@ -301,10 +290,8 @@ int hllPatLen(unsigned char *ele, size_t elesize, long *regp) {
 <h2 id="合并hyperloglog键">合并hyperloglog键</h2>
 
 <p>Redis提供了下面的命令来合并多个hyperloglog键。（源码部分就省略了）</p>
-
-<pre><code class="language-cpp">PFMERGE destkey sourcekey [sourcekey ...]
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">PFMERGE destkey sourcekey [sourcekey ...]
+</code></pre></div>
 <h1 id="hyperloglog小结">hyperloglog小结</h1>
 
 <p>一开始以为hyperloglog是Redis的日志部分的实现，后来才发现，跟日志半毛钱的关系都没有。对于密集存储和稀疏存储，能够大大节约内存，后续有时间还是要详细的理一理实现思路。关于基数统计，各位可以参考下面几篇博客。

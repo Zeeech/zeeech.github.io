@@ -32,9 +32,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -67,7 +69,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -127,38 +128,34 @@
 <h1 id="引例">引例</h1>
 
 <p>还是以上篇博客的Animal类说起，假设我们有一个Dog类，它继承了Animal类。程序如下：</p>
-
-<pre><code class="language-cpp">class Animal{
-public:
-	char name[10];//动物名字
-	int weight;//体重
-	virtual void eat(){
-		cout&lt;&lt;&quot;Animal eat&quot;&lt;&lt;endl;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">char</span> name[<span style="color:#ae81ff">10</span>];<span style="color:#75715e">//动物名字
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">int</span> weight;<span style="color:#75715e">//体重
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 
-	virtual void sleep(){
-		cout&lt;&lt;&quot;Animal sleep&quot;&lt;&lt;endl;
-	}
-};
-
-class Dog : public Animal{
-public:
-	int breed;//引入一个breed变量，表示狗的品种
-	virtual void eat(){
-		cout&lt;&lt;&quot;Dog eat&quot;&lt;&lt;endl;
-	}
-	virtual void yelp(){//狗吠
-		cout&lt;&lt;&quot;Dog yelp&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sleep</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal sleep&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
-</code></pre>
 
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> breed;<span style="color:#75715e">//引入一个breed变量，表示狗的品种
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">yelp</span>(){<span style="color:#75715e">//狗吠
+</span><span style="color:#75715e"></span>		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog yelp&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+};
+</code></pre></div>
 <p>还是同样的问题，这些类占有多少内存空间呢？不急，我们在主函数中仍然添加如下代码：</p>
-
-<pre><code class="language-cpp">Dog dog;
-cout&lt;&lt;sizeof(dog)&lt;&lt;endl;//输出32
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dog dog;
+cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#66d9ef">sizeof</span>(dog)<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//输出32
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>还是在这里卖个关子，为什么输出32？</p>
 
 <h1 id="c-的多态性">C++的多态性</h1>
@@ -183,26 +180,21 @@ cout&lt;&lt;sizeof(dog)&lt;&lt;endl;//输出32
 </ul>
 
 <p>结合引例中定义的两个类，观察下列代码的输出：</p>
-
-<pre><code class="language-cpp">int main(){
-	//1.经由一组隐式转换
-	Animal *animal = new Dog();//将一个anmial指针指向一个dog类对象virtual
-	//2.经由virtual function机制
-	animal-&gt;eat();
-	//3.经由dynamic_cast运算符
-	if(Dog *dog = dynamic_cast&lt;Dog*&gt;(animal){
-		dog-&gt;eat()
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
+	<span style="color:#75715e">//1.经由一组隐式转换
+</span><span style="color:#75715e"></span>	Animal <span style="color:#f92672">*</span>animal <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Dog();<span style="color:#75715e">//将一个anmial指针指向一个dog类对象virtual
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">//2.经由virtual function机制
+</span><span style="color:#75715e"></span>	animal<span style="color:#f92672">-&gt;</span>eat();
+	<span style="color:#75715e">//3.经由dynamic_cast运算符
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span>(Dog <span style="color:#f92672">*</span>dog <span style="color:#f92672">=</span> <span style="color:#66d9ef">dynamic_cast</span><span style="color:#f92672">&lt;</span>Dog<span style="color:#f92672">*&gt;</span>(animal){
+		dog<span style="color:#f92672">-&gt;</span>eat()
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>以上测试代码输出结果如下：</p>
-
-<pre><code class="language-cpp">Dog eat	//由animal-&gt;eat()输出
-Dog eat	//由dog-&gt;eat()输出
-
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dog eat	<span style="color:#75715e">//由animal-&gt;eat()输出
+</span><span style="color:#75715e"></span>Dog eat	<span style="color:#75715e">//由dog-&gt;eat()输出
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>如果不考虑多态性的话，animal指针调用eat()应该输出Animal eat，下面的dog-&gt;eat()还是输出dog eat。</p>
 
 <p>引入多态后，在运行时，编译器会检查animal的真实类型，它指向一个Dog类，于是通过虚函数多态特性输出dog eat，那么编译器在运行时是如何判断该指针指向对象的真实类型呢？又是如何定位到dog::eat函数呢？下面大家带着这些问题继续跟着我一起探索C++对象模型的底层机制。</p>
@@ -242,87 +234,83 @@ Dog eat	//由dog-&gt;eat()输出
 <h3 id="测试小结">测试小结</h3>
 
 <p>在好奇心的驱使下，还是忍不住去编译器探个究竟。于是，狂敲了如下代码：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
 
-<pre><code class="language-cpp">#include &lt;stdio.h&gt;
-#include &lt;iostream&gt;
-#include &lt;string.h&gt;
+<span style="color:#66d9ef">typedef</span> <span style="color:#a6e22e">void</span>(<span style="color:#f92672">*</span>Fun)(<span style="color:#66d9ef">void</span>);
 
-using namespace std;
-
-typedef void(*Fun)(void);
-
-class Animal{
-public:
-	char name[10];//动物名字
-	int weight;//体重
-	virtual void eat(){
-		cout&lt;&lt;&quot;Animal eat&quot;&lt;&lt;endl;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">char</span> name[<span style="color:#ae81ff">10</span>];<span style="color:#75715e">//动物名字
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">int</span> weight;<span style="color:#75715e">//体重
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 
-	virtual void sleep(){
-		cout&lt;&lt;&quot;Animal sleep&quot;&lt;&lt;endl;
-	}
-};
-
-class Dog : public Animal{
-public:
-	int breed;//引入一个breed变量，表示狗的品种
-	virtual void eat(){
-		cout&lt;&lt;&quot;Dog eat&quot;&lt;&lt;endl;
-	}
-	virtual void yelp(){
-		cout&lt;&lt;&quot;Dog yelp&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sleep</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal sleep&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-int main(){
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> breed;<span style="color:#75715e">//引入一个breed变量，表示狗的品种
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">yelp</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog yelp&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+};
+
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
 	Dog dog;
-	cout&lt;&lt;&quot;表虚指针vptr的地址：&quot;&lt;&lt;&amp;dog&lt;&lt;endl;
-	cout&lt;&lt;&quot;虚函数表的地址：&quot;&lt;&lt;(long long *)(*((long long*)&amp;dog))&lt;&lt;endl;
-	cout&lt;&lt;&quot;测试虚表里的函数输出：&quot;&lt;&lt;endl;
-	cout&lt;&lt;&quot;----第一个函数:&quot;;
-	Fun pfun1 = NULL;
-	pfun1 = (Fun)*((long long*)*(long long*)(&amp;dog));
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;表虚指针vptr的地址：&#34;</span><span style="color:#f92672">&lt;&lt;&amp;</span>dog<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;虚函数表的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)(<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>dog))<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;测试虚表里的函数输出：&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第一个函数:&#34;</span>;
+	Fun pfun1 <span style="color:#f92672">=</span> NULL;
+	pfun1 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog));
 	pfun1();
-	cout&lt;&lt;&quot;----第二个函数:&quot;;
-    Fun pfun2 = NULL;
- 	pfun2 = (Fun)*((long long*)*(long long*)(&amp;dog)+1);
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第二个函数:&#34;</span>;
+    Fun pfun2 <span style="color:#f92672">=</span> NULL;
+ 	pfun2 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
  	pfun2();
- 	cout&lt;&lt;&quot;----第三个函数:&quot;;
- 	Fun pfun3 = NULL;
- 	pfun3 = (Fun)*((long long*)*(long long*)(&amp;dog)+2);
+ 	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第三个函数:&#34;</span>;
+ 	Fun pfun3 <span style="color:#f92672">=</span> NULL;
+ 	pfun3 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog)<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>);
  	pfun3();
- 	for (int i = 0; i &lt; 10; ++i)
+ 	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">10</span>; <span style="color:#f92672">++</span>i)
     {
-    	cout&lt;&lt;&quot;name[&quot;&lt;&lt;i&lt;&lt;&quot;]的地址为：&quot;&lt;&lt;(long long *)&amp;(dog.name[i])&lt;&lt;endl;//name每个参数的地址
-    }
-    cout&lt;&lt;&quot;weight的地址为：&quot;&lt;&lt;(long long *)&amp;(dog.weight)&lt;&lt;endl;//weight的地址
-    cout&lt;&lt;&quot;breed的地址为：&quot;&lt;&lt;(long long *)&amp;(dog.breed)&lt;&lt;endl;
+    	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;name[&#34;</span><span style="color:#f92672">&lt;&lt;</span>i<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;]的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(dog.name[i])<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//name每个参数的地址
+</span><span style="color:#75715e"></span>    }
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;weight的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(dog.weight)<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//weight的地址
+</span><span style="color:#75715e"></span>    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;breed的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(dog.breed)<span style="color:#f92672">&lt;&lt;</span>endl;
 }
-</code></pre>
-
+</code></pre></div>
 <p>上述测试代码输出：</p>
-
-<pre><code class="language-cpp">虚表指针vptr的地址：0x7ffd528d2100
-虚函数表的地址：0x400f30
-测试虚表里的函数输出：
-----第一个函数:Dog eat
-----第二个函数:Animal sleep
-----第三个函数:Dog yelp
-name[0]的地址为：0x7ffd528d2108
-name[1]的地址为：0x7ffd528d2109
-name[2]的地址为：0x7ffd528d210a
-name[3]的地址为：0x7ffd528d210b
-name[4]的地址为：0x7ffd528d210c
-name[5]的地址为：0x7ffd528d210d
-name[6]的地址为：0x7ffd528d210e
-name[7]的地址为：0x7ffd528d210f
-name[8]的地址为：0x7ffd528d2110
-name[9]的地址为：0x7ffd528d2111
-weight的地址为：0x7ffd528d2114
-breed的地址为：0x7ffd528d2118
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">虚表指针</span>vptr的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffd528d2100</span>
+<span style="color:#960050;background-color:#1e0010">虚函数表的地址：</span><span style="color:#ae81ff">0x400f30</span>
+<span style="color:#960050;background-color:#1e0010">测试虚表里的函数输出：</span>
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第一个函数</span><span style="color:#f92672">:</span>Dog eat
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第二个函数</span><span style="color:#f92672">:</span>Animal sleep
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第三个函数</span><span style="color:#f92672">:</span>Dog yelp
+name[<span style="color:#ae81ff">0</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d2108</span>
+name[<span style="color:#ae81ff">1</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d2109</span>
+name[<span style="color:#ae81ff">2</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d210a</span>
+name[<span style="color:#ae81ff">3</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d210b</span>
+name[<span style="color:#ae81ff">4</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d210c</span>
+name[<span style="color:#ae81ff">5</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d210d</span>
+name[<span style="color:#ae81ff">6</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d210e</span>
+name[<span style="color:#ae81ff">7</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d210f</span>
+name[<span style="color:#ae81ff">8</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d2110</span>
+name[<span style="color:#ae81ff">9</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd528d2111</span>
+weight的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffd528d2114</span>
+breed的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffd528d2118</span>
+</code></pre></div>
 <p>对比一下，与对象模型中的内存布局一致，Dog类重写了Animal类的eat()函数，所以为了支持多态性，在虚表中将Animal::eat()
 替换成Dog::eat()。</p>
 
@@ -331,45 +319,38 @@ breed的地址为：0x7ffd528d2118
 <h2 id="多重继承">多重继承</h2>
 
 <p>多重继承，即一个类直接继承了多个基类，所以我们在引例的基础上新增一个犬科基类</p>
-
-<pre><code class="language-cpp">class Canidae{
-public:
-	int age;
-	virtual void eat(){
-		cout&lt;&lt;&quot;Canidae eat&quot;&lt;&lt;endl;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Canidae</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> age;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
-	virtual void jump(){
-		cout&lt;&lt;&quot;Canidae jump&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">jump</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae jump&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>然后再修改一下说Dog类的继承关系</p>
-
-<pre><code class="language-cpp">class Dog : public Animal,public Canidae{
-public:
-	int breed;//引入一个breed变量，表示狗的品种
-	virtual void eat(){
-		cout&lt;&lt;&quot;Dog eat&quot;&lt;&lt;endl;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal,<span style="color:#66d9ef">public</span> Canidae{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> breed;<span style="color:#75715e">//引入一个breed变量，表示狗的品种
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
-	virtual void yelp(){
-		cout&lt;&lt;&quot;Dog yelp&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">yelp</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog yelp&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
-</code></pre>
-
+</code></pre></div>
 <p>这样Dog类就有两个直接基类了，如下表所示：
 <center><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkfcs9bjnj30gp06bgly.jpg" alt="多重继承" /></center></p>
 
 <p>同样的，我们来看看继承两个基类后，Dog类所占的内存大小，运行cout&lt;&lt;sizeof(dog)&lt;&lt;endl后，输出40，还是在这里留个疑惑。</p>
 
 <p>另外，我们来试试多态方面，执行如下代码：</p>
-
-<pre><code class="language-cpp">Canidae * canidae = new Dog();
-canidae-&gt;eat();
-
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Canidae <span style="color:#f92672">*</span> canidae <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Dog();
+canidae<span style="color:#f92672">-&gt;</span>eat();
+</code></pre></div>
 <p>以上代码输出Dog eat，一样可以体现出多态性。在多重继承下，C++对象模型的内存布局又是以何种方式来支持这些特性呢？</p>
 
 <h3 id="内存布局-1">内存布局</h3>
@@ -385,114 +366,110 @@ canidae-&gt;eat();
 <h3 id="测试小结-1">测试小结</h3>
 
 <p>下面通过一段测试代码来验证上述推论，代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
 
-<pre><code class="language-cpp">#include &lt;stdio.h&gt;
-#include &lt;iostream&gt;
-#include &lt;string.h&gt;
+<span style="color:#66d9ef">typedef</span> <span style="color:#a6e22e">void</span>(<span style="color:#f92672">*</span>Fun)(<span style="color:#66d9ef">void</span>);
 
-using namespace std;
-
-typedef void(*Fun)(void);
-
-class Animal{
-public:
-	char name[10];//动物名字
-	int weight;//体重
-	virtual void eat(){
-		cout&lt;&lt;&quot;Animal eat&quot;&lt;&lt;endl;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">char</span> name[<span style="color:#ae81ff">10</span>];<span style="color:#75715e">//动物名字
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">int</span> weight;<span style="color:#75715e">//体重
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 
-	virtual void sleep(){
-		cout&lt;&lt;&quot;Animal sleep&quot;&lt;&lt;endl;
-	}
-};
-
-class Canidae{
-public:
-	int age;
-	virtual void eat(){
-		cout&lt;&lt;&quot;Canidae eat&quot;&lt;&lt;endl;
-	}
-	virtual void jump(){
-		cout&lt;&lt;&quot;Canidae jump&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sleep</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal sleep&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-class Dog : public Animal,public Canidae{
-public:
-	int breed;//引入一个breed变量，表示狗的品种
-	virtual void eat(){
-		cout&lt;&lt;&quot;Dog eat&quot;&lt;&lt;endl;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Canidae</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> age;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
-	virtual void yelp(){
-		cout&lt;&lt;&quot;Dog yelp&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">jump</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae jump&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-int main(){
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal,<span style="color:#66d9ef">public</span> Canidae{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> breed;<span style="color:#75715e">//引入一个breed变量，表示狗的品种
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">yelp</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog yelp&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+};
+
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
 	Dog dog;
-	cout&lt;&lt;&quot;从Animal继承来的虚表指针vptr的地址：&quot;&lt;&lt;&amp;dog&lt;&lt;endl;
-	cout&lt;&lt;&quot;从Animal继承来的虚表的地址：&quot;&lt;&lt;(long long *)(*((long long*)&amp;dog))&lt;&lt;endl;
-	cout&lt;&lt;&quot;测试Animal虚表里的函数输出：&quot;&lt;&lt;endl;
-	cout&lt;&lt;&quot;----第一个函数:&quot;;
-	Fun pfun1 = NULL;
-	pfun1 = (Fun)*((long long*)*(long long*)(&amp;dog));
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Animal继承来的虚表指针vptr的地址：&#34;</span><span style="color:#f92672">&lt;&lt;&amp;</span>dog<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Animal继承来的虚表的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)(<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>dog))<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;测试Animal虚表里的函数输出：&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第一个函数:&#34;</span>;
+	Fun pfun1 <span style="color:#f92672">=</span> NULL;
+	pfun1 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog));
 	pfun1();
-	cout&lt;&lt;&quot;----第二个函数:&quot;;
-    Fun pfun2 = NULL;
- 	pfun2 = (Fun)*((long long*)*(long long*)(&amp;dog)+1);
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第二个函数:&#34;</span>;
+    Fun pfun2 <span style="color:#f92672">=</span> NULL;
+ 	pfun2 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
  	pfun2();
- 	cout&lt;&lt;&quot;----第三个函数:&quot;;
- 	Fun pfun3 = NULL;
- 	pfun3 = (Fun)*((long long*)*(long long*)(&amp;dog)+2);
+ 	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第三个函数:&#34;</span>;
+ 	Fun pfun3 <span style="color:#f92672">=</span> NULL;
+ 	pfun3 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog)<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>);
  	pfun3();
- 	for (int i = 0; i &lt; 10; ++i)
+ 	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">10</span>; <span style="color:#f92672">++</span>i)
     {
-    	cout&lt;&lt;&quot;name[&quot;&lt;&lt;i&lt;&lt;&quot;]的地址为：&quot;&lt;&lt;(long long *)&amp;(dog.name[i])&lt;&lt;endl;//name每个参数的地址
-    }
-    cout&lt;&lt;&quot;weight的地址为：&quot;&lt;&lt;(long long *)&amp;(dog.weight)&lt;&lt;endl;//weight的地址
-    cout&lt;&lt;&quot;从Canidae继承来的虚表指针vptr的地址：&quot;&lt;&lt;(long long*)(&amp;dog)+3&lt;&lt;endl;
-    cout&lt;&lt;&quot;从Canidae继承来的虚表的地址：&quot;&lt;&lt;(long long *)(*((long long*)&amp;dog+3))&lt;&lt;endl;
-    cout&lt;&lt;&quot;测试Canidae虚表里的函数输出：&quot;&lt;&lt;endl;
-    cout&lt;&lt;&quot;----第一个函数:&quot;;
-	Fun pfun4 = (Fun)*((long long*)*((long long*)(&amp;dog)+3));
+    	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;name[&#34;</span><span style="color:#f92672">&lt;&lt;</span>i<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;]的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(dog.name[i])<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//name每个参数的地址
+</span><span style="color:#75715e"></span>    }
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;weight的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(dog.weight)<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//weight的地址
+</span><span style="color:#75715e"></span>    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Canidae继承来的虚表指针vptr的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog)<span style="color:#f92672">+</span><span style="color:#ae81ff">3</span><span style="color:#f92672">&lt;&lt;</span>endl;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Canidae继承来的虚表的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)(<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>dog<span style="color:#f92672">+</span><span style="color:#ae81ff">3</span>))<span style="color:#f92672">&lt;&lt;</span>endl;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;测试Canidae虚表里的函数输出：&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第一个函数:&#34;</span>;
+	Fun pfun4 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog)<span style="color:#f92672">+</span><span style="color:#ae81ff">3</span>));
 	pfun4();
-	cout&lt;&lt;&quot;----第二个函数:&quot;;
-	Fun pfun5 = (Fun)*((long long*)*((long long*)(&amp;dog)+3)+1);
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第二个函数:&#34;</span>;
+	Fun pfun5 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>dog)<span style="color:#f92672">+</span><span style="color:#ae81ff">3</span>)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
 	pfun5();
-	cout&lt;&lt;&quot;age的地址为：&quot;&lt;&lt;(long long *)&amp;(dog.age)&lt;&lt;endl;
-    cout&lt;&lt;&quot;breed的地址为：&quot;&lt;&lt;(long long *)&amp;(dog.breed)&lt;&lt;endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;age的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(dog.age)<span style="color:#f92672">&lt;&lt;</span>endl;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;breed的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(dog.breed)<span style="color:#f92672">&lt;&lt;</span>endl;
 }
-</code></pre>
-
+</code></pre></div>
 <p>测试结果：</p>
-
-<pre><code class="language-cpp">从Animal继承来的虚表指针vptr的地址：0x7ffd5450e510
-从Animal继承来的虚表的地址：0x4011c8
-测试Animal虚表里的函数输出：
-----第一个函数:Dog eat
-----第二个函数:Animal sleep
-----第三个函数:Dog yelp
-name[0]的地址为：0x7ffd5450e518
-name[1]的地址为：0x7ffd5450e519
-name[2]的地址为：0x7ffd5450e51a
-name[3]的地址为：0x7ffd5450e51b
-name[4]的地址为：0x7ffd5450e51c
-name[5]的地址为：0x7ffd5450e51d
-name[6]的地址为：0x7ffd5450e51e
-name[7]的地址为：0x7ffd5450e51f
-name[8]的地址为：0x7ffd5450e520
-name[9]的地址为：0x7ffd5450e521//因为内存对其填补了两个字节
-weight的地址为：0x7ffd5450e524//weight占4个字节
-从Canidae继承来的虚表指针vptr的地址：0x7ffd5450e528
-从Canidae继承来的虚表的地址：0x4011f0
-测试Canidae虚表里的函数输出：
-----第一个函数:Dog eat
-----第二个函数:Canidae jump
-age的地址为：0x7ffd5450e530
-breed的地址为：0x7ffd5450e534
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">从</span>Animal继承来的虚表指针vptr的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffd5450e510</span>
+<span style="color:#960050;background-color:#1e0010">从</span>Animal继承来的虚表的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x4011c8</span>
+<span style="color:#960050;background-color:#1e0010">测试</span>Animal虚表里的函数输出<span style="color:#960050;background-color:#1e0010">：</span>
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第一个函数</span><span style="color:#f92672">:</span>Dog eat
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第二个函数</span><span style="color:#f92672">:</span>Animal sleep
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第三个函数</span><span style="color:#f92672">:</span>Dog yelp
+name[<span style="color:#ae81ff">0</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e518</span>
+name[<span style="color:#ae81ff">1</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e519</span>
+name[<span style="color:#ae81ff">2</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e51a</span>
+name[<span style="color:#ae81ff">3</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e51b</span>
+name[<span style="color:#ae81ff">4</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e51c</span>
+name[<span style="color:#ae81ff">5</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e51d</span>
+name[<span style="color:#ae81ff">6</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e51e</span>
+name[<span style="color:#ae81ff">7</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e51f</span>
+name[<span style="color:#ae81ff">8</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e520</span>
+name[<span style="color:#ae81ff">9</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7ffd5450e521</span><span style="color:#75715e">//因为内存对其填补了两个字节
+</span><span style="color:#75715e"></span>weight的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffd5450e524</span><span style="color:#75715e">//weight占4个字节
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">从</span>Canidae继承来的虚表指针vptr的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffd5450e528</span>
+<span style="color:#960050;background-color:#1e0010">从</span>Canidae继承来的虚表的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x4011f0</span>
+<span style="color:#960050;background-color:#1e0010">测试</span>Canidae虚表里的函数输出<span style="color:#960050;background-color:#1e0010">：</span>
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第一个函数</span><span style="color:#f92672">:</span>Dog eat
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第二个函数</span><span style="color:#f92672">:</span>Canidae jump
+age的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffd5450e530</span>
+breed的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7ffd5450e534</span>
+</code></pre></div>
 <p>从地址上可以看出，在内存布局上与上一小节的内存布局图相同，虚表内存放的函数指针通过测试输出也符合上图。</p>
 
 <p>注意：在多重继承的内存布局中是按照继承顺序依次摆放从基类继承下来的数据成员和虚表指针。</p>
@@ -502,43 +479,39 @@ breed的地址为：0x7ffd5450e534
 <h2 id="虚拟继承">虚拟继承</h2>
 
 <p>再讲解虚继承之前，我先引入一个家畜(Livestock)类，这个类由Animal类派生而来</p>
-
-<pre><code class="language-cpp">class Livestock : public Animal{
-public: 
-	int color;//表示家畜的颜色
-	virtual void eat(){
-		cout&lt;&lt;&quot;Livestock eat&quot;&lt;&lt;endl;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Livestock</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span> 
+	<span style="color:#66d9ef">int</span> color;<span style="color:#75715e">//表示家畜的颜色
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Livestock eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
-	virtual void watch(){//看门
-		cout&lt;&lt;&quot;Livestock watch&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">watch</span>(){<span style="color:#75715e">//看门
+</span><span style="color:#75715e"></span>		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Livestock watch&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>然后在调整一下上面的犬科(Canidae)类，并由Canidae类和Livestock类派生出WatchDog类，说白了就是一条看门狗。</p>
-
-<pre><code class="language-cpp">class Canidae : public Animal{
-public:
-	int age;
-	virtual void eat(){
-		cout&lt;&lt;&quot;Canidae eat&quot;&lt;&lt;endl;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Canidae</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> age;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
-	virtual void jump(){
-		cout&lt;&lt;&quot;Canidae jump&quot;&lt;&lt;endl;
-	}
-};
-class WatchDog : public Canidae,public Livestock{
-public:
-	int breed;//引入一个breed变量，表示狗的品种
-	virtual void eat(){
-		cout&lt;&lt;&quot;Dog eat&quot;&lt;&lt;endl;
-	}
-	virtual void yelp(){
-		cout&lt;&lt;&quot;Dog yelp&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">jump</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae jump&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
-</code></pre>
-
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">WatchDog</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Canidae,<span style="color:#66d9ef">public</span> Livestock{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> breed;<span style="color:#75715e">//引入一个breed变量，表示狗的品种
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">yelp</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Dog yelp&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+};
+</code></pre></div>
 <p>上述继承关系可以如下图所示：
 <center><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkfcrnm3jj309w07ozkd.jpg" alt="多重继承2" /></center></p>
 
@@ -547,11 +520,9 @@ public:
 <p><center><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkfcs4gegj30qp0hhabv.jpg" alt="WatchDog类的内存布局" /></center></p>
 
 <p>如果这时候你运行如下程序：</p>
-
-<pre><code class="language-cpp">WatchDog watchdog;
-watchdog.name[1];
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">WatchDog watchdog;
+watchdog.name[<span style="color:#ae81ff">1</span>];
+</code></pre></div>
 <p>就会出现二义性错误，编译器不知道调用Canidae::name[1]还是Livestock::name[1]，虽然你可以通过显示指定watchdog.Canidae::name[1]来调用Canidae::name[1],但是两个name[10]和两个weight完全不符合常理，而且完全没有必要的增大了内存消耗。</p>
 
 <h3 id="内存布局-2">内存布局</h3>
@@ -566,144 +537,140 @@ watchdog.name[1];
 <h3 id="测试小结-2">测试小结</h3>
 
 <p>多重虚拟继承比较复杂，其测试代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
 
-<pre><code class="language-cpp">#include &lt;stdio.h&gt;
-#include &lt;iostream&gt;
-#include &lt;string.h&gt;
+<span style="color:#66d9ef">typedef</span> <span style="color:#a6e22e">void</span>(<span style="color:#f92672">*</span>Fun)(<span style="color:#66d9ef">void</span>);
 
-using namespace std;
-
-typedef void(*Fun)(void);
-
-class Animal{
-public:
-	char name[10];//动物名字
-	int weight;//体重
-	virtual void eat(){
-		cout&lt;&lt;&quot;Animal eat&quot;&lt;&lt;endl;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">char</span> name[<span style="color:#ae81ff">10</span>];<span style="color:#75715e">//动物名字
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">int</span> weight;<span style="color:#75715e">//体重
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 
-	virtual void sleep(){
-		cout&lt;&lt;&quot;Animal sleep&quot;&lt;&lt;endl;
-	}
-};
-
-class Livestock : public virtual Animal{
-public: 
-	int color;//表示家畜的颜色
-	virtual void eat(){
-		cout&lt;&lt;&quot;Livestock eat&quot;&lt;&lt;endl;
-	}
-	virtual void watch(){//看门
-		cout&lt;&lt;&quot;Livestock watch&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sleep</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal sleep&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-class Canidae : public virtual Animal{
-public:
-	int age;
-	virtual void eat(){
-		cout&lt;&lt;&quot;Canidae eat&quot;&lt;&lt;endl;
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Livestock</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">virtual</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span> 
+	<span style="color:#66d9ef">int</span> color;<span style="color:#75715e">//表示家畜的颜色
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Livestock eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
-	virtual void jump(){
-		cout&lt;&lt;&quot;Canidae jump&quot;&lt;&lt;endl;
-	}
-};
-class WatchDog :  public  Canidae , public  Livestock{
-public:
-	int breed;//引入一个breed变量，表示狗的品种
-	virtual void eat(){
-		cout&lt;&lt;&quot;WatchDog eat&quot;&lt;&lt;endl;
-	}
-	virtual void yelp(){
-		cout&lt;&lt;&quot;WatchDog yelp&quot;&lt;&lt;endl;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">watch</span>(){<span style="color:#75715e">//看门
+</span><span style="color:#75715e"></span>		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Livestock watch&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
 	}
 };
 
-int main(){
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Canidae</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">virtual</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> age;
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">jump</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae jump&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+};
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">WatchDog</span> <span style="color:#f92672">:</span>  <span style="color:#66d9ef">public</span>  Canidae , <span style="color:#66d9ef">public</span>  Livestock{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">int</span> breed;<span style="color:#75715e">//引入一个breed变量，表示狗的品种
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;WatchDog eat&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">yelp</span>(){
+		cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;WatchDog yelp&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	}
+};
+
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
 	WatchDog watchdog;
-	cout&lt;&lt;&quot;从Canidae继承来的虚表指针vptr的地址：&quot;&lt;&lt;&amp;watchdog&lt;&lt;endl;
-	cout&lt;&lt;&quot;从Canidae继承来的虚表的地址：&quot;&lt;&lt;(long long *)(*((long long*)&amp;watchdog))&lt;&lt;endl;
-	cout&lt;&lt;&quot;测试Canidae虚表里的函数输出：&quot;&lt;&lt;endl;
-	cout&lt;&lt;&quot;----第一个函数:&quot;;
-	Fun pfun1 = NULL;
-	pfun1 = (Fun)*((long long*)*(long long*)(&amp;watchdog));
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Canidae继承来的虚表指针vptr的地址：&#34;</span><span style="color:#f92672">&lt;&lt;&amp;</span>watchdog<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Canidae继承来的虚表的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)(<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>watchdog))<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;测试Canidae虚表里的函数输出：&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第一个函数:&#34;</span>;
+	Fun pfun1 <span style="color:#f92672">=</span> NULL;
+	pfun1 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog));
 	pfun1();
-	cout&lt;&lt;&quot;----第二个函数:&quot;;
-    Fun pfun2 = NULL;
- 	pfun2 = (Fun)*((long long*)*(long long*)(&amp;watchdog)+1);
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第二个函数:&#34;</span>;
+    Fun pfun2 <span style="color:#f92672">=</span> NULL;
+ 	pfun2 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
  	pfun2();
- 	cout&lt;&lt;&quot;----第三个函数:&quot;;
- 	Fun pfun3 = NULL;
- 	pfun3 = (Fun)*((long long*)*(long long*)(&amp;watchdog)+2);
+ 	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第三个函数:&#34;</span>;
+ 	Fun pfun3 <span style="color:#f92672">=</span> NULL;
+ 	pfun3 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog)<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>);
  	pfun3();
- 	cout&lt;&lt;&quot;Canidae::age的地址为：&quot;&lt;&lt;(long long *)&amp;(watchdog.age)&lt;&lt;endl;
+ 	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Canidae::age的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(watchdog.age)<span style="color:#f92672">&lt;&lt;</span>endl;
 
-    cout&lt;&lt;&quot;从Livestock继承来的虚表指针vptr的地址：&quot;&lt;&lt;(long long*)(&amp;watchdog)+2&lt;&lt;endl;
-    cout&lt;&lt;&quot;从Livestock继承来的虚表的地址：&quot;&lt;&lt;(long long *)(*((long long*)&amp;watchdog+2))&lt;&lt;endl;
-    cout&lt;&lt;&quot;测试Livestock虚表里的函数输出：&quot;&lt;&lt;endl;
-    cout&lt;&lt;&quot;----第一个函数:&quot;;
-	Fun pfun5 = (Fun)*((long long*)*((long long*)(&amp;watchdog)+2));
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Livestock继承来的虚表指针vptr的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog)<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span><span style="color:#f92672">&lt;&lt;</span>endl;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Livestock继承来的虚表的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)(<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>watchdog<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>))<span style="color:#f92672">&lt;&lt;</span>endl;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;测试Livestock虚表里的函数输出：&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第一个函数:&#34;</span>;
+	Fun pfun5 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog)<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>));
 	pfun5();
-	cout&lt;&lt;&quot;----第二个函数:&quot;;
-	Fun pfun6 = (Fun)*((long long*)*((long long*)(&amp;watchdog)+2)+1);
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第二个函数:&#34;</span>;
+	Fun pfun6 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog)<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
 	pfun6();
-	cout&lt;&lt;&quot;Livestock::color的地址为：&quot;&lt;&lt;(long long *)&amp;(watchdog.color)&lt;&lt;endl;
-	cout&lt;&lt;&quot;WatchDog::breed的地址为：&quot;&lt;&lt;(long long *)&amp;(watchdog.breed)&lt;&lt;endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Livestock::color的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(watchdog.color)<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;WatchDog::breed的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(watchdog.breed)<span style="color:#f92672">&lt;&lt;</span>endl;
 
-	cout&lt;&lt;&quot;从Animal虚继承来的虚表指针vptr的地址：&quot;&lt;&lt;(long long*)(&amp;watchdog)+4&lt;&lt;endl;
-	cout&lt;&lt;&quot;从Animal虚继承来的虚表的地址：&quot;&lt;&lt;(long long *)(*((long long*)&amp;watchdog+4))&lt;&lt;endl;
-	cout&lt;&lt;&quot;测试Animal虚表里的函数输出：&quot;&lt;&lt;endl;
-	cout&lt;&lt;&quot;----第一个函数:&quot;;
-	Fun pfun8 = (Fun)*((long long*)*((long long*)(&amp;watchdog)+4));
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Animal虚继承来的虚表指针vptr的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog)<span style="color:#f92672">+</span><span style="color:#ae81ff">4</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;从Animal虚继承来的虚表的地址：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)(<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>watchdog<span style="color:#f92672">+</span><span style="color:#ae81ff">4</span>))<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;测试Animal虚表里的函数输出：&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第一个函数:&#34;</span>;
+	Fun pfun8 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog)<span style="color:#f92672">+</span><span style="color:#ae81ff">4</span>));
 	pfun8();
-    cout&lt;&lt;&quot;----第二个函数:&quot;;
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;----第二个函数:&#34;</span>;
     
-	Fun pfun7 = (Fun)*((long long*)*((long long*)(&amp;watchdog)+4)+1);
+	Fun pfun7 <span style="color:#f92672">=</span> (Fun)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)(<span style="color:#f92672">&amp;</span>watchdog)<span style="color:#f92672">+</span><span style="color:#ae81ff">4</span>)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
 	pfun7();
 
-	for (int i = 0; i &lt; 10; ++i)
+	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">10</span>; <span style="color:#f92672">++</span>i)
     {
-    	cout&lt;&lt;&quot;name[&quot;&lt;&lt;i&lt;&lt;&quot;]的地址为：&quot;&lt;&lt;(long long *)&amp;(watchdog.name[i])&lt;&lt;endl;//name每个参数的地址
-    }
-    cout&lt;&lt;&quot;weight的地址为：&quot;&lt;&lt;(long long *)&amp;(watchdog.weight)&lt;&lt;endl;//weight的地址
-}
-</code></pre>
-
+    	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;name[&#34;</span><span style="color:#f92672">&lt;&lt;</span>i<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;]的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(watchdog.name[i])<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//name每个参数的地址
+</span><span style="color:#75715e"></span>    }
+    cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;weight的地址为：&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>(watchdog.weight)<span style="color:#f92672">&lt;&lt;</span>endl;<span style="color:#75715e">//weight的地址
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>以上测试代码输出结果为：</p>
-
-<pre><code class="language-cpp">从Canidae继承来的虚表指针vptr的地址：0x7fffebf824e0
-从Canidae继承来的虚表的地址：0x4014f8
-测试Canidae虚表里的函数输出：
-----第一个函数:WatchDog eat
-----第二个函数:Canidae jump
-----第三个函数:WatchDog yelp
-Canidae::age的地址为：0x7fffebf824e8
-从Livestock继承来的虚表指针vptr的地址：0x7fffebf824f0
-从Livestock继承来的虚表的地址：0x401528
-测试Livestock虚表里的函数输出：
-----第一个函数:WatchDog eat
-----第二个函数:Livestock watch
-Livestock::color的地址为：0x7fffebf824f8
-WatchDog::breed的地址为：0x7fffebf824fc
-从Animal虚继承来的虚表指针vptr的地址：0x7fffebf82500
-从Animal虚继承来的虚表的地址：0x401558
-测试Animal虚表里的函数输出：
-----第一个函数:watchdog eat
-----第二个函数:Animal sleep
-name[0]的地址为：0x7fffebf82508
-name[1]的地址为：0x7fffebf82509
-name[2]的地址为：0x7fffebf8250a
-name[3]的地址为：0x7fffebf8250b
-name[4]的地址为：0x7fffebf8250c
-name[5]的地址为：0x7fffebf8250d
-name[6]的地址为：0x7fffebf8250e
-name[7]的地址为：0x7fffebf8250f
-name[8]的地址为：0x7fffebf82510
-name[9]的地址为：0x7fffebf82511
-weight的地址为：0x7fffebf82514
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">从</span>Canidae继承来的虚表指针vptr的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7fffebf824e0</span>
+<span style="color:#960050;background-color:#1e0010">从</span>Canidae继承来的虚表的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x4014f8</span>
+<span style="color:#960050;background-color:#1e0010">测试</span>Canidae虚表里的函数输出<span style="color:#960050;background-color:#1e0010">：</span>
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第一个函数</span><span style="color:#f92672">:</span>WatchDog eat
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第二个函数</span><span style="color:#f92672">:</span>Canidae jump
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第三个函数</span><span style="color:#f92672">:</span>WatchDog yelp
+Canidae<span style="color:#f92672">::</span>age的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7fffebf824e8</span>
+<span style="color:#960050;background-color:#1e0010">从</span>Livestock继承来的虚表指针vptr的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7fffebf824f0</span>
+<span style="color:#960050;background-color:#1e0010">从</span>Livestock继承来的虚表的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x401528</span>
+<span style="color:#960050;background-color:#1e0010">测试</span>Livestock虚表里的函数输出<span style="color:#960050;background-color:#1e0010">：</span>
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第一个函数</span><span style="color:#f92672">:</span>WatchDog eat
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第二个函数</span><span style="color:#f92672">:</span>Livestock watch
+Livestock<span style="color:#f92672">::</span>color的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7fffebf824f8</span>
+WatchDog<span style="color:#f92672">::</span>breed的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7fffebf824fc</span>
+<span style="color:#960050;background-color:#1e0010">从</span>Animal虚继承来的虚表指针vptr的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7fffebf82500</span>
+<span style="color:#960050;background-color:#1e0010">从</span>Animal虚继承来的虚表的地址<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x401558</span>
+<span style="color:#960050;background-color:#1e0010">测试</span>Animal虚表里的函数输出<span style="color:#960050;background-color:#1e0010">：</span>
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第一个函数</span><span style="color:#f92672">:</span>watchdog eat
+<span style="color:#f92672">----</span><span style="color:#960050;background-color:#1e0010">第二个函数</span><span style="color:#f92672">:</span>Animal sleep
+name[<span style="color:#ae81ff">0</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf82508</span>
+name[<span style="color:#ae81ff">1</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf82509</span>
+name[<span style="color:#ae81ff">2</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf8250a</span>
+name[<span style="color:#ae81ff">3</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf8250b</span>
+name[<span style="color:#ae81ff">4</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf8250c</span>
+name[<span style="color:#ae81ff">5</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf8250d</span>
+name[<span style="color:#ae81ff">6</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf8250e</span>
+name[<span style="color:#ae81ff">7</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf8250f</span>
+name[<span style="color:#ae81ff">8</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf82510</span>
+name[<span style="color:#ae81ff">9</span>]<span style="color:#960050;background-color:#1e0010">的地址为：</span><span style="color:#ae81ff">0x7fffebf82511</span>
+weight的地址为<span style="color:#960050;background-color:#1e0010">：</span><span style="color:#ae81ff">0x7fffebf82514</span>
+</code></pre></div>
 <p>从上述测试结果中可以看出，watchdog的内存布局中依次摆放的是：</p>
 
 <ul>

@@ -46,9 +46,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -81,7 +83,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -144,31 +145,30 @@
 <li>算法的设计过多的依赖容器，容器的改动会造成大量算法函数的随之改动</li>
 </ul>
 
-<pre><code class="language-cpp">//对于int类的求和函数
-int sum(int *a , int n)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//对于int类的求和函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">sum</span>(<span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>a , <span style="color:#66d9ef">int</span> n)
 {
-	int sum = 0 ;
-	for (int i = 0 ; i &lt; n ; i++) {
-		sum += *a++;
+	<span style="color:#66d9ef">int</span> sum <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> ;
+	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> ; i <span style="color:#f92672">&lt;</span> n ; i<span style="color:#f92672">++</span>) {
+		sum <span style="color:#f92672">+=</span> <span style="color:#f92672">*</span>a<span style="color:#f92672">++</span>;
 	}
-	return sum;
+	<span style="color:#66d9ef">return</span> sum;
 }
-//对于listNode类的求和函数
-struct ListNode {
-	int val;
-	ListNode * next;
+<span style="color:#75715e">//对于listNode类的求和函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> ListNode {
+	<span style="color:#66d9ef">int</span> val;
+	ListNode <span style="color:#f92672">*</span> next;
 };
-int sum(ListNode * head) {
-	int sum = 0;
-	ListNode *p = head;
-	while (p != NULL) {
-		sum += p-&gt;val;
-		p=p-&gt;next;
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">sum</span>(ListNode <span style="color:#f92672">*</span> head) {
+	<span style="color:#66d9ef">int</span> sum <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	ListNode <span style="color:#f92672">*</span>p <span style="color:#f92672">=</span> head;
+	<span style="color:#66d9ef">while</span> (p <span style="color:#f92672">!=</span> NULL) {
+		sum <span style="color:#f92672">+=</span> p<span style="color:#f92672">-&gt;</span>val;
+		p<span style="color:#f92672">=</span>p<span style="color:#f92672">-&gt;</span>next;
 	}
-	return sum;
+	<span style="color:#66d9ef">return</span> sum;
 }
-</code></pre>
-
+</code></pre></div>
 <p>那么，如何设计才能使得算法摆脱特定容器？如何让算法和容器各自独立设计，互不影响又能统一到一起？本篇博客就带你一窥STL的迭代器设计。</p>
 
 <h1 id="迭代器概述">迭代器概述</h1>
@@ -186,36 +186,34 @@ int sum(ListNode * head) {
 <h2 id="template参数推导机制">template参数推导机制</h2>
 
 <p>我们先回过头去看看sum函数，在sum函数中，我们必须知道容器的元素类型，这关系到函数返回值。既然迭代器设计中不能暴露容器的实现细节，那么我们在算法中是不可能知道容器元素的类型，因此，必须设计出一个机制，能够提取出容器中元素的类型。看看如下示例代码：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
 
-<pre><code class="language-cpp">#include &lt;stdio.h&gt;
-#include &lt;iostream&gt;
-
-using namespace std;
-
-//此函数中并不知道iter所指的元素型别，而是通过模板T来获取的
-template &lt;class I, class T1 ,class T&gt;
+<span style="color:#75715e">//此函数中并不知道iter所指的元素型别，而是通过模板T来获取的
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">I</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T1</span> ,<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
 T sum_impl(I iter ,T1 n , T t) {
-	T sum = 0;//通过模板的特性，可以获取I所指之物的型别,此处为int
-
-	//这里做func应该做的工作
-	for(int i = 0 ; i &lt; n ;i++){
-		sum+=*iter++;
+	T sum <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;<span style="color:#75715e">//通过模板的特性，可以获取I所指之物的型别,此处为int
+</span><span style="color:#75715e"></span>
+	<span style="color:#75715e">//这里做func应该做的工作
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> ; i <span style="color:#f92672">&lt;</span> n ;i<span style="color:#f92672">++</span>){
+		sum<span style="color:#f92672">+=*</span>iter<span style="color:#f92672">++</span>;
 	} 
-	return sum;
+	<span style="color:#66d9ef">return</span> sum;
 }
 
-template &lt;class I , class T1&gt;
-inline T1 sum(I iter , T1 n) {//此处暴露了template参数推导机制的缺陷，在型别用于返回值时便束手无策
-	return sum_impl(iter , n ,*iter);
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">I</span> , <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T1</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> T1 sum(I iter , T1 n) {<span style="color:#75715e">//此处暴露了template参数推导机制的缺陷，在型别用于返回值时便束手无策
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> sum_impl(iter , n ,<span style="color:#f92672">*</span>iter);
 }
 
-int main() {
-	int a[5] = {1,2,3,4,5};
-	int sum1 = sum(a , 5);
-	cout&lt;&lt;sum1&lt;&lt;endl;
+<span style="color:#66d9ef">int</span> main() {
+	<span style="color:#66d9ef">int</span> a[<span style="color:#ae81ff">5</span>] <span style="color:#f92672">=</span> {<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>};
+	<span style="color:#66d9ef">int</span> sum1 <span style="color:#f92672">=</span> sum(a , <span style="color:#ae81ff">5</span>);
+	cout<span style="color:#f92672">&lt;&lt;</span>sum1<span style="color:#f92672">&lt;&lt;</span>endl;
 }
-</code></pre>
-
+</code></pre></div>
 <p>上例中通过模板的参数推导机制推导出了iter所指之物的型别(int)，于是可以定义T sum变量。</p>
 
 <p>然而，迭代器所指之物的型别并非只是”迭代器所指对象的型别“，最常用的迭代器型别有五种，并非任何情况下任何一种都可利用上述的template参数推导机制来获取，而且对于返回值类型，template参数推导机制也束手无策，因此，Traits技法应运而生，解决了这一难题！</p>
@@ -223,32 +221,30 @@ int main() {
 <h2 id="内嵌型别机制">内嵌型别机制</h2>
 
 <p>Traits技法采用内嵌型别来实现获取迭代器型别这一功能需求，具体怎么实现的呢？我们看下面的代码：</p>
-
-<pre><code class="language-cpp">#include &lt;stdio.h&gt;
-#include &lt;iostream&gt;
-
-using namespace std;
-//定义一个简单的iterator
-template &lt;class T&gt;
-struct MyIter{
-	typedef T value_type; // 内嵌型别声明
-	T* ptr;
-	MyIter(T* p =0):ptr(p){}
-	T&amp; operator*() const {return *ptr;}
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
+<span style="color:#75715e">//定义一个简单的iterator
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> MyIter{
+	<span style="color:#66d9ef">typedef</span> T value_type; <span style="color:#75715e">// 内嵌型别声明
+</span><span style="color:#75715e"></span>	T<span style="color:#f92672">*</span> ptr;
+	MyIter(T<span style="color:#f92672">*</span> p <span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">:</span>ptr(p){}
+	T<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> {<span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span>ptr;}
 };
 
-template &lt;class I&gt;
-typename I::value_type // func返回值型别
-func(I iter){
-	return *iter;
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">I</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">typename</span> I<span style="color:#f92672">::</span>value_type <span style="color:#75715e">// func返回值型别
+</span><span style="color:#75715e"></span>func(I iter){
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span>iter;
 }
 
-int main(){
-	MyIter&lt;int&gt; iter(new int(8));
-	cout&lt;&lt;func(iter)&lt;&lt;endl;
+<span style="color:#66d9ef">int</span> main(){
+	MyIter<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> iter(<span style="color:#66d9ef">new</span> <span style="color:#66d9ef">int</span>(<span style="color:#ae81ff">8</span>));
+	cout<span style="color:#f92672">&lt;&lt;</span>func(iter)<span style="color:#f92672">&lt;&lt;</span>endl;
 }
-</code></pre>
-
+</code></pre></div>
 <p>注意，func()函数的返回值型别必须加上关键词typename，因为T是一个template参数，在它被编译器具现化之前，编译器对其一无所知，关键词typename的用意在于告诉编译器这是一个型别，如此才能通过编译。</p>
 
 <p>内嵌型别看起来不错，可以很顺利的提取出迭代器所指型别并克服了template参数推导机制不能用于函数返回值的缺陷。可是，并不是所有的迭代器都是class type，原声指针就不是！如果不是class type，那么就无法声明内嵌型别。但是STL绝对必须接受原生指针作为一个迭代器。因此，必须另行它法！</p>
@@ -256,96 +252,86 @@ int main(){
 <h2 id="iterator-traits萃取机">iterator_traits萃取机</h2>
 
 <p>针对原生指针这类特殊情况，我们很容易想到利用模板偏特化的机制来实现特殊声明，在泛化设计中提供一个特化版本。偏特化的定义是：针对任何template参数更进一步的条件限制所设计出来的一个特化版本。这里，针对上面的MyIter设计出一个适合原生指针的特化版本，如下：</p>
-
-<pre><code class="language-cpp">template &lt;class T&gt;
-struct MyIter &lt;T*&gt;{   //T*代表T为原生指针，这便是T为任意型别的一个更进一步的条件限制
-	typedef T value_type; // 内嵌型别声明
-	T* ptr;
-	MyIter(T* p =0):ptr(p){}
-	T&amp; operator*() const {return *ptr;}
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> MyIter <span style="color:#f92672">&lt;</span>T<span style="color:#f92672">*&gt;</span>{   <span style="color:#75715e">//T*代表T为原生指针，这便是T为任意型别的一个更进一步的条件限制
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">typedef</span> T value_type; <span style="color:#75715e">// 内嵌型别声明
+</span><span style="color:#75715e"></span>	T<span style="color:#f92672">*</span> ptr;
+	MyIter(T<span style="color:#f92672">*</span> p <span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">:</span>ptr(p){}
+	T<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> {<span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span>ptr;}
 };
-</code></pre>
-
+</code></pre></div>
 <p>有了上述的介绍，包括template参数推导，内嵌型别，模板偏特化等，下面STL的真正主角要登场了，STL专门设计了一个iterator_traits模板类来”萃取“迭代器的特性。其定义如下：</p>
-
-<pre><code class="language-cpp">// 用于traits出迭代其所指对象的型别
-template &lt;class I&gt;
-struct iterator_traits
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 用于traits出迭代其所指对象的型别
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">I</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits
 {
-  typedef typename I::value_type        value_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> I<span style="color:#f92672">::</span>value_type        value_type;
 };
-</code></pre>
-
+</code></pre></div>
 <p>这个类如何完成迭代器的型别萃取呢？我们继续往下看：</p>
-
-<pre><code class="language-cpp">template &lt;class I&gt;
-typename iterator_traits&lt;I&gt;::value_type // 通过iterator_traits类萃取I的型别
-func(I iter){
-	return *iter;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">I</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>I<span style="color:#f92672">&gt;::</span>value_type <span style="color:#75715e">// 通过iterator_traits类萃取I的型别
+</span><span style="color:#75715e"></span>func(I iter){
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span>iter;
 }
-</code></pre>
-
+</code></pre></div>
 <p>从表面上来看，这么做只是多了一层间接性，但是带来的好处是极大的！iterator_traits类可以拥有特化版本，如下：</p>
-
-<pre><code class="language-cpp">//原生指针特化版本
-template &lt;class T&gt;
-struct iterator_traits &lt;T*&gt;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//原生指针特化版本
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits <span style="color:#f92672">&lt;</span>T<span style="color:#f92672">*&gt;</span>
 {
-  typedef T  value_type;
+  <span style="color:#66d9ef">typedef</span> T  value_type;
 }
-//const指针特化版本
-template &lt;class T&gt;
-struct iterator_traits &lt;const T*&gt;
+<span style="color:#75715e">//const指针特化版本
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">const</span> T<span style="color:#f92672">*&gt;</span>
 {
-  typedef T  value_type;
+  <span style="color:#66d9ef">typedef</span> T  value_type;
 }
-</code></pre>
-
+</code></pre></div>
 <p>于是，原生指针int*虽然不是一种class type，也可以通过traits取其value，到这里traits的思想就基本明了了！下面就来看看STL只能中”萃取机“的源码</p>
-
-<pre><code class="language-cpp">// 用于traits出迭代其所指对象的型别
-template &lt;class Iterator&gt;
-struct iterator_traits
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 用于traits出迭代其所指对象的型别
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Iterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits
 {
-  // 迭代器类型, STL提供五种迭代器
-  typedef typename Iterator::iterator_category iterator_category;
+  <span style="color:#75715e">// 迭代器类型, STL提供五种迭代器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>iterator_category iterator_category;
 
-  // 迭代器所指对象的型别
-  // 如果想与STL算法兼容, 那么在类内需要提供value_type定义
-  typedef typename Iterator::value_type        value_type;
+  <span style="color:#75715e">// 迭代器所指对象的型别
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 如果想与STL算法兼容, 那么在类内需要提供value_type定义
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>value_type        value_type;
 
-  // 这个是用于处理两个迭代器间距离的类型
-  typedef typename Iterator::difference_type   difference_type;
+  <span style="color:#75715e">// 这个是用于处理两个迭代器间距离的类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>difference_type   difference_type;
 
-  // 直接指向对象的原生指针类型
-  typedef typename Iterator::pointer           pointer;
+  <span style="color:#75715e">// 直接指向对象的原生指针类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>pointer           pointer;
 
-  // 这个是对象的引用类型
-  typedef typename Iterator::reference         reference;
+  <span style="color:#75715e">// 这个是对象的引用类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>reference         reference;
 };
-// 针对指针提供特化版本
-template &lt;class T&gt;
-struct iterator_traits&lt;T*&gt;
+<span style="color:#75715e">// 针对指针提供特化版本
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">*&gt;</span>
 {
-  typedef random_access_iterator_tag iterator_category;
-  typedef T                          value_type;
-  typedef ptrdiff_t                  difference_type;
-  typedef T*                         pointer;
-  typedef T&amp;                         reference;
+  <span style="color:#66d9ef">typedef</span> random_access_iterator_tag iterator_category;
+  <span style="color:#66d9ef">typedef</span> T                          value_type;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t                  difference_type;
+  <span style="color:#66d9ef">typedef</span> T<span style="color:#f92672">*</span>                         pointer;
+  <span style="color:#66d9ef">typedef</span> T<span style="color:#f92672">&amp;</span>                         reference;
 };
 
-// 针对指向常对象的指针提供特化
-template &lt;class T&gt;
-struct iterator_traits&lt;const T*&gt;
+<span style="color:#75715e">// 针对指向常对象的指针提供特化
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">const</span> T<span style="color:#f92672">*&gt;</span>
 {
-  typedef random_access_iterator_tag iterator_category;
-  typedef T                          value_type;
-  typedef ptrdiff_t                  difference_type;
-  typedef const T*                   pointer;
-  typedef const T&amp;                   reference;
+  <span style="color:#66d9ef">typedef</span> random_access_iterator_tag iterator_category;
+  <span style="color:#66d9ef">typedef</span> T                          value_type;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t                  difference_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> T<span style="color:#f92672">*</span>                   pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span>                   reference;
 };
-</code></pre>
-
+</code></pre></div>
 <p>对于源码中的五种迭代器型别在下一小节中会有详细说明。</p>
 
 <h1 id="迭代器设计">迭代器设计</h1>
@@ -359,18 +345,16 @@ struct iterator_traits&lt;const T*&gt;
 <h3 id="difference-type">difference_type</h3>
 
 <p>difference_type用来表示两个迭代器之间的距离，因此它也可以用来表示一个容器的最大容量。下面以STL里面的计数功能函数count()为例，来介绍一下difference_type的用法。</p>
-
-<pre><code class="language-cpp">template &lt;class I,class T&gt;
-typename iterator_traits&lt;I&gt;::difference_type   //返回值类型
-count(I first , I end , const T&amp; value){
-	typename iterator_traits&lt;I&gt;::difference_type n = 0;  
-	for( ; first!=end ; ++first){
-		if(*first == value) ++n;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">I</span>,<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>I<span style="color:#f92672">&gt;::</span>difference_type   <span style="color:#75715e">//返回值类型
+</span><span style="color:#75715e"></span>count(I first , I end , <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value){
+	<span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>I<span style="color:#f92672">&gt;::</span>difference_type n <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  
+	<span style="color:#66d9ef">for</span>( ; first<span style="color:#f92672">!=</span>end ; <span style="color:#f92672">++</span>first){
+		<span style="color:#66d9ef">if</span>(<span style="color:#f92672">*</span>first <span style="color:#f92672">==</span> value) <span style="color:#f92672">++</span>n;
 	}
-	return n;
+	<span style="color:#66d9ef">return</span> n;
 }
-</code></pre>
-
+</code></pre></div>
 <p>针对原生指针和原生的const指针，iterator_traits的difference_type为ptrdiff_t(long int)，特化版本依然可以采用iterator_traits<I>::difference_type来获取型别。</p>
 
 <h3 id="reference-type">reference_type</h3>
@@ -391,35 +375,31 @@ count(I first , I end , const T&amp; value){
 <h3 id="pointer-type">pointer type</h3>
 
 <p>迭代器可以传回一个指针，指向迭代器所指之物。再迭代器源码中，可以找到如下关于指针和引用的实现：</p>
-
-<pre><code class="language-cpp">Reference operator*() const { return *value; }
-pointer operator-&gt;() const { return &amp;(operator*()); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Reference <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span>value; }
+pointer <span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span>(<span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>()); }
+</code></pre></div>
 <p>在iterator_traits结构体中需要加入其型别，如下：</p>
-
-<pre><code class="language-cpp">template &lt;class Iterator&gt;
-struct iterator_traits
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Iterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits
 {
-  typedef typename Iterator::pointer           pointer;
-  typedef typename Iterator::reference         reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>pointer           pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>reference         reference;
 }
-//针对原生指针的特化版本
-template &lt;class T&gt;
-struct iterator_traits&lt;T*&gt;
+<span style="color:#75715e">//针对原生指针的特化版本
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">*&gt;</span>
 {
-  typedef T*                         pointer;
-  typedef T&amp;                         reference;
+  <span style="color:#66d9ef">typedef</span> T<span style="color:#f92672">*</span>                         pointer;
+  <span style="color:#66d9ef">typedef</span> T<span style="color:#f92672">&amp;</span>                         reference;
 };
-//针对原生const指针的特化版本
-template &lt;class T&gt;
-struct iterator_traits&lt;const T*&gt;
+<span style="color:#75715e">//针对原生const指针的特化版本
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">const</span> T<span style="color:#f92672">*&gt;</span>
 {
-  typedef const T*                   pointer;
-  typedef const T&amp;                   reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> T<span style="color:#f92672">*</span>                   pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span>                   reference;
 };
-</code></pre>
-
+</code></pre></div>
 <h3 id="iterator-category">iterator_category</h3>
 
 <p>这一型别代表迭代器的类别，一般分为五类：</p>
@@ -436,119 +416,113 @@ struct iterator_traits&lt;const T*&gt;
 <center><img src="http://obd5s81mp.bkt.clouddn.com/387_945_9c1.jpg" alt="迭代器类型" /></center></p>
 
 <p>下面我们来看看它的源代码实现：</p>
-
-<pre><code class="language-cpp">// 用于标记迭代器类型
-struct input_iterator_tag {};
-struct output_iterator_tag {};
-struct forward_iterator_tag : public input_iterator_tag {};
-struct bidirectional_iterator_tag : public forward_iterator_tag {};
-struct random_access_iterator_tag : public bidirectional_iterator_tag {};
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 用于标记迭代器类型
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> input_iterator_tag {};
+<span style="color:#66d9ef">struct</span> output_iterator_tag {};
+<span style="color:#66d9ef">struct</span> forward_iterator_tag : <span style="color:#66d9ef">public</span> input_iterator_tag {};
+<span style="color:#66d9ef">struct</span> bidirectional_iterator_tag : <span style="color:#66d9ef">public</span> forward_iterator_tag {};
+<span style="color:#66d9ef">struct</span> random_access_iterator_tag : <span style="color:#66d9ef">public</span> bidirectional_iterator_tag {};
+</code></pre></div>
 <h2 id="迭代器的保证">迭代器的保证</h2>
 
 <p>为了符合规范，任何迭代器都应该提供五个内嵌型别，以利于Traits萃取，否则就自别与整个STL架构，可能无法与其他STL组件顺利搭配。STL提供了一份iterator class如下：</p>
-
-<pre><code class="language-cpp">//为避免挂一漏万，每个新设计的迭代器都必须继承自它
-template &lt;class Category, class T, class Distance = ptrdiff_t,
-          class Pointer = T*, class Reference = T&amp;&gt;
-struct iterator {
-  typedef Category  iterator_category;
-  typedef T         value_type;
-  typedef Distance  difference_type;
-  typedef Pointer   pointer;
-  typedef Reference reference;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//为避免挂一漏万，每个新设计的迭代器都必须继承自它
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Category</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Distance</span> <span style="color:#f92672">=</span> ptrdiff_t,
+          <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Pointer</span> <span style="color:#f92672">=</span> T<span style="color:#f92672">*</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Reference</span> <span style="color:#f92672">=</span> T<span style="color:#f92672">&amp;&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator {
+  <span style="color:#66d9ef">typedef</span> Category  iterator_category;
+  <span style="color:#66d9ef">typedef</span> T         value_type;
+  <span style="color:#66d9ef">typedef</span> Distance  difference_type;
+  <span style="color:#66d9ef">typedef</span> Pointer   pointer;
+  <span style="color:#66d9ef">typedef</span> Reference reference;
 };
-</code></pre>
-
+</code></pre></div>
 <h2 id="迭代器源码-完整版">迭代器源码(完整版)</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 用于标记迭代器类型
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">struct</span> input_iterator_tag {};
+<span style="color:#66d9ef">struct</span> output_iterator_tag {};
+<span style="color:#66d9ef">struct</span> forward_iterator_tag : <span style="color:#66d9ef">public</span> input_iterator_tag {};
+<span style="color:#66d9ef">struct</span> bidirectional_iterator_tag : <span style="color:#66d9ef">public</span> forward_iterator_tag {};
+<span style="color:#66d9ef">struct</span> random_access_iterator_tag : <span style="color:#66d9ef">public</span> bidirectional_iterator_tag {};
 
-<pre><code class="language-cpp">/**
- * 用于标记迭代器类型
- */
-struct input_iterator_tag {};
-struct output_iterator_tag {};
-struct forward_iterator_tag : public input_iterator_tag {};
-struct bidirectional_iterator_tag : public forward_iterator_tag {};
-struct random_access_iterator_tag : public bidirectional_iterator_tag {};
-
-/**
- * 用于traits出迭代其所指对象的型别
- */
-template &lt;class Iterator&gt;
-struct iterator_traits
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 用于traits出迭代其所指对象的型别
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Iterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits
 {
-  // 迭代器类型, STL提供五种迭代器
-  typedef typename Iterator::iterator_category iterator_category;
+  <span style="color:#75715e">// 迭代器类型, STL提供五种迭代器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>iterator_category iterator_category;
 
-  // 迭代器所指对象的型别
-  // 如果想与STL算法兼容, 那么在类内需要提供value_type定义
-  typedef typename Iterator::value_type        value_type;
+  <span style="color:#75715e">// 迭代器所指对象的型别
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 如果想与STL算法兼容, 那么在类内需要提供value_type定义
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>value_type        value_type;
 
-  // 这个是用于处理两个迭代器间距离的类型
-  typedef typename Iterator::difference_type   difference_type;
+  <span style="color:#75715e">// 这个是用于处理两个迭代器间距离的类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>difference_type   difference_type;
 
-  // 直接指向对象的原生指针类型
-  typedef typename Iterator::pointer           pointer;
+  <span style="color:#75715e">// 直接指向对象的原生指针类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>pointer           pointer;
 
-  // 这个是对象的引用类型
-  typedef typename Iterator::reference         reference;
+  <span style="color:#75715e">// 这个是对象的引用类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Iterator<span style="color:#f92672">::</span>reference         reference;
 };
 
-/**
- * 针对指针提供特化版本
- */
-template &lt;class T&gt;
-struct iterator_traits&lt;T*&gt;
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 针对指针提供特化版本
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">*&gt;</span>
 {
-  typedef random_access_iterator_tag iterator_category;
-  typedef T                          value_type;
-  typedef ptrdiff_t                  difference_type;
-  typedef T*                         pointer;
-  typedef T&amp;                         reference;
+  <span style="color:#66d9ef">typedef</span> random_access_iterator_tag iterator_category;
+  <span style="color:#66d9ef">typedef</span> T                          value_type;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t                  difference_type;
+  <span style="color:#66d9ef">typedef</span> T<span style="color:#f92672">*</span>                         pointer;
+  <span style="color:#66d9ef">typedef</span> T<span style="color:#f92672">&amp;</span>                         reference;
 };
-/**
- * 针对指向常对象的指针提供特化
- */
-template &lt;class T&gt;
-struct iterator_traits&lt;const T*&gt;
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 针对指向常对象的指针提供特化
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> iterator_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">const</span> T<span style="color:#f92672">*&gt;</span>
 {
-  typedef random_access_iterator_tag iterator_category;
-  typedef T                          value_type;
-  typedef ptrdiff_t                  difference_type;
-  typedef const T*                   pointer;
-  typedef const T&amp;                   reference;
+  <span style="color:#66d9ef">typedef</span> random_access_iterator_tag iterator_category;
+  <span style="color:#66d9ef">typedef</span> T                          value_type;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t                  difference_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> T<span style="color:#f92672">*</span>                   pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span>                   reference;
 };
-/**
- *  返回迭代器类别
- */
-template &lt;class Iterator&gt;
-inline typename iterator_traits&lt;Iterator&gt;::iterator_category
-iterator_category(const Iterator&amp;)
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> *  返回迭代器类别
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Iterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>Iterator<span style="color:#f92672">&gt;::</span>iterator_category
+iterator_category(<span style="color:#66d9ef">const</span> Iterator<span style="color:#f92672">&amp;</span>)
 {
-  typedef typename iterator_traits&lt;Iterator&gt;::iterator_category category;
-  return category();
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>Iterator<span style="color:#f92672">&gt;::</span>iterator_category category;
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">category</span>();
 }
-/**
- * 返回表示迭代器距离的类型
- */
-template &lt;class Iterator&gt;
-inline typename iterator_traits&lt;Iterator&gt;::difference_type*
-distance_type(const Iterator&amp;)
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 返回表示迭代器距离的类型
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Iterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>Iterator<span style="color:#f92672">&gt;::</span>difference_type<span style="color:#f92672">*</span>
+distance_type(<span style="color:#66d9ef">const</span> Iterator<span style="color:#f92672">&amp;</span>)
 {
-  return static_cast&lt;typename iterator_traits&lt;Iterator&gt;::difference_type*&gt;(0);
+  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>Iterator<span style="color:#f92672">&gt;::</span>difference_type<span style="color:#f92672">*&gt;</span>(<span style="color:#ae81ff">0</span>);
 }
-/**
- * 返回迭代器所指对象的类型
- */
-template &lt;class Iterator&gt;
-inline typename iterator_traits&lt;Iterator&gt;::value_type*
-value_type(const Iterator&amp;)
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 返回迭代器所指对象的类型
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Iterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>Iterator<span style="color:#f92672">&gt;::</span>value_type<span style="color:#f92672">*</span>
+value_type(<span style="color:#66d9ef">const</span> Iterator<span style="color:#f92672">&amp;</span>)
 {
-  return static_cast&lt;typename iterator_traits&lt;Iterator&gt;::value_type*&gt;(0);
+  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>Iterator<span style="color:#f92672">&gt;::</span>value_type<span style="color:#f92672">*&gt;</span>(<span style="color:#ae81ff">0</span>);
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="迭代器相关函数设计">迭代器相关函数设计</h1>
 
 <h2 id="distance函数">distance函数</h2>
@@ -561,41 +535,39 @@ value_type(const Iterator&amp;)
 </ul>
 
 <p>其具体实现如下:</p>
-
-<pre><code class="language-cpp">/**
- * 针对Input Iterator，Output Iterator，Forward Iterator，Bidirectional Iterator
- * 这四种函数，需要逐一累加来计算距离
- */
-template &lt;class InputIterator&gt;
-inline iterator_traits&lt;InputIterator&gt;::difference_type
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 针对Input Iterator，Output Iterator，Forward Iterator，Bidirectional Iterator
+</span><span style="color:#75715e"> * 这四种函数，需要逐一累加来计算距离
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> iterator_traits<span style="color:#f92672">&lt;</span>InputIterator<span style="color:#f92672">&gt;::</span>difference_type
 __distance(InputIterator first, InputIterator last, input_iterator_tag)
 {
-  iterator_traits&lt;InputIterator&gt;::difference_type n = 0;
-  while (first != last) {
-    ++first; ++n;
+  iterator_traits<span style="color:#f92672">&lt;</span>InputIterator<span style="color:#f92672">&gt;::</span>difference_type n <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+  <span style="color:#66d9ef">while</span> (first <span style="color:#f92672">!=</span> last) {
+    <span style="color:#f92672">++</span>first; <span style="color:#f92672">++</span>n;
   }
-  return n;
+  <span style="color:#66d9ef">return</span> n;
 }
-/**
- * 针对random_access_iterator，可直接相减来计算差距
- */
-template &lt;class RandomAccessIterator&gt;
-inline iterator_traits&lt;RandomAccessIterator&gt;::difference_type
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 针对random_access_iterator，可直接相减来计算差距
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">RandomAccessIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> iterator_traits<span style="color:#f92672">&lt;</span>RandomAccessIterator<span style="color:#f92672">&gt;::</span>difference_type
 __distance(RandomAccessIterator first, RandomAccessIterator last,
            random_access_iterator_tag)
 {
-  return last - first;
+  <span style="color:#66d9ef">return</span> last <span style="color:#f92672">-</span> first;
 }
-// 入口函数，先判断迭代器类型iterator_category，然后调用特定函数
-template &lt;class InputIterator&gt;
-inline iterator_traits&lt;InputIterator&gt;::difference_type
+<span style="color:#75715e">// 入口函数，先判断迭代器类型iterator_category，然后调用特定函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> iterator_traits<span style="color:#f92672">&lt;</span>InputIterator<span style="color:#f92672">&gt;::</span>difference_type
 distance(InputIterator first, InputIterator last)
 {
-  typedef typename iterator_traits&lt;InputIterator&gt;::iterator_category category;
-  return __distance(first, last, category());
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> iterator_traits<span style="color:#f92672">&lt;</span>InputIterator<span style="color:#f92672">&gt;::</span>iterator_category category;
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">__distance</span>(first, last, category());
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="advance函数">Advance函数</h2>
 
 <p>Advance函数有两个参数，迭代器p和n，函数内部将p前进n次。针对不同类型的迭代器有如下实现：</p>
@@ -607,46 +579,44 @@ distance(InputIterator first, InputIterator last)
 </ul>
 
 <p>其代码实现如下：</p>
-
-<pre><code class="language-cpp">/**
- * 针对input_iterator和forward_iterator版本
- */
-template &lt;class InputIterator, class Distance&gt;
-inline void __advance(InputIterator&amp; i, Distance n, input_iterator_tag)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 针对input_iterator和forward_iterator版本
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Distance</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> __advance(InputIterator<span style="color:#f92672">&amp;</span> i, Distance n, input_iterator_tag)
 {
-  while (n--) ++i;
+  <span style="color:#66d9ef">while</span> (n<span style="color:#f92672">--</span>) <span style="color:#f92672">++</span>i;
 }
-/**
- * 针对bidirectional_iterator版本
- */
-template &lt;class BidirectionalIterator, class Distance&gt;
-inline void __advance(BidirectionalIterator&amp; i, Distance n,
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 针对bidirectional_iterator版本
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">BidirectionalIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Distance</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> __advance(BidirectionalIterator<span style="color:#f92672">&amp;</span> i, Distance n,
                       bidirectional_iterator_tag)
 {
-  if (n &gt;= 0)
-    while (n--) ++i;
-  else
-    while (n++) --i;
+  <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>)
+    <span style="color:#66d9ef">while</span> (n<span style="color:#f92672">--</span>) <span style="color:#f92672">++</span>i;
+  <span style="color:#66d9ef">else</span>
+    <span style="color:#a6e22e">while</span> (n<span style="color:#f92672">++</span>) <span style="color:#f92672">--</span>i;
 }
-/**
- * 针对random_access_iterator版本
- */
-template &lt;class RandomAccessIterator, class Distance&gt;
-inline void __advance(RandomAccessIterator&amp; i, Distance n,
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 针对random_access_iterator版本
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">RandomAccessIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Distance</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> __advance(RandomAccessIterator<span style="color:#f92672">&amp;</span> i, Distance n,
                       random_access_iterator_tag)
 {
-  i += n;
+  i <span style="color:#f92672">+=</span> n;
 }
-/**
- * 入口函数，先判断迭代器的类型
- */
-template &lt;class InputIterator, class Distance&gt;
-inline void advance(InputIterator&amp; i, Distance n)
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 入口函数，先判断迭代器的类型
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Distance</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> advance(InputIterator<span style="color:#f92672">&amp;</span> i, Distance n)
 {
   __advance(i, n, iterator_category(i));
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="附加-type-traits设计">附加：type_traits设计</h1>
 
 <p>iterator_traits负责萃取迭代器的特性；type_traits负责萃取型别的特性。</p>
@@ -656,199 +626,197 @@ inline void advance(InputIterator&amp; i, Distance n)
 <p>例如：如果拷贝一个未知类型的数组，如果其具有trivial拷贝构造函数，那么可以直接利用memcpy()来拷贝，反之则要调用该类型的拷贝构造函数。</p>
 
 <p>type_traits的源代码实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 用来标识真/假对象,利用type_traits响应结果来进行参数推导，
+</span><span style="color:#75715e"> * 而编译器只有面对class object形式的参数才会做参数推导，
+</span><span style="color:#75715e"> * 这两个空白class不会带来额外负担
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">struct</span> __true_type{};
+<span style="color:#66d9ef">struct</span> __false_type{};
 
-<pre><code class="language-cpp">/**
- * 用来标识真/假对象,利用type_traits响应结果来进行参数推导，
- * 而编译器只有面对class object形式的参数才会做参数推导，
- * 这两个空白class不会带来额外负担
- */
-struct __true_type{};
-struct __false_type{};
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * type_traits结构体设计
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">type</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> __type_traits
+{
+    <span style="color:#75715e">// 不要移除这个成员
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 它通知能自动特化__type_traits的编译器, 现在这个__type_traits template是特化的
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 这是为了确保万一编译器使用了__type_traits而与此处无任何关联的模板时
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 一切也能顺利运作
+</span><span style="color:#75715e"></span>   <span style="color:#66d9ef">typedef</span> __true_type     this_dummy_member_must_be_first;
 
-/**
- * type_traits结构体设计
- */
-template &lt;class type&gt;
-struct __type_traits
-{
-    // 不要移除这个成员
-    // 它通知能自动特化__type_traits的编译器, 现在这个__type_traits template是特化的
-    // 这是为了确保万一编译器使用了__type_traits而与此处无任何关联的模板时
-    // 一切也能顺利运作
-   typedef __true_type     this_dummy_member_must_be_first;
-
-   // 以下条款应当被遵守, 因为编译器有可能自动生成类型的特化版本
-   //   - 你可以重新安排的成员次序
-   //   - 你可以移除你想移除的成员
-   //   - 一定不可以修改下列成员名称, 却没有修改编译器中的相应名称
-   //   - 新加入的成员被当作一般成员, 除非编译器提供特殊支持
-
-   typedef __false_type    has_trivial_default_constructor;
-   typedef __false_type    has_trivial_copy_constructor;
-   typedef __false_type    has_trivial_assignment_operator;
-   typedef __false_type    has_trivial_destructor;
-   typedef __false_type    is_POD_type;
+   <span style="color:#75715e">// 以下条款应当被遵守, 因为编译器有可能自动生成类型的特化版本
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">//   - 你可以重新安排的成员次序
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">//   - 你可以移除你想移除的成员
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">//   - 一定不可以修改下列成员名称, 却没有修改编译器中的相应名称
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">//   - 新加入的成员被当作一般成员, 除非编译器提供特殊支持
+</span><span style="color:#75715e"></span>
+   <span style="color:#66d9ef">typedef</span> __false_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __false_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __false_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __false_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __false_type    is_POD_type;
 };
-// 特化类型:
-//         char, signed char, unsigned char,
-//         short, unsigned short
-//         int, unsigned int
-//         long, unsigned long
-//         float, double, long double
-/**
- * 以下针对C++内置的基本数据类型提供特化版本, 
- * 使其具有trivial default constructor,
- * copy constructor, assignment operator, destructor并标记其为POD类型
- */
-__STL_TEMPLATE_NULL struct __type_traits&lt;char&gt;
+<span style="color:#75715e">// 特化类型:
+</span><span style="color:#75715e">//         char, signed char, unsigned char,
+</span><span style="color:#75715e">//         short, unsigned short
+</span><span style="color:#75715e">//         int, unsigned int
+</span><span style="color:#75715e">//         long, unsigned long
+</span><span style="color:#75715e">//         float, double, long double
+</span><span style="color:#75715e"></span><span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 以下针对C++内置的基本数据类型提供特化版本, 
+</span><span style="color:#75715e"> * 使其具有trivial default constructor,
+</span><span style="color:#75715e"> * copy constructor, assignment operator, destructor并标记其为POD类型
+</span><span style="color:#75715e"> */</span>
+__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">char</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对char的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;signed char&gt;
+<span style="color:#75715e">//针对char的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">signed</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对unsigned char的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;unsigned char&gt;
+<span style="color:#75715e">//针对unsigned char的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对short的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;short&gt;
+<span style="color:#75715e">//针对short的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">short</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对unsigned short的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;unsigned short&gt;
+<span style="color:#75715e">//针对unsigned short的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">short</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对int的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;int&gt;
+<span style="color:#75715e">//针对int的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对unsigned int的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;unsigned int&gt;
+<span style="color:#75715e">//针对unsigned int的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对long的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;long&gt;
+<span style="color:#75715e">//针对long的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">long</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对unsigned long的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;unsigned long&gt;
+<span style="color:#75715e">//针对unsigned long的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对float的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;float&gt;
+<span style="color:#75715e">//针对float的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">float</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对double的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;double&gt;
+<span style="color:#75715e">//针对double的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">double</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-//针对long double的特化版本
-__STL_TEMPLATE_NULL struct __type_traits&lt;long double&gt;
+<span style="color:#75715e">//针对long double的特化版本
+</span><span style="color:#75715e"></span>__STL_TEMPLATE_NULL <span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">long</span> <span style="color:#66d9ef">double</span><span style="color:#f92672">&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
-};
-
-// 针对指针提供特化
-template &lt;class T&gt;
-struct __type_traits&lt;T*&gt;
-{
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
 
-// 针对char *, signed char *, unsigned char *提供特化
-
-struct __type_traits&lt;char*&gt;
+<span style="color:#75715e">// 针对指针提供特化
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">*&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
 
-struct __type_traits&lt;signed char*&gt;
+<span style="color:#75715e">// 针对char *, signed char *, unsigned char *提供特化
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">char</span><span style="color:#f92672">*&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
 
-struct __type_traits&lt;unsigned char*&gt;
+<span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">signed</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*&gt;</span>
 {
-   typedef __true_type    has_trivial_default_constructor;
-   typedef __true_type    has_trivial_copy_constructor;
-   typedef __true_type    has_trivial_assignment_operator;
-   typedef __true_type    has_trivial_destructor;
-   typedef __true_type    is_POD_type;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
 };
-</code></pre>
 
+<span style="color:#66d9ef">struct</span> __type_traits<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*&gt;</span>
+{
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_default_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_copy_constructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_assignment_operator;
+   <span style="color:#66d9ef">typedef</span> __true_type    has_trivial_destructor;
+   <span style="color:#66d9ef">typedef</span> __true_type    is_POD_type;
+};
+</code></pre></div>
 <h1 id="后记">后记</h1>
 
 <p>本篇博客比较枯燥，STL的迭代器中有很多优秀的值得学习的设计方式，如萃取机制，用类继承来定义迭代器类型等，通篇代码比较多，图片讲解较少，只能说迭代器的设计中基本上都是较为繁琐的型别声明和定义，认真看下去的话会收获很多！若有疑惑可以在博文下方留言，我看到会及时帮大家解答！</p>

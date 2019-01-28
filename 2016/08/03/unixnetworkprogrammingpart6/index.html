@@ -68,9 +68,11 @@ UDP首部八个字节，开销小
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -103,7 +105,6 @@ UDP首部八个字节，开销小
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -184,17 +185,14 @@ UDP首部八个字节，开销小
 <h1 id="二-recvform和sendto函数">二、recvform和sendto函数</h1>
 
 <p>类似与TCP里面的read和write函数，UDP套接字编程中使用recvform和sendto函数来传输数据，其函数原型如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/socket.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+ssize_t <span style="color:#a6e22e">recvform</span>(<span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>buff , size_t nbytes, <span style="color:#66d9ef">int</span> flags , 
+<span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>from , socklen_t <span style="color:#f92672">*</span>addrlen);
 
-<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
-
-ssize_t recvform(int sockfd, void *buff , size_t nbytes, int flags , 
-struct sockaddr *from , socklen_t *addrlen);
-
-ssize_t sendto(int sockfd, const void *buff , size_t nbytes, int flags , 
-struct sockaddr *to , socklen_t addrlen);//若成功则返回读或写的字节大小，若出错返回-1
-
-</code></pre>
-
+ssize_t <span style="color:#a6e22e">sendto</span>(<span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>buff , size_t nbytes, <span style="color:#66d9ef">int</span> flags , 
+<span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>to , socklen_t addrlen);<span style="color:#75715e">//若成功则返回读或写的字节大小，若出错返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>前三个参数分别为：描述符、指向读入或写出缓冲区的指针和读写字节数。flags暂时设为0。</p>
 
 <p>recvfrom的from参数指向一个将由该函数在返回时填写数据报发送者的协议地址的套接字地址结构（从哪里接收），其大小由addrlen指定；</p>
@@ -212,88 +210,82 @@ struct sockaddr *to , socklen_t addrlen);//若成功则返回读或写的字节�
 <p>下面用UDP来重写<a href="http://zcheng.ren/2016/07/12/%E3%80%90unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E7%AC%AC%E4%B8%89%E7%89%88%E3%80%91%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%EF%BC%88%E5%9B%9B%EF%BC%89%EF%BC%9ATCP%E5%AE%A2%E6%88%B7-%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%AE%9E%E4%BE%8B/">TCP回射服务器</a>,其函数调用流程图如下：
 <center><img src="https://ww2.sinaimg.cn/large/006tNbRwgw1fbpyeyt0ooj30h602e0st.jpg" alt="UDP回射服务器流程" /></center>
 服务器程序清单如下：</p>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-int main(int argc, char **argv)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-	int					sockfd;
-	struct sockaddr_in	servaddr, cliaddr;
+	<span style="color:#66d9ef">int</span>					sockfd;
+	<span style="color:#66d9ef">struct</span> sockaddr_in	servaddr, cliaddr;
 
-	sockfd = Socket(AF_INET, SOCK_DGRAM, 0);//UDP面向数据报，SOCK_DGRAM为数据报套接字
+	sockfd <span style="color:#f92672">=</span> Socket(AF_INET, SOCK_DGRAM, <span style="color:#ae81ff">0</span>);<span style="color:#75715e">//UDP面向数据报，SOCK_DGRAM为数据报套接字
+</span><span style="color:#75715e"></span>
+	bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));<span style="color:#75715e">//初始化套接字
+</span><span style="color:#75715e"></span>	servaddr.sin_family      <span style="color:#f92672">=</span> AF_INET;
+	servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);
+	servaddr.sin_port        <span style="color:#f92672">=</span> htons(SERV_PORT);
 
-	bzero(&amp;servaddr, sizeof(servaddr));//初始化套接字
-	servaddr.sin_family      = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(SERV_PORT);
-
-	Bind(sockfd, (SA *) &amp;servaddr, sizeof(servaddr));//将本地协议地址赋值给套接字
-
-	dg_echo(sockfd, (SA *) &amp;cliaddr, sizeof(cliaddr));//调用回射程序
-}
-void dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
+	Bind(sockfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));<span style="color:#75715e">//将本地协议地址赋值给套接字
+</span><span style="color:#75715e"></span>
+	dg_echo(sockfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, <span style="color:#66d9ef">sizeof</span>(cliaddr));<span style="color:#75715e">//调用回射程序
+</span><span style="color:#75715e"></span>}
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">dg_echo</span>(<span style="color:#66d9ef">int</span> sockfd, SA <span style="color:#f92672">*</span>pcliaddr, socklen_t clilen)
 {
-	int			n;
+	<span style="color:#66d9ef">int</span>			n;
 	socklen_t	len;
-	char		mesg[MAXLINE];
+	<span style="color:#66d9ef">char</span>		mesg[MAXLINE];
 
-	for ( ; ; ) {
-		len = clilen;
-		n = Recvfrom(sockfd, mesg, MAXLINE, 0, pcliaddr, &amp;len);//接受客户的消息
-
-		Sendto(sockfd, mesg, n, 0, pcliaddr, len);//回射给客户端
-	}
+	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		len <span style="color:#f92672">=</span> clilen;
+		n <span style="color:#f92672">=</span> Recvfrom(sockfd, mesg, MAXLINE, <span style="color:#ae81ff">0</span>, pcliaddr, <span style="color:#f92672">&amp;</span>len);<span style="color:#75715e">//接受客户的消息
+</span><span style="color:#75715e"></span>
+		Sendto(sockfd, mesg, n, <span style="color:#ae81ff">0</span>, pcliaddr, len);<span style="color:#75715e">//回射给客户端
+</span><span style="color:#75715e"></span>	}
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="四-udp回射客户程序">四、UDP回射客户程序</h1>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-
-int main(int argc, char **argv)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-	int					sockfd;
-	struct sockaddr_in	servaddr;
+	<span style="color:#66d9ef">int</span>					sockfd;
+	<span style="color:#66d9ef">struct</span> sockaddr_in	servaddr;
 
-	if (argc != 2)
-		err_quit(&quot;usage: udpcli &lt;IPaddress&gt;&quot;);
+	<span style="color:#66d9ef">if</span> (argc <span style="color:#f92672">!=</span> <span style="color:#ae81ff">2</span>)
+		err_quit(<span style="color:#e6db74">&#34;usage: udpcli &lt;IPaddress&gt;&#34;</span>);
 
-	bzero(&amp;servaddr, sizeof(servaddr));
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_port = htons(7);
-	Inet_pton(AF_INET, argv[1], &amp;servaddr.sin_addr);//将点分十进制地址转换成二进制地址
-
-	sockfd = Socket(AF_INET, SOCK_DGRAM, 0);//建立套接字
-
-	dg_cli(stdin, sockfd, (SA *) &amp;servaddr, sizeof(servaddr));//调用回射程序
-
-	exit(0);
+	bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
+	servaddr.sin_family <span style="color:#f92672">=</span> AF_INET;
+	servaddr.sin_port <span style="color:#f92672">=</span> htons(<span style="color:#ae81ff">7</span>);
+	Inet_pton(AF_INET, argv[<span style="color:#ae81ff">1</span>], <span style="color:#f92672">&amp;</span>servaddr.sin_addr);<span style="color:#75715e">//将点分十进制地址转换成二进制地址
+</span><span style="color:#75715e"></span>
+	sockfd <span style="color:#f92672">=</span> Socket(AF_INET, SOCK_DGRAM, <span style="color:#ae81ff">0</span>);<span style="color:#75715e">//建立套接字
+</span><span style="color:#75715e"></span>
+	dg_cli(stdin, sockfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));<span style="color:#75715e">//调用回射程序
+</span><span style="color:#75715e"></span>
+	exit(<span style="color:#ae81ff">0</span>);
 }
-void dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">dg_cli</span>(FILE <span style="color:#f92672">*</span>fp, <span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">const</span> SA <span style="color:#f92672">*</span>pservaddr, socklen_t servlen)
 {
-	int	n;
-	char	sendline[MAXLINE], recvline[MAXLINE + 1];
+	<span style="color:#66d9ef">int</span>	n;
+	<span style="color:#66d9ef">char</span>	sendline[MAXLINE], recvline[MAXLINE <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>];
 
-	while (Fgets(sendline, MAXLINE, fp) != NULL) {//从标准输入读入数据
-
-		Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);//将文本发送给服务器
-
-		n = Recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL);//读取回射后的文本
-
-		recvline[n] = 0;	/* null terminate */
-		Fputs(recvline, stdout);//标准输出
-	}
+	<span style="color:#66d9ef">while</span> (Fgets(sendline, MAXLINE, fp) <span style="color:#f92672">!=</span> NULL) {<span style="color:#75715e">//从标准输入读入数据
+</span><span style="color:#75715e"></span>
+		Sendto(sockfd, sendline, strlen(sendline), <span style="color:#ae81ff">0</span>, pservaddr, servlen);<span style="color:#75715e">//将文本发送给服务器
+</span><span style="color:#75715e"></span>
+		n <span style="color:#f92672">=</span> Recvfrom(sockfd, recvline, MAXLINE, <span style="color:#ae81ff">0</span>, NULL, NULL);<span style="color:#75715e">//读取回射后的文本
+</span><span style="color:#75715e"></span>
+		recvline[n] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;	<span style="color:#75715e">/* null terminate */</span>
+		Fputs(recvline, stdout);<span style="color:#75715e">//标准输出
+</span><span style="color:#75715e"></span>	}
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="测试小结">测试小结</h2>
 
 <p>在ubuntu15.10环境下，测试上述代码：</p>
-
-<pre><code class="language-cpp">@Inspiron-N4010:~/unp$ ./udpcli 127.0.0.1
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">@</span>Inspiron<span style="color:#f92672">-</span>N4010:<span style="color:#f92672">~/</span>unp<span style="color:#960050;background-color:#1e0010">$</span> .<span style="color:#f92672">/</span>udpcli <span style="color:#ae81ff">127.0.0.1</span>
 hello
 hello
-</code></pre>
-
+</code></pre></div>
 <p>回射服务器正确返回客户端发送的数据</p>
 
 <h1 id="五-数据报丢失">五、数据报丢失</h1>
@@ -306,35 +298,33 @@ hello
 <p>由于UDP只管收发数据报，知道客户临时端口号的任何进程都可往客户发送数据报，而且这些数据报会与正常的服务器应答混杂，此时，可以修改客户程序的recvfrom调用以返回数据报发送者的IP地址和端口号，保留来自数据报所发往服务器的应答，而忽略任何其他的数据报。</p>
 
 <p>修改后的客户回射程序如下：</p>
-
-<pre><code class="language-cpp">void
-dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span>
+<span style="color:#a6e22e">dg_cli</span>(FILE <span style="color:#f92672">*</span>fp, <span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">const</span> SA <span style="color:#f92672">*</span>pservaddr, socklen_t servlen)
 {
-	int				n;
-	char			sendline[MAXLINE], recvline[MAXLINE + 1];
+	<span style="color:#66d9ef">int</span>				n;
+	<span style="color:#66d9ef">char</span>			sendline[MAXLINE], recvline[MAXLINE <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>];
 	socklen_t		len;
-	struct sockaddr	*preply_addr;
+	<span style="color:#66d9ef">struct</span> sockaddr	<span style="color:#f92672">*</span>preply_addr;
 
-	preply_addr = Malloc(servlen);
+	preply_addr <span style="color:#f92672">=</span> Malloc(servlen);
 
-	while (Fgets(sendline, MAXLINE, fp) != NULL) {
+	<span style="color:#66d9ef">while</span> (Fgets(sendline, MAXLINE, fp) <span style="color:#f92672">!=</span> NULL) {
 
-		Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);//返回发送者的IP地址和端口号
-
-		len = servlen;
-		n = Recvfrom(sockfd, recvline, MAXLINE, 0, preply_addr, &amp;len);
-		if (len != servlen || memcmp(pservaddr, preply_addr, len) != 0) {//验证ip地址和端口号
-			printf(&quot;reply from %s (ignored)\n&quot;,
+		Sendto(sockfd, sendline, strlen(sendline), <span style="color:#ae81ff">0</span>, pservaddr, servlen);<span style="color:#75715e">//返回发送者的IP地址和端口号
+</span><span style="color:#75715e"></span>
+		len <span style="color:#f92672">=</span> servlen;
+		n <span style="color:#f92672">=</span> Recvfrom(sockfd, recvline, MAXLINE, <span style="color:#ae81ff">0</span>, preply_addr, <span style="color:#f92672">&amp;</span>len);
+		<span style="color:#66d9ef">if</span> (len <span style="color:#f92672">!=</span> servlen <span style="color:#f92672">||</span> memcmp(pservaddr, preply_addr, len) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {<span style="color:#75715e">//验证ip地址和端口号
+</span><span style="color:#75715e"></span>			printf(<span style="color:#e6db74">&#34;reply from %s (ignored)</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,
 					Sock_ntop(preply_addr, len));
-			continue;
+			<span style="color:#66d9ef">continue</span>;
 		}
 
-		recvline[n] = 0;	/* null terminate */
+		recvline[n] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;	<span style="color:#75715e">/* null terminate */</span>
 		Fputs(recvline, stdout);
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>这种做法还是有缺陷的，如果一个主机只有单个IP，那么程序可以非常完美的运行；但是，如果运行在多宿主机（多个IP地址）上，该程序则可能失败。</p>
 
 <p>举个例子，假设服务器的IP有172.24.37.94和172.24,37.100，客户连接服务器172.24,37.100，但是响应的是172.24.37.94，这样程序就出了问题了。</p>
@@ -405,33 +395,29 @@ dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
 <p>可见，显示连接套接字的效率要高很多。</p>
 
 <h1 id="九-使用connect改进客户程序">九、使用connect改进客户程序</h1>
-
-<pre><code class="language-cpp">void dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">dg_cli</span>(FILE <span style="color:#f92672">*</span>fp, <span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">const</span> SA <span style="color:#f92672">*</span>pservaddr, socklen_t servlen)
 {
-	int		n;
-	char	sendline[MAXLINE], recvline[MAXLINE + 1];
+	<span style="color:#66d9ef">int</span>		n;
+	<span style="color:#66d9ef">char</span>	sendline[MAXLINE], recvline[MAXLINE <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>];
 
-	Connect(sockfd, (SA *) pservaddr, servlen);//连接套接字
-
-	while (Fgets(sendline, MAXLINE, fp) != NULL) {
+	Connect(sockfd, (SA <span style="color:#f92672">*</span>) pservaddr, servlen);<span style="color:#75715e">//连接套接字
+</span><span style="color:#75715e"></span>
+	<span style="color:#66d9ef">while</span> (Fgets(sendline, MAXLINE, fp) <span style="color:#f92672">!=</span> NULL) {
 
 		Write(sockfd, sendline, strlen(sendline));
 
-		n = Read(sockfd, recvline, MAXLINE);
+		n <span style="color:#f92672">=</span> Read(sockfd, recvline, MAXLINE);
 
-		recvline[n] = 0;	/* null terminate */
+		recvline[n] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;	<span style="color:#75715e">/* null terminate */</span>
 		Fputs(recvline, stdout);
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>运行此客户端程序，结果如下：</p>
-
-<pre><code class="language-cpp">@Inspiron-N4010:~/unp$ ./udpcli 127.0.0.1
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">@</span>Inspiron<span style="color:#f92672">-</span>N4010:<span style="color:#f92672">~/</span>unp<span style="color:#960050;background-color:#1e0010">$</span> .<span style="color:#f92672">/</span>udpcli <span style="color:#ae81ff">127.0.0.1</span>
 hello
 read error: Connection refused
-</code></pre>
-
+</code></pre></div>
 <p>解释一下为什么在键入一行文本后返回connection refused，而不是调用connect函数的时候？</p>
 
 <p>在UDP套接字上，调用connect并不给对端主机发送任何消息，它完全是一个本地操作，知识保存对端的IP地址和端口号，然后因为发送该数据引发了来自服务器主机的ICMP错误。</p>
@@ -441,61 +427,54 @@ read error: Connection refused
 <p>通过改进客户和服务器端程序，来观察缺乏流量控制的情况下，udp的传输效率。</p>
 
 <h2 id="客户端程序">客户端程序</h2>
-
-<pre><code class="language-cpp">
-#define	NDG		2000	//数据的个数
-#define	DGLEN	1400	//每个数据的长度
-
-void
-dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define	NDG		2000	</span><span style="color:#75715e">//数据的个数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define	DGLEN	1400	</span><span style="color:#75715e">//每个数据的长度
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">void</span>
+<span style="color:#a6e22e">dg_cli</span>(FILE <span style="color:#f92672">*</span>fp, <span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">const</span> SA <span style="color:#f92672">*</span>pservaddr, socklen_t servlen)
 {
-	int		i;
-	char	sendline[DGLEN];
+	<span style="color:#66d9ef">int</span>		i;
+	<span style="color:#66d9ef">char</span>	sendline[DGLEN];
 
-	for (i = 0; i &lt; NDG; i++) {//发送200个包
-		Sendto(sockfd, sendline, DGLEN, 0, pservaddr, servlen);
+	<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> NDG; i<span style="color:#f92672">++</span>) {<span style="color:#75715e">//发送200个包
+</span><span style="color:#75715e"></span>		Sendto(sockfd, sendline, DGLEN, <span style="color:#ae81ff">0</span>, pservaddr, servlen);
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>##服务器程序</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span>	<span style="color:#a6e22e">recvfrom_int</span>(<span style="color:#66d9ef">int</span>);
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span>	count;
 
-<pre><code class="language-cpp">static void	recvfrom_int(int);
-static int	count;
-
-void
-dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
+<span style="color:#66d9ef">void</span>
+<span style="color:#a6e22e">dg_echo</span>(<span style="color:#66d9ef">int</span> sockfd, SA <span style="color:#f92672">*</span>pcliaddr, socklen_t clilen)
 {
 	socklen_t	len;
-	char		mesg[MAXLINE];
+	<span style="color:#66d9ef">char</span>		mesg[MAXLINE];
 
 	Signal(SIGINT, recvfrom_int);
 
-	for ( ; ; ) {
-		len = clilen;
-		Recvfrom(sockfd, mesg, MAXLINE, 0, pcliaddr, &amp;len);
+	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		len <span style="color:#f92672">=</span> clilen;
+		Recvfrom(sockfd, mesg, MAXLINE, <span style="color:#ae81ff">0</span>, pcliaddr, <span style="color:#f92672">&amp;</span>len);
 
-		count++;//计算接受到的包个数
-	}
+		count<span style="color:#f92672">++</span>;<span style="color:#75715e">//计算接受到的包个数
+</span><span style="color:#75715e"></span>	}
 }
 
-static void
-recvfrom_int(int signo)
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span>
+<span style="color:#a6e22e">recvfrom_int</span>(<span style="color:#66d9ef">int</span> signo)
 {
-	printf(&quot;\nreceived %d datagrams\n&quot;, count);
-	exit(0);
+	printf(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">received %d datagrams</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, count);
+	exit(<span style="color:#ae81ff">0</span>);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="测试小结-1">测试小结</h2>
 
 <p>在我的主机上同时运行客户和服务器程序，基本上没有丢失</p>
-
-<pre><code class="language-cpp">@Inspiron-N4010:~/unp$ sudo ./udpserv 
-//客户运行完毕后敲ctrl+c
-received 2000 datagrams
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">@</span>Inspiron<span style="color:#f92672">-</span>N4010:<span style="color:#f92672">~/</span>unp<span style="color:#960050;background-color:#1e0010">$</span> sudo .<span style="color:#f92672">/</span>udpserv 
+<span style="color:#75715e">//客户运行完毕后敲ctrl+c
+</span><span style="color:#75715e"></span>received <span style="color:#ae81ff">2000</span> datagrams
+</code></pre></div>
 <h2 id="udp套接字接收缓存区">UDP套接字接收缓存区</h2>
 
 <p>由UDP给某个特定套接字排队的UDP数据报数目受限于该套接字缓冲区的大小。可以使用SO_REVBUF套接字选项来修改该值。</p>
@@ -503,101 +482,96 @@ received 2000 datagrams
 <p>在UDP第七章讲了常用的套接字选项，可以利用setsockopt函数来修改。</p>
 
 <p>具体修改调用如下：</p>
-
-<pre><code class="language-cpp">n=220*1024;//新的套接字接受缓冲区
-setsockopt(sockfd,SOL_SOCKET,SO_REVBUF,&amp;n,sizeof(n));//修改SO_REVBUF为n
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">n<span style="color:#f92672">=</span><span style="color:#ae81ff">220</span><span style="color:#f92672">*</span><span style="color:#ae81ff">1024</span>;<span style="color:#75715e">//新的套接字接受缓冲区
+</span><span style="color:#75715e"></span>setsockopt(sockfd,SOL_SOCKET,SO_REVBUF,<span style="color:#f92672">&amp;</span>n,<span style="color:#66d9ef">sizeof</span>(n));<span style="color:#75715e">//修改SO_REVBUF为n
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="十一-udp中的外出接口的确定">十一、UDP中的外出接口的确定</h1>
 
 <p>已连接的套接字还可以用来确定用于某个特定目的地的外出接口。</p>
 
 <p>通过调用getsockname得到本地IP地址和端口号并显示输出，即可获得外出接口。</p>
-
-<pre><code class="language-cpp">Connect(sockfd, (SA *) servaddr, servlen);//连接套接字
-
-len= sizeof(cliaddr);
-Getsockname(sockfd,(SA *)cliaddr,&amp;len);//通过描述符获得本地端口和描述符
-printf(&quot;local address %s\n&quot;,Sock_ntop((SA*) &amp;cliaddr , len));
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Connect(sockfd, (SA <span style="color:#f92672">*</span>) servaddr, servlen);<span style="color:#75715e">//连接套接字
+</span><span style="color:#75715e"></span>
+len<span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);
+Getsockname(sockfd,(SA <span style="color:#f92672">*</span>)cliaddr,<span style="color:#f92672">&amp;</span>len);<span style="color:#75715e">//通过描述符获得本地端口和描述符
+</span><span style="color:#75715e"></span>printf(<span style="color:#e6db74">&#34;local address %s</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,Sock_ntop((SA<span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr , len));
+</code></pre></div>
 <h1 id="十二-使用select函数的tcp和udp回射服务器程序">十二、使用select函数的TCP和UDP回射服务器程序</h1>
 
 <p>在<a href="http://zcheng.ren/2016/07/14/%E3%80%90unix%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E7%AC%AC%E4%B8%89%E7%89%88%E3%80%91%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%94%EF%BC%89%EF%BC%9AI-O%E5%A4%8D%E7%94%A8%EF%BC%9Aselect%E5%92%8Cpoll%E5%87%BD%E6%95%B0/">【UNIX网络编程第三版】阅读笔记（五）：select和poll函数</a>一文中，利用select函数达到IO复用的目的。</p>
 
 <p>本章的最后，利用select来完成TCP和UDP的复用效果。</p>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-int main(int argc, char **argv)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-	int					listenfd, connfd, udpfd, nready, maxfdp1;
-	char				mesg[MAXLINE];
+	<span style="color:#66d9ef">int</span>					listenfd, connfd, udpfd, nready, maxfdp1;
+	<span style="color:#66d9ef">char</span>				mesg[MAXLINE];
 	pid_t				childpid;
 	fd_set				rset;
 	ssize_t				n;
 	socklen_t			len;
-	const int			on = 1;
-	struct sockaddr_in	cliaddr, servaddr;
-	void				sig_chld(int);
+	<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">int</span>			on <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+	<span style="color:#66d9ef">struct</span> sockaddr_in	cliaddr, servaddr;
+	<span style="color:#66d9ef">void</span>				sig_chld(<span style="color:#66d9ef">int</span>);
 
-	//创建TCP监听套接字
-	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+	<span style="color:#75715e">//创建TCP监听套接字
+</span><span style="color:#75715e"></span>	listenfd <span style="color:#f92672">=</span> Socket(AF_INET, SOCK_STREAM, <span style="color:#ae81ff">0</span>);
 
-	bzero(&amp;servaddr, sizeof(servaddr));
-	servaddr.sin_family      = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(SERV_PORT);
+	bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
+	servaddr.sin_family      <span style="color:#f92672">=</span> AF_INET;
+	servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);
+	servaddr.sin_port        <span style="color:#f92672">=</span> htons(SERV_PORT);
 
-	Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &amp;on, sizeof(on));
-	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+	Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, <span style="color:#f92672">&amp;</span>on, <span style="color:#66d9ef">sizeof</span>(on));
+	Bind(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
 
 	Listen(listenfd, LISTENQ);
 
-	//创建UDP套接字
-	udpfd = Socket(AF_INET, SOCK_DGRAM, 0);
+	<span style="color:#75715e">//创建UDP套接字
+</span><span style="color:#75715e"></span>	udpfd <span style="color:#f92672">=</span> Socket(AF_INET, SOCK_DGRAM, <span style="color:#ae81ff">0</span>);
 
-	bzero(&amp;servaddr, sizeof(servaddr));
-	servaddr.sin_family      = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(SERV_PORT);
+	bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
+	servaddr.sin_family      <span style="color:#f92672">=</span> AF_INET;
+	servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);
+	servaddr.sin_port        <span style="color:#f92672">=</span> htons(SERV_PORT);
 
-	Bind(udpfd, (SA *) &amp;servaddr, sizeof(servaddr));
+	Bind(udpfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
 
-	Signal(SIGCHLD, sig_chld);	//建立信号处理函数，必须调用waitpid
-
-	FD_ZERO(&amp;rset);
-	maxfdp1 = max(listenfd, udpfd) + 1;//最大描述符+1
-	for ( ; ; ) {
-		FD_SET(listenfd, &amp;rset);
-		FD_SET(udpfd, &amp;rset);
-		if ( (nready = select(maxfdp1, &amp;rset, NULL, NULL, NULL)) &lt; 0) {
-			if (errno == EINTR)
-				continue;		
-			else
-				err_sys(&quot;select error&quot;);
+	Signal(SIGCHLD, sig_chld);	<span style="color:#75715e">//建立信号处理函数，必须调用waitpid
+</span><span style="color:#75715e"></span>
+	FD_ZERO(<span style="color:#f92672">&amp;</span>rset);
+	maxfdp1 <span style="color:#f92672">=</span> max(listenfd, udpfd) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;<span style="color:#75715e">//最大描述符+1
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		FD_SET(listenfd, <span style="color:#f92672">&amp;</span>rset);
+		FD_SET(udpfd, <span style="color:#f92672">&amp;</span>rset);
+		<span style="color:#66d9ef">if</span> ( (nready <span style="color:#f92672">=</span> select(maxfdp1, <span style="color:#f92672">&amp;</span>rset, NULL, NULL, NULL)) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {
+			<span style="color:#66d9ef">if</span> (errno <span style="color:#f92672">==</span> EINTR)
+				<span style="color:#66d9ef">continue</span>;		
+			<span style="color:#66d9ef">else</span>
+				err_sys(<span style="color:#e6db74">&#34;select error&#34;</span>);
 		}
 
-		if (FD_ISSET(listenfd, &amp;rset)) {
-			len = sizeof(cliaddr);
-			connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;len);
+		<span style="color:#66d9ef">if</span> (FD_ISSET(listenfd, <span style="color:#f92672">&amp;</span>rset)) {
+			len <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);
+			connfd <span style="color:#f92672">=</span> Accept(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, <span style="color:#f92672">&amp;</span>len);
 	
-			if ( (childpid = Fork()) == 0) {	//创建子进程处理客户需求
-				Close(listenfd);	//监听套接字计数-1.为0时关闭
-				str_echo(connfd);	
-				exit(0);
+			<span style="color:#66d9ef">if</span> ( (childpid <span style="color:#f92672">=</span> Fork()) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {	<span style="color:#75715e">//创建子进程处理客户需求
+</span><span style="color:#75715e"></span>				Close(listenfd);	<span style="color:#75715e">//监听套接字计数-1.为0时关闭
+</span><span style="color:#75715e"></span>				str_echo(connfd);	
+				exit(<span style="color:#ae81ff">0</span>);
 			}
-			Close(connfd);			//连接套接字计数减1，为0时关闭
-		}
+			Close(connfd);			<span style="color:#75715e">//连接套接字计数减1，为0时关闭
+</span><span style="color:#75715e"></span>		}
 
-		if (FD_ISSET(udpfd, &amp;rset)) {
-			len = sizeof(cliaddr);
-			n = Recvfrom(udpfd, mesg, MAXLINE, 0, (SA *) &amp;cliaddr, &amp;len);//UDP传输
-
-			Sendto(udpfd, mesg, n, 0, (SA *) &amp;cliaddr, len);//回射
-		}
+		<span style="color:#66d9ef">if</span> (FD_ISSET(udpfd, <span style="color:#f92672">&amp;</span>rset)) {
+			len <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);
+			n <span style="color:#f92672">=</span> Recvfrom(udpfd, mesg, MAXLINE, <span style="color:#ae81ff">0</span>, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, <span style="color:#f92672">&amp;</span>len);<span style="color:#75715e">//UDP传输
+</span><span style="color:#75715e"></span>
+			Sendto(udpfd, mesg, n, <span style="color:#ae81ff">0</span>, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, len);<span style="color:#75715e">//回射
+</span><span style="color:#75715e"></span>		}
 	}
 }
-</code></pre>
+</code></pre></div>
 		</div>
 		
 <div class="post__tags tags clearfix">

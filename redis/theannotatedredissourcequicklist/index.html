@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -126,10 +127,8 @@
 </ul>
 
 <p>Redis的配置文件中，给出了每个ziplist中的元素个数设定，考虑使用场景需求，我们可以选择不同的元素个数。该参数设置格式如下：</p>
-
-<pre><code class="language-cpp">list-max-ziplist-size -2
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">list<span style="color:#f92672">-</span>max<span style="color:#f92672">-</span>ziplist<span style="color:#f92672">-</span>size <span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>
+</code></pre></div>
 <p>后面的数字可正可负，正、负代表不同函数，其中，如果参数为正，表示按照数据项个数来限定每个节点中的元素个数，比如3代表每个节点中存放的元素个数不能超过3；反之，如果参数为负，表示按照字节数来限定每个节点中的元素个数，它只能取-1~-5这五个数，其含义如下：</p>
 
 <ul>
@@ -141,10 +140,8 @@
 </ul>
 
 <p>另外，在quicklist的源码中提到了一个LZF的压缩算法，该算法用于对quicklist的节点进行压缩操作。list的设计目的是能够存放很长的数据列表，当列表很长时，必然会占用很高的内存空间，且list中最容易访问的是两端的数据，中间的数据访问率较低，于是就可以从这个出发点来进一步节省内存用于其他操作。Redis提供了一下的配置参数，用于表示中间节点是否压缩。</p>
-
-<pre><code class="language-cpp">list-compress-depth 0
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">list<span style="color:#f92672">-</span>compress<span style="color:#f92672">-</span>depth <span style="color:#ae81ff">0</span>
+</code></pre></div>
 <p>参数list-compress-depth的取值和含义对应如下：</p>
 
 <ul>
@@ -158,67 +155,59 @@
 <h1 id="quicklist的数据结构">quicklist的数据结构</h1>
 
 <p>quicklist的数据结构定义在quicklist.c文件中。</p>
-
-<pre><code class="language-cpp">typedef struct quicklist {
-    quicklistNode *head;        // 指向quicklist的头部
-    quicklistNode *tail;        // 指向quicklist的尾部
-    unsigned long count;        // 列表中所有数据项的个数总和
-    unsigned int len;           // quicklist节点的个数，即ziplist的个数
-    int fill : 16;              // ziplist大小限定，由list-max-ziplist-size给定
-    unsigned int compress : 16; // 节点压缩深度设置，由list-compress-depth给定
-} quicklist;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> quicklist {
+    quicklistNode <span style="color:#f92672">*</span>head;        <span style="color:#75715e">// 指向quicklist的头部
+</span><span style="color:#75715e"></span>    quicklistNode <span style="color:#f92672">*</span>tail;        <span style="color:#75715e">// 指向quicklist的尾部
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> count;        <span style="color:#75715e">// 列表中所有数据项的个数总和
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> len;           <span style="color:#75715e">// quicklist节点的个数，即ziplist的个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> fill : <span style="color:#ae81ff">16</span>;              <span style="color:#75715e">// ziplist大小限定，由list-max-ziplist-size给定
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> compress : <span style="color:#ae81ff">16</span>; <span style="color:#75715e">// 节点压缩深度设置，由list-compress-depth给定
+</span><span style="color:#75715e"></span>} quicklist;
+</code></pre></div>
 <p>每个quicklist结构占用32个字节的空间，下面来看看quicklist节点的数据结构。</p>
-
-<pre><code class="language-cpp">typedef struct quicklistNode {
-    struct quicklistNode *prev;  // 指向上一个ziplist节点
-    struct quicklistNode *next;  // 指向下一个ziplist节点
-    unsigned char *zl;           // 数据指针，如果没有被压缩，就指向ziplist结构，反之指向quicklistLZF结构 
-    unsigned int sz;             // 表示指向ziplist结构的总长度(内存占用长度)
-    unsigned int count : 16;     // 表示ziplist中的数据项个数
-    unsigned int encoding : 2;   // 编码方式，1--ziplist，2--quicklistLZF
-    unsigned int container : 2;  // 预留字段，存放数据的方式，1--NONE，2--ziplist
-    unsigned int recompress : 1; // 解压标记，当查看一个被压缩的数据时，需要暂时解压，标记此参数为1，之后再重新进行压缩
-    unsigned int attempted_compress : 1; // 测试相关
-    unsigned int extra : 10; // 扩展字段，暂时没用
-} quicklistNode;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> quicklistNode {
+    <span style="color:#66d9ef">struct</span> quicklistNode <span style="color:#f92672">*</span>prev;  <span style="color:#75715e">// 指向上一个ziplist节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> quicklistNode <span style="color:#f92672">*</span>next;  <span style="color:#75715e">// 指向下一个ziplist节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl;           <span style="color:#75715e">// 数据指针，如果没有被压缩，就指向ziplist结构，反之指向quicklistLZF结构 
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> sz;             <span style="color:#75715e">// 表示指向ziplist结构的总长度(内存占用长度)
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> count : <span style="color:#ae81ff">16</span>;     <span style="color:#75715e">// 表示ziplist中的数据项个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> encoding : <span style="color:#ae81ff">2</span>;   <span style="color:#75715e">// 编码方式，1--ziplist，2--quicklistLZF
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> container : <span style="color:#ae81ff">2</span>;  <span style="color:#75715e">// 预留字段，存放数据的方式，1--NONE，2--ziplist
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> recompress : <span style="color:#ae81ff">1</span>; <span style="color:#75715e">// 解压标记，当查看一个被压缩的数据时，需要暂时解压，标记此参数为1，之后再重新进行压缩
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> attempted_compress : <span style="color:#ae81ff">1</span>; <span style="color:#75715e">// 测试相关
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> extra : <span style="color:#ae81ff">10</span>; <span style="color:#75715e">// 扩展字段，暂时没用
+</span><span style="color:#75715e"></span>} quicklistNode;
+</code></pre></div>
 <p>每个quicklistnode也占用32个字节，上面介绍了，每个节点的数据存放格式有ziplist和quicklistLZF，后者是一种采用LZF压缩算法压缩的数据结构，其定义如下：</p>
-
-<pre><code class="language-cpp">typedef struct quicklistLZF {
-    unsigned int sz; // LZF压缩后占用的字节数
-    char compressed[]; // 柔性数组，指向数据部分
-} quicklistLZF;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> quicklistLZF {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> sz; <span style="color:#75715e">// LZF压缩后占用的字节数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span> compressed[]; <span style="color:#75715e">// 柔性数组，指向数据部分
+</span><span style="color:#75715e"></span>} quicklistLZF;
+</code></pre></div>
 <p>分析到这里，quicklist的大体结构以及呈现在我们面前了，请看下图，是不是豁然开朗：</p>
 
 <p><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkgbuhb91j30pp0g7tax.jpg" alt="quicklist" /></p>
 
 <p>另外，quicklist还提供了迭代器结构以及指向ziplist中的节点结构</p>
-
-<pre><code class="language-cpp">// quicklist的迭代器结构
-typedef struct quicklistIter {
-    const quicklist *quicklist;  // 指向所在quicklist的指针
-    quicklistNode *current;  // 指向当前节点的指针
-    unsigned char *zi;  // 指向当前节点的ziplist
-    long offset; // 当前ziplist中的偏移地址
-    int direction; // 迭代器的方向
-} quicklistIter;
-// 表示quicklist节点中ziplist里的一个节点结构
-typedef struct quicklistEntry {
-    const quicklist *quicklist;  // 指向所在quicklist的指针
-    quicklistNode *node;  // 指向当前节点的指针
-    unsigned char *zi;  // 指向当前节点的ziplist
-    unsigned char *value;  // 当前指向的ziplist中的节点的字符串值
-    long long longval;  // 当前指向的ziplist中的节点的整型值
-    unsigned int sz;  // 当前指向的ziplist中的节点的字节大小
-    int offset;  // 当前指向的ziplist中的节点相对于ziplist的偏移量
-} quicklistEntry;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// quicklist的迭代器结构
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> quicklistIter {
+    <span style="color:#66d9ef">const</span> quicklist <span style="color:#f92672">*</span>quicklist;  <span style="color:#75715e">// 指向所在quicklist的指针
+</span><span style="color:#75715e"></span>    quicklistNode <span style="color:#f92672">*</span>current;  <span style="color:#75715e">// 指向当前节点的指针
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zi;  <span style="color:#75715e">// 指向当前节点的ziplist
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> offset; <span style="color:#75715e">// 当前ziplist中的偏移地址
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> direction; <span style="color:#75715e">// 迭代器的方向
+</span><span style="color:#75715e"></span>} quicklistIter;
+<span style="color:#75715e">// 表示quicklist节点中ziplist里的一个节点结构
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> quicklistEntry {
+    <span style="color:#66d9ef">const</span> quicklist <span style="color:#f92672">*</span>quicklist;  <span style="color:#75715e">// 指向所在quicklist的指针
+</span><span style="color:#75715e"></span>    quicklistNode <span style="color:#f92672">*</span>node;  <span style="color:#75715e">// 指向当前节点的指针
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zi;  <span style="color:#75715e">// 指向当前节点的ziplist
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>value;  <span style="color:#75715e">// 当前指向的ziplist中的节点的字符串值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> longval;  <span style="color:#75715e">// 当前指向的ziplist中的节点的整型值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> sz;  <span style="color:#75715e">// 当前指向的ziplist中的节点的字节大小
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> offset;  <span style="color:#75715e">// 当前指向的ziplist中的节点相对于ziplist的偏移量
+</span><span style="color:#75715e"></span>} quicklistEntry;
+</code></pre></div>
 <h1 id="quicklist基本接口">quicklist基本接口</h1>
 
 <p>Redis为每一个底层数据结构都提供了丰富的接口，以供上层数据结构调用，quicklist也不例外。为了篇幅不会过长，本博客仅仅剖析一下部分关键的接口的实现。</p>
@@ -226,36 +215,32 @@ typedef struct quicklistEntry {
 <h2 id="创建quicklist及其节点">创建quicklist及其节点</h2>
 
 <p>创建一个quicklist需要为其设定各种参数，其由quicklistCreate函数实现。</p>
-
-<pre><code class="language-cpp">quicklist *quicklistCreate(void) {
-    struct quicklist *quicklist;  // 声明指针
-
-    quicklist = zmalloc(sizeof(*quicklist));  // 分配内存
-    quicklist-&gt;head = quicklist-&gt;tail = NULL;   // 设定头尾指针
-    quicklist-&gt;len = 0;  // 设定长度
-    quicklist-&gt;count = 0;  // 设定数据项总和
-    quicklist-&gt;compress = 0;  // 设定压缩深度
-    quicklist-&gt;fill = -2;  // 设定ziplist大小限定
-    return quicklist;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">quicklist <span style="color:#f92672">*</span><span style="color:#a6e22e">quicklistCreate</span>(<span style="color:#66d9ef">void</span>) {
+    <span style="color:#66d9ef">struct</span> quicklist <span style="color:#f92672">*</span>quicklist;  <span style="color:#75715e">// 声明指针
+</span><span style="color:#75715e"></span>
+    quicklist <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>quicklist));  <span style="color:#75715e">// 分配内存
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>head <span style="color:#f92672">=</span> quicklist<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> NULL;   <span style="color:#75715e">// 设定头尾指针
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>len <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 设定长度
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 设定数据项总和
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>compress <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 设定压缩深度
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>fill <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>;  <span style="color:#75715e">// 设定ziplist大小限定
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> quicklist;
 }
-</code></pre>
-
+</code></pre></div>
 <p>创建完quicklist，接下来就是创建一个quicklist节点。</p>
-
-<pre><code class="language-cpp">REDIS_STATIC quicklistNode *quicklistCreateNode(void) {
-    quicklistNode *node;
-    node = zmalloc(sizeof(*node));  //  申请内存
-    node-&gt;zl = NULL;  // 初始化指向ziplist的指针
-    node-&gt;count = 0;  // 初始化数据项个数
-    node-&gt;sz = 0;  // 初始化ziplist大小
-    node-&gt;next = node-&gt;prev = NULL;  // 初始化prev和next指针
-    node-&gt;encoding = QUICKLIST_NODE_ENCODING_RAW;  // 初始化节点编码方式
-    node-&gt;container = QUICKLIST_NODE_CONTAINER_ZIPLIST;  // 初始化存放数据的方式
-    node-&gt;recompress = 0;  // 初始化再压缩标记
-    return node;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">REDIS_STATIC quicklistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">quicklistCreateNode</span>(<span style="color:#66d9ef">void</span>) {
+    quicklistNode <span style="color:#f92672">*</span>node;
+    node <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>node));  <span style="color:#75715e">//  申请内存
+</span><span style="color:#75715e"></span>    node<span style="color:#f92672">-&gt;</span>zl <span style="color:#f92672">=</span> NULL;  <span style="color:#75715e">// 初始化指向ziplist的指针
+</span><span style="color:#75715e"></span>    node<span style="color:#f92672">-&gt;</span>count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 初始化数据项个数
+</span><span style="color:#75715e"></span>    node<span style="color:#f92672">-&gt;</span>sz <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 初始化ziplist大小
+</span><span style="color:#75715e"></span>    node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> NULL;  <span style="color:#75715e">// 初始化prev和next指针
+</span><span style="color:#75715e"></span>    node<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> QUICKLIST_NODE_ENCODING_RAW;  <span style="color:#75715e">// 初始化节点编码方式
+</span><span style="color:#75715e"></span>    node<span style="color:#f92672">-&gt;</span>container <span style="color:#f92672">=</span> QUICKLIST_NODE_CONTAINER_ZIPLIST;  <span style="color:#75715e">// 初始化存放数据的方式
+</span><span style="color:#75715e"></span>    node<span style="color:#f92672">-&gt;</span>recompress <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 初始化再压缩标记
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> node;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="push操作">PUSH操作</h2>
 
 <p>quicklist最重要的操作就是首尾插入节点，此操作由quicklistPush函数实现。PUSH操作不管是头部还是尾部压入都包含两个步骤：</p>
@@ -264,206 +249,200 @@ typedef struct quicklistEntry {
 <li>如果插入节点中的ziplist大小没有超过限制（list-max-ziplist-size），那么直接调用ziplistPush函数压入</li>
 <li>如果插入节点中的ziplist大小超过了限制，则新建一个quicklist节点（自然会创建一个新的ziplist），新的数据项会压入到新的ziplist，新的quicklist节点插入到原有的quicklist上</li>
 </ul>
-
-<pre><code class="language-cpp">// push操作，需要判断是头部插入还是尾部插入
-void quicklistPush(quicklist *quicklist, void *value, const size_t sz,
-                   int where) {
-    if (where == QUICKLIST_HEAD) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// push操作，需要判断是头部插入还是尾部插入
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">quicklistPush</span>(quicklist <span style="color:#f92672">*</span>quicklist, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value, <span style="color:#66d9ef">const</span> size_t sz,
+                   <span style="color:#66d9ef">int</span> where) {
+    <span style="color:#66d9ef">if</span> (where <span style="color:#f92672">==</span> QUICKLIST_HEAD) {
         quicklistPushHead(quicklist, value, sz);
-    } else if (where == QUICKLIST_TAIL) {
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (where <span style="color:#f92672">==</span> QUICKLIST_TAIL) {
         quicklistPushTail(quicklist, value, sz);
     }
 }
-// 将新的数据项push到头部
-int quicklistPushHead(quicklist *quicklist, void *value, size_t sz) {
-    quicklistNode *orig_head = quicklist-&gt;head;
-    // likely()是linux提供给程序员的编译优化方法
-    // 目的是将“分支转移”的信息提供给编译器，这样编译器可以对代码进行优化，以减少指令跳转带来的性能下降
-    // 此处表示节点没有满发生的概率比较大，也就是数据项直接插入到当前节点的可能性大，
-    // likely()属于编译器级别的优化
-    if (likely(
-      		// 判断该头部节点是否允许插入，计算头部节点中的大小和fill参数设置的大小相比较
-            _quicklistNodeAllowInsert(quicklist-&gt;head, quicklist-&gt;fill, sz))) {
-      	// 执行到此，说明允许插入，直接调用ziplistpush插入节点即可
-        quicklist-&gt;head-&gt;zl =
-            ziplistPush(quicklist-&gt;head-&gt;zl, value, sz, ZIPLIST_HEAD);
-        // 更新头部大小
-        quicklistNodeUpdateSz(quicklist-&gt;head);
-    } else {
-      	// 执行到此，说明头部节点已经满了，需要重新创建一个节点
-        quicklistNode *node = quicklistCreateNode();
-        // 将新节点压入新创建的ziplist中，并与新创建的quicklist节点关联起来
-        node-&gt;zl = ziplistPush(ziplistNew(), value, sz, ZIPLIST_HEAD);
-        // 更新大小
-        quicklistNodeUpdateSz(node);
-      	// 将新创建的quicklist节点关联到quicklist中
-        _quicklistInsertNodeBefore(quicklist, quicklist-&gt;head, node);
+<span style="color:#75715e">// 将新的数据项push到头部
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">quicklistPushHead</span>(quicklist <span style="color:#f92672">*</span>quicklist, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value, size_t sz) {
+    quicklistNode <span style="color:#f92672">*</span>orig_head <span style="color:#f92672">=</span> quicklist<span style="color:#f92672">-&gt;</span>head;
+    <span style="color:#75715e">// likely()是linux提供给程序员的编译优化方法
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 目的是将“分支转移”的信息提供给编译器，这样编译器可以对代码进行优化，以减少指令跳转带来的性能下降
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 此处表示节点没有满发生的概率比较大，也就是数据项直接插入到当前节点的可能性大，
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// likely()属于编译器级别的优化
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (likely(
+      		<span style="color:#75715e">// 判断该头部节点是否允许插入，计算头部节点中的大小和fill参数设置的大小相比较
+</span><span style="color:#75715e"></span>            _quicklistNodeAllowInsert(quicklist<span style="color:#f92672">-&gt;</span>head, quicklist<span style="color:#f92672">-&gt;</span>fill, sz))) {
+      	<span style="color:#75715e">// 执行到此，说明允许插入，直接调用ziplistpush插入节点即可
+</span><span style="color:#75715e"></span>        quicklist<span style="color:#f92672">-&gt;</span>head<span style="color:#f92672">-&gt;</span>zl <span style="color:#f92672">=</span>
+            ziplistPush(quicklist<span style="color:#f92672">-&gt;</span>head<span style="color:#f92672">-&gt;</span>zl, value, sz, ZIPLIST_HEAD);
+        <span style="color:#75715e">// 更新头部大小
+</span><span style="color:#75715e"></span>        quicklistNodeUpdateSz(quicklist<span style="color:#f92672">-&gt;</span>head);
+    } <span style="color:#66d9ef">else</span> {
+      	<span style="color:#75715e">// 执行到此，说明头部节点已经满了，需要重新创建一个节点
+</span><span style="color:#75715e"></span>        quicklistNode <span style="color:#f92672">*</span>node <span style="color:#f92672">=</span> quicklistCreateNode();
+        <span style="color:#75715e">// 将新节点压入新创建的ziplist中，并与新创建的quicklist节点关联起来
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>zl <span style="color:#f92672">=</span> ziplistPush(ziplistNew(), value, sz, ZIPLIST_HEAD);
+        <span style="color:#75715e">// 更新大小
+</span><span style="color:#75715e"></span>        quicklistNodeUpdateSz(node);
+      	<span style="color:#75715e">// 将新创建的quicklist节点关联到quicklist中
+</span><span style="color:#75715e"></span>        _quicklistInsertNodeBefore(quicklist, quicklist<span style="color:#f92672">-&gt;</span>head, node);
     }
-  	// 更新total数据项个数
-    quicklist-&gt;count++;
-    // 更新头结点的数据项个数
-    quicklist-&gt;head-&gt;count++;
-    // 如果尾部quicklist节点指针没变，返回0；
-    // 反之返回1
-    return (orig_head != quicklist-&gt;head);
+  	<span style="color:#75715e">// 更新total数据项个数
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>count<span style="color:#f92672">++</span>;
+    <span style="color:#75715e">// 更新头结点的数据项个数
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>head<span style="color:#f92672">-&gt;</span>count<span style="color:#f92672">++</span>;
+    <span style="color:#75715e">// 如果尾部quicklist节点指针没变，返回0；
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 反之返回1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> (orig_head <span style="color:#f92672">!=</span> quicklist<span style="color:#f92672">-&gt;</span>head);
 }
-// 将新数据项push到尾部
-int quicklistPushTail(quicklist *quicklist, void *value, size_t sz) {
-    quicklistNode *orig_tail = quicklist-&gt;tail;
-    if (likely(
-            // 判断该尾部节点是否允许插入，计算尾部节点中的大小和fill参数设置的大小相比较
-            _quicklistNodeAllowInsert(quicklist-&gt;tail, quicklist-&gt;fill, sz))) {
-        // 执行到此，说明允许插入，直接调用ziplistpush插入节点即可
-        quicklist-&gt;tail-&gt;zl =
-          	// 将新数据项push到ziplist的尾部
-            ziplistPush(quicklist-&gt;tail-&gt;zl, value, sz, ZIPLIST_TAIL);
-        // 更新尾部节点大小
-        quicklistNodeUpdateSz(quicklist-&gt;tail);
-    } else {
-        // 执行到此，说明尾部节点已经满了，需要重新创建一个节点
-        quicklistNode *node = quicklistCreateNode();
-        // 创建一个新的ziplist，并将新数据项插入，然后与新创建的quicklist节点关联起来
-        node-&gt;zl = ziplistPush(ziplistNew(), value, sz, ZIPLIST_TAIL);
-        // 更新该quicklist节点的大小
-        quicklistNodeUpdateSz(node);
-        // 将新创建的quicklist与quicklist关联起来
-        _quicklistInsertNodeAfter(quicklist, quicklist-&gt;tail, node);
+<span style="color:#75715e">// 将新数据项push到尾部
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">quicklistPushTail</span>(quicklist <span style="color:#f92672">*</span>quicklist, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value, size_t sz) {
+    quicklistNode <span style="color:#f92672">*</span>orig_tail <span style="color:#f92672">=</span> quicklist<span style="color:#f92672">-&gt;</span>tail;
+    <span style="color:#66d9ef">if</span> (likely(
+            <span style="color:#75715e">// 判断该尾部节点是否允许插入，计算尾部节点中的大小和fill参数设置的大小相比较
+</span><span style="color:#75715e"></span>            _quicklistNodeAllowInsert(quicklist<span style="color:#f92672">-&gt;</span>tail, quicklist<span style="color:#f92672">-&gt;</span>fill, sz))) {
+        <span style="color:#75715e">// 执行到此，说明允许插入，直接调用ziplistpush插入节点即可
+</span><span style="color:#75715e"></span>        quicklist<span style="color:#f92672">-&gt;</span>tail<span style="color:#f92672">-&gt;</span>zl <span style="color:#f92672">=</span>
+          	<span style="color:#75715e">// 将新数据项push到ziplist的尾部
+</span><span style="color:#75715e"></span>            ziplistPush(quicklist<span style="color:#f92672">-&gt;</span>tail<span style="color:#f92672">-&gt;</span>zl, value, sz, ZIPLIST_TAIL);
+        <span style="color:#75715e">// 更新尾部节点大小
+</span><span style="color:#75715e"></span>        quicklistNodeUpdateSz(quicklist<span style="color:#f92672">-&gt;</span>tail);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 执行到此，说明尾部节点已经满了，需要重新创建一个节点
+</span><span style="color:#75715e"></span>        quicklistNode <span style="color:#f92672">*</span>node <span style="color:#f92672">=</span> quicklistCreateNode();
+        <span style="color:#75715e">// 创建一个新的ziplist，并将新数据项插入，然后与新创建的quicklist节点关联起来
+</span><span style="color:#75715e"></span>        node<span style="color:#f92672">-&gt;</span>zl <span style="color:#f92672">=</span> ziplistPush(ziplistNew(), value, sz, ZIPLIST_TAIL);
+        <span style="color:#75715e">// 更新该quicklist节点的大小
+</span><span style="color:#75715e"></span>        quicklistNodeUpdateSz(node);
+        <span style="color:#75715e">// 将新创建的quicklist与quicklist关联起来
+</span><span style="color:#75715e"></span>        _quicklistInsertNodeAfter(quicklist, quicklist<span style="color:#f92672">-&gt;</span>tail, node);
     }
-    // 更新quicklist的数据项个数
-    quicklist-&gt;count++;
-    // 更新尾部节点的数据项个数
-    quicklist-&gt;tail-&gt;count++;
-    // 如果尾部quicklist节点指针没变，返回0；
-    // 反之返回1
-    return (orig_tail != quicklist-&gt;tail);
+    <span style="color:#75715e">// 更新quicklist的数据项个数
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>count<span style="color:#f92672">++</span>;
+    <span style="color:#75715e">// 更新尾部节点的数据项个数
+</span><span style="color:#75715e"></span>    quicklist<span style="color:#f92672">-&gt;</span>tail<span style="color:#f92672">-&gt;</span>count<span style="color:#f92672">++</span>;
+    <span style="color:#75715e">// 如果尾部quicklist节点指针没变，返回0；
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 反之返回1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> (orig_tail <span style="color:#f92672">!=</span> quicklist<span style="color:#f92672">-&gt;</span>tail);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="pop操作">POP操作</h2>
 
 <p>与PUSH操作对应的是POP操作，POP操作可以弹出首尾节点。</p>
-
-<pre><code class="language-cpp">// 接口函数，执行POP操作
-// 执行成功返回1，反之0
-// 如果弹出节点是字符串值，data，sz存放弹出节点的字符串值
-// 如果弹出节点是整型值，slong存放弹出节点的整型值
-int quicklistPop(quicklist *quicklist, int where, unsigned char **data,
-                 unsigned int *sz, long long *slong) {
-    unsigned char *vstr;
-    unsigned int vlen;
-    long long vlong;
-    // 没有数据项，直接返回
-    if (quicklist-&gt;count == 0)
-        return 0;
-    // 调用底层实现函数
-    // 传入的_quicklistSaver是一个函数指针，用于深拷贝节点的值，用于返回
-    int ret = quicklistPopCustom(quicklist, where, &amp;vstr, &amp;vlen, &amp;vlong,
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 接口函数，执行POP操作
+</span><span style="color:#75715e">// 执行成功返回1，反之0
+</span><span style="color:#75715e">// 如果弹出节点是字符串值，data，sz存放弹出节点的字符串值
+</span><span style="color:#75715e">// 如果弹出节点是整型值，slong存放弹出节点的整型值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">quicklistPop</span>(quicklist <span style="color:#f92672">*</span>quicklist, <span style="color:#66d9ef">int</span> where, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>data,
+                 <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>sz, <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>slong) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>vstr;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> vlen;
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> vlong;
+    <span style="color:#75715e">// 没有数据项，直接返回
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (quicklist<span style="color:#f92672">-&gt;</span>count <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 调用底层实现函数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 传入的_quicklistSaver是一个函数指针，用于深拷贝节点的值，用于返回
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> ret <span style="color:#f92672">=</span> quicklistPopCustom(quicklist, where, <span style="color:#f92672">&amp;</span>vstr, <span style="color:#f92672">&amp;</span>vlen, <span style="color:#f92672">&amp;</span>vlong,
                                  _quicklistSaver);
-    // 给data，sz，slong赋值
-    if (data)
-        *data = vstr;
-    if (slong)
-        *slong = vlong;
-    if (sz)
-        *sz = vlen;
-    return ret;
+    <span style="color:#75715e">// 给data，sz，slong赋值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (data)
+        <span style="color:#f92672">*</span>data <span style="color:#f92672">=</span> vstr;
+    <span style="color:#66d9ef">if</span> (slong)
+        <span style="color:#f92672">*</span>slong <span style="color:#f92672">=</span> vlong;
+    <span style="color:#66d9ef">if</span> (sz)
+        <span style="color:#f92672">*</span>sz <span style="color:#f92672">=</span> vlen;
+    <span style="color:#66d9ef">return</span> ret;
 }
-// pop操作的底层实现函数
-// 执行成功返回1，反之0
-// 如果弹出节点是字符串值，data，sz存放弹出节点的字符串值
-// 如果弹出节点是整型值，slong存放弹出节点的整型值
-int quicklistPopCustom(quicklist *quicklist, int where, unsigned char **data,
-                       unsigned int *sz, long long *sval,
-                       void *(*saver)(unsigned char *data, unsigned int sz)) {
-    unsigned char *p;
-    unsigned char *vstr;
-    unsigned int vlen;
-    long long vlong;
-  	// 判断弹出位置，首部或者尾部
-    int pos = (where == QUICKLIST_HEAD) ? 0 : -1;
-    // 没有数据
-    if (quicklist-&gt;count == 0)
-        return 0;
-    // 
-    if (data)
-        *data = NULL;
-    if (sz)
-        *sz = 0;
-    if (sval)
-        *sval = -123456789;
-    // 获取quicklist节点
-    quicklistNode *node;
-    if (where == QUICKLIST_HEAD &amp;&amp; quicklist-&gt;head) {
-        node = quicklist-&gt;head;
-    } else if (where == QUICKLIST_TAIL &amp;&amp; quicklist-&gt;tail) {
-        node = quicklist-&gt;tail;
-    } else {
-        return 0;
+<span style="color:#75715e">// pop操作的底层实现函数
+</span><span style="color:#75715e">// 执行成功返回1，反之0
+</span><span style="color:#75715e">// 如果弹出节点是字符串值，data，sz存放弹出节点的字符串值
+</span><span style="color:#75715e">// 如果弹出节点是整型值，slong存放弹出节点的整型值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">quicklistPopCustom</span>(quicklist <span style="color:#f92672">*</span>quicklist, <span style="color:#66d9ef">int</span> where, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>data,
+                       <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>sz, <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>sval,
+                       <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>(<span style="color:#f92672">*</span>saver)(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>data, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> sz)) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>vstr;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> vlen;
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> vlong;
+  	<span style="color:#75715e">// 判断弹出位置，首部或者尾部
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> pos <span style="color:#f92672">=</span> (where <span style="color:#f92672">==</span> QUICKLIST_HEAD) <span style="color:#f92672">?</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">:</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+    <span style="color:#75715e">// 没有数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (quicklist<span style="color:#f92672">-&gt;</span>count <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (data)
+        <span style="color:#f92672">*</span>data <span style="color:#f92672">=</span> NULL;
+    <span style="color:#66d9ef">if</span> (sz)
+        <span style="color:#f92672">*</span>sz <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">if</span> (sval)
+        <span style="color:#f92672">*</span>sval <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">123456789</span>;
+    <span style="color:#75715e">// 获取quicklist节点
+</span><span style="color:#75715e"></span>    quicklistNode <span style="color:#f92672">*</span>node;
+    <span style="color:#66d9ef">if</span> (where <span style="color:#f92672">==</span> QUICKLIST_HEAD <span style="color:#f92672">&amp;&amp;</span> quicklist<span style="color:#f92672">-&gt;</span>head) {
+        node <span style="color:#f92672">=</span> quicklist<span style="color:#f92672">-&gt;</span>head;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (where <span style="color:#f92672">==</span> QUICKLIST_TAIL <span style="color:#f92672">&amp;&amp;</span> quicklist<span style="color:#f92672">-&gt;</span>tail) {
+        node <span style="color:#f92672">=</span> quicklist<span style="color:#f92672">-&gt;</span>tail;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
     }
-    // 获取ziplist中的节点
-    p = ziplistIndex(node-&gt;zl, pos);
-    // 获取该节点的值
-    if (ziplistGet(p, &amp;vstr, &amp;vlen, &amp;vlong)) {
-        // 如果是字符串值
-        if (vstr) {
-            if (data)
-                // _quicklistSaver函数用于深拷贝取出返回值
-                *data = saver(vstr, vlen);
-            if (sz)
-                *sz = vlen;  // 字符串的长度
-        } else {
-            // 如果存放的是整型值
-            if (data)
-                *data = NULL;  // 字符串设为NULL
-            if (sval)
-                *sval = vlong;  // 弹出节点的整型值
-        }
-        // 删除该节点
-        quicklistDelIndex(quicklist, node, &amp;p);
-        return 1;
+    <span style="color:#75715e">// 获取ziplist中的节点
+</span><span style="color:#75715e"></span>    p <span style="color:#f92672">=</span> ziplistIndex(node<span style="color:#f92672">-&gt;</span>zl, pos);
+    <span style="color:#75715e">// 获取该节点的值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (ziplistGet(p, <span style="color:#f92672">&amp;</span>vstr, <span style="color:#f92672">&amp;</span>vlen, <span style="color:#f92672">&amp;</span>vlong)) {
+        <span style="color:#75715e">// 如果是字符串值
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (vstr) {
+            <span style="color:#66d9ef">if</span> (data)
+                <span style="color:#75715e">// _quicklistSaver函数用于深拷贝取出返回值
+</span><span style="color:#75715e"></span>                <span style="color:#f92672">*</span>data <span style="color:#f92672">=</span> saver(vstr, vlen);
+            <span style="color:#66d9ef">if</span> (sz)
+                <span style="color:#f92672">*</span>sz <span style="color:#f92672">=</span> vlen;  <span style="color:#75715e">// 字符串的长度
+</span><span style="color:#75715e"></span>        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 如果存放的是整型值
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (data)
+                <span style="color:#f92672">*</span>data <span style="color:#f92672">=</span> NULL;  <span style="color:#75715e">// 字符串设为NULL
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (sval)
+                <span style="color:#f92672">*</span>sval <span style="color:#f92672">=</span> vlong;  <span style="color:#75715e">// 弹出节点的整型值
+</span><span style="color:#75715e"></span>        }
+        <span style="color:#75715e">// 删除该节点
+</span><span style="color:#75715e"></span>        quicklistDelIndex(quicklist, node, <span style="color:#f92672">&amp;</span>p);
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
     }
-    return 0;
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }
-// 返回一个字符串副本，深拷贝
-// 这里深拷贝的用意是避免二次释放
-REDIS_STATIC void *_quicklistSaver(unsigned char *data, unsigned int sz) {
-    unsigned char *vstr;
-    if (data) {
-        vstr = zmalloc(sz);
+<span style="color:#75715e">// 返回一个字符串副本，深拷贝
+</span><span style="color:#75715e">// 这里深拷贝的用意是避免二次释放
+</span><span style="color:#75715e"></span>REDIS_STATIC <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">_quicklistSaver</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>data, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> sz) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>vstr;
+    <span style="color:#66d9ef">if</span> (data) {
+        vstr <span style="color:#f92672">=</span> zmalloc(sz);
         memcpy(vstr, data, sz);
-        return vstr;
+        <span style="color:#66d9ef">return</span> vstr;
     }
-    return NULL;
+    <span style="color:#66d9ef">return</span> NULL;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="其他接口函数">其他接口函数</h2>
 
 <p>Redis关于quicklist还提供了很多接口函数，这里只罗列出接口，没有具体实现。</p>
-
-<pre><code class="language-cpp">// 在quicklist尾部追加指针zl指向的ziplist
-void quicklistAppendZiplist(quicklist *quicklist, unsigned char *zl);
-// 将ziplist数据转换成quicklist
-quicklist *quicklistCreateFromZiplist(int fill, int compress,
-                                      unsigned char *zl);
-// 在node节点后添加一个值valiue
-void quicklistInsertAfter(quicklist *quicklist, quicklistEntry *node,
-                          void *value, const size_t sz);
-// 在node节点前面添加一个值value
-void quicklistInsertBefore(quicklist *quicklist, quicklistEntry *node,
-                           void *value, const size_t sz);
-// 删除ziplist节点entry
-void quicklistDelEntry(quicklistIter *iter, quicklistEntry *entry);
-// 翻转quicklist
-void quicklistRotate(quicklist *quicklist);
-// 返回quicklist列表中所有数据项的个数总和
-unsigned int quicklistCount(quicklist *ql);
-// 比较两个quicklist结构数据
-int quicklistCompare(unsigned char *p1, unsigned char *p2, int p2_len);
-// 从节点node中取出LZF压缩编码后的数据
-size_t quicklistGetLzf(const quicklistNode *node, void **data);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 在quicklist尾部追加指针zl指向的ziplist
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">quicklistAppendZiplist</span>(quicklist <span style="color:#f92672">*</span>quicklist, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl);
+<span style="color:#75715e">// 将ziplist数据转换成quicklist
+</span><span style="color:#75715e"></span>quicklist <span style="color:#f92672">*</span><span style="color:#a6e22e">quicklistCreateFromZiplist</span>(<span style="color:#66d9ef">int</span> fill, <span style="color:#66d9ef">int</span> compress,
+                                      <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl);
+<span style="color:#75715e">// 在node节点后添加一个值valiue
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">quicklistInsertAfter</span>(quicklist <span style="color:#f92672">*</span>quicklist, quicklistEntry <span style="color:#f92672">*</span>node,
+                          <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value, <span style="color:#66d9ef">const</span> size_t sz);
+<span style="color:#75715e">// 在node节点前面添加一个值value
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">quicklistInsertBefore</span>(quicklist <span style="color:#f92672">*</span>quicklist, quicklistEntry <span style="color:#f92672">*</span>node,
+                           <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>value, <span style="color:#66d9ef">const</span> size_t sz);
+<span style="color:#75715e">// 删除ziplist节点entry
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">quicklistDelEntry</span>(quicklistIter <span style="color:#f92672">*</span>iter, quicklistEntry <span style="color:#f92672">*</span>entry);
+<span style="color:#75715e">// 翻转quicklist
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">quicklistRotate</span>(quicklist <span style="color:#f92672">*</span>quicklist);
+<span style="color:#75715e">// 返回quicklist列表中所有数据项的个数总和
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">quicklistCount</span>(quicklist <span style="color:#f92672">*</span>ql);
+<span style="color:#75715e">// 比较两个quicklist结构数据
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">quicklistCompare</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p1, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p2, <span style="color:#66d9ef">int</span> p2_len);
+<span style="color:#75715e">// 从节点node中取出LZF压缩编码后的数据
+</span><span style="color:#75715e"></span>size_t <span style="color:#a6e22e">quicklistGetLzf</span>(<span style="color:#66d9ef">const</span> quicklistNode <span style="color:#f92672">*</span>node, <span style="color:#66d9ef">void</span> <span style="color:#f92672">**</span>data);
+</code></pre></div>
 <h1 id="quicklist小结">quicklist小结</h1>
 
 <p>quicklist将sdlist和ziplist两者的优点结合起来，在时间和空间上做了一个均衡，能较大程度上提高Redis的效率。压入和弹出操作的时间复杂度都很理想。在源码中，还给出了很多接口函数，有兴趣的读者可以去quicklist.c文件中查看，如果对博客中的讲述觉得有问题的，可以在下方留言，多多交流，互相学习！</p>

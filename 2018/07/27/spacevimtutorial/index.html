@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -130,26 +131,20 @@
 <h2 id="neovim">Neovim</h2>
 
 <p>brew是mac上的软件安装神器，通过brew安装neovim也很方便。</p>
-
-<pre><code class="language-bash">// 安装Neovim
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">// 安装Neovim
 brew install neovim
 // 更新Neovim
-brew upgrade neovim
-</code></pre>
-
+brew upgrade neovim</code></pre></div>
 <p>安装完后，在iterm2输入<code>nvim</code>即可打开Neovim。目前Neovim是v0.3.0版本。</p>
 
 <h3 id="python加持">python加持</h3>
 
 <p>通常，使用Vim的一些插件都需要Python支持，这里给Neovim添加python支持。</p>
-
-<pre><code class="language-bash">pip install neovim --upgrade
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">pip install neovim --upgrade
 // 这里说明一下，如果需要python3支持，则使用pip3 install neovim --upgrade
 // 然后修改配置文件，~/.config/nvim/init.vim中添加
-let g:python_host_prog = '/usr/local/bin/python'
-// 这里也一样，如果是python3，则let g:python3_host_prog = '/usr/local/bin/python3'
-</code></pre>
-
+let g:python_host_prog <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;/usr/local/bin/python&#39;</span>
+// 这里也一样，如果是python3，则let g:python3_host_prog <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;/usr/local/bin/python3&#39;</span></code></pre></div>
 <p>要确认添加了python支持，在打开nvim之后输入<code>:echo has('python3')</code>如果返回1，则表示安装成功。</p>
 
 <p>到这里，简单的Neovim已经安装完成。</p>
@@ -166,42 +161,36 @@ let g:python_host_prog = '/usr/local/bin/python'
 
 <p>SpaceVim提供了很完善的quickstart文档，安装起来也是自动化脚本一键安装。
 这里首先运行安装帮助命令。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">➜  ~ curl -sLf https://spacevim.org/install.sh | bash -s -- -h
+SpaceVim install script : V <span style="color:#ae81ff">0</span>.9.0-dev
 
-<pre><code class="language-shell">➜  ~ curl -sLf https://spacevim.org/install.sh | bash -s -- -h
-SpaceVim install script : V 0.9.0-dev
+Usage : curl -sLf https://spacevim.org/install.sh | bash -s -- <span style="color:#f92672">[</span>option<span style="color:#f92672">]</span> <span style="color:#f92672">[</span>target<span style="color:#f92672">]</span>
 
-Usage : curl -sLf https://spacevim.org/install.sh | bash -s -- [option] [target]
-
-  This is bootstrap script for SpaceVim.
+  This is bootstrap script <span style="color:#66d9ef">for</span> SpaceVim.
 
 OPTIONS
 
- -i, --install            install spacevim for vim or neovim
+ -i, --install            install spacevim <span style="color:#66d9ef">for</span> vim or neovim
  -v, --version            Show version information and exit
  -u, --uninstall          Uninstall SpaceVim
- -c, --checkRequirements  checkRequirements for SpaceVim
+ -c, --checkRequirements  checkRequirements <span style="color:#66d9ef">for</span> SpaceVim
 
 EXAMPLE
 
-    Install SpaceVim for vim and neovim
+    Install SpaceVim <span style="color:#66d9ef">for</span> vim and neovim
 
         curl -sLf https://spacevim.org/install.sh | bash
 
-    Install SpaceVim for vim only or neovim only
+    Install SpaceVim <span style="color:#66d9ef">for</span> vim only or neovim only
 
         curl -sLf https://spacevim.org/install.sh | bash -s -- --install vim
         curl -sLf https://spacevim.org/install.sh | bash -s -- --install neovim
 
     Uninstall SpaceVim
 
-        curl -sLf https://spacevim.org/install.sh | bash -s -- --uninstalled
-</code></pre>
-
+        curl -sLf https://spacevim.org/install.sh | bash -s -- --uninstalled</code></pre></div>
 <p>这里我们可以看到，当前最新的版本是0.9.0dev，SpaceVim提供了两个安装脚本，可以分别为vim和neovim安装。这里运行单独给neovim安装的脚本。</p>
-
-<pre><code class="language-shell">curl -sLf https://spacevim.org/install.sh | bash -s -- --install neovim
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">curl -sLf https://spacevim.org/install.sh | bash -s -- --install neovim</code></pre></div>
 <p>安装界面。</p>
 
 <p><img src="https://ws1.sinaimg.cn/large/73a1af36gy1ftqsnonivyj212c0uyk0i.jpg" alt="" /></p>
@@ -223,13 +212,10 @@ EXAMPLE
 <p>作为SpaceVim默认的文件树插件，vimfiler还是简单实用的。<code>F3</code>按键可以打开和关闭vimfilter，一般情况下我都不会打开，因为屏幕空间实在有限，而且有leaderF这类神器(下面具体介绍)辅助。但是，vimfiler在新建文件、删除文件等上还是挺有帮助的。</p>
 
 <p>默认情况下， vimdiler开启了安全模式，避免误删文件。这里可以在配置文件中关闭。</p>
-
-<pre><code class="language-shell">cd  ~/.SpaceVim/config/plugins
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">cd  ~/.SpaceVim/config/plugins
 nvim vimfiler.vim
 // 添加如下配置
-let g:vimfiler_safe_mode_by_default = 0
-</code></pre>
-
+let g:vimfiler_safe_mode_by_default <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span></code></pre></div>
 <p>这样一来关闭了安全模式，可以随意增删改查文件了。</p>
 
 <ul>
@@ -259,16 +245,13 @@ let g:vimfiler_safe_mode_by_default = 0
 <p><img src="https://ws2.sinaimg.cn/large/006tKfTcgy1ftqtzbs553j31kw0tqq5y.jpg" alt="006tKfTcgy1ftqto2wftwj31kw0tqn2y" /></p>
 
 <p>配色方面，SpaceVim默认Gruvbox很不错，但是，本人还是很倾向于solarized，这里采用neoSolarized作为默认配色。需要修改init.toml文件，导入相关配色。</p>
-
-<pre><code class="language-bash">// 修改配置文件， nvim ~/.SpaceVim.d/init.toml
-colorscheme = &quot;NeoSolarized&quot;&quot;
-    background = &quot;dark&quot;
- 
-[[custom_plugins]]
-    name = &quot;iCyMind/NeoSolarized&quot;
-    merged = 0
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">// 修改配置文件， nvim ~/.SpaceVim.d/init.toml
+colorscheme <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;NeoSolarized&#34;&#34;
+</span><span style="color:#e6db74">    background = &#34;</span>dark<span style="color:#e6db74">&#34;
+</span><span style="color:#e6db74"> 
+</span><span style="color:#e6db74">[[custom_plugins]]
+</span><span style="color:#e6db74">    name = &#34;</span>iCyMind/NeoSolarized<span style="color:#e6db74">&#34;
+</span><span style="color:#e6db74">    merged = 0</span></code></pre></div>
 <p>关闭后重新打开nvim，SpaceVim会自动安装插件。待安装完成后即可看到最新的主题配色。</p>
 
 <p><img src="https://ws3.sinaimg.cn/large/006tKfTcgy1ftqtz5blt4j31kw1bhk99.jpg" alt="image-20180729165202267" /></p>

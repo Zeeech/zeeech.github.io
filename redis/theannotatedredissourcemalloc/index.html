@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -113,23 +114,21 @@
 <h1 id="功能函数总览">功能函数总览</h1>
 
 <p>在zmalloc.h中，定义了Redis内存分配的主要功能函数，这些函数基本上实现了Redis内存申请，释放和统计等功能，其函数声明如下：</p>
-
-<pre><code class="language-cpp">void *zmalloc(size_t size); // 调用zmalloc函数，申请size大小的空间
-void *zcalloc(size_t size); // 调用系统函数calloc申请内存空间
-void *zrealloc(void *ptr, size_t size); // 原内存重新调整为size空间的大小
-void zfree(void *ptr);  // 调用zfree释放内存空间
-char *zstrdup(const char *s); // 字符串复制方法
-size_t zmalloc_used_memory(void); // 获取当前以及占用的内存空间大小
-void zmalloc_enable_thread_safeness(void); // 是否设置线程安全模式
-void zmalloc_set_oom_handler(void (*oom_handler)(size_t)); // 可自定义设置内存溢出的处理方法
-float zmalloc_get_fragmentation_ratio(size_t rss); // 获取所给内存和已使用内存的大小之比
-size_t zmalloc_get_rss(void); // 获取RSS信息(Resident Set Size)
-size_t zmalloc_get_private_dirty(void); // 获得实际内存大小
-size_t zmalloc_get_smap_bytes_by_field(char *field); // 获取/proc/self/smaps字段的字节数
-size_t zmalloc_get_memory_size(void); // 获取物理内存大小
-void zlibc_free(void *ptr); // 原始系统free释放方法
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zmalloc</span>(size_t size); <span style="color:#75715e">// 调用zmalloc函数，申请size大小的空间
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zcalloc</span>(size_t size); <span style="color:#75715e">// 调用系统函数calloc申请内存空间
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zrealloc</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr, size_t size); <span style="color:#75715e">// 原内存重新调整为size空间的大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zfree</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr);  <span style="color:#75715e">// 调用zfree释放内存空间
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zstrdup</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>s); <span style="color:#75715e">// 字符串复制方法
+</span><span style="color:#75715e"></span>size_t <span style="color:#a6e22e">zmalloc_used_memory</span>(<span style="color:#66d9ef">void</span>); <span style="color:#75715e">// 获取当前以及占用的内存空间大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zmalloc_enable_thread_safeness</span>(<span style="color:#66d9ef">void</span>); <span style="color:#75715e">// 是否设置线程安全模式
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zmalloc_set_oom_handler</span>(<span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span>oom_handler)(size_t)); <span style="color:#75715e">// 可自定义设置内存溢出的处理方法
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">zmalloc_get_fragmentation_ratio</span>(size_t rss); <span style="color:#75715e">// 获取所给内存和已使用内存的大小之比
+</span><span style="color:#75715e"></span>size_t <span style="color:#a6e22e">zmalloc_get_rss</span>(<span style="color:#66d9ef">void</span>); <span style="color:#75715e">// 获取RSS信息(Resident Set Size)
+</span><span style="color:#75715e"></span>size_t <span style="color:#a6e22e">zmalloc_get_private_dirty</span>(<span style="color:#66d9ef">void</span>); <span style="color:#75715e">// 获得实际内存大小
+</span><span style="color:#75715e"></span>size_t <span style="color:#a6e22e">zmalloc_get_smap_bytes_by_field</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>field); <span style="color:#75715e">// 获取/proc/self/smaps字段的字节数
+</span><span style="color:#75715e"></span>size_t <span style="color:#a6e22e">zmalloc_get_memory_size</span>(<span style="color:#66d9ef">void</span>); <span style="color:#75715e">// 获取物理内存大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zlibc_free</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr); <span style="color:#75715e">// 原始系统free释放方法
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>另外，我们还要注意到zmalloc.c中的几个变量和概念，</p>
 
 <pre><code>static size_t used_memory = 0;  // 已使用内存的大小
@@ -144,103 +143,91 @@ pthread_mutex_t used_memory_mutex = PTHREAD_MUTEX_INITIALIZER; // 为此服务�
 <h2 id="内存申请函数zmalloc">内存申请函数zmalloc</h2>
 
 <p>Redis的内存申请函数zmalloc本质就是调用了系统的malloc函数，然后对其进行了适当的封装，加上了异常处理函数和内存统计。其源代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zmalloc</span>(size_t size) {
+    <span style="color:#75715e">// 调用malloc函数进行内存申请
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 多申请的PREFIX_SIZE大小的内存用于记录该段内存的大小
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr <span style="color:#f92672">=</span> malloc(size<span style="color:#f92672">+</span>PREFIX_SIZE);
 
-<pre><code class="language-cpp">void *zmalloc(size_t size) {
-    // 调用malloc函数进行内存申请
-    // 多申请的PREFIX_SIZE大小的内存用于记录该段内存的大小
-    void *ptr = malloc(size+PREFIX_SIZE);
-
-    // 如果ptr为NULL，则调用异常处理函数
-    if (!ptr) zmalloc_oom_handler(size);
-    // 以下是内存统计
-    *((size_t*)ptr) = size;
-    update_zmalloc_stat_alloc(size+PREFIX_SIZE); // 更新used_memory的值
-    return (char*)ptr+PREFIX_SIZE;
+    <span style="color:#75715e">// 如果ptr为NULL，则调用异常处理函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>ptr) zmalloc_oom_handler(size);
+    <span style="color:#75715e">// 以下是内存统计
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">*</span>((size_t<span style="color:#f92672">*</span>)ptr) <span style="color:#f92672">=</span> size;
+    update_zmalloc_stat_alloc(size<span style="color:#f92672">+</span>PREFIX_SIZE); <span style="color:#75715e">// 更新used_memory的值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)ptr<span style="color:#f92672">+</span>PREFIX_SIZE;
 }
-</code></pre>
-
+</code></pre></div>
 <blockquote>
 <p>上述代码中的PREFIX_SIZE解释：由于malloc函数申请的内存不会标识内存块的大小，而我们需要统计内存大小，所以需要在多申请PREFIX_SIZE大小的内存，用于存放该大小。</p>
 </blockquote>
 
 <p>其中，异常处理函数如下：</p>
-
-<pre><code class="language-cpp">static void zmalloc_default_oom(size_t size) {
-    fprintf(stderr, &quot;zmalloc: Out of memory trying to allocate %zu bytes\n&quot;, // 打印输出日志
-        size);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zmalloc_default_oom</span>(size_t size) {
+    fprintf(stderr, <span style="color:#e6db74">&#34;zmalloc: Out of memory trying to allocate %zu bytes</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, <span style="color:#75715e">// 打印输出日志
+</span><span style="color:#75715e"></span>        size);
     fflush(stderr);
-    abort(); // 中断退出
-}
-</code></pre>
-
+    abort(); <span style="color:#75715e">// 中断退出
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>更新used_memory值得函数以宏定义给出，其代码和注释如下：</p>
-
-<pre><code class="language-cpp">#define update_zmalloc_stat_alloc(__n) do { \
-    size_t _n = (__n); \
-    if (_n&amp;(sizeof(long)-1)) _n += sizeof(long)-(_n&amp;(sizeof(long)-1)); \   // 将_n调整为sizeof(long)的整数倍
-    if (zmalloc_thread_safe) { \ // 如果启用了线程安全模式
-        update_zmalloc_stat_add(_n); \   // 调用原子操作加(+)来更新已用内存
-    } else { \
-        used_memory += _n; \   // 不考虑线程安全，则直接更新已用内存
-    } \
-} while(0)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define update_zmalloc_stat_alloc(__n) do { \
+</span><span style="color:#75715e"></span>    size_t _n <span style="color:#f92672">=</span> (__n); \
+    <span style="color:#66d9ef">if</span> (_n<span style="color:#f92672">&amp;</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">long</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)) _n <span style="color:#f92672">+=</span> <span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">long</span>)<span style="color:#f92672">-</span>(_n<span style="color:#f92672">&amp;</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">long</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)); <span style="color:#960050;background-color:#1e0010">\</span>   <span style="color:#75715e">// 将_n调整为sizeof(long)的整数倍
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (zmalloc_thread_safe) { <span style="color:#960050;background-color:#1e0010">\</span> <span style="color:#75715e">// 如果启用了线程安全模式
+</span><span style="color:#75715e"></span>        update_zmalloc_stat_add(_n); <span style="color:#960050;background-color:#1e0010">\</span>   <span style="color:#75715e">// 调用原子操作加(+)来更新已用内存
+</span><span style="color:#75715e"></span>    } <span style="color:#66d9ef">else</span> { \
+        used_memory <span style="color:#f92672">+=</span> _n; <span style="color:#960050;background-color:#1e0010">\</span>   <span style="color:#75715e">// 不考虑线程安全，则直接更新已用内存
+</span><span style="color:#75715e"></span>    } \
+} <span style="color:#66d9ef">while</span>(<span style="color:#ae81ff">0</span>)
+</code></pre></div>
 <p>在上述函数中，又用到了原子加操作，其代码和注释如下：</p>
-
-<pre><code class="language-cpp">// __atomic_add_fetch是C++11特性中提供的原子加操作
-#if defined(__ATOMIC_RELAXED)
-#define update_zmalloc_stat_add(__n) __atomic_add_fetch(&amp;used_memory, (__n), __ATOMIC_RELAXED)
-// 如果不支持C++11，则调用GCC提供的原子加操作
-#elif defined(HAVE_ATOMIC)
-#define update_zmalloc_stat_add(__n) __sync_add_and_fetch(&amp;used_memory, (__n))
-// 如果上述都没有，则只能采用加锁操作
-#else
-#define update_zmalloc_stat_add(__n) do { \
-    pthread_mutex_lock(&amp;used_memory_mutex); \
-    used_memory += (__n); \
-    pthread_mutex_unlock(&amp;used_memory_mutex); \
-} while(0)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// __atomic_add_fetch是C++11特性中提供的原子加操作
+</span><span style="color:#75715e"></span><span style="color:#75715e">#if defined(__ATOMIC_RELAXED)
+</span><span style="color:#75715e">#define update_zmalloc_stat_add(__n) __atomic_add_fetch(&amp;used_memory, (__n), __ATOMIC_RELAXED)
+</span><span style="color:#75715e"></span><span style="color:#75715e">// 如果不支持C++11，则调用GCC提供的原子加操作
+</span><span style="color:#75715e"></span><span style="color:#75715e">#elif defined(HAVE_ATOMIC)
+</span><span style="color:#75715e">#define update_zmalloc_stat_add(__n) __sync_add_and_fetch(&amp;used_memory, (__n))
+</span><span style="color:#75715e"></span><span style="color:#75715e">// 如果上述都没有，则只能采用加锁操作
+</span><span style="color:#75715e"></span><span style="color:#75715e">#else
+</span><span style="color:#75715e">#define update_zmalloc_stat_add(__n) do { \
+</span><span style="color:#75715e"></span>    pthread_mutex_lock(<span style="color:#f92672">&amp;</span>used_memory_mutex); \
+    used_memory <span style="color:#f92672">+=</span> (__n); \
+    pthread_mutex_unlock(<span style="color:#f92672">&amp;</span>used_memory_mutex); \
+} <span style="color:#66d9ef">while</span>(<span style="color:#ae81ff">0</span>)
+</code></pre></div>
 <h2 id="内存申请函数zcalloc">内存申请函数zcalloc</h2>
 
 <p>与malloc一样，zcalloc调用的是系统给的calloc()来申请内存。</p>
-
-<pre><code class="language-cpp">void *zcalloc(size_t size) {
-    void *ptr = calloc(1, size+PREFIX_SIZE);
-    // 异常处理函数
-    if (!ptr) zmalloc_oom_handler(size);
-    // 内存统计函数
-    *((size_t*)ptr) = size;
-    update_zmalloc_stat_alloc(size+PREFIX_SIZE);
-    return (char*)ptr+PREFIX_SIZE;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zcalloc</span>(size_t size) {
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr <span style="color:#f92672">=</span> calloc(<span style="color:#ae81ff">1</span>, size<span style="color:#f92672">+</span>PREFIX_SIZE);
+    <span style="color:#75715e">// 异常处理函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>ptr) zmalloc_oom_handler(size);
+    <span style="color:#75715e">// 内存统计函数
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">*</span>((size_t<span style="color:#f92672">*</span>)ptr) <span style="color:#f92672">=</span> size;
+    update_zmalloc_stat_alloc(size<span style="color:#f92672">+</span>PREFIX_SIZE);
+    <span style="color:#66d9ef">return</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)ptr<span style="color:#f92672">+</span>PREFIX_SIZE;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="内存调整函数zrecalloc">内存调整函数zrecalloc</h2>
 
 <p>Redis定义的zrecalloc用于调整已申请内存的大小，其本质也是直接调用系统函数recalloc()</p>
-
-<pre><code class="language-cpp">void *zrealloc(void *ptr, size_t size) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zrealloc</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr, size_t size) {
     size_t oldsize;
-    void *newptr;
-    // 为空直接退出
-    if (ptr == NULL) return zmalloc(size);
-    // 找到内存真正的起始位置
-    realptr = (char*)ptr-PREFIX_SIZE;
-    oldsize = *((size_t*)realptr);
-    // 调用recalloc函数
-    newptr = realloc(realptr,size+PREFIX_SIZE);
-    if (!newptr) zmalloc_oom_handler(size);
-    // 内存统计
-    *((size_t*)newptr) = size;
-    update_zmalloc_stat_free(oldsize); // 先减去原来的已使用内存大小
-    update_zmalloc_stat_alloc(size); // 在加上调整后的大小
-    return (char*)newptr+PREFIX_SIZE;
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>newptr;
+    <span style="color:#75715e">// 为空直接退出
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (ptr <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> zmalloc(size);
+    <span style="color:#75715e">// 找到内存真正的起始位置
+</span><span style="color:#75715e"></span>    realptr <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)ptr<span style="color:#f92672">-</span>PREFIX_SIZE;
+    oldsize <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>((size_t<span style="color:#f92672">*</span>)realptr);
+    <span style="color:#75715e">// 调用recalloc函数
+</span><span style="color:#75715e"></span>    newptr <span style="color:#f92672">=</span> realloc(realptr,size<span style="color:#f92672">+</span>PREFIX_SIZE);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>newptr) zmalloc_oom_handler(size);
+    <span style="color:#75715e">// 内存统计
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">*</span>((size_t<span style="color:#f92672">*</span>)newptr) <span style="color:#f92672">=</span> size;
+    update_zmalloc_stat_free(oldsize); <span style="color:#75715e">// 先减去原来的已使用内存大小
+</span><span style="color:#75715e"></span>    update_zmalloc_stat_alloc(size); <span style="color:#75715e">// 在加上调整后的大小
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)newptr<span style="color:#f92672">+</span>PREFIX_SIZE;
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="内存释放函数">内存释放函数</h1>
 
 <p>与内存申请函数调用malloc一样，内存释放也是调用系统的free()函数来实现内存释放</p>
@@ -287,41 +274,35 @@ pthread_mutex_t used_memory_mutex = PTHREAD_MUTEX_INITIALIZER; // 为此服务�
 <h2 id="设置异常处理函数">设置异常处理函数</h2>
 
 <p>Redis允许自行设定异常处理函数，也提供了如下的函数。</p>
-
-<pre><code class="language-cpp">void zmalloc_set_oom_handler(void (*oom_handler)(size_t)) {
-    zmalloc_oom_handler = oom_handler; // 绑定自定义的异常处理函数
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zmalloc_set_oom_handler</span>(<span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span>oom_handler)(size_t)) {
+    zmalloc_oom_handler <span style="color:#f92672">=</span> oom_handler; <span style="color:#75715e">// 绑定自定义的异常处理函数
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="开启线程安全">开启线程安全</h2>
-
-<pre><code class="language-cpp">void zmalloc_enable_thread_safeness(void) {
-    zmalloc_thread_safe = 1;  // 此参数用来控制是否开启线程安全
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zmalloc_enable_thread_safeness</span>(<span style="color:#66d9ef">void</span>) {
+    zmalloc_thread_safe <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;  <span style="color:#75715e">// 此参数用来控制是否开启线程安全
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="获取已使用内存">获取已使用内存</h2>
-
-<pre><code class="language-cpp">size_t zmalloc_used_memory(void) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">size_t <span style="color:#a6e22e">zmalloc_used_memory</span>(<span style="color:#66d9ef">void</span>) {
     size_t um;
-    // 如果开启了线程安全模式
-    if (zmalloc_thread_safe) {
-#if defined(__ATOMIC_RELAXED) || defined(HAVE_ATOMIC)
-        um = update_zmalloc_stat_add(0);
-#else
-        pthread_mutex_lock(&amp;used_memory_mutex);
-        um = used_memory;
-        pthread_mutex_unlock(&amp;used_memory_mutex);
-#endif
-    }
-    else {
-        um = used_memory; // 未开启则直接使用used_memory
-    }
+    <span style="color:#75715e">// 如果开启了线程安全模式
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (zmalloc_thread_safe) {
+<span style="color:#75715e">#if defined(__ATOMIC_RELAXED) || defined(HAVE_ATOMIC)
+</span><span style="color:#75715e"></span>        um <span style="color:#f92672">=</span> update_zmalloc_stat_add(<span style="color:#ae81ff">0</span>);
+<span style="color:#75715e">#else
+</span><span style="color:#75715e"></span>        pthread_mutex_lock(<span style="color:#f92672">&amp;</span>used_memory_mutex);
+        um <span style="color:#f92672">=</span> used_memory;
+        pthread_mutex_unlock(<span style="color:#f92672">&amp;</span>used_memory_mutex);
+<span style="color:#75715e">#endif
+</span><span style="color:#75715e"></span>    }
+    <span style="color:#66d9ef">else</span> {
+        um <span style="color:#f92672">=</span> used_memory; <span style="color:#75715e">// 未开启则直接使用used_memory
+</span><span style="color:#75715e"></span>    }
 
-    return um;
+    <span style="color:#66d9ef">return</span> um;
 }
-</code></pre>
-
+</code></pre></div>
 <p>到此，Redis的内存管理函数已分析完。
 end&hellip;</p>
 		</div>

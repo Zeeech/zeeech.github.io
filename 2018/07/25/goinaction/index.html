@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -134,50 +135,35 @@
 <h3 id="1-2-import">1.2 import</h3>
 
 <p>导入包的关键字：import。如下：</p>
-
-<pre><code class="language-go">import (
-	&quot;fmt&quot;
-    &quot;strings&quot;
-)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;fmt&#34;</span>
+    <span style="color:#e6db74">&#34;strings&#34;</span>
+)</code></pre></div>
 <p>go查找包的顺序，由GOROOT和GOPATH决定。如</p>
-
-<pre><code class="language-go">/usr/local/go/src/pkg/net/http    -- GOROOT
-/home/workspace/go/src/net/http   -- GOPATH
-/home/myproject/src/net/http	  -- GOPATH
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">/</span><span style="color:#a6e22e">usr</span><span style="color:#f92672">/</span><span style="color:#a6e22e">local</span><span style="color:#f92672">/</span><span style="color:#66d9ef">go</span><span style="color:#f92672">/</span><span style="color:#a6e22e">src</span><span style="color:#f92672">/</span><span style="color:#a6e22e">pkg</span><span style="color:#f92672">/</span><span style="color:#a6e22e">net</span><span style="color:#f92672">/</span><span style="color:#a6e22e">http</span>    <span style="color:#f92672">--</span> <span style="color:#a6e22e">GOROOT</span>
+<span style="color:#f92672">/</span><span style="color:#a6e22e">home</span><span style="color:#f92672">/</span><span style="color:#a6e22e">workspace</span><span style="color:#f92672">/</span><span style="color:#66d9ef">go</span><span style="color:#f92672">/</span><span style="color:#a6e22e">src</span><span style="color:#f92672">/</span><span style="color:#a6e22e">net</span><span style="color:#f92672">/</span><span style="color:#a6e22e">http</span>   <span style="color:#f92672">--</span> <span style="color:#a6e22e">GOPATH</span>
+<span style="color:#f92672">/</span><span style="color:#a6e22e">home</span><span style="color:#f92672">/</span><span style="color:#a6e22e">myproject</span><span style="color:#f92672">/</span><span style="color:#a6e22e">src</span><span style="color:#f92672">/</span><span style="color:#a6e22e">net</span><span style="color:#f92672">/</span><span style="color:#a6e22e">http</span>	  <span style="color:#f92672">--</span> <span style="color:#a6e22e">GOPATH</span></code></pre></div>
 <p>一旦编译器找到一个满足import语句的包，就停止进一步查找。</p>
 
 <p>**远程导入 ** ： 迎合分布式版本控制系统，使用<code>go get</code>获取包，如下：</p>
-
-<pre><code class="language-go">// 项目里面导入包
-import &quot;github.com/alecthomas/log4go&quot;
-// 使用goget来导入包
-go get &quot;github.com/alecthomas/log4go&quot;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 项目里面导入包
+</span><span style="color:#75715e"></span><span style="color:#f92672">import</span> <span style="color:#e6db74">&#34;github.com/alecthomas/log4go&#34;</span>
+<span style="color:#75715e">// 使用goget来导入包
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">go</span> <span style="color:#a6e22e">get</span> <span style="color:#e6db74">&#34;github.com/alecthomas/log4go&#34;</span></code></pre></div>
 <p><strong>命名导入</strong>:  在import语句给出的包路径的左侧定义一个名字，将导入的包命名为新名字。主要是为了解决包重名的问题。如下：</p>
-
-<pre><code class="language-go">package main 
-import (
-	&quot;fmt&quot;
-    myfmt &quot;mylib/fmt&quot;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span> 
+<span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;fmt&#34;</span>
+    <span style="color:#a6e22e">myfmt</span> <span style="color:#e6db74">&#34;mylib/fmt&#34;</span>
 )
-func main() {
-    fmt.Println(&quot;hello, Go!&quot;)
-    myfmt.Println(&quot;hello, Go!&quot;)
-}
-</code></pre>
-
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;hello, Go!&#34;</span>)
+    <span style="color:#a6e22e">myfmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;hello, Go!&#34;</span>)
+}</code></pre></div>
 <p>另外，有时候需要导入一个包，但是不需要引用这个包的标志符。这种情况可以使用空白标识符<code>_</code>来重命名这个导入。如下：</p>
-
-<pre><code class="language-go">import (
-	_ &quot;fmt&quot;
-)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">import</span> (
+	<span style="color:#a6e22e">_</span> <span style="color:#e6db74">&#34;fmt&#34;</span>
+)</code></pre></div>
 <h3 id="1-3-init函数">1.3 init函数</h3>
 
 <p>初始化函数，每个包可以包含任意多个init函数，在程序执行开始的时候被调用。</p>
@@ -185,65 +171,59 @@ func main() {
 <h3 id="1-4-go-tools">1.4 Go tools</h3>
 
 <p>go命令行工具—— <code>go</code>。go这个指令提供了很多功能，如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">is</span> <span style="color:#a6e22e">a</span> <span style="color:#a6e22e">tool</span> <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">managing</span> <span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">source</span> <span style="color:#a6e22e">code</span>.
 
-<pre><code class="language-go">Go is a tool for managing Go source code.
+<span style="color:#a6e22e">Usage</span>:
 
-Usage:
+	<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">command</span> [<span style="color:#a6e22e">arguments</span>]
 
-	go command [arguments]
+<span style="color:#a6e22e">The</span> <span style="color:#a6e22e">commands</span> <span style="color:#a6e22e">are</span>:
 
-The commands are:
+	<span style="color:#a6e22e">build</span>       <span style="color:#a6e22e">compile</span> <span style="color:#a6e22e">packages</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">dependencies</span>
+	<span style="color:#a6e22e">clean</span>       <span style="color:#a6e22e">remove</span> <span style="color:#a6e22e">object</span> <span style="color:#a6e22e">files</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">cached</span> <span style="color:#a6e22e">files</span>
+	<span style="color:#a6e22e">doc</span>         <span style="color:#a6e22e">show</span> <span style="color:#a6e22e">documentation</span> <span style="color:#66d9ef">for</span> <span style="color:#f92672">package</span> <span style="color:#a6e22e">or</span> <span style="color:#a6e22e">symbol</span>
+	<span style="color:#a6e22e">env</span>         <span style="color:#a6e22e">print</span> <span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">environment</span> <span style="color:#a6e22e">information</span>
+	<span style="color:#a6e22e">bug</span>         <span style="color:#a6e22e">start</span> <span style="color:#a6e22e">a</span> <span style="color:#a6e22e">bug</span> <span style="color:#a6e22e">report</span>
+	<span style="color:#a6e22e">fix</span>         <span style="color:#a6e22e">update</span> <span style="color:#a6e22e">packages</span> <span style="color:#a6e22e">to</span> <span style="color:#a6e22e">use</span> <span style="color:#a6e22e">new</span> <span style="color:#a6e22e">APIs</span>
+	<span style="color:#a6e22e">fmt</span>         <span style="color:#a6e22e">gofmt</span> (<span style="color:#a6e22e">reformat</span>) <span style="color:#f92672">package</span> <span style="color:#a6e22e">sources</span>
+	<span style="color:#a6e22e">generate</span>    <span style="color:#a6e22e">generate</span> <span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">files</span> <span style="color:#a6e22e">by</span> <span style="color:#a6e22e">processing</span> <span style="color:#a6e22e">source</span>
+	<span style="color:#a6e22e">get</span>         <span style="color:#a6e22e">download</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">install</span> <span style="color:#a6e22e">packages</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">dependencies</span>
+	<span style="color:#a6e22e">install</span>     <span style="color:#a6e22e">compile</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">install</span> <span style="color:#a6e22e">packages</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">dependencies</span>
+	<span style="color:#a6e22e">list</span>        <span style="color:#a6e22e">list</span> <span style="color:#a6e22e">packages</span>
+	<span style="color:#a6e22e">run</span>         <span style="color:#a6e22e">compile</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">run</span> <span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">program</span>
+	<span style="color:#a6e22e">test</span>        <span style="color:#a6e22e">test</span> <span style="color:#a6e22e">packages</span>
+	<span style="color:#a6e22e">tool</span>        <span style="color:#a6e22e">run</span> <span style="color:#a6e22e">specified</span> <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">tool</span>
+	<span style="color:#a6e22e">version</span>     <span style="color:#a6e22e">print</span> <span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">version</span>
+	<span style="color:#a6e22e">vet</span>         <span style="color:#a6e22e">report</span> <span style="color:#a6e22e">likely</span> <span style="color:#a6e22e">mistakes</span> <span style="color:#a6e22e">in</span> <span style="color:#a6e22e">packages</span>
 
-	build       compile packages and dependencies
-	clean       remove object files and cached files
-	doc         show documentation for package or symbol
-	env         print Go environment information
-	bug         start a bug report
-	fix         update packages to use new APIs
-	fmt         gofmt (reformat) package sources
-	generate    generate Go files by processing source
-	get         download and install packages and dependencies
-	install     compile and install packages and dependencies
-	list        list packages
-	run         compile and run Go program
-	test        test packages
-	tool        run specified go tool
-	version     print Go version
-	vet         report likely mistakes in packages
+<span style="color:#a6e22e">Use</span> <span style="color:#e6db74">&#34;go help [command]&#34;</span> <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">more</span> <span style="color:#a6e22e">information</span> <span style="color:#a6e22e">about</span> <span style="color:#a6e22e">a</span> <span style="color:#a6e22e">command</span>.
 
-Use &quot;go help [command]&quot; for more information about a command.
+<span style="color:#a6e22e">Additional</span> <span style="color:#a6e22e">help</span> <span style="color:#a6e22e">topics</span>:
 
-Additional help topics:
+	<span style="color:#a6e22e">c</span>           <span style="color:#a6e22e">calling</span> <span style="color:#a6e22e">between</span> <span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">C</span>
+	<span style="color:#a6e22e">buildmode</span>   <span style="color:#a6e22e">build</span> <span style="color:#a6e22e">modes</span>
+	<span style="color:#a6e22e">cache</span>       <span style="color:#a6e22e">build</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">test</span> <span style="color:#a6e22e">caching</span>
+	<span style="color:#a6e22e">filetype</span>    <span style="color:#a6e22e">file</span> <span style="color:#a6e22e">types</span>
+	<span style="color:#a6e22e">gopath</span>      <span style="color:#a6e22e">GOPATH</span> <span style="color:#a6e22e">environment</span> <span style="color:#a6e22e">variable</span>
+	<span style="color:#a6e22e">environment</span> <span style="color:#a6e22e">environment</span> <span style="color:#a6e22e">variables</span>
+	<span style="color:#a6e22e">importpath</span>  <span style="color:#f92672">import</span> <span style="color:#a6e22e">path</span> <span style="color:#a6e22e">syntax</span>
+	<span style="color:#a6e22e">packages</span>    <span style="color:#f92672">package</span> <span style="color:#a6e22e">lists</span>
+	<span style="color:#a6e22e">testflag</span>    <span style="color:#a6e22e">testing</span> <span style="color:#a6e22e">flags</span>
+	<span style="color:#a6e22e">testfunc</span>    <span style="color:#a6e22e">testing</span> <span style="color:#a6e22e">functions</span>
 
-	c           calling between Go and C
-	buildmode   build modes
-	cache       build and test caching
-	filetype    file types
-	gopath      GOPATH environment variable
-	environment environment variables
-	importpath  import path syntax
-	packages    package lists
-	testflag    testing flags
-	testfunc    testing functions
-
-Use &quot;go help [topic]&quot; for more information about that topic.
-</code></pre>
-
+<span style="color:#a6e22e">Use</span> <span style="color:#e6db74">&#34;go help [topic]&#34;</span> <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">more</span> <span style="color:#a6e22e">information</span> <span style="color:#a6e22e">about</span> <span style="color:#a6e22e">that</span> <span style="color:#a6e22e">topic</span>.</code></pre></div>
 <p><strong>Go buile 和 run</strong>是最常见的操作，分别是编译和运行go项目。可以以最简单的helloword为例，来练习这些操作。</p>
-
-<pre><code class="language-go">// 代码清单
-package main
-import &quot;fmt&quot;
-func main() {
-	fmt.Println(&quot;hello, Go!&quot;)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 代码清单
+</span><span style="color:#75715e"></span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+<span style="color:#f92672">import</span> <span style="color:#e6db74">&#34;fmt&#34;</span>
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;hello, Go!&#34;</span>)
 }
 
-// 以下为终端命令
-➜  go go build helloworld.go
-➜  go ./helloworld
-hello, Go!
-</code></pre>
-
+<span style="color:#75715e">// 以下为终端命令
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">➜</span>  <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">build</span> <span style="color:#a6e22e">helloworld</span>.<span style="color:#66d9ef">go</span>
+<span style="color:#960050;background-color:#1e0010">➜</span>  <span style="color:#66d9ef">go</span> .<span style="color:#f92672">/</span><span style="color:#a6e22e">helloworld</span>
+<span style="color:#a6e22e">hello</span>, <span style="color:#a6e22e">Go</span>!</code></pre></div>
 <p><strong>go vet</strong> 帮助开发人员检测代码的常见错误。通常，能捕获的错误类型如下：</p>
 
 <ul>
@@ -254,46 +234,37 @@ hello, Go!
 </ul>
 
 <p>如下所示，如果变量没有指定类型，go vet可以找出错误。</p>
-
-<pre><code class="language-go">str = fmt.Println(&quot;hello, Go!&quot;)
-// 以下为终端命令
-➜  go go vet helloworld.go
-# command-line-arguments
-./helloworld.go:7:2: undefined: str
-./helloworld.go:7:19: multiple-value fmt.Println() in single-value context
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">str</span> = <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;hello, Go!&#34;</span>)
+<span style="color:#75715e">// 以下为终端命令
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">➜</span>  <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">vet</span> <span style="color:#a6e22e">helloworld</span>.<span style="color:#66d9ef">go</span>
+<span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">command</span><span style="color:#f92672">-</span><span style="color:#a6e22e">line</span><span style="color:#f92672">-</span><span style="color:#a6e22e">arguments</span>
+.<span style="color:#f92672">/</span><span style="color:#a6e22e">helloworld</span>.<span style="color:#66d9ef">go</span>:<span style="color:#ae81ff">7</span>:<span style="color:#ae81ff">2</span>: <span style="color:#a6e22e">undefined</span>: <span style="color:#a6e22e">str</span>
+.<span style="color:#f92672">/</span><span style="color:#a6e22e">helloworld</span>.<span style="color:#66d9ef">go</span>:<span style="color:#ae81ff">7</span>:<span style="color:#ae81ff">19</span>: <span style="color:#a6e22e">multiple</span><span style="color:#f92672">-</span><span style="color:#a6e22e">value</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>() <span style="color:#a6e22e">in</span> <span style="color:#a6e22e">single</span><span style="color:#f92672">-</span><span style="color:#a6e22e">value</span> <span style="color:#a6e22e">context</span></code></pre></div>
 <p><strong>go fmt</strong>格式化代码。fmt工具会将开发人员的代码布局成和Go源代码类似的风格，不用再为了大括号是不是要放到行尾，或者用tab还是空格来做缩进而纠结。</p>
 
 <p><strong>go doc</strong> 获取go帮助文档，直接指定包来获取tar包的帮助文档</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#960050;background-color:#1e0010">➜</span>  <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">doc</span> <span style="color:#a6e22e">tar</span>
+<span style="color:#f92672">package</span> <span style="color:#a6e22e">tar</span> <span style="color:#75715e">// import &#34;archive/tar&#34;
+</span><span style="color:#75715e"></span>
+<span style="color:#a6e22e">Package</span> <span style="color:#a6e22e">tar</span> <span style="color:#a6e22e">implements</span> <span style="color:#a6e22e">access</span> <span style="color:#a6e22e">to</span> <span style="color:#a6e22e">tar</span> <span style="color:#a6e22e">archives</span>.
 
-<pre><code class="language-go">➜  go go doc tar
-package tar // import &quot;archive/tar&quot;
+<span style="color:#a6e22e">Tape</span> <span style="color:#a6e22e">archives</span> (<span style="color:#a6e22e">tar</span>) <span style="color:#a6e22e">are</span> <span style="color:#a6e22e">a</span> <span style="color:#a6e22e">file</span> <span style="color:#a6e22e">format</span> <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">storing</span> <span style="color:#a6e22e">a</span> <span style="color:#a6e22e">sequence</span> <span style="color:#a6e22e">of</span> <span style="color:#a6e22e">files</span> <span style="color:#a6e22e">that</span>
+<span style="color:#a6e22e">can</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">read</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">written</span> <span style="color:#a6e22e">in</span> <span style="color:#a6e22e">a</span> <span style="color:#a6e22e">streaming</span> <span style="color:#a6e22e">manner</span>. <span style="color:#a6e22e">This</span> <span style="color:#f92672">package</span> <span style="color:#a6e22e">aims</span> <span style="color:#a6e22e">to</span> <span style="color:#a6e22e">cover</span>
+<span style="color:#a6e22e">most</span> <span style="color:#a6e22e">variations</span> <span style="color:#a6e22e">of</span> <span style="color:#a6e22e">the</span> <span style="color:#a6e22e">format</span>, <span style="color:#a6e22e">including</span> <span style="color:#a6e22e">those</span> <span style="color:#a6e22e">produced</span> <span style="color:#a6e22e">by</span> <span style="color:#a6e22e">GNU</span> <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">BSD</span> <span style="color:#a6e22e">tar</span>
+<span style="color:#a6e22e">tools</span>.
 
-Package tar implements access to tar archives.
-
-Tape archives (tar) are a file format for storing a sequence of files that
-can be read and written in a streaming manner. This package aims to cover
-most variations of the format, including those produced by GNU and BSD tar
-tools.
-
-const TypeReg = '0' ...
-var ErrHeader = errors.New(&quot;archive/tar: invalid tar header&quot;) ...
-type Format int
-    const FormatUnknown Format ...
-type Header struct{ ... }
-    func FileInfoHeader(fi os.FileInfo, link string) (*Header, error)
-type Reader struct{ ... }
-    func NewReader(r io.Reader) *Reader
-type Writer struct{ ... }
-    func NewWriter(w io.Writer) *Writer
-</code></pre>
-
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">TypeReg</span> = <span style="color:#e6db74">&#39;0&#39;</span> <span style="color:#f92672">...</span>
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">ErrHeader</span> = <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;archive/tar: invalid tar header&#34;</span>) <span style="color:#f92672">...</span>
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Format</span> <span style="color:#66d9ef">int</span>
+    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">FormatUnknown</span> <span style="color:#a6e22e">Format</span> <span style="color:#f92672">...</span>
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Header</span> <span style="color:#66d9ef">struct</span>{ <span style="color:#f92672">...</span> }
+    <span style="color:#66d9ef">func</span> <span style="color:#a6e22e">FileInfoHeader</span>(<span style="color:#a6e22e">fi</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">FileInfo</span>, <span style="color:#a6e22e">link</span> <span style="color:#66d9ef">string</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">Header</span>, <span style="color:#66d9ef">error</span>)
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Reader</span> <span style="color:#66d9ef">struct</span>{ <span style="color:#f92672">...</span> }
+    <span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">Reader</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">Reader</span>
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Writer</span> <span style="color:#66d9ef">struct</span>{ <span style="color:#f92672">...</span> }
+    <span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewWriter</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">Writer</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">Writer</span></code></pre></div>
 <p>或者从浏览器查看go的文档。</p>
-
-<pre><code class="language-shell">godoc -http=:6060
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">godoc -http<span style="color:#f92672">=</span>:6060</code></pre></div>
 <p>然后在浏览器键入localhost:6060。</p>
 
 <p><img src="https://ws1.sinaimg.cn/large/73a1af36ly1ftlyr6ndrqj22l61h2wys.jpg" alt="" /></p>
@@ -310,80 +281,70 @@ type Writer struct{ ... }
 </ul>
 
 <p>这里额外补充一下使用gb来管理go工程依赖的相关知识。</p>
-
-<pre><code class="language-shell">// 安装gb工具
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">// 安装gb工具
 go get github.com/constabulary/gb/...
 // 以下可以放在.bash_profile中
 unalias gb // 于git branch的简写冲突
-export PATH=$PATH:$GOPATH/bin
-</code></pre>
-
+export PATH<span style="color:#f92672">=</span>$PATH:$GOPATH/bin</code></pre></div>
 <p>这样就可以使用gb命令了，如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#960050;background-color:#1e0010">➜</span>  <span style="color:#a6e22e">bin</span> <span style="color:#a6e22e">gb</span>
+<span style="color:#a6e22e">gb</span>, <span style="color:#a6e22e">a</span> <span style="color:#a6e22e">project</span> <span style="color:#a6e22e">based</span> <span style="color:#a6e22e">build</span> <span style="color:#a6e22e">tool</span> <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">the</span> <span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">programming</span> <span style="color:#a6e22e">language</span>.
 
-<pre><code class="language-go">➜  bin gb
-gb, a project based build tool for the Go programming language.
+<span style="color:#a6e22e">Usage</span>:
 
-Usage:
+        <span style="color:#a6e22e">gb</span> <span style="color:#a6e22e">command</span> [<span style="color:#a6e22e">arguments</span>]
 
-        gb command [arguments]
+<span style="color:#a6e22e">The</span> <span style="color:#a6e22e">commands</span> <span style="color:#a6e22e">are</span>:
 
-The commands are:
+        <span style="color:#a6e22e">build</span>       <span style="color:#a6e22e">build</span> <span style="color:#a6e22e">a</span> <span style="color:#f92672">package</span>
+        <span style="color:#a6e22e">doc</span>         <span style="color:#a6e22e">show</span> <span style="color:#a6e22e">documentation</span> <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">a</span> <span style="color:#f92672">package</span> <span style="color:#a6e22e">or</span> <span style="color:#a6e22e">symbol</span>
+        <span style="color:#a6e22e">env</span>         <span style="color:#a6e22e">print</span> <span style="color:#a6e22e">project</span> <span style="color:#a6e22e">environment</span> <span style="color:#a6e22e">variables</span>
+        <span style="color:#a6e22e">generate</span>    <span style="color:#a6e22e">generate</span> <span style="color:#a6e22e">Go</span> <span style="color:#a6e22e">files</span> <span style="color:#a6e22e">by</span> <span style="color:#a6e22e">processing</span> <span style="color:#a6e22e">source</span>
+        <span style="color:#a6e22e">info</span>        <span style="color:#a6e22e">info</span> <span style="color:#a6e22e">returns</span> <span style="color:#a6e22e">information</span> <span style="color:#a6e22e">about</span> <span style="color:#a6e22e">this</span> <span style="color:#a6e22e">project</span>
+        <span style="color:#a6e22e">list</span>        <span style="color:#a6e22e">list</span> <span style="color:#a6e22e">the</span> <span style="color:#a6e22e">packages</span> <span style="color:#a6e22e">named</span> <span style="color:#a6e22e">by</span> <span style="color:#a6e22e">the</span> <span style="color:#a6e22e">importpaths</span>
+        <span style="color:#a6e22e">test</span>        <span style="color:#a6e22e">test</span> <span style="color:#a6e22e">packages</span>
 
-        build       build a package
-        doc         show documentation for a package or symbol
-        env         print project environment variables
-        generate    generate Go files by processing source
-        info        info returns information about this project
-        list        list the packages named by the importpaths
-        test        test packages
+<span style="color:#a6e22e">Use</span> <span style="color:#e6db74">&#34;gb help [command]&#34;</span> <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">more</span> <span style="color:#a6e22e">information</span> <span style="color:#a6e22e">about</span> <span style="color:#a6e22e">a</span> <span style="color:#a6e22e">command</span>.
 
-Use &quot;gb help [command]&quot; for more information about a command.
+<span style="color:#a6e22e">Additional</span> <span style="color:#a6e22e">help</span> <span style="color:#a6e22e">topics</span>:
 
-Additional help topics:
+        <span style="color:#a6e22e">plugin</span>      <span style="color:#a6e22e">plugin</span> <span style="color:#a6e22e">information</span>
+        <span style="color:#a6e22e">project</span>     <span style="color:#a6e22e">gb</span> <span style="color:#a6e22e">project</span> <span style="color:#a6e22e">layout</span>
 
-        plugin      plugin information
-        project     gb project layout
-
-Use &quot;gb help [topic]&quot; for more information about that topic.
-</code></pre>
-
+<span style="color:#a6e22e">Use</span> <span style="color:#e6db74">&#34;gb help [topic]&#34;</span> <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">more</span> <span style="color:#a6e22e">information</span> <span style="color:#a6e22e">about</span> <span style="color:#a6e22e">that</span> <span style="color:#a6e22e">topic</span>.</code></pre></div>
 <p>这里我们简要的搭建一个工程来试一试gb。参考(<a href="http://tabalt.net/blog/golang-package-dependency-management-tool-gb/">Golang包依赖管理工具gb</a>)：</p>
 
 <ol>
 <li>创建gb项目目录结构</li>
 </ol>
-
-<pre><code class="language-go">   cd ~/helloworld
-   mkdir -p src/helloworld
-   mkdir -p vendor/src
-   vim src/helloworld/main.go
-   // 编写helloworld代码
-   package main
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">   <span style="color:#a6e22e">cd</span> <span style="color:#960050;background-color:#1e0010">~</span><span style="color:#f92672">/</span><span style="color:#a6e22e">helloworld</span>
+   <span style="color:#a6e22e">mkdir</span> <span style="color:#f92672">-</span><span style="color:#a6e22e">p</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">/</span><span style="color:#a6e22e">helloworld</span>
+   <span style="color:#a6e22e">mkdir</span> <span style="color:#f92672">-</span><span style="color:#a6e22e">p</span> <span style="color:#a6e22e">vendor</span><span style="color:#f92672">/</span><span style="color:#a6e22e">src</span>
+   <span style="color:#a6e22e">vim</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">/</span><span style="color:#a6e22e">helloworld</span><span style="color:#f92672">/</span><span style="color:#a6e22e">main</span>.<span style="color:#66d9ef">go</span>
+   <span style="color:#75715e">// 编写helloworld代码
+</span><span style="color:#75715e"></span>   <span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
    
-   import (
-       &quot;fmt&quot;
-       &quot;net/http&quot;
+   <span style="color:#f92672">import</span> (
+       <span style="color:#e6db74">&#34;fmt&#34;</span>
+       <span style="color:#e6db74">&#34;net/http&#34;</span>
    
-       &quot;github.com/tabalt/gracehttp&quot;
+       <span style="color:#e6db74">&#34;github.com/tabalt/gracehttp&#34;</span>
    )
    
-   func main() {
-       http.HandleFunc(&quot;/&quot;, func(w http.ResponseWriter, r *http.Request) {
-           fmt.Fprintf(w, &quot;hello world&quot;)
+   <span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+       <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+           <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Fprintf</span>(<span style="color:#a6e22e">w</span>, <span style="color:#e6db74">&#34;hello world&#34;</span>)
        })
    
-       err := gracehttp.ListenAndServe(&quot;:8080&quot;, nil)
-       if err != nil {
-           fmt.Println(err)
+       <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">gracehttp</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#e6db74">&#34;:8080&#34;</span>, <span style="color:#66d9ef">nil</span>)
+       <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+           <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">err</span>)
        }
-   }
-</code></pre>
-
+   }</code></pre></div>
 <ol>
 <li>添加第三方依赖包：使用gb vendor</li>
 </ol>
-
-<pre><code class="language-shell">   gb vendor fetch github.com/tabalt/gracehttp
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">   gb vendor fetch github.com/tabalt/gracehttp
    // 目前为止，整个目录的架构如下
    ├── src
    │   └── helloworld
@@ -398,40 +359,29 @@ Use &quot;gb help [topic]&quot; for more information about that topic.
                        ├── gracehttp.go
                        ├── gracehttpdemo
                        │   └── main.go
-                       └── server.go
-</code></pre>
-
+                       └── server.go</code></pre></div>
 <ol>
 <li>编译可执行程序</li>
 </ol>
-
-<pre><code class="language-go">   gb build helloworld
-   ./bin/helloworld
-   // 此时打开一个终端，并执行curl http://127.0.0.1:8000/,会得到如下输出
-   hello world
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">   <span style="color:#a6e22e">gb</span> <span style="color:#a6e22e">build</span> <span style="color:#a6e22e">helloworld</span>
+   .<span style="color:#f92672">/</span><span style="color:#a6e22e">bin</span><span style="color:#f92672">/</span><span style="color:#a6e22e">helloworld</span>
+   <span style="color:#75715e">// 此时打开一个终端，并执行curl http://127.0.0.1:8000/,会得到如下输出
+</span><span style="color:#75715e"></span>   <span style="color:#a6e22e">hello</span> <span style="color:#a6e22e">world</span></code></pre></div>
 <p>gb还有其他的一直指令，如下：</p>
-
-<pre><code class="language-shell">        build       build a package 编译包
-        doc         show documentation for a package or symbol  显示文档
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">        build       build a package 编译包
+        doc         show documentation <span style="color:#66d9ef">for</span> a package or symbol  显示文档
         env         print project environment variables 打印项目的环境变量
         generate    generate Go files by processing source 处理源代码生成go文件
         info        info returns information about this project 显示项目信息
         list        list the packages named by the importpaths 显示项目下的所有包
-        test        test packages 执行测试
-</code></pre>
-
+        test        test packages 执行测试</code></pre></div>
 <p>gb vendor获取依赖，其功能列表如下</p>
-
-<pre><code class="language-shell">        fetch       fetch a remote dependency 获取一个远程依赖
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">        fetch       fetch a remote dependency 获取一个远程依赖
         update      update a local dependency 更新一个本地依赖
         list        lists dependencies, one per line 每行一个列出所有依赖
         delete      deletes a local dependency 删除一个本地依赖
         purge       purges all unreferenced dependencies 清除所有未引用的依赖
-        restore     restore dependencies from the manifest 从manifest清单文件还原依赖
-</code></pre>
-
+        restore     restore dependencies from the manifest 从manifest清单文件还原依赖</code></pre></div>
 <h2 id="2-数组-切片和映射">2. 数组、切片和映射</h2>
 
 <p>数组是切片和映射的基础数据结构。</p>
@@ -445,38 +395,29 @@ Use &quot;gb help [topic]&quot; for more information about that topic.
 </blockquote>
 
 <p>声明一个数组后，数据类型和数组长度就不能改变了。声明后就会初始化，数组也是，数组内每个元素都初始化为对应类型的零值。</p>
-
-<pre><code class="language-go">var array [5]int
-// Go自动计算声明数组的长度
-array := [...]int{10,20,30,40,50}
-// 声明数组，并给其中特定索引的元素赋值，其余保持零值
-// 如下，索引为1和3的元素赋值为10，20
-array := [5]int{1:10, 3:20}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">array</span> [<span style="color:#ae81ff">5</span>]<span style="color:#66d9ef">int</span>
+<span style="color:#75715e">// Go自动计算声明数组的长度
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">array</span> <span style="color:#f92672">:=</span> [<span style="color:#f92672">...</span>]<span style="color:#66d9ef">int</span>{<span style="color:#ae81ff">10</span>,<span style="color:#ae81ff">20</span>,<span style="color:#ae81ff">30</span>,<span style="color:#ae81ff">40</span>,<span style="color:#ae81ff">50</span>}
+<span style="color:#75715e">// 声明数组，并给其中特定索引的元素赋值，其余保持零值
+</span><span style="color:#75715e">// 如下，索引为1和3的元素赋值为10，20
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">array</span> <span style="color:#f92672">:=</span> [<span style="color:#ae81ff">5</span>]<span style="color:#66d9ef">int</span>{<span style="color:#ae81ff">1</span>:<span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">3</span>:<span style="color:#ae81ff">20</span>}</code></pre></div>
 <p>使用数组的方法</p>
-
-<pre><code class="language-go">array := [5]int(10,20,30)
-array[2]=20 // 修改索引为2的元素的值
-// 声明数组指针
-array := [5]*int{1: new(int), 1: new(int)}
-// 为索引为0和1的元素赋值
-*array[0] = 10
-// 索引为0的元素是一个指针，该指针指向整数10
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">array</span> <span style="color:#f92672">:=</span> [<span style="color:#ae81ff">5</span>]int(<span style="color:#ae81ff">10</span>,<span style="color:#ae81ff">20</span>,<span style="color:#ae81ff">30</span>)
+<span style="color:#a6e22e">array</span>[<span style="color:#ae81ff">2</span>]=<span style="color:#ae81ff">20</span> <span style="color:#75715e">// 修改索引为2的元素的值
+</span><span style="color:#75715e">// 声明数组指针
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">array</span> <span style="color:#f92672">:=</span> [<span style="color:#ae81ff">5</span>]<span style="color:#f92672">*</span><span style="color:#66d9ef">int</span>{<span style="color:#ae81ff">1</span>: new(<span style="color:#66d9ef">int</span>), <span style="color:#ae81ff">1</span>: new(<span style="color:#66d9ef">int</span>)}
+<span style="color:#75715e">// 为索引为0和1的元素赋值
+</span><span style="color:#75715e"></span><span style="color:#f92672">*</span><span style="color:#a6e22e">array</span>[<span style="color:#ae81ff">0</span>] = <span style="color:#ae81ff">10</span>
+<span style="color:#f92672">//</span> <span style="color:#a6e22e">索引为0的元素是一个指针</span><span style="color:#960050;background-color:#1e0010">，</span><span style="color:#a6e22e">该指针指向整数10</span></code></pre></div>
 <p><strong>只有数组类型相同（长度和每个元素的类型均相同）的两个数组才能相互赋值。</strong></p>
 
 <p><strong>多维数组</strong>：组合多个数组来创建多维数组。</p>
-
-<pre><code class="language-shell">// 声明一个二维整形数组
-var array [4][2]int
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">// 声明一个二维整形数组
+var array <span style="color:#f92672">[</span><span style="color:#ae81ff">4</span><span style="color:#f92672">][</span><span style="color:#ae81ff">2</span><span style="color:#f92672">]</span>int
 // 初始化与一个二维数组
-array := [4][2]int{{1,2},{2,3},{3,4},{4,5}}
+array :<span style="color:#f92672">=</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">4</span><span style="color:#f92672">][</span><span style="color:#ae81ff">2</span><span style="color:#f92672">]</span>int<span style="color:#f92672">{{</span><span style="color:#ae81ff">1</span>,2<span style="color:#f92672">}</span>,<span style="color:#f92672">{</span><span style="color:#ae81ff">2</span>,3<span style="color:#f92672">}</span>,<span style="color:#f92672">{</span><span style="color:#ae81ff">3</span>,4<span style="color:#f92672">}</span>,<span style="color:#f92672">{</span><span style="color:#ae81ff">4</span>,5<span style="color:#f92672">}}</span>
 // 使用二维数组
-array[0][0] // 值为1
-</code></pre>
-
+array<span style="color:#f92672">[</span><span style="color:#ae81ff">0</span><span style="color:#f92672">][</span><span style="color:#ae81ff">0</span><span style="color:#f92672">]</span> // 值为1</code></pre></div>
 <p>在函数间传递数组时，最好使用指针，避免用值得方式传递。</p>
 
 <h3 id="2-2-切片">2.2 切片</h3>
@@ -498,13 +439,10 @@ array[0][0] // 值为1
 </ul>
 
 <p><strong>创建和初始化</strong>：内置的make函数可以创建和初始化切片。</p>
-
-<pre><code class="language-go">// 创建一个字符串切片
-slice := make([]string, 5) // 长度和容量都是5个元素，类型为字符串
-// 指定长度和容量
-slice := make([]int, 3, 5) // 长度为3，容量为5
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 创建一个字符串切片
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> make([]<span style="color:#66d9ef">string</span>, <span style="color:#ae81ff">5</span>) <span style="color:#75715e">// 长度和容量都是5个元素，类型为字符串
+</span><span style="color:#75715e">// 指定长度和容量
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> make([]<span style="color:#66d9ef">int</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">5</span>) <span style="color:#f92672">//</span> <span style="color:#a6e22e">长度为3</span><span style="color:#960050;background-color:#1e0010">，</span><span style="color:#a6e22e">容量为5</span></code></pre></div>
 <p>需要注意如下几点：</p>
 
 <ul>
@@ -513,41 +451,32 @@ slice := make([]int, 3, 5) // 长度为3，容量为5
 </ul>
 
 <p>声明数组和声明切片的不同：</p>
-
-<pre><code class="language-go">// 创建有三个元素的整形数组
-array := [3]int{10,20,30}
-// 创建长度和容量都是3的整形切片
-slice := []int{10,20,30}
-// []运算符里指定了值就是创建数组，反之为创建切片
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 创建有三个元素的整形数组
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">array</span> <span style="color:#f92672">:=</span> [<span style="color:#ae81ff">3</span>]<span style="color:#66d9ef">int</span>{<span style="color:#ae81ff">10</span>,<span style="color:#ae81ff">20</span>,<span style="color:#ae81ff">30</span>}
+<span style="color:#75715e">// 创建长度和容量都是3的整形切片
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">int</span>{<span style="color:#ae81ff">10</span>,<span style="color:#ae81ff">20</span>,<span style="color:#ae81ff">30</span>}
+<span style="color:#f92672">//</span> []<span style="color:#a6e22e">运算符里指定了值就是创建数组</span><span style="color:#960050;background-color:#1e0010">，</span><span style="color:#a6e22e">反之为创建切片</span></code></pre></div>
 <p>创建nil和空切片</p>
-
-<pre><code class="language-go">var slice []int // 底层数组的指针为nil，长度和容量均为0
-// 空切片
-slice := make([]int,0) // 使用make创建空的整型切片，地址针织不为nil，长度和容量均为0
-// 使用切片字面量创建空的整型切片
-slice := []int{}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">slice</span> []<span style="color:#66d9ef">int</span> <span style="color:#75715e">// 底层数组的指针为nil，长度和容量均为0
+</span><span style="color:#75715e">// 空切片
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> make([]<span style="color:#66d9ef">int</span>,<span style="color:#ae81ff">0</span>) <span style="color:#75715e">// 使用make创建空的整型切片，地址针织不为nil，长度和容量均为0
+</span><span style="color:#75715e">// 使用切片字面量创建空的整型切片
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">int</span>{}</code></pre></div>
 <p><strong>切片的使用</strong>：基本使用和数组类似，可以使用索引。这里关注一下，使用切片来创建切片。</p>
-
-<pre><code class="language-go">// 创建切片
-slice := []int{1,2,3,4,5}
-// 创建新切片
-newslice := slice[1:3]
-// newslice和slice共享一段底层数组，slice的指针指向1，newslice的指针指向2
-// slice 指针 长度5 容量5
-//   	  ↓ 
-// 		| 1 | 2 | 3 | 4 | 5 |
-// 			  ↑
-// newslice  指针 长度2，容量4
-// 切片长度和容量计算方式:
-// 对底层数组容量是k的切片slice[i:j]来说
-// 长度: j - i
-// 容量: k - i
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 创建切片
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">int</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>}
+<span style="color:#75715e">// 创建新切片
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">newslice</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">slice</span>[<span style="color:#ae81ff">1</span>:<span style="color:#ae81ff">3</span>]
+<span style="color:#75715e">// newslice和slice共享一段底层数组，slice的指针指向1，newslice的指针指向2
+</span><span style="color:#75715e">// slice 指针 长度5 容量5
+</span><span style="color:#75715e">//   	  ↓ 
+</span><span style="color:#75715e">// 		| 1 | 2 | 3 | 4 | 5 |
+</span><span style="color:#75715e">// 			  ↑
+</span><span style="color:#75715e">// newslice  指针 长度2，容量4
+</span><span style="color:#75715e">// 切片长度和容量计算方式:
+</span><span style="color:#75715e">// 对底层数组容量是k的切片slice[i:j]来说
+</span><span style="color:#75715e">// 长度: j - i
+</span><span style="color:#75715e"></span><span style="color:#f92672">//</span> <span style="color:#a6e22e">容量</span>: <span style="color:#a6e22e">k</span> <span style="color:#f92672">-</span> <span style="color:#a6e22e">i</span></code></pre></div>
 <blockquote>
 <p>Warning：由于是指针，修改newsclice的元素值会导致slice中的值也相应被修改。</p>
 </blockquote>
@@ -564,38 +493,29 @@ newslice := slice[1:3]
 </blockquote>
 
 <p><strong>创建切片时限制容量</strong> ： 创建切片时，可以限制容量，如下：</p>
-
-<pre><code class="language-go">slice := []int{1,2,3,4,5,6}
-newsclie := slice[1,3,4]
-// newslice长度为2，容量为4，{2,3,4}
-// 计算方式：i:j为前闭后开区间
-// 对于 slice[i:j:k]
-// 长度: j – i
-// 容量: k – i
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">int</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">6</span>}
+<span style="color:#a6e22e">newsclie</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">slice</span>[<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>]
+<span style="color:#75715e">// newslice长度为2，容量为4，{2,3,4}
+</span><span style="color:#75715e">// 计算方式：i:j为前闭后开区间
+</span><span style="color:#75715e">// 对于 slice[i:j:k]
+</span><span style="color:#75715e">// 长度: j – i
+</span><span style="color:#75715e"></span><span style="color:#f92672">//</span> <span style="color:#a6e22e">容量</span>: <span style="color:#a6e22e">k</span> <span style="color:#960050;background-color:#1e0010">–</span> <span style="color:#a6e22e">i</span></code></pre></div>
 <p><strong>迭代切片</strong>：关键字range，和for配合来迭代切片</p>
-
-<pre><code class="language-go">slice := []int{1,2,3,4}
-// 迭代每一个元素，
-for index, value := range slice {
-    fmt.Printf(&quot;Index: %d Value: %d\n&quot;,index, value)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">int</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>}
+<span style="color:#75715e">// 迭代每一个元素，
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">index</span>, <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">slice</span> {
+    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Index: %d Value: %d\n&#34;</span>,<span style="color:#a6e22e">index</span>, <span style="color:#a6e22e">value</span>)
 }
-// Output:
-// Index: 0 Value: 1
-// Index: 1 Value: 2
-// Index: 2 Value: 3
-// Index: 3 Value: 4
-</code></pre>
-
+<span style="color:#75715e">// Output:
+</span><span style="color:#75715e">// Index: 0 Value: 1
+</span><span style="color:#75715e">// Index: 1 Value: 2
+</span><span style="color:#75715e">// Index: 2 Value: 3
+</span><span style="color:#75715e"></span><span style="color:#f92672">//</span> <span style="color:#a6e22e">Index</span>: <span style="color:#ae81ff">3</span> <span style="color:#a6e22e">Value</span>: <span style="color:#ae81ff">4</span></code></pre></div>
 <p><strong>多维切片</strong> ：和数组一样，组合多个切片形成多维切片。</p>
-
-<pre><code class="language-go">// 创建一个整型切片的切片
-slice := [][]int{{10}, {100, 200}}
-// 为第一个切片追加值为 20 的元素 
-slice[0] = append(slice[0], 20)	
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 创建一个整型切片的切片
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">slice</span> <span style="color:#f92672">:=</span> [][]<span style="color:#66d9ef">int</span>{{<span style="color:#ae81ff">10</span>}, {<span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">200</span>}}
+<span style="color:#75715e">// 为第一个切片追加值为 20 的元素 
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">slice</span>[<span style="color:#ae81ff">0</span>] = append(<span style="color:#a6e22e">slice</span>[<span style="color:#ae81ff">0</span>], <span style="color:#ae81ff">20</span>)	</code></pre></div>
 <p><strong>在函数间传递切片</strong>：切片尺寸很小，可以看成是指针的传递。</p>
 
 <h3 id="2-3-映射">2.3 映射</h3>
@@ -607,37 +527,28 @@ slice[0] = append(slice[0], 20)
 </blockquote>
 
 <p><strong>创建和初始化</strong>：主要是make和直接声明。</p>
-
-<pre><code class="language-go">dict := make(map[string]int) // 键是string，值是int
-// 使用键值对直接初始化
-dict := map[string]string{&quot;Red&quot;:&quot;#da1337&quot;, &quot;Orange&quot;:&quot;#e95a22&quot;}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">dict</span> <span style="color:#f92672">:=</span> make(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">int</span>) <span style="color:#75715e">// 键是string，值是int
+</span><span style="color:#75715e">// 使用键值对直接初始化
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">dict</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;Red&#34;</span>:<span style="color:#e6db74">&#34;#da1337&#34;</span>, <span style="color:#e6db74">&#34;Orange&#34;</span>:<span style="color:#e6db74">&#34;#e95a22&#34;</span>}</code></pre></div>
 <p>字符串切片不能作为map的键，但是可以作为map的值。</p>
-
-<pre><code class="language-go">dict := map[[]string]int{}
-// 会报错Compiler Exception: invalid map key type []string
-dict := map[int][]string{}
-// 正常使用
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">dict</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[[]<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">int</span>{}
+<span style="color:#75715e">// 会报错Compiler Exception: invalid map key type []string
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">dict</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">int</span>][]<span style="color:#66d9ef">string</span>{}
+<span style="color:#f92672">//</span> <span style="color:#a6e22e">正常使用</span></code></pre></div>
 <p><strong>使用映射</strong>：直接当做键值对使用。</p>
-
-<pre><code class="language-go">// 创建map
-colors := map[string]string{}
-colors[&quot;Red&quot;] = “#da1337”
-// 创建一个值为nil的map
-colors :=map[string]string
-colors[&quot;Red&quot;] = “#da1337” // 报错panic: runtime error: assignment to entry in nil map
-// 判断键存在
-value, exists := colors[&quot;Blue&quot;]
-if exists {}  // exists返回键存在与否
-value := colors[&quot;Blue&quot;]
-if value != &quot;&quot; {} // 值为空代表不存在
-// 删除
-delete(colors, &quot;Red&quot;)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 创建map
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">colors</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{}
+<span style="color:#a6e22e">colors</span>[<span style="color:#e6db74">&#34;Red&#34;</span>] = <span style="color:#960050;background-color:#1e0010">“#</span><span style="color:#a6e22e">da1337</span><span style="color:#960050;background-color:#1e0010">”</span>
+<span style="color:#75715e">// 创建一个值为nil的map
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">colors</span> <span style="color:#f92672">:=</span><span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>
+<span style="color:#a6e22e">colors</span>[<span style="color:#e6db74">&#34;Red&#34;</span>] = <span style="color:#960050;background-color:#1e0010">“#</span><span style="color:#a6e22e">da1337</span><span style="color:#960050;background-color:#1e0010">”</span> <span style="color:#75715e">// 报错panic: runtime error: assignment to entry in nil map
+</span><span style="color:#75715e">// 判断键存在
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">colors</span>[<span style="color:#e6db74">&#34;Blue&#34;</span>]
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">exists</span> {}  <span style="color:#75715e">// exists返回键存在与否
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">colors</span>[<span style="color:#e6db74">&#34;Blue&#34;</span>]
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">value</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> {} <span style="color:#75715e">// 值为空代表不存在
+</span><span style="color:#75715e">// 删除
+</span><span style="color:#75715e"></span>delete(<span style="color:#a6e22e">colors</span>, <span style="color:#e6db74">&#34;Red&#34;</span>)</code></pre></div>
 <p><strong>函数间传递映射</strong>：函数中传递mao也是相当于指针的方式，并不会复制底层的数据结构。因此<strong>在函数内做的修改在函数外也有效</strong>，这个要值得注意一下。</p>
 
 <h2 id="3-go语言的类型系统">3. Go语言的类型系统</h2>
@@ -647,89 +558,83 @@ delete(colors, &quot;Red&quot;)
 <h3 id="3-1-用户自定义的类型">3.1 用户自定义的类型</h3>
 
 <p>使用struct关键字来创建一个结构类型</p>
-
-<pre><code class="language-go">// 新建一个结构类型
-type user struct {
-    name string 
-    email string
-    ext   int
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 新建一个结构类型
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">user</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span> 
+    <span style="color:#a6e22e">email</span> <span style="color:#66d9ef">string</span>
+    <span style="color:#a6e22e">ext</span>   <span style="color:#66d9ef">int</span>
 }
-// 声明一个user类型的变量
-var bill user
-// 初始化一个user类型的变量
-lisa := user {
-    name : &quot;Lisa&quot;,
-    email : &quot;lisa@email&quot;, 
-    // 未指定的变量按照类型的默认值给定
+<span style="color:#75715e">// 声明一个user类型的变量
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">bill</span> <span style="color:#a6e22e">user</span>
+<span style="color:#75715e">// 初始化一个user类型的变量
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">lisa</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">user</span> {
+    <span style="color:#a6e22e">name</span> : <span style="color:#e6db74">&#34;Lisa&#34;</span>,
+    <span style="color:#a6e22e">email</span> : <span style="color:#e6db74">&#34;lisa@email&#34;</span>, 
+    <span style="color:#75715e">// 未指定的变量按照类型的默认值给定
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">// 类型允许嵌套
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">admin</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">person</span> <span style="color:#a6e22e">user</span>
+    <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>
 }
-// 类型允许嵌套
-type admin struct {
-    person user
-    age int
-}
-// 初始化的时候可以直接在内部用字面量进行初始化
-fred := admin {
-    person: user {
-        name : &quot;fred&quot;,
-    	email : &quot;fred@email&quot;
+<span style="color:#75715e">// 初始化的时候可以直接在内部用字面量进行初始化
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">fred</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">admin</span> {
+    <span style="color:#a6e22e">person</span>: <span style="color:#a6e22e">user</span> {
+        <span style="color:#a6e22e">name</span> : <span style="color:#e6db74">&#34;fred&#34;</span>,
+    	<span style="color:#a6e22e">email</span> : <span style="color:#e6db74">&#34;fred@email&#34;</span>
     },
-    age: 20
+    <span style="color:#a6e22e">age</span>: <span style="color:#ae81ff">20</span>
 }
-// 类型不同的变量之间不能赋值，下面这种特殊情况也不行
-type Duration int64
-var dur Duration
-dur = int64(1000) // 编译会报错。cannot use int64(1000) (type int64) as type Duration in assignment
-</code></pre>
-
+<span style="color:#75715e">// 类型不同的变量之间不能赋值，下面这种特殊情况也不行
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Duration</span> <span style="color:#66d9ef">int64</span>
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">dur</span> <span style="color:#a6e22e">Duration</span>
+<span style="color:#a6e22e">dur</span> = int64(<span style="color:#ae81ff">1000</span>) <span style="color:#f92672">//</span> <span style="color:#a6e22e">编译会报错</span><span style="color:#960050;background-color:#1e0010">。</span><span style="color:#a6e22e">cannot</span> <span style="color:#a6e22e">use</span> int64(<span style="color:#ae81ff">1000</span>) (<span style="color:#66d9ef">type</span> <span style="color:#66d9ef">int64</span>) <span style="color:#a6e22e">as</span> <span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Duration</span> <span style="color:#a6e22e">in</span> <span style="color:#a6e22e">assignment</span></code></pre></div>
 <h3 id="3-2-方法">3.2 方法</h3>
 
 <p>方法即函数，只是在声明时，在关键字func和方法名之间增加了一个参数。</p>
-
-<pre><code class="language-go">package main 
-import &quot;fmt&quot;
-type user struct {
-    name string 
-    email string
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span> 
+<span style="color:#f92672">import</span> <span style="color:#e6db74">&#34;fmt&#34;</span>
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">user</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span> 
+    <span style="color:#a6e22e">email</span> <span style="color:#66d9ef">string</span>
 }
-// notify使用值接收的方式，实现了一个方法
-func (u user) notify {
-    fmt.Printf(&quot;sending User Email To %s&lt;%s&gt;\n&quot;, u.name, u.email)
-    u.name = &quot;jasper&quot; // 值传递的话改变值只在当前函数有效，函数外部无效
+<span style="color:#75715e">// notify使用值接收的方式，实现了一个方法
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">u</span> <span style="color:#a6e22e">user</span>) <span style="color:#a6e22e">notify</span> {
+    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;sending User Email To %s&lt;%s&gt;\n&#34;</span>, <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">email</span>)
+    <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;jasper&#34;</span> <span style="color:#75715e">// 值传递的话改变值只在当前函数有效，函数外部无效
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">// notify使用指针接收的方式，实现了一个方法
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">u</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">user</span>) <span style="color:#a6e22e">changeEmail</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>) {
+    <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">email</span> = <span style="color:#a6e22e">email</span>
 }
-// notify使用指针接收的方式，实现了一个方法
-func (u *user) changeEmail(name string) {
-    u.email = email
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span> {
+	<span style="color:#75715e">// Values of type user can be used to call methods
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// declared with a value receiver.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">bill</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">user</span>{<span style="color:#e6db74">&#34;Bill&#34;</span>, <span style="color:#e6db74">&#34;bill@email.com&#34;</span>}
+	<span style="color:#a6e22e">bill</span>.<span style="color:#a6e22e">notify</span>()
+
+	<span style="color:#75715e">// Pointers of type user can also be used to call methods
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// declared with a value receiver.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">lisa</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">user</span>{<span style="color:#e6db74">&#34;Lisa&#34;</span>, <span style="color:#e6db74">&#34;lisa@email.com&#34;</span>}
+    <span style="color:#a6e22e">lisa</span>.<span style="color:#a6e22e">notify</span>() <span style="color:#75715e">// (*lisa).notify() Go底层做了优化
+</span><span style="color:#75715e"></span>
+	<span style="color:#75715e">// Values of type user can be used to call methods
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// declared with a pointer receiver.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">bill</span>.<span style="color:#a6e22e">changeEmail</span>(<span style="color:#e6db74">&#34;bill@newdomain.com&#34;</span>) 
+    <span style="color:#75715e">// Go背后调用如下：
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (&amp;bill).changEmail()
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">bill</span>.<span style="color:#a6e22e">notify</span>()
+
+	<span style="color:#75715e">// Pointers of type user can be used to call methods
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// declared with a pointer receiver.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">lisa</span>.<span style="color:#a6e22e">changeEmail</span>(<span style="color:#e6db74">&#34;lisa@newdomain.com&#34;</span>)
+	<span style="color:#a6e22e">lisa</span>.<span style="color:#a6e22e">notify</span>()
 }
-func main {
-	// Values of type user can be used to call methods
-	// declared with a value receiver.
-	bill := user{&quot;Bill&quot;, &quot;bill@email.com&quot;}
-	bill.notify()
-
-	// Pointers of type user can also be used to call methods
-	// declared with a value receiver.
-	lisa := &amp;user{&quot;Lisa&quot;, &quot;lisa@email.com&quot;}
-    lisa.notify() // (*lisa).notify() Go底层做了优化
-
-	// Values of type user can be used to call methods
-	// declared with a pointer receiver.
-	bill.changeEmail(&quot;bill@newdomain.com&quot;) 
-    // Go背后调用如下：
-    // (&amp;bill).changEmail()
-	bill.notify()
-
-	// Pointers of type user can be used to call methods
-	// declared with a pointer receiver.
-	lisa.changeEmail(&quot;lisa@newdomain.com&quot;)
-	lisa.notify()
-}
-// 输出
-// Sending User Email To Bill&lt;bill@email.com&gt;
-// Sending User Email To Lisa&lt;lisa@email.com&gt;
-// Sending User Email To Bill&lt;bill@newdomain.com&gt;
-// Sending User Email To Lisa&lt;lisa@newdomain.com&gt;
-</code></pre>
-
+<span style="color:#75715e">// 输出
+</span><span style="color:#75715e">// Sending User Email To Bill&lt;bill@email.com&gt;
+</span><span style="color:#75715e">// Sending User Email To Lisa&lt;lisa@email.com&gt;
+</span><span style="color:#75715e">// Sending User Email To Bill&lt;bill@newdomain.com&gt;
+</span><span style="color:#75715e"></span><span style="color:#f92672">//</span> <span style="color:#a6e22e">Sending</span> <span style="color:#a6e22e">User</span> <span style="color:#a6e22e">Email</span> <span style="color:#a6e22e">To</span> <span style="color:#a6e22e">Lisa</span>&lt;<span style="color:#a6e22e">lisa</span><span style="color:#960050;background-color:#1e0010">@</span><span style="color:#a6e22e">newdomain</span>.<span style="color:#a6e22e">com</span>&gt;</code></pre></div>
 <p><strong>Go语言既允许使用值，也允许使用指针来调用方法，不必严格符合接受者的类型。</strong> 对这个抱有怀疑，这样会不会造成混淆？</p>
 
 <h3 id="3-3-类型的本质">3.3 类型的本质</h3>
@@ -751,82 +656,76 @@ func main {
 <p>接口是用来定义行为的类型，接口不实现具体的方法，而是通过方法由用户定义的类型实现。</p>
 
 <p>接口使用interface关键字实现。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Go实现简单的多态
+</span><span style="color:#75715e"></span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
 
-<pre><code class="language-go">// Go实现简单的多态
-package main
-
-import (
-	&quot;fmt&quot;
+<span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;fmt&#34;</span>
 )
 
-// 定义接口，包含一个接口函数notify
-type notifier interface {
-	notify()
+<span style="color:#75715e">// 定义接口，包含一个接口函数notify
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">notifier</span> <span style="color:#66d9ef">interface</span> {
+	<span style="color:#a6e22e">notify</span>()
 }
 
-// user defines a user in the program.
-type user struct {
-	name  string
-	email string
+<span style="color:#75715e">// user defines a user in the program.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">user</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">name</span>  <span style="color:#66d9ef">string</span>
+	<span style="color:#a6e22e">email</span> <span style="color:#66d9ef">string</span>
 }
 
-// 使用指针传递的方式实现notifier接口
-func (u *user) notify() {
-	fmt.Printf(&quot;Sending user email to %s&lt;%s&gt;\n&quot;,
-		u.name,
-		u.email)
+<span style="color:#75715e">// 使用指针传递的方式实现notifier接口
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">u</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">user</span>) <span style="color:#a6e22e">notify</span>() {
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Sending user email to %s&lt;%s&gt;\n&#34;</span>,
+		<span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">name</span>,
+		<span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">email</span>)
 }
 
-// admin defines a admin in the program.
-type admin struct {
-	name  string
-	email string
+<span style="color:#75715e">// admin defines a admin in the program.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">admin</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">name</span>  <span style="color:#66d9ef">string</span>
+	<span style="color:#a6e22e">email</span> <span style="color:#66d9ef">string</span>
 }
 
-// 使用指针传递的方式实现notifier接口
-func (a *admin) notify() {
-	fmt.Printf(&quot;Sending admin email to %s&lt;%s&gt;\n&quot;,
-		a.name,
-		a.email)
+<span style="color:#75715e">// 使用指针传递的方式实现notifier接口
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">admin</span>) <span style="color:#a6e22e">notify</span>() {
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Sending admin email to %s&lt;%s&gt;\n&#34;</span>,
+		<span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">name</span>,
+		<span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">email</span>)
 }
 
-// main is the entry point for the application.
-func main() {
-	// Create a user value and pass it to sendNotification.
-	bill := user{&quot;Bill&quot;, &quot;bill@email.com&quot;}
-	sendNotification(&amp;bill)
+<span style="color:#75715e">// main is the entry point for the application.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#75715e">// Create a user value and pass it to sendNotification.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">bill</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">user</span>{<span style="color:#e6db74">&#34;Bill&#34;</span>, <span style="color:#e6db74">&#34;bill@email.com&#34;</span>}
+	<span style="color:#a6e22e">sendNotification</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">bill</span>)
 
-	// Create an admin value and pass it to sendNotification.
-	lisa := admin{&quot;Lisa&quot;, &quot;lisa@email.com&quot;}
-	sendNotification(&amp;lisa)
+	<span style="color:#75715e">// Create an admin value and pass it to sendNotification.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">lisa</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">admin</span>{<span style="color:#e6db74">&#34;Lisa&#34;</span>, <span style="color:#e6db74">&#34;lisa@email.com&#34;</span>}
+	<span style="color:#a6e22e">sendNotification</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">lisa</span>)
 }
 
-// sendNotification accepts values that implement the notifier
-// interface and sends notifications.
-func sendNotification(n notifier) {
-	n.notify()
-}
-</code></pre>
-
+<span style="color:#75715e">// sendNotification accepts values that implement the notifier
+</span><span style="color:#75715e">// interface and sends notifications.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">sendNotification</span>(<span style="color:#a6e22e">n</span> <span style="color:#a6e22e">notifier</span>) {
+	<span style="color:#a6e22e">n</span>.<span style="color:#a6e22e">notify</span>()
+}</code></pre></div>
 <h3 id="3-5-嵌入类型-type-embedding">3.5 嵌入类型 type embedding</h3>
 
 <p>Go支持类型嵌套。</p>
 
 <p>外层的接口会覆盖内层的接口，但是可以通过直接访问内层接口来调用内层接口。这里来个简单的代码吧。</p>
-
-<pre><code class="language-go">// user 实现了notify接口
-// admain 实现了notify接口
-type admin struct{
-    u user
-    age int
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// user 实现了notify接口
+</span><span style="color:#75715e">// admain 实现了notify接口
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">admin</span> <span style="color:#66d9ef">struct</span>{
+    <span style="color:#a6e22e">u</span> <span style="color:#a6e22e">user</span>
+    <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>
 }
-// admin中嵌套了user类型。
-// 初始化一个admin 记为ad吧
-ad.notify()  // 会调用admin实现的notify接口
-ad.u.notify() // 会调用user实现的notify接口
-// 就是这么理解，和C++的继承差不多。
-</code></pre>
-
+<span style="color:#75715e">// admin中嵌套了user类型。
+</span><span style="color:#75715e">// 初始化一个admin 记为ad吧
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">ad</span>.<span style="color:#a6e22e">notify</span>()  <span style="color:#75715e">// 会调用admin实现的notify接口
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">ad</span>.<span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">notify</span>() <span style="color:#75715e">// 会调用user实现的notify接口
+</span><span style="color:#75715e"></span><span style="color:#f92672">//</span> <span style="color:#a6e22e">就是这么理解</span><span style="color:#960050;background-color:#1e0010">，</span><span style="color:#a6e22e">和C</span><span style="color:#f92672">++</span><span style="color:#a6e22e">的继承差不多</span><span style="color:#960050;background-color:#1e0010">。</span></code></pre></div>
 <h3 id="3-6-公开和未公开的标志符">3.6 公开和未公开的标志符</h3>
 
 <p>这个在刚接触go的时候就发现了。</p>

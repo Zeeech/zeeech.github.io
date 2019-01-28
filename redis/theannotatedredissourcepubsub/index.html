@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -135,14 +136,12 @@
 <h1 id="pubsub数据结构">Pubsub数据结构</h1>
 
 <p>阅读源码最好是从数据结构开始，这样能尽可能的理解功能函数。Redis服务器结构体中定义了如下数据结构用来记录某个频道有哪些客户端订阅。</p>
-
-<pre><code class="language-cpp">struct redisServer {
-  // ...
-  dict *pubsub_channels;  // 字典结构，用来记录频道和客户端的对应关系
-  // ...
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> redisServer {
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  dict <span style="color:#f92672">*</span>pubsub_channels;  <span style="color:#75715e">// 字典结构，用来记录频道和客户端的对应关系
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>例如，上一节中的简单示例里面，其服务器的dict结构布局如下：</p>
 
 <p><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkgb6p7cpj30bu04iaaf.jpg" alt="" /></p>
@@ -150,14 +149,12 @@
 <p>当客户端向某频道发送消息的时候，就检查这个字典下该频道对应的客户端，然后一一发送消息。</p>
 
 <p>同样，在客户端结构体也用一个字典结构记录了该客户端订阅了哪些频道。</p>
-
-<pre><code class="language-cpp">struct client {
-  // ...
-  dict *pubsub_channels; // 记录了该客户端订阅了哪些频道
-  // ...
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> client {
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  dict <span style="color:#f92672">*</span>pubsub_channels; <span style="color:#75715e">// 记录了该客户端订阅了哪些频道
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>在上一届的示例中，2号客户端的<code>pubsub_channels</code>字典结构的结构布局如下：</p>
 
 <p><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkgb61sogj306o03q74f.jpg" alt="" /></p>
@@ -165,34 +162,30 @@
 <p>该字典结构的键为收听的频道，值全为NULL，这样做的目的是快速判断该客户端是否收听了该频道。</p>
 
 <p>另外，Redis还支持订阅特定模式的频道，其命令是PSUBSCRIBE，例如运行如下命令，就代表我可以订阅所有以chann开头的频道。</p>
-
-<pre><code class="language-cpp">PSUBSCRIBE chann*
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">PSUBSCRIBE chann<span style="color:#f92672">*</span>
+</code></pre></div>
 <p>关于订阅指定模式的频道，Redis定义了<code>pubsub_patterns</code>链表结构，在服务器结构体重，该链表的每一个节点都是一个<code>pubsubPattern</code>结构，具体定义如下：</p>
-
-<pre><code class="language-cpp">/* 服务器结构 */
-struct redisServer {
-  // ...
-  list *pubsub_patterns;  // 记录了客户端和模式串的对应关系
-  // ...
-}
-/* pubsub模式串结构体 */
-typedef struct pubsubPattern {
-    client *client; // 指向客户端
-    robj *pattern;  // 指向该客户端收听的模式串
-} pubsubPattern;
-/* 客户端结构 
- * 注意：在客户端结构中，该链表的每一个节点就是一个模式串
- * 而不是一个结构体。(这里为啥不采取字典结构，有待考虑)
- */
-struct client {
-  // ...
-  list *pubsub_patterns; // 记录了该客户端订阅了哪些模式串
-  // ...
-} 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 服务器结构 */</span>
+<span style="color:#66d9ef">struct</span> redisServer {
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  list <span style="color:#f92672">*</span>pubsub_patterns;  <span style="color:#75715e">// 记录了客户端和模式串的对应关系
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">/* pubsub模式串结构体 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> pubsubPattern {
+    client <span style="color:#f92672">*</span>client; <span style="color:#75715e">// 指向客户端
+</span><span style="color:#75715e"></span>    robj <span style="color:#f92672">*</span>pattern;  <span style="color:#75715e">// 指向该客户端收听的模式串
+</span><span style="color:#75715e"></span>} pubsubPattern;
+<span style="color:#75715e">/* 客户端结构 
+</span><span style="color:#75715e"> * 注意：在客户端结构中，该链表的每一个节点就是一个模式串
+</span><span style="color:#75715e"> * 而不是一个结构体。(这里为啥不采取字典结构，有待考虑)
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">struct</span> client {
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  list <span style="color:#f92672">*</span>pubsub_patterns; <span style="color:#75715e">// 记录了该客户端订阅了哪些模式串
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>} 
+</code></pre></div>
 <p>假设客户端订阅了某个模式串，其会向上述两个链表中添加相关信息，之后发布消息的时候，会检查模式串是否符合要求，如符合就向客户端发送消息。</p>
 
 <h1 id="订阅">订阅</h1>
@@ -207,159 +200,151 @@ struct client {
 </ul>
 
 <p>上述两个步骤由subscribeCommand函数完成，其源码如下：</p>
-
-<pre><code class="language-cpp">/* 订阅频道命令的实现 */
-void subscribeCommand(client *c) {
-    int j;
-    // 遍历指令中的所有频道
-    for (j = 1; j &lt; c-&gt;argc; j++)
-        pubsubSubscribeChannel(c,c-&gt;argv[j]);
-    c-&gt;flags |= CLIENT_PUBSUB;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 订阅频道命令的实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">subscribeCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">int</span> j;
+    <span style="color:#75715e">// 遍历指令中的所有频道
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>)
+        pubsubSubscribeChannel(c,c<span style="color:#f92672">-&gt;</span>argv[j]);
+    c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">|=</span> CLIENT_PUBSUB;
 }
-/* 订阅频道的底层实现代码 */
-int pubsubSubscribeChannel(client *c, robj *channel) {
-    dictEntry *de;
-    list *clients = NULL;
-    int retval = 0;
+<span style="color:#75715e">/* 订阅频道的底层实现代码 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">pubsubSubscribeChannel</span>(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">*</span>channel) {
+    dictEntry <span style="color:#f92672">*</span>de;
+    list <span style="color:#f92672">*</span>clients <span style="color:#f92672">=</span> NULL;
+    <span style="color:#66d9ef">int</span> retval <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
 
-    // 添加频道到client-&gt;pubsub_channels字典中
-    if (dictAdd(c-&gt;pubsub_channels,channel,NULL) == DICT_OK) {
-        retval = 1;
+    <span style="color:#75715e">// 添加频道到client-&gt;pubsub_channels字典中
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictAdd(c<span style="color:#f92672">-&gt;</span>pubsub_channels,channel,NULL) <span style="color:#f92672">==</span> DICT_OK) {
+        retval <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
         incrRefCount(channel);
-        // 查找server.pubsub_channels字典中是否存在该频道
-        de = dictFind(server.pubsub_channels,channel);
-        if (de == NULL) {
-            // 如不存在就创建，客户端是以链表形式连接
-            clients = listCreate();
-            // 添加频道和收听该频道的客户端链表到pubsub_channels字典中
-            dictAdd(server.pubsub_channels,channel,clients);
+        <span style="color:#75715e">// 查找server.pubsub_channels字典中是否存在该频道
+</span><span style="color:#75715e"></span>        de <span style="color:#f92672">=</span> dictFind(server.pubsub_channels,channel);
+        <span style="color:#66d9ef">if</span> (de <span style="color:#f92672">==</span> NULL) {
+            <span style="color:#75715e">// 如不存在就创建，客户端是以链表形式连接
+</span><span style="color:#75715e"></span>            clients <span style="color:#f92672">=</span> listCreate();
+            <span style="color:#75715e">// 添加频道和收听该频道的客户端链表到pubsub_channels字典中
+</span><span style="color:#75715e"></span>            dictAdd(server.pubsub_channels,channel,clients);
             incrRefCount(channel);
-        } else {
-            // 如果存在，获取客户端链表
-            clients = dictGetVal(de);
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 如果存在，获取客户端链表
+</span><span style="color:#75715e"></span>            clients <span style="color:#f92672">=</span> dictGetVal(de);
         }
-        // 将该客户端添加到客户端链表的尾部
-        listAddNodeTail(clients,c);
+        <span style="color:#75715e">// 将该客户端添加到客户端链表的尾部
+</span><span style="color:#75715e"></span>        listAddNodeTail(clients,c);
     }
-    // 通知客户端
-    addReply(c,shared.mbulkhdr[3]);
+    <span style="color:#75715e">// 通知客户端
+</span><span style="color:#75715e"></span>    addReply(c,shared.mbulkhdr[<span style="color:#ae81ff">3</span>]);
     addReply(c,shared.subscribebulk);
     addReplyBulk(c,channel);
     addReplyLongLong(c,clientSubscriptionsCount(c));
-    return retval;
+    <span style="color:#66d9ef">return</span> retval;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="订阅模式">订阅模式</h2>
 
 <p>当客户端执行订阅模式的指令时，同样需要对服务器和客户端的pubsub_patterns链表进行操作。其源码如下：</p>
-
-<pre><code class="language-cpp">/* 订阅模式命令的实现 */
-void psubscribeCommand(client *c) {
-    int j;
-    // 遍历模式串
-    for (j = 1; j &lt; c-&gt;argc; j++)
-        pubsubSubscribePattern(c,c-&gt;argv[j]);
-    c-&gt;flags |= CLIENT_PUBSUB;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 订阅模式命令的实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">psubscribeCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">int</span> j;
+    <span style="color:#75715e">// 遍历模式串
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>)
+        pubsubSubscribePattern(c,c<span style="color:#f92672">-&gt;</span>argv[j]);
+    c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">|=</span> CLIENT_PUBSUB;
 }
-/* 订阅模式的底层实现 */
-int pubsubSubscribePattern(client *c, robj *pattern) {
-    int retval = 0;
-	// 查看链表中该模式是否存在，如存在不做处理，反之则添加
-    if (listSearchKey(c-&gt;pubsub_patterns,pattern) == NULL) {
-        retval = 1;
-        pubsubPattern *pat;
-        // 添加模式串到client-&gt;pubsub_patterns链表的尾部
-        listAddNodeTail(c-&gt;pubsub_patterns,pattern);
+<span style="color:#75715e">/* 订阅模式的底层实现 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">pubsubSubscribePattern</span>(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">*</span>pattern) {
+    <span style="color:#66d9ef">int</span> retval <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#75715e">// 查看链表中该模式是否存在，如存在不做处理，反之则添加
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (listSearchKey(c<span style="color:#f92672">-&gt;</span>pubsub_patterns,pattern) <span style="color:#f92672">==</span> NULL) {
+        retval <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        pubsubPattern <span style="color:#f92672">*</span>pat;
+        <span style="color:#75715e">// 添加模式串到client-&gt;pubsub_patterns链表的尾部
+</span><span style="color:#75715e"></span>        listAddNodeTail(c<span style="color:#f92672">-&gt;</span>pubsub_patterns,pattern);
         incrRefCount(pattern);
-        // 构造pubsubPattern结构体并赋值
-        pat = zmalloc(sizeof(*pat));
-        pat-&gt;pattern = getDecodedObject(pattern);
-        pat-&gt;client = c;
-        // 添加pubsubPattern结构体到链表尾部
-        listAddNodeTail(server.pubsub_patterns,pat);
+        <span style="color:#75715e">// 构造pubsubPattern结构体并赋值
+</span><span style="color:#75715e"></span>        pat <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>pat));
+        pat<span style="color:#f92672">-&gt;</span>pattern <span style="color:#f92672">=</span> getDecodedObject(pattern);
+        pat<span style="color:#f92672">-&gt;</span>client <span style="color:#f92672">=</span> c;
+        <span style="color:#75715e">// 添加pubsubPattern结构体到链表尾部
+</span><span style="color:#75715e"></span>        listAddNodeTail(server.pubsub_patterns,pat);
     }
-    // 回复客户端
-    addReply(c,shared.mbulkhdr[3]);
+    <span style="color:#75715e">// 回复客户端
+</span><span style="color:#75715e"></span>    addReply(c,shared.mbulkhdr[<span style="color:#ae81ff">3</span>]);
     addReply(c,shared.psubscribebulk);
     addReplyBulk(c,pattern);
     addReplyLongLong(c,clientSubscriptionsCount(c));
-    return retval;
+    <span style="color:#66d9ef">return</span> retval;
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="退订">退订</h1>
 
 <p>退订的操作就放在一节里面讲了，无非就是从结构体中删除一些节点，事实就是如此，以退订频道为例：</p>
-
-<pre><code class="language-cpp">/* 退订频道的命令实现 */
-void unsubscribeCommand(client *c) {
-    if (c-&gt;argc == 1) {
-        // 退订所有频道
-        pubsubUnsubscribeAllChannels(c,1);
-    } else {
-        int j;
-        // 遍历频道，一一退订
-        for (j = 1; j &lt; c-&gt;argc; j++)
-            // 退订频道
-            pubsubUnsubscribeChannel(c,c-&gt;argv[j],1);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 退订频道的命令实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">unsubscribeCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>) {
+        <span style="color:#75715e">// 退订所有频道
+</span><span style="color:#75715e"></span>        pubsubUnsubscribeAllChannels(c,<span style="color:#ae81ff">1</span>);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#66d9ef">int</span> j;
+        <span style="color:#75715e">// 遍历频道，一一退订
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>)
+            <span style="color:#75715e">// 退订频道
+</span><span style="color:#75715e"></span>            pubsubUnsubscribeChannel(c,c<span style="color:#f92672">-&gt;</span>argv[j],<span style="color:#ae81ff">1</span>);
     }
-    if (clientSubscriptionsCount(c) == 0) c-&gt;flags &amp;= ~CLIENT_PUBSUB;
+    <span style="color:#66d9ef">if</span> (clientSubscriptionsCount(c) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;=</span> <span style="color:#f92672">~</span>CLIENT_PUBSUB;
 }
-/* 退订频道的底层实现 */
-int pubsubUnsubscribeChannel(client *c, robj *channel, int notify) {
-    dictEntry *de;
-    list *clients;
-    listNode *ln;
-    int retval = 0;
-    // 该指针可能指向字典结构中的同一个对象，此处需要保护它
-    incrRefCount(channel); 
-    // 在客户端的pubsub_channels字典中删除
-    if (dictDelete(c-&gt;pubsub_channels,channel) == DICT_OK) {
-        retval = 1;
-        // 在服务器的pubsub_channels中删除
-        de = dictFind(server.pubsub_channels,channel);
-        serverAssertWithInfo(c,NULL,de != NULL);
-        clients = dictGetVal(de); // 获取客户端链表
-        ln = listSearchKey(clients,c); // 找到该客户端对应的节点
-        serverAssertWithInfo(c,NULL,ln != NULL);
-        listDelNode(clients,ln); // 删除节点
-        if (listLength(clients) == 0) {
-            // 如果该频道下没有客户端了，就删除字典中的该频道节点
-            dictDelete(server.pubsub_channels,channel);
+<span style="color:#75715e">/* 退订频道的底层实现 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">pubsubUnsubscribeChannel</span>(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">*</span>channel, <span style="color:#66d9ef">int</span> notify) {
+    dictEntry <span style="color:#f92672">*</span>de;
+    list <span style="color:#f92672">*</span>clients;
+    listNode <span style="color:#f92672">*</span>ln;
+    <span style="color:#66d9ef">int</span> retval <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 该指针可能指向字典结构中的同一个对象，此处需要保护它
+</span><span style="color:#75715e"></span>    incrRefCount(channel); 
+    <span style="color:#75715e">// 在客户端的pubsub_channels字典中删除
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictDelete(c<span style="color:#f92672">-&gt;</span>pubsub_channels,channel) <span style="color:#f92672">==</span> DICT_OK) {
+        retval <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        <span style="color:#75715e">// 在服务器的pubsub_channels中删除
+</span><span style="color:#75715e"></span>        de <span style="color:#f92672">=</span> dictFind(server.pubsub_channels,channel);
+        serverAssertWithInfo(c,NULL,de <span style="color:#f92672">!=</span> NULL);
+        clients <span style="color:#f92672">=</span> dictGetVal(de); <span style="color:#75715e">// 获取客户端链表
+</span><span style="color:#75715e"></span>        ln <span style="color:#f92672">=</span> listSearchKey(clients,c); <span style="color:#75715e">// 找到该客户端对应的节点
+</span><span style="color:#75715e"></span>        serverAssertWithInfo(c,NULL,ln <span style="color:#f92672">!=</span> NULL);
+        listDelNode(clients,ln); <span style="color:#75715e">// 删除节点
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (listLength(clients) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+            <span style="color:#75715e">// 如果该频道下没有客户端了，就删除字典中的该频道节点
+</span><span style="color:#75715e"></span>            dictDelete(server.pubsub_channels,channel);
         }
     }
-    // 通知客户端
-    if (notify) {
-        addReply(c,shared.mbulkhdr[3]);
+    <span style="color:#75715e">// 通知客户端
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (notify) {
+        addReply(c,shared.mbulkhdr[<span style="color:#ae81ff">3</span>]);
         addReply(c,shared.unsubscribebulk);
         addReplyBulk(c,channel);
-        addReplyLongLong(c,dictSize(c-&gt;pubsub_channels)+
-                       listLength(c-&gt;pubsub_patterns));
+        addReplyLongLong(c,dictSize(c<span style="color:#f92672">-&gt;</span>pubsub_channels)<span style="color:#f92672">+</span>
+                       listLength(c<span style="color:#f92672">-&gt;</span>pubsub_patterns));
 
     }
-    // 到了这里可以安全的删除了
-    decrRefCount(channel);
-    return retval;
+    <span style="color:#75715e">// 到了这里可以安全的删除了
+</span><span style="color:#75715e"></span>    decrRefCount(channel);
+    <span style="color:#66d9ef">return</span> retval;
 }
-</code></pre>
-
+</code></pre></div>
 <p>其他的退订操作也是如此，下面仅罗列出它们的函数声明和功能，有兴趣的可以去源码中查看。</p>
-
-<pre><code class="language-cpp">/* 退订所有频道 */
-pubsubUnsubscribeAllChannels(client *c, int notify);
-/* 退订所有模式 */
-pubsubUnsubscribeAllPatterns(client *c, int notify);
-/* 退订一个或多个频道 */
-pubsubUnsubscribeChannel(client *c, robj *channel, int notify);
-/* 退订一个或多个模式 */
-pubsubUnsubscribePattern(client *c, robj *pattern, int notify);
-/* 退订模式的命令实现 */
-punsubscribeCommand(client *c);
-/* 退订频道的命令实现 */
-subscribeCommand(client *c);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 退订所有频道 */</span>
+pubsubUnsubscribeAllChannels(client <span style="color:#f92672">*</span>c, <span style="color:#66d9ef">int</span> notify);
+<span style="color:#75715e">/* 退订所有模式 */</span>
+pubsubUnsubscribeAllPatterns(client <span style="color:#f92672">*</span>c, <span style="color:#66d9ef">int</span> notify);
+<span style="color:#75715e">/* 退订一个或多个频道 */</span>
+pubsubUnsubscribeChannel(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">*</span>channel, <span style="color:#66d9ef">int</span> notify);
+<span style="color:#75715e">/* 退订一个或多个模式 */</span>
+pubsubUnsubscribePattern(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">*</span>pattern, <span style="color:#66d9ef">int</span> notify);
+<span style="color:#75715e">/* 退订模式的命令实现 */</span>
+punsubscribeCommand(client <span style="color:#f92672">*</span>c);
+<span style="color:#75715e">/* 退订频道的命令实现 */</span>
+subscribeCommand(client <span style="color:#f92672">*</span>c);
+</code></pre></div>
 <h1 id="发布消息">发布消息</h1>
 
 <p>当客户端调用发布消息的命令时，需要进行如下两个操作：</p>
@@ -370,139 +355,133 @@ subscribeCommand(client *c);
 </ul>
 
 <p>发布消息的命令由publishCommand函数实现，其源码如下：</p>
-
-<pre><code class="language-cpp">/* 发布消息命令的实现 */
-void publishCommand(client *c) {
-    int receivers = pubsubPublishMessage(c-&gt;argv[1],c-&gt;argv[2]);
-    // 如果开启了集群，需要向集群中的客户端发送消息
-    // 现阶段不讨论集群
-  	if (server.cluster_enabled)
-        clusterPropagatePublish(c-&gt;argv[1],c-&gt;argv[2]);
-    else
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 发布消息命令的实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">publishCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">int</span> receivers <span style="color:#f92672">=</span> pubsubPublishMessage(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>]);
+    <span style="color:#75715e">// 如果开启了集群，需要向集群中的客户端发送消息
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 现阶段不讨论集群
+</span><span style="color:#75715e"></span>  	<span style="color:#66d9ef">if</span> (server.cluster_enabled)
+        clusterPropagatePublish(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>]);
+    <span style="color:#66d9ef">else</span>
         forceCommandPropagation(c,PROPAGATE_REPL);
     addReplyLongLong(c,receivers);
 }
-/* 发布消息的底层实现 */
-int pubsubPublishMessage(robj *channel, robj *message) {
-    int receivers = 0;
-    dictEntry *de;
-    listNode *ln;
+<span style="color:#75715e">/* 发布消息的底层实现 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">pubsubPublishMessage</span>(robj <span style="color:#f92672">*</span>channel, robj <span style="color:#f92672">*</span>message) {
+    <span style="color:#66d9ef">int</span> receivers <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    dictEntry <span style="color:#f92672">*</span>de;
+    listNode <span style="color:#f92672">*</span>ln;
     listIter li;
 
-    // 发送到订阅该频道的所有客户端
-    de = dictFind(server.pubsub_channels,channel);
-    if (de) {
-        // 如果存在该频道，则获取客户端链表
-        list *list = dictGetVal(de);
-        listNode *ln;
+    <span style="color:#75715e">// 发送到订阅该频道的所有客户端
+</span><span style="color:#75715e"></span>    de <span style="color:#f92672">=</span> dictFind(server.pubsub_channels,channel);
+    <span style="color:#66d9ef">if</span> (de) {
+        <span style="color:#75715e">// 如果存在该频道，则获取客户端链表
+</span><span style="color:#75715e"></span>        list <span style="color:#f92672">*</span>list <span style="color:#f92672">=</span> dictGetVal(de);
+        listNode <span style="color:#f92672">*</span>ln;
         listIter li;
-		// 获取迭代器
-        listRewind(list,&amp;li);
-        // 遍历，发送消息
-        while ((ln = listNext(&amp;li)) != NULL) {
-            client *c = ln-&gt;value;
-			// 发送消息
-            addReply(c,shared.mbulkhdr[3]);
+		<span style="color:#75715e">// 获取迭代器
+</span><span style="color:#75715e"></span>        listRewind(list,<span style="color:#f92672">&amp;</span>li);
+        <span style="color:#75715e">// 遍历，发送消息
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span> ((ln <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>li)) <span style="color:#f92672">!=</span> NULL) {
+            client <span style="color:#f92672">*</span>c <span style="color:#f92672">=</span> ln<span style="color:#f92672">-&gt;</span>value;
+			<span style="color:#75715e">// 发送消息
+</span><span style="color:#75715e"></span>            addReply(c,shared.mbulkhdr[<span style="color:#ae81ff">3</span>]);
             addReply(c,shared.messagebulk);
             addReplyBulk(c,channel);
             addReplyBulk(c,message);
-            receivers++;
+            receivers<span style="color:#f92672">++</span>;
         }
     }
-    // 发送到所有模式能与该频道匹配上的客户端
-    if (listLength(server.pubsub_patterns)) {
-        // 获取迭代器
-        listRewind(server.pubsub_patterns,&amp;li);
-        // 解码频道
-        channel = getDecodedObject(channel);
-        // 遍历该链表
-        while ((ln = listNext(&amp;li)) != NULL) {
-            pubsubPattern *pat = ln-&gt;value;
-            // 判断是否能匹配上
-            if (stringmatchlen((char*)pat-&gt;pattern-&gt;ptr,
-                                sdslen(pat-&gt;pattern-&gt;ptr),
-                                (char*)channel-&gt;ptr,
-                                sdslen(channel-&gt;ptr),0)) {
-                // 能匹配上，发送消息
-                addReply(pat-&gt;client,shared.mbulkhdr[4]);
-                addReply(pat-&gt;client,shared.pmessagebulk);
-                addReplyBulk(pat-&gt;client,pat-&gt;pattern);
-                addReplyBulk(pat-&gt;client,channel);
-                addReplyBulk(pat-&gt;client,message);
-                receivers++;
+    <span style="color:#75715e">// 发送到所有模式能与该频道匹配上的客户端
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (listLength(server.pubsub_patterns)) {
+        <span style="color:#75715e">// 获取迭代器
+</span><span style="color:#75715e"></span>        listRewind(server.pubsub_patterns,<span style="color:#f92672">&amp;</span>li);
+        <span style="color:#75715e">// 解码频道
+</span><span style="color:#75715e"></span>        channel <span style="color:#f92672">=</span> getDecodedObject(channel);
+        <span style="color:#75715e">// 遍历该链表
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span> ((ln <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>li)) <span style="color:#f92672">!=</span> NULL) {
+            pubsubPattern <span style="color:#f92672">*</span>pat <span style="color:#f92672">=</span> ln<span style="color:#f92672">-&gt;</span>value;
+            <span style="color:#75715e">// 判断是否能匹配上
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (stringmatchlen((<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)pat<span style="color:#f92672">-&gt;</span>pattern<span style="color:#f92672">-&gt;</span>ptr,
+                                sdslen(pat<span style="color:#f92672">-&gt;</span>pattern<span style="color:#f92672">-&gt;</span>ptr),
+                                (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)channel<span style="color:#f92672">-&gt;</span>ptr,
+                                sdslen(channel<span style="color:#f92672">-&gt;</span>ptr),<span style="color:#ae81ff">0</span>)) {
+                <span style="color:#75715e">// 能匹配上，发送消息
+</span><span style="color:#75715e"></span>                addReply(pat<span style="color:#f92672">-&gt;</span>client,shared.mbulkhdr[<span style="color:#ae81ff">4</span>]);
+                addReply(pat<span style="color:#f92672">-&gt;</span>client,shared.pmessagebulk);
+                addReplyBulk(pat<span style="color:#f92672">-&gt;</span>client,pat<span style="color:#f92672">-&gt;</span>pattern);
+                addReplyBulk(pat<span style="color:#f92672">-&gt;</span>client,channel);
+                addReplyBulk(pat<span style="color:#f92672">-&gt;</span>client,message);
+                receivers<span style="color:#f92672">++</span>;
             }
         }
-        // 执行完之后，引用计数减1
-        decrRefCount(channel);
+        <span style="color:#75715e">// 执行完之后，引用计数减1
+</span><span style="color:#75715e"></span>        decrRefCount(channel);
     }
-    // 返回收到消息的客户端个数
-    return receivers;
+    <span style="color:#75715e">// 返回收到消息的客户端个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> receivers;
 }
-</code></pre>
-
+</code></pre></div>
 <p>本来感觉到此就没有什么功能了，没想到还有一个函数给漏掉了。那就是PUBSUB命令的实现函数，一开始不怎么理解它，于是查看了一下源码。有意思，这是个含有子命令的命令。</p>
-
-<pre><code class="language-cpp">/* 后面的参数是模式串，子命令channels的功能是返回所有符合该模式串的频道 */
-PUBSUB CHANNELS [&lt;pattern1&gt;]
-/* 后面的参数是频道，子命令NUMSUB的功能是返回收听该频道的客户端个数 */
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 后面的参数是模式串，子命令channels的功能是返回所有符合该模式串的频道 */</span>
+PUBSUB CHANNELS [<span style="color:#f92672">&lt;</span>pattern1<span style="color:#f92672">&gt;</span>]
+<span style="color:#75715e">/* 后面的参数是频道，子命令NUMSUB的功能是返回收听该频道的客户端个数 */</span>
 PUBSUB NUMSUB [channel1 ... channeln]
-/* 子命令NUMPAT的功能是返回服务器中所有模式串频道的个数，即pubsub_patterns链表的长度*/
+<span style="color:#75715e">/* 子命令NUMPAT的功能是返回服务器中所有模式串频道的个数，即pubsub_patterns链表的长度*/</span>
 PUBSUB NUMPAT 
-</code></pre>
-
+</code></pre></div>
 <p>其源码实现也很简单，这里列出来大家一起看看。</p>
-
-<pre><code class="language-cpp">/* PUBSUB命令源码实现 */
-void pubsubCommand(client *c) {
-    if (!strcasecmp(c-&gt;argv[1]-&gt;ptr,&quot;channels&quot;) &amp;&amp;
-        (c-&gt;argc == 2 || c-&gt;argc ==3))
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* PUBSUB命令源码实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pubsubCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>strcasecmp(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">-&gt;</span>ptr,<span style="color:#e6db74">&#34;channels&#34;</span>) <span style="color:#f92672">&amp;&amp;</span>
+        (c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">==</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">||</span> c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">==</span><span style="color:#ae81ff">3</span>))
     {
-        // 子命令 PUBSUB CHANNELS [&lt;pattern&gt;]
-        sds pat = (c-&gt;argc == 2) ? NULL : c-&gt;argv[2]-&gt;ptr;
-        // 获取迭代器
-        dictIterator *di = dictGetIterator(server.pubsub_channels);
-        dictEntry *de;
-        long mblen = 0;
-        void *replylen;
+        <span style="color:#75715e">// 子命令 PUBSUB CHANNELS [&lt;pattern&gt;]
+</span><span style="color:#75715e"></span>        sds pat <span style="color:#f92672">=</span> (c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">==</span> <span style="color:#ae81ff">2</span>) <span style="color:#f92672">?</span> NULL <span style="color:#f92672">:</span> c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>]<span style="color:#f92672">-&gt;</span>ptr;
+        <span style="color:#75715e">// 获取迭代器
+</span><span style="color:#75715e"></span>        dictIterator <span style="color:#f92672">*</span>di <span style="color:#f92672">=</span> dictGetIterator(server.pubsub_channels);
+        dictEntry <span style="color:#f92672">*</span>de;
+        <span style="color:#66d9ef">long</span> mblen <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>replylen;
 
-        replylen = addDeferredMultiBulkLength(c);
-        // 遍历并检查与模式串是否匹配
-        while((de = dictNext(di)) != NULL) {
-            robj *cobj = dictGetKey(de);
-            sds channel = cobj-&gt;ptr;
-            if (!pat || stringmatchlen(pat, sdslen(pat),
-                                       channel, sdslen(channel),0))
+        replylen <span style="color:#f92672">=</span> addDeferredMultiBulkLength(c);
+        <span style="color:#75715e">// 遍历并检查与模式串是否匹配
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span>((de <span style="color:#f92672">=</span> dictNext(di)) <span style="color:#f92672">!=</span> NULL) {
+            robj <span style="color:#f92672">*</span>cobj <span style="color:#f92672">=</span> dictGetKey(de);
+            sds channel <span style="color:#f92672">=</span> cobj<span style="color:#f92672">-&gt;</span>ptr;
+            <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>pat <span style="color:#f92672">||</span> stringmatchlen(pat, sdslen(pat),
+                                       channel, sdslen(channel),<span style="color:#ae81ff">0</span>))
             {
-                // 如匹配，就返回该频道的名称
-                addReplyBulk(c,cobj);
-                mblen++;
+                <span style="color:#75715e">// 如匹配，就返回该频道的名称
+</span><span style="color:#75715e"></span>                addReplyBulk(c,cobj);
+                mblen<span style="color:#f92672">++</span>;
             }
         }
         dictReleaseIterator(di);
         setDeferredMultiBulkLength(c,replylen,mblen);
-    } else if (!strcasecmp(c-&gt;argv[1]-&gt;ptr,&quot;numsub&quot;) &amp;&amp; c-&gt;argc &gt;= 2) {
-        // 子命令PUBSUB NUMSUB [Channel_1 ... Channel_N]
-        int j;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>strcasecmp(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">-&gt;</span>ptr,<span style="color:#e6db74">&#34;numsub&#34;</span>) <span style="color:#f92672">&amp;&amp;</span> c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">2</span>) {
+        <span style="color:#75715e">// 子命令PUBSUB NUMSUB [Channel_1 ... Channel_N]
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">int</span> j;
 
-        addReplyMultiBulkLen(c,(c-&gt;argc-2)*2);
-        for (j = 2; j &lt; c-&gt;argc; j++) {
-            list *l = dictFetchValue(server.pubsub_channels,c-&gt;argv[j]);
+        addReplyMultiBulkLen(c,(c<span style="color:#f92672">-&gt;</span>argc<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>)<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>);
+        <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>) {
+            list <span style="color:#f92672">*</span>l <span style="color:#f92672">=</span> dictFetchValue(server.pubsub_channels,c<span style="color:#f92672">-&gt;</span>argv[j]);
 
-            addReplyBulk(c,c-&gt;argv[j]);
-            addReplyLongLong(c,l ? listLength(l) : 0);
+            addReplyBulk(c,c<span style="color:#f92672">-&gt;</span>argv[j]);
+            addReplyLongLong(c,l <span style="color:#f92672">?</span> listLength(l) <span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>);
         }
-    } else if (!strcasecmp(c-&gt;argv[1]-&gt;ptr,&quot;numpat&quot;) &amp;&amp; c-&gt;argc == 2) {
-        // 子命令PUBSUB NUMPAT
-        addReplyLongLong(c,listLength(server.pubsub_patterns));
-    } else {
-        // 其他不能识别的命令 直接报错
-        addReplyErrorFormat(c,
-            &quot;Unknown PUBSUB subcommand or wrong number of arguments for '%s'&quot;,
-            (char*)c-&gt;argv[1]-&gt;ptr);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>strcasecmp(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">-&gt;</span>ptr,<span style="color:#e6db74">&#34;numpat&#34;</span>) <span style="color:#f92672">&amp;&amp;</span> c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">==</span> <span style="color:#ae81ff">2</span>) {
+        <span style="color:#75715e">// 子命令PUBSUB NUMPAT
+</span><span style="color:#75715e"></span>        addReplyLongLong(c,listLength(server.pubsub_patterns));
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 其他不能识别的命令 直接报错
+</span><span style="color:#75715e"></span>        addReplyErrorFormat(c,
+            <span style="color:#e6db74">&#34;Unknown PUBSUB subcommand or wrong number of arguments for &#39;%s&#39;&#34;</span>,
+            (<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">-&gt;</span>ptr);
     }
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="pubsub小结">Pubsub小结</h1>
 
 <p>至此，发布和订阅这个有意思的功能就全部剖析完了，是不是感觉超级简单但很实用？其中，还是不太理解为什么模式串频道要用list，难道是因为模式串频道数据量比较小？要用list来节省内存？而且效率方面也不会影响多少？姑且就这么认为吧，哈哈。大家有什么疑惑和问题请在下方留言区留言，期待和志同道合的你一起讨论Redis！共同学习，共同进步！</p>

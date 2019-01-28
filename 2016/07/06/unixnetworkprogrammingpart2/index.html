@@ -46,9 +46,11 @@ unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bi
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -81,7 +83,6 @@ unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bi
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -138,14 +139,12 @@ unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bi
 <h1 id="二-socket函数">二、socket函数</h1>
 
 <p>为了执行网路I/O，进程做的第一件事情就是调用socket()函数，指定期望的通信协议类型。</p>
-
-<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
-/*  family --指明协议簇  */
-/*  type --指明套接字类型  */
-/*  protocol --指明使用那个协议(当此项为0时，则根据family和type组合的系统默认值)  */
-int socket (int family, int type, int protocol);//若成功则返回非负描述符sockfd，若出错则返回-1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/socket.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">/*  family --指明协议簇  */</span>
+<span style="color:#75715e">/*  type --指明套接字类型  */</span>
+<span style="color:#75715e">/*  protocol --指明使用那个协议(当此项为0时，则根据family和type组合的系统默认值)  */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">socket</span> (<span style="color:#66d9ef">int</span> family, <span style="color:#66d9ef">int</span> type, <span style="color:#66d9ef">int</span> protocol);<span style="color:#75715e">//若成功则返回非负描述符sockfd，若出错则返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>下表为他们的一些取值：</p>
 
 <p>|family|说明| |type|说明||protocol|说明|
@@ -212,14 +211,12 @@ int socket (int family, int type, int protocol);//若成功则返回非负描述
 <h1 id="三-connect函数">三、connect函数</h1>
 
 <p>client客户进程调用此函数来建立与服务器间的连接。</p>
-
-<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
-/*  sockfd --socket()函数返回的套接字描述符  */
-/*  servaddr --指向套接字地址结构的指针  */
-/*  addrlen --该结构的大小  */
-int connect (int sockfd, const struct sockaddr *servaddr, socklen_t addrlen);//若成功返回0，反之返回-1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/socket.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">/*  sockfd --socket()函数返回的套接字描述符  */</span>
+<span style="color:#75715e">/*  servaddr --指向套接字地址结构的指针  */</span>
+<span style="color:#75715e">/*  addrlen --该结构的大小  */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">connect</span> (<span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>servaddr, socklen_t addrlen);<span style="color:#75715e">//若成功返回0，反之返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>客户在调用connect()时没必要调用bind()，因为如果需要的话，内核会确定源IP地址，并选择一个临时端口作为源端口。</p>
 
 <p>调用connect()函数，出错的情况有如下几种：</p>
@@ -241,96 +238,84 @@ int connect (int sockfd, const struct sockaddr *servaddr, socklen_t addrlen);//�
 <h1 id="四-bind函数">四、bind函数</h1>
 
 <p>用于把一个本地协议地址赋予一个套接字。对于网际网协议，协议地址时32位的IPv4地址或者128位IPv6地址与16位的TCP或UDP端口号的组合。调用bind可以制定IP地址或端口，也可以两者都指定，也可以都不指定。</p>
-
-<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
-/*  sockfd --socket()函数返回的套接字描述符  */
-/*  servaddr --指向套接字地址结构的指针  */
-/*  addrlen --该结构的大小  */
-int bind(int sockfd, const struct sockaddr *myaddr, socklen_t addrlen);//若成功返回0，反之返回-1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/socket.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">/*  sockfd --socket()函数返回的套接字描述符  */</span>
+<span style="color:#75715e">/*  servaddr --指向套接字地址结构的指针  */</span>
+<span style="color:#75715e">/*  addrlen --该结构的大小  */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">bind</span>(<span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>myaddr, socklen_t addrlen);<span style="color:#75715e">//若成功返回0，反之返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="五-listen函数">五、listen函数</h1>
 
 <p>该函数主要干两件事情
 (1) 当socket函数创建一个套接字时，它被假设为一个主动套接字（将调用connect发起连接的客户套接字）
 listen函数把一个未连接的套接字转换成一个被动套接字，指示内核应接受指向该套接字的连接请求。
 (2) 本函数的第二个参数规定了内核应该为相应套接字排队的最大连接个数</p>
-
-<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
-/*  sockfd --socket()函数返回的套接字描述符  */
-/*  backlog --内核为相应套接字排队的最大连接个数  */
-int listen(int sockfd, int backlog);//若成功返回0，反之返回-1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/socket.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">/*  sockfd --socket()函数返回的套接字描述符  */</span>
+<span style="color:#75715e">/*  backlog --内核为相应套接字排队的最大连接个数  */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">listen</span>(<span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">int</span> backlog);<span style="color:#75715e">//若成功返回0，反之返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="六-accept函数">六、accept函数</h1>
 
 <p>此函数由TCP服务器调用，用于已完成连接队列对头返回下一个已完成连接。如果已完成连接队列为空，那么进程被投入睡眠。</p>
-
-<pre><code class="language-cpp">/*  sockfd --socket()函数返回的套接字描述符  */
-/*  cliaddr --用来返回已连接的对端进程的协议地址  */
-/*  addrlen --调用前：为cliaddr所指的套接字地址结构大小  */
-/*          --调用后：为由内核存放在该套接字地址结构内的确切字节数  */
-int accept(int sockfd, struct sockaddr *cliaddr , socklen_t *addrlen);//若成功返回非负描述符，若出错，则返回-1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/*  sockfd --socket()函数返回的套接字描述符  */</span>
+<span style="color:#75715e">/*  cliaddr --用来返回已连接的对端进程的协议地址  */</span>
+<span style="color:#75715e">/*  addrlen --调用前：为cliaddr所指的套接字地址结构大小  */</span>
+<span style="color:#75715e">/*          --调用后：为由内核存放在该套接字地址结构内的确切字节数  */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">accept</span>(<span style="color:#66d9ef">int</span> sockfd, <span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>cliaddr , socklen_t <span style="color:#f92672">*</span>addrlen);<span style="color:#75715e">//若成功返回非负描述符，若出错，则返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>如果accept调用成功，则返回一个由内核自动生成的全新描述符，代表与所返回客户的TCP连接。</p>
 
 <p>accept的参数socket通常被称为监听套接字描述符，而其返回值为连接套接字描述符。一个服务器通常只创建一个监听套接字描述符，内核为每个由服务器进程接受的客户创建一个已连接套接字（三次握手已完成）。</p>
 
 <h1 id="七-一个简单的值-结果例子">七、一个简单的值-结果例子</h1>
-
-<pre><code class="language-cpp">#include	&quot;unp.h&quot;
-#include	&lt;time.h&gt;
-int
-main(int argc, char **argv)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span>	<span style="color:#75715e">&#34;unp.h&#34;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span>	<span style="color:#75715e">&lt;time.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span>
+<span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-	int					listenfd, connfd;
+	<span style="color:#66d9ef">int</span>					listenfd, connfd;
 	socklen_t			len;
-	struct sockaddr_in	servaddr, cliaddr;
-	char				buff[MAXLINE];
+	<span style="color:#66d9ef">struct</span> sockaddr_in	servaddr, cliaddr;
+	<span style="color:#66d9ef">char</span>				buff[MAXLINE];
 	time_t				ticks;
-	//创建套接字
-	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
-	//初始化套接字
-	bzero(&amp;servaddr, sizeof(servaddr));
-	servaddr.sin_family      = AF_INET;//IPv4协议
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);//通配地址，一般为0
-	servaddr.sin_port        = htons(13);//时间服务端口
-	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+	<span style="color:#75715e">//创建套接字
+</span><span style="color:#75715e"></span>	listenfd <span style="color:#f92672">=</span> Socket(AF_INET, SOCK_STREAM, <span style="color:#ae81ff">0</span>);
+	<span style="color:#75715e">//初始化套接字
+</span><span style="color:#75715e"></span>	bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
+	servaddr.sin_family      <span style="color:#f92672">=</span> AF_INET;<span style="color:#75715e">//IPv4协议
+</span><span style="color:#75715e"></span>	servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);<span style="color:#75715e">//通配地址，一般为0
+</span><span style="color:#75715e"></span>	servaddr.sin_port        <span style="color:#f92672">=</span> htons(<span style="color:#ae81ff">13</span>);<span style="color:#75715e">//时间服务端口
+</span><span style="color:#75715e"></span>	Bind(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
 	Listen(listenfd, LISTENQ);
-	for ( ; ; ) {
-		len = sizeof(cliaddr);
-		connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;len);
-		printf(&quot;connection from %s, port %d\n&quot;,
-			Inet_ntop(AF_INET, &amp;cliaddr.sin_addr, buff, sizeof(buff)),
+	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		len <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);
+		connfd <span style="color:#f92672">=</span> Accept(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, <span style="color:#f92672">&amp;</span>len);
+		printf(<span style="color:#e6db74">&#34;connection from %s, port %d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,
+			Inet_ntop(AF_INET, <span style="color:#f92672">&amp;</span>cliaddr.sin_addr, buff, <span style="color:#66d9ef">sizeof</span>(buff)),
 			ntohs(cliaddr.sin_port));
-        ticks = time(NULL);
-        snprintf(buff, sizeof(buff), &quot;%.24s\r\n&quot;, ctime(&amp;ticks));
+        ticks <span style="color:#f92672">=</span> time(NULL);
+        snprintf(buff, <span style="color:#66d9ef">sizeof</span>(buff), <span style="color:#e6db74">&#34;%.24s</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>, ctime(<span style="color:#f92672">&amp;</span>ticks));
         Write(connfd, buff, strlen(buff));
 		Close(connfd);
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>编译执行上述代码，即可运行服务器端程序，那么我们开启客户端程序连接服务器，就会输出客户IP地址和端口号。</p>
 
 <blockquote>
 <p>注意：此处如果出现bind error：Address already in use！，可参考：<a href="http://blog.csdn.net/terence1212/article/details/51834177">【unix网络编程第三版】ubuntu端口占用问题</a></p>
 </blockquote>
-
-<pre><code class="language-cpp"># ./daytimes
-connection from 127.0.0.1, port 53458
-connection from 192.168.191.2, port 54358
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e"># ./daytimes
+</span><span style="color:#75715e"></span>connection from <span style="color:#ae81ff">127.0.0.1</span>, port <span style="color:#ae81ff">53458</span>
+connection from <span style="color:#ae81ff">192.168.191.2</span>, port <span style="color:#ae81ff">54358</span>
+</code></pre></div>
 <h1 id="八-fork和exec函数">八、fork和exec函数</h1>
 
 <p>fork函数是Unix中派生新进程的唯一方法。</p>
-
-<pre><code class="language-cpp">#include&lt;unistd.h&gt;
-pid_t fork(void);/* 在子进程中返回0，在父进程中为子进程ID，若出错则返回-1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span><span style="color:#75715e">&lt;unistd.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>pid_t <span style="color:#a6e22e">fork</span>(<span style="color:#66d9ef">void</span>);<span style="color:#75715e">/* 在子进程中返回0，在父进程中为子进程ID，若出错则返回-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>任何子进程只有一个父进程，而且父进程通过getppid取得父进程ID，而父进程可以有许多子进程，而且无法获取各个子进程的进程ID，如果父进程想要知道子进程的ID，只能通过记录每次调用fork的返回值。</p>
 
 <p>fork的两个典型用法：</p>
@@ -340,42 +325,39 @@ pid_t fork(void);/* 在子进程中返回0，在父进程中为子进程ID，若
 <p>(2) 一个进程想要执行另一个进程。fork函数创建一个副本，然后通过调用exec把其中一个副本替换成新的程序。</p>
 
 <p>存放在硬盘你上的可执行程序文件能够被Unix执行的唯一方法：由一个现有的进程调用六个exec函数中的某一个。</p>
-
-<pre><code class="language-cpp">#include &lt;unistd.h&gt;
-int execl(const char *path, const char *arg, ...);
-int execlp(const char *file, const char *arg, ...);
-int execle(const char *path, const char *arg,..., char * const envp[]);
-int execv(const char *path, char *const argv[]);
-int execvp(const char *file, char *const argv[]);
-int execve(int fd,char *const argv[],char *const envp[]);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unistd.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">execl</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>path, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>arg, ...);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">execlp</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>file, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>arg, ...);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">execle</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>path, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>arg,..., <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">const</span> envp[]);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">execv</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>path, <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">const</span> argv[]);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">execvp</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>file, <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">const</span> argv[]);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">execve</span>(<span style="color:#66d9ef">int</span> fd,<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">const</span> argv[],<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">const</span> envp[]);
+</code></pre></div>
 <h1 id="九-并发服务器">九、并发服务器</h1>
 
 <p>像上面提到的时间获取服务器，属于迭代服务器。这种服务器都被一个单一客户占用，如果客户请求时间长，则该服务器被长期占用，这显然会影响效率。所以，我们希望服务器能尽可能同时服务多个用户。这种服务器称为并发服务器。</p>
 
 <p>并发服务器利用fork函数创建一个子进程来服务客户。</p>
-
-<pre><code class="language-cpp">int
-﻿main(int argc, char **argv)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span>
+<span style="color:#960050;background-color:#1e0010">﻿</span>main(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
 	pid_t 		pid;
-	int		listenfd, connfd;
+	<span style="color:#66d9ef">int</span>		listenfd, connfd;
 	socklen_t	len;
-	struct sockaddr_in	servaddr;
+	<span style="color:#66d9ef">struct</span> sockaddr_in	servaddr;
 	time_t		ticks;
-	//创建套接字
-	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
-	//初始化套接字
-	bzero(&amp;servaddr, sizeof(servaddr));
-	servaddr.sin_family      = AF_INET;//IPv4协议
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);//通配地址，一般为0
-	servaddr.sin_port        = htons(13);//时间服务端口
-	Bind(listenfd, (SA *) &amp;servaddr, sizeof(servaddr));
+	<span style="color:#75715e">//创建套接字
+</span><span style="color:#75715e"></span>	listenfd <span style="color:#f92672">=</span> Socket(AF_INET, SOCK_STREAM, <span style="color:#ae81ff">0</span>);
+	<span style="color:#75715e">//初始化套接字
+</span><span style="color:#75715e"></span>	bzero(<span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
+	servaddr.sin_family      <span style="color:#f92672">=</span> AF_INET;<span style="color:#75715e">//IPv4协议
+</span><span style="color:#75715e"></span>	servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);<span style="color:#75715e">//通配地址，一般为0
+</span><span style="color:#75715e"></span>	servaddr.sin_port        <span style="color:#f92672">=</span> htons(<span style="color:#ae81ff">13</span>);<span style="color:#75715e">//时间服务端口
+</span><span style="color:#75715e"></span>	Bind(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr, <span style="color:#66d9ef">sizeof</span>(servaddr));
 	Listen(listenfd, LISTENQ);
-	for ( ; ; ) {
-		connfd = Accept(listenfd, (SA *) &amp;cliaddr, &amp;len);
-		if((pid = fork())==0)
+	<span style="color:#66d9ef">for</span> ( ; ; ) {
+		connfd <span style="color:#f92672">=</span> Accept(listenfd, (SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>cliaddr, <span style="color:#f92672">&amp;</span>len);
+		<span style="color:#66d9ef">if</span>((pid <span style="color:#f92672">=</span> fork())<span style="color:#f92672">==</span><span style="color:#ae81ff">0</span>)
 		{
 			close(listenfd);
 			doit(connfd);
@@ -385,8 +367,7 @@ int execve(int fd,char *const argv[],char *const envp[]);
 		Close(connfd);
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>分析以上程序：
 父进程：pid为子进程ID，不为0，则将connfd的引用套接字减1，父进程继续等待下一个客户连接</p>
 
@@ -395,22 +376,18 @@ int execve(int fd,char *const argv[],char *const envp[]);
 <h1 id="十-close函数">十、close函数</h1>
 
 <p>用来关闭套接字，并中止TCP连接。</p>
-
-<pre><code class="language-cpp">#include &lt;unistd.h&gt;
-int close(int sockfd);/* 若成功则返回0，出错则返回-1*/
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unistd.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">close</span>(<span style="color:#66d9ef">int</span> sockfd);<span style="color:#75715e">/* 若成功则返回0，出错则返回-1*/</span>
+</code></pre></div>
 <p>close函数调用后只是将引用计数减1，只有当引用技术为0时，才会测地关闭该套接字，清理和资源释放。</p>
 
 <h1 id="十一-getsockname和getpeername函数">十一、getsockname和getpeername函数</h1>
 
 <p>getsockname函数返回与某个套接字关联的本地协议地址，getpeername函数返回与某个套接字关联的外地协议地址。</p>
-
-<pre><code class="language-cpp">#include &lt;sys/socket.h&gt;
-int getsockname(int sockfd,struct sockaddr *localaddr,socklen_t *addrlen);
-int getpeername(int sockfd,struct sockaddr *peeraddr,socklen_t *addrlen);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/socket.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">getsockname</span>(<span style="color:#66d9ef">int</span> sockfd,<span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>localaddr,socklen_t <span style="color:#f92672">*</span>addrlen);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">getpeername</span>(<span style="color:#66d9ef">int</span> sockfd,<span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>peeraddr,socklen_t <span style="color:#f92672">*</span>addrlen);
+</code></pre></div>
 <p>需要使用上述函数的情况如下：
 (1) 在一个没有调用bind的TCP客户上，connect成功返回后，getsockname用于返回由内核赋予该连接的本地IP地址和本地端口号
 (2) 在以端口0调用bind后，getsockname用于返回由内核赋予的本地端口号

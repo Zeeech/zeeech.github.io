@@ -50,9 +50,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -85,7 +87,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -142,54 +143,48 @@
 <p>正如Linus Torvalds说的一句话：“Talk is cheap，Show me the code”。在程序员的世界里，讲再多都不如直接给看代码。就比如一道算法题，别人跟你讲半天思路，你懂了，但真正要你码出代码来实现时，你可能花的时间比理解思路还要多，更别提后面的调试时间了。所以，一如本系列文章的风格，从代码的角度来观“对象模型”，再合适也不过呢。</p>
 
 <p>拷贝构造函数，就是以一个对象作为另一个类对象初值的构造函数。在下面三种情况下会调用拷贝构造函数：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{};
+<span style="color:#75715e">//--------------------第一种情况-------------------------//
+</span><span style="color:#75715e">//对一个对象对另一个对象进行显示的初始化
+</span><span style="color:#75715e"></span>Animal animal_one;
+Animal animal_two <span style="color:#f92672">=</span> animal_one; 
 
-<pre><code class="language-cpp">class Animal{};
-//--------------------第一种情况-------------------------//
-//对一个对象对另一个对象进行显示的初始化
-Animal animal_one;
-Animal animal_two = animal_one; 
-
-//--------------------第二种情况-------------------------//
-//一个对象作为函数参数，以值传递的方式传进函数
-void getName(Animal a){}
+<span style="color:#75715e">//--------------------第二种情况-------------------------//
+</span><span style="color:#75715e">//一个对象作为函数参数，以值传递的方式传进函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">getName</span>(Animal a){}
 getName(animal_one);
 
-//--------------------第三种情况-------------------------//
-//一个对象作为函数返回值，以值传递的方式从函数返回
-Animal setName(){
+<span style="color:#75715e">//--------------------第三种情况-------------------------//
+</span><span style="color:#75715e">//一个对象作为函数返回值，以值传递的方式从函数返回
+</span><span style="color:#75715e"></span>Animal <span style="color:#a6e22e">setName</span>(){
 	Animal animal;
-	//....
-	return animal;
+	<span style="color:#75715e">//....
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> animal;
 }
-</code></pre>
-
+</code></pre></div>
 <p>说了这么多，拷贝构造函数到底该怎么写呢？请继续阅读下面的代码。</p>
-
-<pre><code class="language-cpp">//单参数拷贝构造函数
-Animal::Animal(const Animal&amp; _animal){
-	//....
-}
-//多参数拷贝构造函数，其第二参数即后继参数以一个默认值供应
-Animal::Animal(const Animal&amp; _animal, int =0){
-	//.....
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//单参数拷贝构造函数
+</span><span style="color:#75715e"></span>Animal<span style="color:#f92672">::</span>Animal(<span style="color:#66d9ef">const</span> Animal<span style="color:#f92672">&amp;</span> _animal){
+	<span style="color:#75715e">//....
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">//多参数拷贝构造函数，其第二参数即后继参数以一个默认值供应
+</span><span style="color:#75715e"></span>Animal<span style="color:#f92672">::</span>Animal(<span style="color:#66d9ef">const</span> Animal<span style="color:#f92672">&amp;</span> _animal, <span style="color:#66d9ef">int</span> <span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>){
+	<span style="color:#75715e">//.....
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>有了如上的理解之后，还是如默认构造函数那样，接下来就来讨论trivial和non-trivial构造函数以及什么时候编译器会产生non-trivial构造函数。</p>
 
 <h1 id="位逐次拷贝">位逐次拷贝</h1>
 
 <p>位逐次拷贝是由“Bitwise Copy Semantics”翻译而来，就是按bit位来拷贝对象。如下面的代码：</p>
-
-<pre><code class="language-cpp">class Animal{
-	//没有提供显示的拷贝构造函数
-	int age；
-	char* name;
-}；
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+	<span style="color:#75715e">//没有提供显示的拷贝构造函数
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">int</span> age<span style="color:#960050;background-color:#1e0010">；</span>
+	<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> name;
+}<span style="color:#960050;background-color:#1e0010">；</span>
 Animal animal_one;
-Animal animal_two = animal_one;
-</code></pre>
-
+Animal animal_two <span style="color:#f92672">=</span> animal_one;
+</code></pre></div>
 <p>这种情况下会采用位逐次拷贝，只是简简单单按位把animal_one的内存中存的值赋给animal_two，这类拷贝也称为浅拷贝。正如大家熟知，这类拷贝是不安全的。</p>
 
 <p><center><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkfex0qsej30dj096dg9.jpg" alt="浅拷贝" /></center></p>
@@ -214,50 +209,46 @@ Animal animal_two = animal_one;
 <h1 id="带有拷贝构造函数的成员类对象">带有拷贝构造函数的成员类对象</h1>
 
 <p>如果一个类中有带有拷贝构造函数的类成员，或是编译器会为其合成一个拷贝构造函数，那么这个类就不会展现出位逐次拷贝的能力。</p>
-
-<pre><code class="language-cpp">class Animal{
- public:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+ <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
  	Animal(){}
-    Animal(const Animal&amp; animal){
-            cout&lt;&lt;&quot;Animal's Copy Constructor&quot;&lt;&lt;endl;
+    Animal(<span style="color:#66d9ef">const</span> Animal<span style="color:#f92672">&amp;</span> animal){
+            cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal&#39;s Copy Constructor&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
         }
 };
-class Dog{
-public:
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	Dog(){}
     Animal animal;
 };
 
-int main(){
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
     Dog dog1;
-    Dog dog2 = dog1;
+    Dog dog2 <span style="color:#f92672">=</span> dog1;
 }
-</code></pre>
-
+</code></pre></div>
 <p>如上述的代码，执行之后会输出：Animal&rsquo;s Copy Constructor，编译器为dog2合成的拷贝构造函数不是简单的进行位逐次拷贝，而是调用了Animal的拷贝构造函数，重新构造一个dog2::animal。</p>
 
 <h1 id="带有拷贝构造函数的基类">带有拷贝构造函数的基类</h1>
 
 <p>如果一个类继承自一个带有拷贝构造函数的基类的话，那么编译器在为其合成拷贝构造函数的时候会调用基类的拷贝构造函数。简单的以以下代码来测试一下：</p>
-
-<pre><code class="language-cpp">class Animal{
- public:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+ <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
  	Animal(){}
-    Animal(const Animal&amp; animal){
-            cout&lt;&lt;&quot;Animal's Copy Constructor&quot;&lt;&lt;endl;
+    Animal(<span style="color:#66d9ef">const</span> Animal<span style="color:#f92672">&amp;</span> animal){
+            cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Animal&#39;s Copy Constructor&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
         }
 };
-class Dog : Animal{
-public:
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span> <span style="color:#f92672">:</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
 	Dog(){}
 };
 
-int main(){
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
     Dog dog1;
-    Dog dog2 = dog1;
+    Dog dog2 <span style="color:#f92672">=</span> dog1;
 }
-</code></pre>
-
+</code></pre></div>
 <p>同样的，上述代码会输出Animal&rsquo;s Copy Constructor，显示调用了基类的拷贝构造函数。</p>
 
 <h1 id="带有虚函数的类对象">带有虚函数的类对象</h1>
@@ -270,29 +261,25 @@ int main(){
 </ul>
 
 <p>涉及到虚函数的类在合成拷贝构造函数的时候，有点复杂，我们先看看如下测试代码：</p>
-
-<pre><code class="language-cpp">class Animal{
- public:
- 	virtual void eat(){}
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+ <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+ 	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> eat(){}
 };
-class Dog : public Animal{
-public:
-	virtual void eat(){}	
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Dog</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> Animal{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> eat(){}	
 };
-int main(){
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(){
 	Dog dog1;
-	Dog dog2 = dog1;
-	cout&lt;&lt;&quot;dog1::vptr&quot;&lt;&lt;(long long *)*(long long*)&amp;dog1&lt;&lt;endl;
-	cout&lt;&lt;&quot;dog1::vptr&quot;&lt;&lt;(long long *)*(long long*)&amp;dog2&lt;&lt;endl;
+	Dog dog2 <span style="color:#f92672">=</span> dog1;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;dog1::vptr&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>dog1<span style="color:#f92672">&lt;&lt;</span>endl;
+	cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;dog1::vptr&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>dog2<span style="color:#f92672">&lt;&lt;</span>endl;
 }
-</code></pre>
-
+</code></pre></div>
 <p>在上述测试代码中，我提取出dog1和dog2对象中的虚表地址，观察输出如下：</p>
-
-<pre><code class="language-cpp">dog1::vptr:0x400c60
-dog2::vptr:0x400c60
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dog1<span style="color:#f92672">::</span>vptr:<span style="color:#ae81ff">0x400c60</span>
+dog2<span style="color:#f92672">::</span>vptr:<span style="color:#ae81ff">0x400c60</span>
+</code></pre></div>
 <p>由于虚表是在编译的时候创建的，所以，将dog2的虚表指针指向dog1的虚表这样是安全的，这里使用位逐次拷贝是没有问题的。</p>
 
 <blockquote>
@@ -302,19 +289,15 @@ dog2::vptr:0x400c60
 </blockquote>
 
 <p>但是，如果执行如下代码：</p>
-
-<pre><code class="language-cpp">Dog dog;
-Animal animal = dog;
-cout&lt;&lt;&quot;dog::vptr:&quot;&lt;&lt;(long long *)*(long long*)&amp;dog&lt;&lt;endl;
-cout&lt;&lt;&quot;animal::vptr:&quot;&lt;&lt;(long long *)*(long long*)&amp;animal&lt;&lt;endl;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dog dog;
+Animal animal <span style="color:#f92672">=</span> dog;
+cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;dog::vptr:&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>dog<span style="color:#f92672">&lt;&lt;</span>endl;
+cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;animal::vptr:&#34;</span><span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>animal<span style="color:#f92672">&lt;&lt;</span>endl;
+</code></pre></div>
 <p>此时，将一个父类用子类初始化，这时候输出如下：</p>
-
-<pre><code class="language-cpp">dog::vptr:0x400c30
-animal::vptr:0x400c48
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dog<span style="color:#f92672">::</span>vptr:<span style="color:#ae81ff">0x400c30</span>
+animal<span style="color:#f92672">::</span>vptr:<span style="color:#ae81ff">0x400c48</span>
+</code></pre></div>
 <p>可见，这时候就不能采用位逐次拷贝了，父类的拷贝构造函数需要重新设定自己的虚指针指向Animal类的虚表，而不是直接将dog::vptr直接赋给animal::vptr。</p>
 
 <h1 id="带有虚基类的子类对象">带有虚基类的子类对象</h1>
@@ -324,19 +307,15 @@ animal::vptr:0x400c48
 <p><center><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkfext82hj305z09sq32.jpg" alt="" /></center></p>
 
 <p>在上图中，Canidae由Animal类虚拟派生出来，Dog由Canidae类派生出来，在Canidae和Dog类中都有一个虚基类的指针，指向每个类中的虚基类。因此，在执行以下操作时，位逐次拷贝也会失效，编译器必须合成一个拷贝构造函数，来重新设定指向虚基类的指针。</p>
-
-<pre><code class="language-cpp">Dog dog;
-Canidae canidae=dog;
-cout&lt;&lt;(long long *)*(long long*)&amp;canidae&lt;&lt;endl;
-cout&lt;&lt;(long long *)*(long long*)&amp;dog&lt;&lt;endl;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dog dog;
+Canidae canidae<span style="color:#f92672">=</span>dog;
+cout<span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>canidae<span style="color:#f92672">&lt;&lt;</span>endl;
+cout<span style="color:#f92672">&lt;&lt;</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span><span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>dog<span style="color:#f92672">&lt;&lt;</span>endl;
+</code></pre></div>
 <p>以上测试代码输出：</p>
-
-<pre><code class="language-cpp">0x400c20
-0x400be0
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#ae81ff">0x400c20</span>
+<span style="color:#ae81ff">0x400be0</span>
+</code></pre></div>
 <h1 id="总结">总结</h1>
 
 <p>本篇博客讨论了编译器会合成一个拷贝构造函数的四种情况，现总结如下：</p>

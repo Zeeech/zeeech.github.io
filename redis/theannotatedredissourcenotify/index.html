@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -103,33 +104,27 @@
 <p>对于Redis服务器，它可以通过订阅发布功能来发送服务器中的键空间事件。所谓键空间事件，就是数据库中键的增加，修改和删除等操作，用于告知收听该类事件的客户端当前数据库中执行了哪些操作。由于通知功能会影响服务器的工作效率，Redis默认在启动的时候不开启键空间事件通知功能。</p>
 
 <p>我们有两种方式开启键空间事件通知功能，或者只接受特定类型的通知，一是修改redis.conf中的指定参数，如下：</p>
-
-<pre><code class="language-cpp">/* 默认为空，表示不开启键空间事件通知功能 */
-notify-keyspace-events &quot;&quot; 
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 默认为空，表示不开启键空间事件通知功能 */</span>
+notify<span style="color:#f92672">-</span>keyspace<span style="color:#f92672">-</span>events <span style="color:#e6db74">&#34;&#34;</span> 
+</code></pre></div>
 <p>第二种方法是通过CONFIG SET命令来设定notify-keyspace-events参数，其命令形式如下：</p>
-
-<pre><code class="language-cpp">/* xx代表订阅的事件类型，后面会讲到 */
-CONFIG SET notify-keyspace-events KE
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* xx代表订阅的事件类型，后面会讲到 */</span>
+CONFIG SET notify<span style="color:#f92672">-</span>keyspace<span style="color:#f92672">-</span>events KE
+</code></pre></div>
 <p>当服务器开启键空间事件通知功能时，需要指定事件的类型，即开启哪些特定类型的通知。Redis设定了一系列的宏定义，用来标识事件的类型。</p>
-
-<pre><code class="language-cpp">#define NOTIFY_KEYSPACE (1&lt;&lt;0)    /* K */
-#define NOTIFY_KEYEVENT (1&lt;&lt;1)    /* E */
-#define NOTIFY_GENERIC (1&lt;&lt;2)     /* g */
-#define NOTIFY_STRING (1&lt;&lt;3)      /* $ */
-#define NOTIFY_LIST (1&lt;&lt;4)        /* l */
-#define NOTIFY_SET (1&lt;&lt;5)         /* s */
-#define NOTIFY_HASH (1&lt;&lt;6)        /* h */
-#define NOTIFY_ZSET (1&lt;&lt;7)        /* z */
-#define NOTIFY_EXPIRED (1&lt;&lt;8)     /* x */
-#define NOTIFY_EVICTED (1&lt;&lt;9)     /* e */
-#define NOTIFY_ALL (NOTIFY_GENERIC | NOTIFY_STRING | NOTIFY_LIST | NOTIFY_SET |
-NOTIFY_HASH | NOTIFY_ZSET | NOTIFY_EXPIRED | NOTIFY_EVICTED) /* A */
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define NOTIFY_KEYSPACE (1&lt;&lt;0)    </span><span style="color:#75715e">/* K */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_KEYEVENT (1&lt;&lt;1)    </span><span style="color:#75715e">/* E */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_GENERIC (1&lt;&lt;2)     </span><span style="color:#75715e">/* g */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_STRING (1&lt;&lt;3)      </span><span style="color:#75715e">/* $ */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_LIST (1&lt;&lt;4)        </span><span style="color:#75715e">/* l */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_SET (1&lt;&lt;5)         </span><span style="color:#75715e">/* s */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_HASH (1&lt;&lt;6)        </span><span style="color:#75715e">/* h */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_ZSET (1&lt;&lt;7)        </span><span style="color:#75715e">/* z */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_EXPIRED (1&lt;&lt;8)     </span><span style="color:#75715e">/* x */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_EVICTED (1&lt;&lt;9)     </span><span style="color:#75715e">/* e */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define NOTIFY_ALL (NOTIFY_GENERIC | NOTIFY_STRING | NOTIFY_LIST | NOTIFY_SET |
+</span><span style="color:#75715e"></span>NOTIFY_HASH <span style="color:#f92672">|</span> NOTIFY_ZSET <span style="color:#f92672">|</span> NOTIFY_EXPIRED <span style="color:#f92672">|</span> NOTIFY_EVICTED) <span style="color:#75715e">/* A */</span>
+</code></pre></div>
 <p>其中，每一个宏定义代表的事件类型如下表：</p>
 
 <table>
@@ -199,163 +194,149 @@ NOTIFY_HASH | NOTIFY_ZSET | NOTIFY_EXPIRED | NOTIFY_EVICTED) /* A */
 </table>
 
 <p>关于notify-keyspace-events的设定，输入参数必须至少要有一个K或者E，用来标识该通知是键空间还是键事件；如果不包含，不管其余参数为什么，都将不会有任何通知被分发。例如：</p>
-
-<pre><code class="language-cpp">~ redis-cli
-/* 开启所有的事件 */
-127.0.0.1:6379&gt; CONFIG SET notify-keyspace-events KEA
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>cli
+<span style="color:#75715e">/* 开启所有的事件 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> CONFIG SET notify<span style="color:#f92672">-</span>keyspace<span style="color:#f92672">-</span>events KEA
 OK
-/* 开启所有的键空间命令 */
-127.0.0.1:6379&gt; CONFIG SET notify-keyspace-events KA
+<span style="color:#75715e">/* 开启所有的键空间命令 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> CONFIG SET notify<span style="color:#f92672">-</span>keyspace<span style="color:#f92672">-</span>events KA
 OK
-/* 开启列表命令的键事件通知 */
-127.0.0.1:6379&gt; CONFIG SET notify-keyspace-events El
+<span style="color:#75715e">/* 开启列表命令的键事件通知 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> CONFIG SET notify<span style="color:#f92672">-</span>keyspace<span style="color:#f92672">-</span>events El
 OK
-</code></pre>
-
+</code></pre></div>
 <p># Notify源码实现</p>
 
 <p>Notify的功能由三个函数实现，没错，就是三个，这充分体现了Redis模块划分明确的优点，使得代码的重用性很强。下面来看一下这三个函数吧。</p>
-
-<pre><code class="language-cpp">/* 将Notify设置参数由字符串转换成标识量flag */
-int keyspaceEventsStringToFlags(char *classes);
-/* 将Notify设置参数由标识量flags转换成字符串 */
-sds keyspaceEventsFlagsToString(int flags);
-/* 通知功能的实现 */
-void notifyKeyspaceEvent(int type, char *event, robj *key, int dbid);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 将Notify设置参数由字符串转换成标识量flag */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">keyspaceEventsStringToFlags</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>classes);
+<span style="color:#75715e">/* 将Notify设置参数由标识量flags转换成字符串 */</span>
+sds <span style="color:#a6e22e">keyspaceEventsFlagsToString</span>(<span style="color:#66d9ef">int</span> flags);
+<span style="color:#75715e">/* 通知功能的实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">notifyKeyspaceEvent</span>(<span style="color:#66d9ef">int</span> type, <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>event, robj <span style="color:#f92672">*</span>key, <span style="color:#66d9ef">int</span> dbid);
+</code></pre></div>
 <p>首先来看看第一个函数，其功能是将Notify设置参数由字符串转换成标识量flag</p>
-
-<pre><code class="language-cpp">int keyspaceEventsStringToFlags(char *classes) {
-    char *p = classes;
-    int c, flags = 0;
-    // 遍历每一个字符
-    while((c = *p++) != '\0') {
-        switch(c) {
-        case 'A': flags |= NOTIFY_ALL; break;
-        case 'g': flags |= NOTIFY_GENERIC; break;
-        case '$': flags |= NOTIFY_STRING; break;
-        case 'l': flags |= NOTIFY_LIST; break;
-        case 's': flags |= NOTIFY_SET; break;
-        case 'h': flags |= NOTIFY_HASH; break;
-        case 'z': flags |= NOTIFY_ZSET; break;
-        case 'x': flags |= NOTIFY_EXPIRED; break;
-        case 'e': flags |= NOTIFY_EVICTED; break;
-        case 'K': flags |= NOTIFY_KEYSPACE; break;
-        case 'E': flags |= NOTIFY_KEYEVENT; break;
-        default: return -1;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">keyspaceEventsStringToFlags</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>classes) {
+    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p <span style="color:#f92672">=</span> classes;
+    <span style="color:#66d9ef">int</span> c, flags <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 遍历每一个字符
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>((c <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>p<span style="color:#f92672">++</span>) <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#39;\0&#39;</span>) {
+        <span style="color:#66d9ef">switch</span>(c) {
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;A&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_ALL; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;g&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_GENERIC; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;$&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_STRING; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;l&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_LIST; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;s&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_SET; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;h&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_HASH; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;z&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_ZSET; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;x&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_EXPIRED; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;e&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_EVICTED; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;K&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_KEYSPACE; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;E&#39;</span><span style="color:#f92672">:</span> flags <span style="color:#f92672">|=</span> NOTIFY_KEYEVENT; <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
         }
     }
-    return flags;
+    <span style="color:#66d9ef">return</span> flags;
 }
-</code></pre>
-
+</code></pre></div>
 <p>再来看看其逆向函数，如下：</p>
-
-<pre><code class="language-cpp">sds keyspaceEventsFlagsToString(int flags) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">sds <span style="color:#a6e22e">keyspaceEventsFlagsToString</span>(<span style="color:#66d9ef">int</span> flags) {
     sds res;
 
-    res = sdsempty();
-    // 收听全部事件
-    if ((flags &amp; NOTIFY_ALL) == NOTIFY_ALL) {
-        res = sdscatlen(res,&quot;A&quot;,1);
-    } else {
-        // 检查每一个控制位
-        if (flags &amp; NOTIFY_GENERIC) res = sdscatlen(res,&quot;g&quot;,1);
-        if (flags &amp; NOTIFY_STRING) res = sdscatlen(res,&quot;$&quot;,1);
-        if (flags &amp; NOTIFY_LIST) res = sdscatlen(res,&quot;l&quot;,1);
-        if (flags &amp; NOTIFY_SET) res = sdscatlen(res,&quot;s&quot;,1);
-        if (flags &amp; NOTIFY_HASH) res = sdscatlen(res,&quot;h&quot;,1);
-        if (flags &amp; NOTIFY_ZSET) res = sdscatlen(res,&quot;z&quot;,1);
-        if (flags &amp; NOTIFY_EXPIRED) res = sdscatlen(res,&quot;x&quot;,1);
-        if (flags &amp; NOTIFY_EVICTED) res = sdscatlen(res,&quot;e&quot;,1);
+    res <span style="color:#f92672">=</span> sdsempty();
+    <span style="color:#75715e">// 收听全部事件
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((flags <span style="color:#f92672">&amp;</span> NOTIFY_ALL) <span style="color:#f92672">==</span> NOTIFY_ALL) {
+        res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;A&#34;</span>,<span style="color:#ae81ff">1</span>);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 检查每一个控制位
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_GENERIC) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;g&#34;</span>,<span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_STRING) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;$&#34;</span>,<span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_LIST) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;l&#34;</span>,<span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_SET) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;s&#34;</span>,<span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_HASH) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;h&#34;</span>,<span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_ZSET) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;z&#34;</span>,<span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_EXPIRED) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;x&#34;</span>,<span style="color:#ae81ff">1</span>);
+        <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_EVICTED) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;e&#34;</span>,<span style="color:#ae81ff">1</span>);
     }
-    // K，E参数的判断
-    if (flags &amp; NOTIFY_KEYSPACE) res = sdscatlen(res,&quot;K&quot;,1);
-    if (flags &amp; NOTIFY_KEYEVENT) res = sdscatlen(res,&quot;E&quot;,1);
-    return res;
+    <span style="color:#75715e">// K，E参数的判断
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_KEYSPACE) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;K&#34;</span>,<span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> NOTIFY_KEYEVENT) res <span style="color:#f92672">=</span> sdscatlen(res,<span style="color:#e6db74">&#34;E&#34;</span>,<span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">return</span> res;
 }
-</code></pre>
-
+</code></pre></div>
 <p>接下来，主角登场了，利用Redis的订阅和发布功能来发送键空间事件通知。</p>
-
-<pre><code class="language-cpp">void notifyKeyspaceEvent(int type, char *event, robj *key, int dbid) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">notifyKeyspaceEvent</span>(<span style="color:#66d9ef">int</span> type, <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>event, robj <span style="color:#f92672">*</span>key, <span style="color:#66d9ef">int</span> dbid) {
     sds chan;
-    robj *chanobj, *eventobj;
-    int len = -1;
-    char buf[24];
+    robj <span style="color:#f92672">*</span>chanobj, <span style="color:#f92672">*</span>eventobj;
+    <span style="color:#66d9ef">int</span> len <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+    <span style="color:#66d9ef">char</span> buf[<span style="color:#ae81ff">24</span>];
 
-    // 通知功能关闭，直接退出
-    if (!(server.notify_keyspace_events &amp; type)) return;
-    // 创建事件对象
-    eventobj = createStringObject(event,strlen(event));
-    // 键空间通知，格式为__keyspace@&lt;db&gt;__:&lt;key&gt; &lt;event&gt;
-    if (server.notify_keyspace_events &amp; NOTIFY_KEYSPACE) {
-        chan = sdsnewlen(&quot;__keyspace@&quot;,11);
-        len = ll2string(buf,sizeof(buf),dbid);
-        chan = sdscatlen(chan, buf, len);
-        chan = sdscatlen(chan, &quot;__:&quot;, 3);
-        chan = sdscatsds(chan, key-&gt;ptr);
-        chanobj = createObject(OBJ_STRING, chan);
-        // 调用pub/sub命令
-        pubsubPublishMessage(chanobj, eventobj);
+    <span style="color:#75715e">// 通知功能关闭，直接退出
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(server.notify_keyspace_events <span style="color:#f92672">&amp;</span> type)) <span style="color:#66d9ef">return</span>;
+    <span style="color:#75715e">// 创建事件对象
+</span><span style="color:#75715e"></span>    eventobj <span style="color:#f92672">=</span> createStringObject(event,strlen(event));
+    <span style="color:#75715e">// 键空间通知，格式为__keyspace@&lt;db&gt;__:&lt;key&gt; &lt;event&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.notify_keyspace_events <span style="color:#f92672">&amp;</span> NOTIFY_KEYSPACE) {
+        chan <span style="color:#f92672">=</span> sdsnewlen(<span style="color:#e6db74">&#34;__keyspace@&#34;</span>,<span style="color:#ae81ff">11</span>);
+        len <span style="color:#f92672">=</span> ll2string(buf,<span style="color:#66d9ef">sizeof</span>(buf),dbid);
+        chan <span style="color:#f92672">=</span> sdscatlen(chan, buf, len);
+        chan <span style="color:#f92672">=</span> sdscatlen(chan, <span style="color:#e6db74">&#34;__:&#34;</span>, <span style="color:#ae81ff">3</span>);
+        chan <span style="color:#f92672">=</span> sdscatsds(chan, key<span style="color:#f92672">-&gt;</span>ptr);
+        chanobj <span style="color:#f92672">=</span> createObject(OBJ_STRING, chan);
+        <span style="color:#75715e">// 调用pub/sub命令
+</span><span style="color:#75715e"></span>        pubsubPublishMessage(chanobj, eventobj);
         decrRefCount(chanobj);
     }
-    // 键时间通知，格式为__keyevente@&lt;db&gt;__:&lt;event&gt; &lt;key&gt;
-    if (server.notify_keyspace_events &amp; NOTIFY_KEYEVENT) {
-        chan = sdsnewlen(&quot;__keyevent@&quot;,11);
-        if (len == -1) len = ll2string(buf,sizeof(buf),dbid);
-        chan = sdscatlen(chan, buf, len);
-        chan = sdscatlen(chan, &quot;__:&quot;, 3);
-        chan = sdscatsds(chan, eventobj-&gt;ptr);
-        chanobj = createObject(OBJ_STRING, chan);
-        // 调用pub/sub命令
-        pubsubPublishMessage(chanobj, key);
+    <span style="color:#75715e">// 键时间通知，格式为__keyevente@&lt;db&gt;__:&lt;event&gt; &lt;key&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.notify_keyspace_events <span style="color:#f92672">&amp;</span> NOTIFY_KEYEVENT) {
+        chan <span style="color:#f92672">=</span> sdsnewlen(<span style="color:#e6db74">&#34;__keyevent@&#34;</span>,<span style="color:#ae81ff">11</span>);
+        <span style="color:#66d9ef">if</span> (len <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) len <span style="color:#f92672">=</span> ll2string(buf,<span style="color:#66d9ef">sizeof</span>(buf),dbid);
+        chan <span style="color:#f92672">=</span> sdscatlen(chan, buf, len);
+        chan <span style="color:#f92672">=</span> sdscatlen(chan, <span style="color:#e6db74">&#34;__:&#34;</span>, <span style="color:#ae81ff">3</span>);
+        chan <span style="color:#f92672">=</span> sdscatsds(chan, eventobj<span style="color:#f92672">-&gt;</span>ptr);
+        chanobj <span style="color:#f92672">=</span> createObject(OBJ_STRING, chan);
+        <span style="color:#75715e">// 调用pub/sub命令
+</span><span style="color:#75715e"></span>        pubsubPublishMessage(chanobj, key);
         decrRefCount(chanobj);
     }
     decrRefCount(eventobj);
 }
-</code></pre>
-
+</code></pre></div>
 <p>整个通知的实现就是这么简单，通过pub/sub功能来发送事件通知，使得客户端能收到键空间事件。</p>
 
 <h1 id="notify实例">Notify实例</h1>
 
 <p>为了验证上述的通知，是否按照预想发送了，我们可以做一个小的实验来验证一下。首先开启两个redis-cli客户端，每个客户端运行下述命令。</p>
-
-<pre><code class="language-cpp">/* 0号客户端 */
-127.0.0.1:6379&gt; PSUBSCRIBE __keyevent*
-Reading messages... (press Ctrl-C to quit)
-1) &quot;psubscribe&quot;
-2) &quot;__keyevent*&quot;
-3) (integer) 1
-/* 1号客户端 */
-127.0.0.1:6379&gt; CONFIG SET notify-keyspace-events KEA
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 0号客户端 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> PSUBSCRIBE __keyevent<span style="color:#f92672">*</span>
+Reading messages... (press Ctrl<span style="color:#f92672">-</span>C to quit)
+<span style="color:#ae81ff">1</span>) <span style="color:#e6db74">&#34;psubscribe&#34;</span>
+<span style="color:#ae81ff">2</span>) <span style="color:#e6db74">&#34;__keyevent*&#34;</span>
+<span style="color:#ae81ff">3</span>) (integer) <span style="color:#ae81ff">1</span>
+<span style="color:#75715e">/* 1号客户端 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> CONFIG SET notify<span style="color:#f92672">-</span>keyspace<span style="color:#f92672">-</span>events KEA
 OK
-127.0.0.1:6379&gt; set str value
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> set str value
 OK
-</code></pre>
-
+</code></pre></div>
 <p>0号客户端运行了PSUBSCRIBE命令后，就开始订阅了符合模式串__keyevent*的事件，1号客户端首先设置服务器开启键空间事件通知功能，然后运行SET命令，这个时间0号客户端就可以接收到这个事件，如下：</p>
-
-<pre><code class="language-cpp">/* 0号客户端 */
-127.0.0.1:6379&gt; PSUBSCRIBE __key*
-Reading messages... (press Ctrl-C to quit)
-1) &quot;psubscribe&quot;
-2) &quot;__key*&quot;
-3) (integer) 1
-/* keyspace键空间通知 */
-1) &quot;pmessage&quot;
-2) &quot;__key*&quot;
-3) &quot;__keyspace@0__:str&quot;
-4) &quot;set&quot;
-/* keyevents键事件通知*/
-1) &quot;pmessage&quot;
-2) &quot;__key*&quot;
-3) &quot;__keyevent@0__:set&quot;
-4) &quot;str&quot;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 0号客户端 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> PSUBSCRIBE __key<span style="color:#f92672">*</span>
+Reading messages... (press Ctrl<span style="color:#f92672">-</span>C to quit)
+<span style="color:#ae81ff">1</span>) <span style="color:#e6db74">&#34;psubscribe&#34;</span>
+<span style="color:#ae81ff">2</span>) <span style="color:#e6db74">&#34;__key*&#34;</span>
+<span style="color:#ae81ff">3</span>) (integer) <span style="color:#ae81ff">1</span>
+<span style="color:#75715e">/* keyspace键空间通知 */</span>
+<span style="color:#ae81ff">1</span>) <span style="color:#e6db74">&#34;pmessage&#34;</span>
+<span style="color:#ae81ff">2</span>) <span style="color:#e6db74">&#34;__key*&#34;</span>
+<span style="color:#ae81ff">3</span>) <span style="color:#e6db74">&#34;__keyspace@0__:str&#34;</span>
+<span style="color:#ae81ff">4</span>) <span style="color:#e6db74">&#34;set&#34;</span>
+<span style="color:#75715e">/* keyevents键事件通知*/</span>
+<span style="color:#ae81ff">1</span>) <span style="color:#e6db74">&#34;pmessage&#34;</span>
+<span style="color:#ae81ff">2</span>) <span style="color:#e6db74">&#34;__key*&#34;</span>
+<span style="color:#ae81ff">3</span>) <span style="color:#e6db74">&#34;__keyevent@0__:set&#34;</span>
+<span style="color:#ae81ff">4</span>) <span style="color:#e6db74">&#34;str&#34;</span>
+</code></pre></div>
 <h1 id="notify小结">Notify小结</h1>
 
 <p>本篇博客简要的分析了一下通知功能的实现，源码部分比较简单，当数据库中的键发生改变且服务器开启了相应的事件类型通知时，Redis就会发送键事件通知，通过pub/sub命令来告知客户端此刻数据库中的修改操作。pub/sub功能会在后续的博客中讲到，到时候可以回头来理解以下整个通知流程。</p>

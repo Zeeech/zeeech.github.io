@@ -32,9 +32,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -67,7 +69,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -126,10 +127,7 @@
 <p><img src="http://ww1.sinaimg.cn/large/73a1af36gy1flu71k99hdj20pf0fpmzu.jpg" alt="" /></p>
 
 <p>配置方法：在Iterm2-&gt;Prefenerce-&gt;Profiles，中添加新的Profiles，并填入相应的name和Tags，Tags可以为你提供分组服务，便于快速的找到该profiles。最关键的步骤是在Command一栏中，填上你登录ssh的指令，如下所示：</p>
-
-<pre><code class="language-c">ssh zhangcheng@192.168.2.235
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">ssh zhangcheng<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#ae81ff">192.168.2.235</span></code></pre></div>
 <p>这样一来，每次登录该服务器的时候，只需要点击对应的Profiles即可。</p>
 
 <p><img src="http://ww1.sinaimg.cn/large/73a1af36gy1flu8q9ida7j20jc07vjs0.jpg" alt="" /></p>

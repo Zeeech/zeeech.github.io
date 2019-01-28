@@ -32,9 +32,11 @@ ziplist可以用来存放字符串或者整数，其存储数据的特点是：�
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -67,7 +69,6 @@ ziplist可以用来存放字符串或者整数，其存储数据的特点是：�
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -136,11 +137,9 @@ ziplist可以用来存放字符串或者整数，其存储数据的特点是：�
 </ul>
 
 <p>ziplist尾部的zlend则表示压缩列表结束，其值固定为0xFF。Redis提供了一个宏定义来表示ziplist header的大小。</p>
-
-<pre><code class="language-cpp">// 总共10个字节
-#define ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t))
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 总共10个字节
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t))
+</span><span style="color:#75715e"></span></code></pre></div>
 <h2 id="节点结构">节点结构</h2>
 
 <p>数据节点部分由若干个节点紧密排列构成，每个节点也由三部分构成，分别是：</p>
@@ -259,225 +258,213 @@ ziplist可以用来存放字符串或者整数，其存储数据的特点是：�
 </blockquote>
 
 <p>Redis提供了如下的宏定义用于定义不同的encoding和计算encoding类型。</p>
-
-<pre><code class="language-cpp">// 定义不同的encoding
-// 字符串
-#define ZIP_STR_06B (0 &lt;&lt; 6)
-#define ZIP_STR_14B (1 &lt;&lt; 6)
-#define ZIP_STR_32B (2 &lt;&lt; 6)
-// 整数
-#define ZIP_INT_16B (0xc0 | 0&lt;&lt;4) // '|'按位或，1&amp;0=1，0&amp;0=0
-#define ZIP_INT_32B (0xc0 | 1&lt;&lt;4)
-#define ZIP_INT_64B (0xc0 | 2&lt;&lt;4)
-
-// 计算encoding类型，true或者false
-#define ZIP_IS_STR(enc) (((enc) &amp; 0xc0) &lt; 0xc0) //'&amp;'按位与，1&amp;1=1，1&amp;0=0
-#define ZIP_IS_INT(enc) (!ZIP_IS_STR(enc) &amp;&amp; ((enc) &amp; 0x30) &lt; 0x30)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 定义不同的encoding
+</span><span style="color:#75715e">// 字符串
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define ZIP_STR_06B (0 &lt;&lt; 6)
+</span><span style="color:#75715e">#define ZIP_STR_14B (1 &lt;&lt; 6)
+</span><span style="color:#75715e">#define ZIP_STR_32B (2 &lt;&lt; 6)
+</span><span style="color:#75715e"></span><span style="color:#75715e">// 整数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define ZIP_INT_16B (0xc0 | 0&lt;&lt;4) </span><span style="color:#75715e">// &#39;|&#39;按位或，1&amp;0=1，0&amp;0=0
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define ZIP_INT_32B (0xc0 | 1&lt;&lt;4)
+</span><span style="color:#75715e">#define ZIP_INT_64B (0xc0 | 2&lt;&lt;4)
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">// 计算encoding类型，true或者false
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define ZIP_IS_STR(enc) (((enc) &amp; 0xc0) &lt; 0xc0) </span><span style="color:#75715e">//&#39;&amp;&#39;按位与，1&amp;1=1，1&amp;0=0
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define ZIP_IS_INT(enc) (!ZIP_IS_STR(enc) &amp;&amp; ((enc) &amp; 0x30) &lt; 0x30)
+</span><span style="color:#75715e"></span></code></pre></div>
 <h2 id="编码和解码">编码和解码</h2>
 
 <p>在ziplist中，节点的数据结构定义如下：</p>
-
-<pre><code class="language-cpp">typedef struct zlentry {
-    unsigned int prevrawlensize, prevrawlen; // 前置节点长度和编码所需长度
-    unsigned int lensize, len; // 当前节点长度和编码所需长度
-    unsigned int headersize; // 头的大小
-    unsigned char encoding; // 编码类型
-    unsigned char *p; // 数据部分
-} zlentry;
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> zlentry {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> prevrawlensize, prevrawlen; <span style="color:#75715e">// 前置节点长度和编码所需长度
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> lensize, len; <span style="color:#75715e">// 当前节点长度和编码所需长度
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> headersize; <span style="color:#75715e">// 头的大小
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> encoding; <span style="color:#75715e">// 编码类型
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p; <span style="color:#75715e">// 数据部分
+</span><span style="color:#75715e"></span>} zlentry;
+</code></pre></div>
 <p>很显然，内存上不能直接存放结构体，于是，Redis提供了一系列的编码和解码操作函数。这里以编码前置节点长度和解码前置节点长度的源码为例来讲解这一过程：</p>
-
-<pre><code class="language-cpp">/****************************** 编码前置节点长度信息 *******************************/
-// 将长度信息len写入起止地址为p的内存
-static unsigned int zipPrevEncodeLength(unsigned char *p, unsigned int len) {
-    if (p == NULL) {
-        return (len &lt; ZIP_BIGLEN) ? 1 : sizeof(len)+1;
-    } else {
-        // 如果长度小于254字节
-        if (len &lt; ZIP_BIGLEN) {
-            // 采用1字节编码，该字节存放长度信息
-            p[0] = len;
-            return 1;
-        } else {
-            // 长度大于254字节
-            // 第一个字节固定为0xFE
-            p[0] = ZIP_BIGLEN;
-            // 后四个字节用来存放长度值
-            memcpy(p+1,&amp;len,sizeof(len));
-            memrev32ifbe(p+1);
-            return 1+sizeof(len);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/****************************** 编码前置节点长度信息 *******************************/</span>
+<span style="color:#75715e">// 将长度信息len写入起止地址为p的内存
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zipPrevEncodeLength</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> len) {
+    <span style="color:#66d9ef">if</span> (p <span style="color:#f92672">==</span> NULL) {
+        <span style="color:#66d9ef">return</span> (len <span style="color:#f92672">&lt;</span> ZIP_BIGLEN) <span style="color:#f92672">?</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">:</span> <span style="color:#66d9ef">sizeof</span>(len)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果长度小于254字节
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (len <span style="color:#f92672">&lt;</span> ZIP_BIGLEN) {
+            <span style="color:#75715e">// 采用1字节编码，该字节存放长度信息
+</span><span style="color:#75715e"></span>            p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> len;
+            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 长度大于254字节
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 第一个字节固定为0xFE
+</span><span style="color:#75715e"></span>            p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> ZIP_BIGLEN;
+            <span style="color:#75715e">// 后四个字节用来存放长度值
+</span><span style="color:#75715e"></span>            memcpy(p<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,<span style="color:#f92672">&amp;</span>len,<span style="color:#66d9ef">sizeof</span>(len));
+            memrev32ifbe(p<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">+</span><span style="color:#66d9ef">sizeof</span>(len);
         }
     }
 }
-/****************************** 解码前置节点长度信息 ******************************/
-// 解压prevlensize编码所需长度
-#define ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do {                          \
-    // 如果第一个字节的值小于254字节
-    if ((ptr)[0] &lt; ZIP_BIGLEN) {                                               \
-        (prevlensize) = 1;                                                     \
-    } else {                                                                   \
-        (prevlensize) = 5;                                                     \
+<span style="color:#75715e">/****************************** 解码前置节点长度信息 ******************************/</span>
+<span style="color:#75715e">// 解压prevlensize编码所需长度
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do {                          \
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 如果第一个字节的值小于254字节
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((ptr)[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">&lt;</span> ZIP_BIGLEN) {                                               \
+        (prevlensize) <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;                                                     \
+    } <span style="color:#66d9ef">else</span> {                                                                   \
+        (prevlensize) <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;                                                     \
     }                                                                          \
-} while(0);
-// 解码前置节点长度信息
-#define ZIP_DECODE_PREVLEN(ptr, prevlensize, prevlen) do {                     \
-    // 先判断编码类型，1字节或者5字节
-    ZIP_DECODE_PREVLENSIZE(ptr, prevlensize);                                  \
-    // 1字节的话直接读取长度值
-    if ((prevlensize) == 1) {                                                  \
-        (prevlen) = (ptr)[0];                                                  \
-    // 5字节的话，读取后四个字节的值作为长度值
-    } else if ((prevlensize) == 5) {                                           \
-        assert(sizeof((prevlensize)) == 4);                                    \
-        memcpy(&amp;(prevlen), ((char*)(ptr)) + 1, 4);                             \
-        memrev32ifbe(&amp;prevlen);                                                \
+} <span style="color:#66d9ef">while</span>(<span style="color:#ae81ff">0</span>);
+<span style="color:#75715e">// 解码前置节点长度信息
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define ZIP_DECODE_PREVLEN(ptr, prevlensize, prevlen) do {                     \
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 先判断编码类型，1字节或者5字节
+</span><span style="color:#75715e"></span>    ZIP_DECODE_PREVLENSIZE(ptr, prevlensize);                                  \
+    <span style="color:#75715e">// 1字节的话直接读取长度值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((prevlensize) <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>) {                                                  \
+        (prevlen) <span style="color:#f92672">=</span> (ptr)[<span style="color:#ae81ff">0</span>];                                                  \
+    <span style="color:#75715e">// 5字节的话，读取后四个字节的值作为长度值
+</span><span style="color:#75715e"></span>    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> ((prevlensize) <span style="color:#f92672">==</span> <span style="color:#ae81ff">5</span>) {                                           \
+        assert(<span style="color:#66d9ef">sizeof</span>((prevlensize)) <span style="color:#f92672">==</span> <span style="color:#ae81ff">4</span>);                                    \
+        memcpy(<span style="color:#f92672">&amp;</span>(prevlen), ((<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)(ptr)) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">4</span>);                             \
+        memrev32ifbe(<span style="color:#f92672">&amp;</span>prevlen);                                                \
     }                                                                          \
-} while(0);
-</code></pre>
-
+} <span style="color:#66d9ef">while</span>(<span style="color:#ae81ff">0</span>);
+</code></pre></div>
 <p>在编码解码当前节点的长度，ziplist提供了zipEncodeLength和ZIP_DECODE_LENGTH这两个配套函数来完成。这里就不加赘述了。</p>
 
 <h1 id="ziplist基本操作">ziplist基本操作</h1>
 
 <h2 id="创建空ziplist">创建空ziplist</h2>
-
-<pre><code class="language-cpp">// 创建一个空的ziplist
-unsigned char *ziplistNew(void) {
-    // 空ziplist的大小为11个字节，头部10字节，尾部1字节
-    unsigned int bytes = ZIPLIST_HEADER_SIZE+1;
-    // 分配内存
-    unsigned char *zl = zmalloc(bytes);
-    // 设定ziplist的属性
-    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes); // 设定ziplist所占的字节数，如有必要进行大小端转换
-    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE); // 设定尾节点相对头部的偏移量
-    ZIPLIST_LENGTH(zl) = 0; // 设定ziplist内的节点数
-    // 设定尾部一个字节位0xFF
-    zl[bytes-1] = ZIP_END;
-    return zl;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 创建一个空的ziplist
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ziplistNew</span>(<span style="color:#66d9ef">void</span>) {
+    <span style="color:#75715e">// 空ziplist的大小为11个字节，头部10字节，尾部1字节
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> bytes <span style="color:#f92672">=</span> ZIPLIST_HEADER_SIZE<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>;
+    <span style="color:#75715e">// 分配内存
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl <span style="color:#f92672">=</span> zmalloc(bytes);
+    <span style="color:#75715e">// 设定ziplist的属性
+</span><span style="color:#75715e"></span>    ZIPLIST_BYTES(zl) <span style="color:#f92672">=</span> intrev32ifbe(bytes); <span style="color:#75715e">// 设定ziplist所占的字节数，如有必要进行大小端转换
+</span><span style="color:#75715e"></span>    ZIPLIST_TAIL_OFFSET(zl) <span style="color:#f92672">=</span> intrev32ifbe(ZIPLIST_HEADER_SIZE); <span style="color:#75715e">// 设定尾节点相对头部的偏移量
+</span><span style="color:#75715e"></span>    ZIPLIST_LENGTH(zl) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">// 设定ziplist内的节点数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 设定尾部一个字节位0xFF
+</span><span style="color:#75715e"></span>    zl[bytes<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> ZIP_END;
+    <span style="color:#66d9ef">return</span> zl;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="插入节点">插入节点</h2>
 
 <p>ziplist中插入节点操作由ziplistPush函数完成。</p>
-
-<pre><code class="language-cpp">// ziplist插入节点只能往头或者尾部插入
-// zl: 待插入的ziplist
-// s，slen: 待插入节点和其长度
-// where: 带插入的位置，0代表头部插入，1代表尾部插入
-unsigned char *ziplistPush(unsigned char *zl, unsigned char *s, unsigned int slen, int where) {
-    unsigned char *p;
-    // 获取待插入位置的指针
-    p = (where == ZIPLIST_HEAD) ? ZIPLIST_ENTRY_HEAD(zl) : ZIPLIST_ENTRY_END(zl);
-    return __ziplistInsert(zl,p,s,slen);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// ziplist插入节点只能往头或者尾部插入
+</span><span style="color:#75715e">// zl: 待插入的ziplist
+</span><span style="color:#75715e">// s，slen: 待插入节点和其长度
+</span><span style="color:#75715e">// where: 带插入的位置，0代表头部插入，1代表尾部插入
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ziplistPush</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>s, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> slen, <span style="color:#66d9ef">int</span> where) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p;
+    <span style="color:#75715e">// 获取待插入位置的指针
+</span><span style="color:#75715e"></span>    p <span style="color:#f92672">=</span> (where <span style="color:#f92672">==</span> ZIPLIST_HEAD) <span style="color:#f92672">?</span> ZIPLIST_ENTRY_HEAD(zl) <span style="color:#f92672">:</span> ZIPLIST_ENTRY_END(zl);
+    <span style="color:#66d9ef">return</span> __ziplistInsert(zl,p,s,slen);
 }
-</code></pre>
-
+</code></pre></div>
 <p>真正的插入操作由__ziplistInsert完成。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">__ziplistInsert</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>s, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> slen) {
+    size_t curlen <span style="color:#f92672">=</span> intrev32ifbe(ZIPLIST_BYTES(zl)), reqlen; <span style="color:#75715e">// 当前长度和插入节点后需要的长度
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> prevlensize, prevlen <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">// 前置节点长度和编码该长度值所需的长度
+</span><span style="color:#75715e"></span>    size_t offset;
+    <span style="color:#66d9ef">int</span> nextdiff <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> encoding <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> value <span style="color:#f92672">=</span> <span style="color:#ae81ff">123456789</span>; <span style="color:#75715e">// 为了避免警告，初始化其值
+</span><span style="color:#75715e"></span>    zlentry tail;
 
-<pre><code class="language-cpp">static unsigned char *__ziplistInsert(unsigned char *zl, unsigned char *p, unsigned char *s, unsigned int slen) {
-    size_t curlen = intrev32ifbe(ZIPLIST_BYTES(zl)), reqlen; // 当前长度和插入节点后需要的长度
-    unsigned int prevlensize, prevlen = 0; // 前置节点长度和编码该长度值所需的长度
-    size_t offset;
-    int nextdiff = 0;
-    unsigned char encoding = 0;
-    long long value = 123456789; // 为了避免警告，初始化其值
-    zlentry tail;
-
-    // 找出待插入节点的前置节点长度
-    // 如果p[0]不指向列表末端，说明列表非空，并且p指向其中一个节点
-    if (p[0] != ZIP_END) {
-        // 解码前置节点p的长度和编码该长度需要的字节
-        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
-    } else {
-        // 如果p指向列表末端，表示列表为空
-        unsigned char *ptail = ZIPLIST_ENTRY_TAIL(zl);
+    <span style="color:#75715e">// 找出待插入节点的前置节点长度
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 如果p[0]不指向列表末端，说明列表非空，并且p指向其中一个节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END) {
+        <span style="color:#75715e">// 解码前置节点p的长度和编码该长度需要的字节
+</span><span style="color:#75715e"></span>        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果p指向列表末端，表示列表为空
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>ptail <span style="color:#f92672">=</span> ZIPLIST_ENTRY_TAIL(zl);
         
-        if (ptail[0] != ZIP_END) {
-            // 计算尾节点的长度
-            prevlen = zipRawEntryLength(ptail);
+        <span style="color:#66d9ef">if</span> (ptail[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END) {
+            <span style="color:#75715e">// 计算尾节点的长度
+</span><span style="color:#75715e"></span>            prevlen <span style="color:#f92672">=</span> zipRawEntryLength(ptail);
         }
 
     }
 
-    // 判断是否能够编码为整数
-    if (zipTryEncoding(s,slen,&amp;value,&amp;encoding)) {
-        // 该节点已经编码为整数，通过encoding来获取编码长度
-        reqlen = zipIntSize(encoding);
-    } else {
-        // 采用字符串来编码该节点
-        reqlen = slen;
+    <span style="color:#75715e">// 判断是否能够编码为整数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (zipTryEncoding(s,slen,<span style="color:#f92672">&amp;</span>value,<span style="color:#f92672">&amp;</span>encoding)) {
+        <span style="color:#75715e">// 该节点已经编码为整数，通过encoding来获取编码长度
+</span><span style="color:#75715e"></span>        reqlen <span style="color:#f92672">=</span> zipIntSize(encoding);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 采用字符串来编码该节点
+</span><span style="color:#75715e"></span>        reqlen <span style="color:#f92672">=</span> slen;
     }
-    // 获取前置节点的编码长度
-    reqlen += zipPrevEncodeLength(NULL,prevlen);
-    // 获取当前节点的编码长度
-    reqlen += zipEncodeLength(NULL,encoding,slen);
+    <span style="color:#75715e">// 获取前置节点的编码长度
+</span><span style="color:#75715e"></span>    reqlen <span style="color:#f92672">+=</span> zipPrevEncodeLength(NULL,prevlen);
+    <span style="color:#75715e">// 获取当前节点的编码长度
+</span><span style="color:#75715e"></span>    reqlen <span style="color:#f92672">+=</span> zipEncodeLength(NULL,encoding,slen);
 
-    // 只要不是插入到列表的末端，都需要判断当前p所指向的节点header是否能存放新节点的长度编码
-    // nextdiff保存新旧编码之间的字节大小差，如果这个值大于0
-    // 那就说明当前p指向的节点的header进行扩展
-    nextdiff = (p[0] != ZIP_END) ? zipPrevLenByteDiff(p,reqlen) : 0;
+    <span style="color:#75715e">// 只要不是插入到列表的末端，都需要判断当前p所指向的节点header是否能存放新节点的长度编码
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// nextdiff保存新旧编码之间的字节大小差，如果这个值大于0
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 那就说明当前p指向的节点的header进行扩展
+</span><span style="color:#75715e"></span>    nextdiff <span style="color:#f92672">=</span> (p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END) <span style="color:#f92672">?</span> zipPrevLenByteDiff(p,reqlen) <span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>;
 
-    // 存储p相对于列表zl的偏移地址
-    offset = p-zl;
-    // 重新分配空间，curlen当前列表的长度
-    // reqlen 新节点的全部长度
-    // nextdiff 新节点的后继节点扩展header的长度
-    zl = ziplistResize(zl,curlen+reqlen+nextdiff);
-    // 重新获取p的值
-    p = zl+offset;
+    <span style="color:#75715e">// 存储p相对于列表zl的偏移地址
+</span><span style="color:#75715e"></span>    offset <span style="color:#f92672">=</span> p<span style="color:#f92672">-</span>zl;
+    <span style="color:#75715e">// 重新分配空间，curlen当前列表的长度
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// reqlen 新节点的全部长度
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// nextdiff 新节点的后继节点扩展header的长度
+</span><span style="color:#75715e"></span>    zl <span style="color:#f92672">=</span> ziplistResize(zl,curlen<span style="color:#f92672">+</span>reqlen<span style="color:#f92672">+</span>nextdiff);
+    <span style="color:#75715e">// 重新获取p的值
+</span><span style="color:#75715e"></span>    p <span style="color:#f92672">=</span> zl<span style="color:#f92672">+</span>offset;
 
-    // 非表尾插入，需要重新计算表尾的偏移量
-    if (p[0] != ZIP_END) {
-        // 移动现有元素，为新元素的插入提供空间
-        memmove(p+reqlen,p-nextdiff,curlen-offset-1+nextdiff);
+    <span style="color:#75715e">// 非表尾插入，需要重新计算表尾的偏移量
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END) {
+        <span style="color:#75715e">// 移动现有元素，为新元素的插入提供空间
+</span><span style="color:#75715e"></span>        memmove(p<span style="color:#f92672">+</span>reqlen,p<span style="color:#f92672">-</span>nextdiff,curlen<span style="color:#f92672">-</span>offset<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>nextdiff);
 
-        // p+reqlen为新节点前置节点移动后的位置，将新节点的长度编码至前置节点
-        zipPrevEncodeLength(p+reqlen,reqlen);
+        <span style="color:#75715e">// p+reqlen为新节点前置节点移动后的位置，将新节点的长度编码至前置节点
+</span><span style="color:#75715e"></span>        zipPrevEncodeLength(p<span style="color:#f92672">+</span>reqlen,reqlen);
 
-        // 更新列表尾相对于表头的偏移量，将新节点的长度算上
-        ZIPLIST_TAIL_OFFSET(zl) =
-            intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))+reqlen);
+        <span style="color:#75715e">// 更新列表尾相对于表头的偏移量，将新节点的长度算上
+</span><span style="color:#75715e"></span>        ZIPLIST_TAIL_OFFSET(zl) <span style="color:#f92672">=</span>
+            intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))<span style="color:#f92672">+</span>reqlen);
 
-        // 如果新节点后面有多个节点，那么表尾的偏移量需要算上nextdiff的值
-        zipEntry(p+reqlen, &amp;tail);
-        if (p[reqlen+tail.headersize+tail.len] != ZIP_END) {
-            ZIPLIST_TAIL_OFFSET(zl) =
-                intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))+nextdiff);
+        <span style="color:#75715e">// 如果新节点后面有多个节点，那么表尾的偏移量需要算上nextdiff的值
+</span><span style="color:#75715e"></span>        zipEntry(p<span style="color:#f92672">+</span>reqlen, <span style="color:#f92672">&amp;</span>tail);
+        <span style="color:#66d9ef">if</span> (p[reqlen<span style="color:#f92672">+</span>tail.headersize<span style="color:#f92672">+</span>tail.len] <span style="color:#f92672">!=</span> ZIP_END) {
+            ZIPLIST_TAIL_OFFSET(zl) <span style="color:#f92672">=</span>
+                intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))<span style="color:#f92672">+</span>nextdiff);
         }
-    } else {
-        // 表尾插入，直接计算偏移量
-        ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(p-zl);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 表尾插入，直接计算偏移量
+</span><span style="color:#75715e"></span>        ZIPLIST_TAIL_OFFSET(zl) <span style="color:#f92672">=</span> intrev32ifbe(p<span style="color:#f92672">-</span>zl);
     }
 
-    // 当nextdiff不为0时，表示需要新节点的后继节点对头部进行扩展
-    if (nextdiff != 0) {
-        offset = p-zl;
-        // 需要对p所指向的机电header进行扩展更新
-        // 有可能会引起连锁更新
-        zl = __ziplistCascadeUpdate(zl,p+reqlen);
-        p = zl+offset;
+    <span style="color:#75715e">// 当nextdiff不为0时，表示需要新节点的后继节点对头部进行扩展
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (nextdiff <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+        offset <span style="color:#f92672">=</span> p<span style="color:#f92672">-</span>zl;
+        <span style="color:#75715e">// 需要对p所指向的机电header进行扩展更新
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 有可能会引起连锁更新
+</span><span style="color:#75715e"></span>        zl <span style="color:#f92672">=</span> __ziplistCascadeUpdate(zl,p<span style="color:#f92672">+</span>reqlen);
+        p <span style="color:#f92672">=</span> zl<span style="color:#f92672">+</span>offset;
     }
 
-    // 将新节点前置节点的长度写入新节点的header
-    p += zipPrevEncodeLength(p,prevlen);
-    // 将新节点的值长度写入新节点的header
-    p += zipEncodeLength(p,encoding,slen);
-    // 写入节点值
-    if (ZIP_IS_STR(encoding)) {
+    <span style="color:#75715e">// 将新节点前置节点的长度写入新节点的header
+</span><span style="color:#75715e"></span>    p <span style="color:#f92672">+=</span> zipPrevEncodeLength(p,prevlen);
+    <span style="color:#75715e">// 将新节点的值长度写入新节点的header
+</span><span style="color:#75715e"></span>    p <span style="color:#f92672">+=</span> zipEncodeLength(p,encoding,slen);
+    <span style="color:#75715e">// 写入节点值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (ZIP_IS_STR(encoding)) {
         memcpy(p,s,slen);
-    } else {
+    } <span style="color:#66d9ef">else</span> {
         zipSaveInteger(p,value,encoding);
     }
-    // 更新列表节点计数
-    ZIPLIST_INCR_LENGTH(zl,1);
-    return zl;
+    <span style="color:#75715e">// 更新列表节点计数
+</span><span style="color:#75715e"></span>    ZIPLIST_INCR_LENGTH(zl,<span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">return</span> zl;
 }
-</code></pre>
-
+</code></pre></div>
 <ul>
 <li>什么是连锁更新？</li>
 </ul>
@@ -485,187 +472,179 @@ unsigned char *ziplistPush(unsigned char *zl, unsigned char *s, unsigned int sle
 <p>插入节点的时候，有时会引起连锁更新。我们知道，当新节点插入后，需要改变新节点后继节点的header信息中的保存前置节点长度的部分，如果这个pre_entry_length原存放的长度小于254字节，也就是只用了一个字节，现在新节点的长度大于254字节，需要用5个字节保存，这样就要对这个pre_entry_length进行扩展。试想一下，如果扩展之后该节点的整体长度大于254字节了，那么该节点的后继节点是不是也需要更新header信息呢？答案是肯定的，这样就引发了连锁更新，导致新节点后面的一连串节点都需要对header进行扩容。这就是连锁更新。</p>
 
 <p>连锁更新的实现由如下函数完成。</p>
-
-<pre><code class="language-cpp">// 检查并修复后续节点的空间问题
-static unsigned char *__ziplistCascadeUpdate(unsigned char *zl, unsigned char *p) {
-    size_t curlen = intrev32ifbe(ZIPLIST_BYTES(zl)), rawlen, rawlensize;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 检查并修复后续节点的空间问题
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">__ziplistCascadeUpdate</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p) {
+    size_t curlen <span style="color:#f92672">=</span> intrev32ifbe(ZIPLIST_BYTES(zl)), rawlen, rawlensize;
     size_t offset, noffset, extra;
-    unsigned char *np;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>np;
     zlentry cur, next;
     
-    while (p[0] != ZIP_END) {
-        // 将p所指向节点的信息保存到cur结构体中
-        zipEntry(p, &amp;cur);
+    <span style="color:#66d9ef">while</span> (p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END) {
+        <span style="color:#75715e">// 将p所指向节点的信息保存到cur结构体中
+</span><span style="color:#75715e"></span>        zipEntry(p, <span style="color:#f92672">&amp;</span>cur);
 
-        // 当前节点的长度
-        rawlen = cur.headersize + cur.len;
-        // 编码当前节点的长度所需的字节数
-        rawlensize = zipPrevEncodeLength(NULL,rawlen);
+        <span style="color:#75715e">// 当前节点的长度
+</span><span style="color:#75715e"></span>        rawlen <span style="color:#f92672">=</span> cur.headersize <span style="color:#f92672">+</span> cur.len;
+        <span style="color:#75715e">// 编码当前节点的长度所需的字节数
+</span><span style="color:#75715e"></span>        rawlensize <span style="color:#f92672">=</span> zipPrevEncodeLength(NULL,rawlen);
 
-        // 如果没有后续节点需要更新了，就退出
-        if (p[rawlen] == ZIP_END) break;
-        // 去除后续节点的信息保存到next结构体中
-        zipEntry(p+rawlen, &amp;next);
+        <span style="color:#75715e">// 如果没有后续节点需要更新了，就退出
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (p[rawlen] <span style="color:#f92672">==</span> ZIP_END) <span style="color:#66d9ef">break</span>;
+        <span style="color:#75715e">// 去除后续节点的信息保存到next结构体中
+</span><span style="color:#75715e"></span>        zipEntry(p<span style="color:#f92672">+</span>rawlen, <span style="color:#f92672">&amp;</span>next);
 
-        // 当后续节点的空间已经足够了，就直接退出
-        if (next.prevrawlen == rawlen) break;
+        <span style="color:#75715e">// 当后续节点的空间已经足够了，就直接退出
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (next.prevrawlen <span style="color:#f92672">==</span> rawlen) <span style="color:#66d9ef">break</span>;
 
-        // 当后续节点的空间不足够，则需要进行扩容操作
-        if (next.prevrawlensize &lt; rawlensize) {
-            // 记录p的偏移值
-            offset = p-zl;
-            // 记录需要增加的长度
-            extra = rawlensize-next.prevrawlensize;
-            // 扩展zl的大小
-            zl = ziplistResize(zl,curlen+extra);
-            // 获取p相对于新的zl的值
-            p = zl+offset;
+        <span style="color:#75715e">// 当后续节点的空间不足够，则需要进行扩容操作
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (next.prevrawlensize <span style="color:#f92672">&lt;</span> rawlensize) {
+            <span style="color:#75715e">// 记录p的偏移值
+</span><span style="color:#75715e"></span>            offset <span style="color:#f92672">=</span> p<span style="color:#f92672">-</span>zl;
+            <span style="color:#75715e">// 记录需要增加的长度
+</span><span style="color:#75715e"></span>            extra <span style="color:#f92672">=</span> rawlensize<span style="color:#f92672">-</span>next.prevrawlensize;
+            <span style="color:#75715e">// 扩展zl的大小
+</span><span style="color:#75715e"></span>            zl <span style="color:#f92672">=</span> ziplistResize(zl,curlen<span style="color:#f92672">+</span>extra);
+            <span style="color:#75715e">// 获取p相对于新的zl的值
+</span><span style="color:#75715e"></span>            p <span style="color:#f92672">=</span> zl<span style="color:#f92672">+</span>offset;
 
-            //记录下一个节点的偏移量
-            np = p+rawlen;
-            noffset = np-zl;
+            <span style="color:#75715e">//记录下一个节点的偏移量
+</span><span style="color:#75715e"></span>            np <span style="color:#f92672">=</span> p<span style="color:#f92672">+</span>rawlen;
+            noffset <span style="color:#f92672">=</span> np<span style="color:#f92672">-</span>zl;
 
-            // 当 next 节点不是表尾节点时，更新列表到表尾节点的偏移量
-            if ((zl+intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))) != np) {
-                ZIPLIST_TAIL_OFFSET(zl) =
-                    intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))+extra);
+            <span style="color:#75715e">// 当 next 节点不是表尾节点时，更新列表到表尾节点的偏移量
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> ((zl<span style="color:#f92672">+</span>intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))) <span style="color:#f92672">!=</span> np) {
+                ZIPLIST_TAIL_OFFSET(zl) <span style="color:#f92672">=</span>
+                    intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))<span style="color:#f92672">+</span>extra);
             }
 
-            // 向后移动cur节点之后的数据，为新的header腾出空间
-            memmove(np+rawlensize,
-                np+next.prevrawlensize,
-                curlen-noffset-next.prevrawlensize-1);
+            <span style="color:#75715e">// 向后移动cur节点之后的数据，为新的header腾出空间
+</span><span style="color:#75715e"></span>            memmove(np<span style="color:#f92672">+</span>rawlensize,
+                np<span style="color:#f92672">+</span>next.prevrawlensize,
+                curlen<span style="color:#f92672">-</span>noffset<span style="color:#f92672">-</span>next.prevrawlensize<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
             zipPrevEncodeLength(np,rawlen);
 
-            // 移动指针，继续处理下一个节点
-            p += rawlen;
-            curlen += extra;
-        } else {
-            if (next.prevrawlensize &gt; rawlensize) {
-                // 执行到这里，next节点编码前置节点的header空间有5个字节
-                // 但是此时只需要一个字节
-                // Redis不提供缩小操作，而是直接将长度强制性写入五个字节中
-                zipPrevEncodeLengthForceLarge(p+rawlen,rawlen);
-            } else {
-                // 运行到这里，说明刚好可以存放
-                zipPrevEncodeLength(p+rawlen,rawlen);
+            <span style="color:#75715e">// 移动指针，继续处理下一个节点
+</span><span style="color:#75715e"></span>            p <span style="color:#f92672">+=</span> rawlen;
+            curlen <span style="color:#f92672">+=</span> extra;
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#66d9ef">if</span> (next.prevrawlensize <span style="color:#f92672">&gt;</span> rawlensize) {
+                <span style="color:#75715e">// 执行到这里，next节点编码前置节点的header空间有5个字节
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// 但是此时只需要一个字节
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// Redis不提供缩小操作，而是直接将长度强制性写入五个字节中
+</span><span style="color:#75715e"></span>                zipPrevEncodeLengthForceLarge(p<span style="color:#f92672">+</span>rawlen,rawlen);
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#75715e">// 运行到这里，说明刚好可以存放
+</span><span style="color:#75715e"></span>                zipPrevEncodeLength(p<span style="color:#f92672">+</span>rawlen,rawlen);
             }
 
-            // 退出，代表空间足够，后续空间不需要更改
-            break;
+            <span style="color:#75715e">// 退出，代表空间足够，后续空间不需要更改
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">break</span>;
         }
     }
-    return zl;
+    <span style="color:#66d9ef">return</span> zl;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="获取指定索引上的节点">获取指定索引上的节点</h2>
-
-<pre><code class="language-cpp">// 根据index的值，获取压缩列表第index个节点
-unsigned char *ziplistIndex(unsigned char *zl, int index) {
-    unsigned char *p;
-    unsigned int prevlensize, prevlen = 0;
-    // index为负，从尾部开始遍历
-    if (index &lt; 0) {
-        index = (-index)-1;
-        // 获取尾指针
-        p = ZIPLIST_ENTRY_TAIL(zl);
-        if (p[0] != ZIP_END) {
-            // 解码前置节点长度
-            ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
-            while (prevlen &gt; 0 &amp;&amp; index--) {
-                p -= prevlen;
-                // 解码前置节点长度
-                ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 根据index的值，获取压缩列表第index个节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ziplistIndex</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">int</span> index) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> prevlensize, prevlen <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// index为负，从尾部开始遍历
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (index <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {
+        index <span style="color:#f92672">=</span> (<span style="color:#f92672">-</span>index)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        <span style="color:#75715e">// 获取尾指针
+</span><span style="color:#75715e"></span>        p <span style="color:#f92672">=</span> ZIPLIST_ENTRY_TAIL(zl);
+        <span style="color:#66d9ef">if</span> (p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END) {
+            <span style="color:#75715e">// 解码前置节点长度
+</span><span style="color:#75715e"></span>            ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
+            <span style="color:#66d9ef">while</span> (prevlen <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">&amp;&amp;</span> index<span style="color:#f92672">--</span>) {
+                p <span style="color:#f92672">-=</span> prevlen;
+                <span style="color:#75715e">// 解码前置节点长度
+</span><span style="color:#75715e"></span>                ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);
             }
         }
-    } else {        // index为正，从头部开始遍历
-        p = ZIPLIST_ENTRY_HEAD(zl);
-        while (p[0] != ZIP_END &amp;&amp; index--) {
-            // 获取当前节点的整体长度，包括pre_entry_length，encoding，contents三部分
-            p += zipRawEntryLength(p);
+    } <span style="color:#66d9ef">else</span> {        <span style="color:#75715e">// index为正，从头部开始遍历
+</span><span style="color:#75715e"></span>        p <span style="color:#f92672">=</span> ZIPLIST_ENTRY_HEAD(zl);
+        <span style="color:#66d9ef">while</span> (p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END <span style="color:#f92672">&amp;&amp;</span> index<span style="color:#f92672">--</span>) {
+            <span style="color:#75715e">// 获取当前节点的整体长度，包括pre_entry_length，encoding，contents三部分
+</span><span style="color:#75715e"></span>            p <span style="color:#f92672">+=</span> zipRawEntryLength(p);
         }
     }
-    return (p[0] == ZIP_END || index &gt; 0) ? NULL : p;
+    <span style="color:#66d9ef">return</span> (p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">==</span> ZIP_END <span style="color:#f92672">||</span> index <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) <span style="color:#f92672">?</span> NULL <span style="color:#f92672">:</span> p;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="删除给定节点">删除给定节点</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除给定节点，输入压缩列表zl和指向删除节点的指针p
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ziplistDelete</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>p) {
+    size_t offset <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>p<span style="color:#f92672">-</span>zl;
+    <span style="color:#75715e">// 调用底层函数__ziplistDelete进行删除操作
+</span><span style="color:#75715e"></span>    zl <span style="color:#f92672">=</span> __ziplistDelete(zl,<span style="color:#f92672">*</span>p,<span style="color:#ae81ff">1</span>);
 
-<pre><code class="language-cpp">// 删除给定节点，输入压缩列表zl和指向删除节点的指针p
-unsigned char *ziplistDelete(unsigned char *zl, unsigned char **p) {
-    size_t offset = *p-zl;
-    // 调用底层函数__ziplistDelete进行删除操作
-    zl = __ziplistDelete(zl,*p,1);
-
-    // 删除操作可能会改变zl，因为会重新分配内存
-    *p = zl+offset;
-    return zl;
+    <span style="color:#75715e">// 删除操作可能会改变zl，因为会重新分配内存
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">*</span>p <span style="color:#f92672">=</span> zl<span style="color:#f92672">+</span>offset;
+    <span style="color:#66d9ef">return</span> zl;
 }
-</code></pre>
-
+</code></pre></div>
 <p>删除操作的底层实现由__ziplistDelete函数实现。</p>
-
-<pre><code class="language-cpp">// 删除压缩列表zl中以p起始的num个节点
-static unsigned char *__ziplistDelete(unsigned char *zl, unsigned char *p, unsigned int num) {
-    unsigned int i, totlen, deleted = 0;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除压缩列表zl中以p起始的num个节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">__ziplistDelete</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> num) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> i, totlen, deleted <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
     size_t offset;
-    int nextdiff = 0;
+    <span style="color:#66d9ef">int</span> nextdiff <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
     zlentry first, tail;
-    // 获取p指向的节点信息
-    zipEntry(p, &amp;first);
-    // 计算num个节点占用的内存
-    for (i = 0; p[0] != ZIP_END &amp;&amp; i &lt; num; i++) {
-        p += zipRawEntryLength(p);
-        deleted++;
+    <span style="color:#75715e">// 获取p指向的节点信息
+</span><span style="color:#75715e"></span>    zipEntry(p, <span style="color:#f92672">&amp;</span>first);
+    <span style="color:#75715e">// 计算num个节点占用的内存
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END <span style="color:#f92672">&amp;&amp;</span> i <span style="color:#f92672">&lt;</span> num; i<span style="color:#f92672">++</span>) {
+        p <span style="color:#f92672">+=</span> zipRawEntryLength(p);
+        deleted<span style="color:#f92672">++</span>;
     }
 
-    totlen = p-first.p;
-    if (totlen &gt; 0) {
-        if (p[0] != ZIP_END) {
-            // 执行到这里，表示被删除节点后面还存在节点
-            
-            // 判断最后一个被删除的节点的后继节点的header中的存放前置节点长度的空间
-            // 能不能容纳第一个被删除节点的前置节点的长度
-            nextdiff = zipPrevLenByteDiff(p,first.prevrawlen);
-            p -= nextdiff;
+    totlen <span style="color:#f92672">=</span> p<span style="color:#f92672">-</span>first.p;
+    <span style="color:#66d9ef">if</span> (totlen <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#66d9ef">if</span> (p[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> ZIP_END) {
+            <span style="color:#75715e">// 执行到这里，表示被删除节点后面还存在节点
+</span><span style="color:#75715e"></span>            
+            <span style="color:#75715e">// 判断最后一个被删除的节点的后继节点的header中的存放前置节点长度的空间
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 能不能容纳第一个被删除节点的前置节点的长度
+</span><span style="color:#75715e"></span>            nextdiff <span style="color:#f92672">=</span> zipPrevLenByteDiff(p,first.prevrawlen);
+            p <span style="color:#f92672">-=</span> nextdiff;
             zipPrevEncodeLength(p,first.prevrawlen);
 
-            // 更新尾部相对于头部的便宜
-            ZIPLIST_TAIL_OFFSET(zl) =
-                intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))-totlen);
+            <span style="color:#75715e">// 更新尾部相对于头部的便宜
+</span><span style="color:#75715e"></span>            ZIPLIST_TAIL_OFFSET(zl) <span style="color:#f92672">=</span>
+                intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))<span style="color:#f92672">-</span>totlen);
 
-            // 如果被删除节点后面还存在节点，就需要将nextdiff计算在内
-            zipEntry(p, &amp;tail);
-            if (p[tail.headersize+tail.len] != ZIP_END) {
-                ZIPLIST_TAIL_OFFSET(zl) =
-                   intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))+nextdiff);
+            <span style="color:#75715e">// 如果被删除节点后面还存在节点，就需要将nextdiff计算在内
+</span><span style="color:#75715e"></span>            zipEntry(p, <span style="color:#f92672">&amp;</span>tail);
+            <span style="color:#66d9ef">if</span> (p[tail.headersize<span style="color:#f92672">+</span>tail.len] <span style="color:#f92672">!=</span> ZIP_END) {
+                ZIPLIST_TAIL_OFFSET(zl) <span style="color:#f92672">=</span>
+                   intrev32ifbe(intrev32ifbe(ZIPLIST_TAIL_OFFSET(zl))<span style="color:#f92672">+</span>nextdiff);
             }
 
-            // 将被删除节点后面的内存空间移动到删除的节点之后
-            memmove(first.p,p,
-                intrev32ifbe(ZIPLIST_BYTES(zl))-(p-zl)-1);
-        } else {
-            // 执行到这里，表示被删除节点后面没有节点了
-            ZIPLIST_TAIL_OFFSET(zl) =
-                intrev32ifbe((first.p-zl)-first.prevrawlen);
+            <span style="color:#75715e">// 将被删除节点后面的内存空间移动到删除的节点之后
+</span><span style="color:#75715e"></span>            memmove(first.p,p,
+                intrev32ifbe(ZIPLIST_BYTES(zl))<span style="color:#f92672">-</span>(p<span style="color:#f92672">-</span>zl)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 执行到这里，表示被删除节点后面没有节点了
+</span><span style="color:#75715e"></span>            ZIPLIST_TAIL_OFFSET(zl) <span style="color:#f92672">=</span>
+                intrev32ifbe((first.p<span style="color:#f92672">-</span>zl)<span style="color:#f92672">-</span>first.prevrawlen);
         }
 
-        // 缩小内存并更新ziplist的长度
-        offset = first.p-zl;
-        zl = ziplistResize(zl, intrev32ifbe(ZIPLIST_BYTES(zl))-totlen+nextdiff);
-        ZIPLIST_INCR_LENGTH(zl,-deleted);
-        p = zl+offset;
+        <span style="color:#75715e">// 缩小内存并更新ziplist的长度
+</span><span style="color:#75715e"></span>        offset <span style="color:#f92672">=</span> first.p<span style="color:#f92672">-</span>zl;
+        zl <span style="color:#f92672">=</span> ziplistResize(zl, intrev32ifbe(ZIPLIST_BYTES(zl))<span style="color:#f92672">-</span>totlen<span style="color:#f92672">+</span>nextdiff);
+        ZIPLIST_INCR_LENGTH(zl,<span style="color:#f92672">-</span>deleted);
+        p <span style="color:#f92672">=</span> zl<span style="color:#f92672">+</span>offset;
 
-        // 如果nextdiff不等于0，说明被删除节点后面节点的header信息还需要更改
-        if (nextdiff != 0)
-            // 连锁更新
-            zl = __ziplistCascadeUpdate(zl,p);
+        <span style="color:#75715e">// 如果nextdiff不等于0，说明被删除节点后面节点的header信息还需要更改
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (nextdiff <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>)
+            <span style="color:#75715e">// 连锁更新
+</span><span style="color:#75715e"></span>            zl <span style="color:#f92672">=</span> __ziplistCascadeUpdate(zl,p);
     }
-    return zl;
+    <span style="color:#66d9ef">return</span> zl;
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="ziplist小结">ziplist小结</h1>
 
 <p>ziplist实际上就可以理解为一个存放在连续内存空间上的双向列表，其每一个节点都包含了前置指针和后置指针，只是经过了特殊的编码步骤了的。连锁更新是ziplist的一大特点，为了节省内存，ziplist需要存放在一段连续的内存空间上，所以必然会引起节点空间不足的问题。但是，连锁更新发生的概率比较小，不会影响其效率！</p>

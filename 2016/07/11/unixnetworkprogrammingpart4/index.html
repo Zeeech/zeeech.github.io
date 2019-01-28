@@ -70,9 +70,11 @@ fork函数，完成并行服务器的编写
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -105,7 +107,6 @@ fork函数，完成并行服务器的编写
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -185,115 +186,107 @@ fork函数，完成并行服务器的编写
 </ul>
 
 <h1 id="二-tcp回射服务器程序清单">二、TCP回射服务器程序清单</h1>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unp.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">str_echo</span>(<span style="color:#66d9ef">int</span> sockfd);<span style="color:#75715e">//回射函数
+</span><span style="color:#75715e"></span>
 
-<pre><code class="language-cpp">#include &lt;unp.h&gt;
-#include &lt;stdio.h&gt;
-void str_echo(int sockfd);//回射函数
-
-
-int main(int argc , char **argv)
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc , <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-    int listenfd,connfd;
+    <span style="color:#66d9ef">int</span> listenfd,connfd;
     pid_t pid;
     socklen_t clilen;
-    struct sockaddr_in cliaddr,servaddr;
-    //创建套接字
-    listenfd = Socket(AF_INET,SOCK_STREAM,0);
-    //初始化套接字地址
-    bzero(&amp;servaddr,sizeof(servaddr));
-    servaddr.sin_port = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);//通配地址
-    servaddr.sin_port = htons(SERV_PORT);
-    //将本地协议地址赋值给套接字
-    Bind(listenfd,(SA *) &amp;servaddr,sizeof(servaddr));
-    //监听
-    Listen(listenfd,LISTENQ);
-    while(1)
+    <span style="color:#66d9ef">struct</span> sockaddr_in cliaddr,servaddr;
+    <span style="color:#75715e">//创建套接字
+</span><span style="color:#75715e"></span>    listenfd <span style="color:#f92672">=</span> Socket(AF_INET,SOCK_STREAM,<span style="color:#ae81ff">0</span>);
+    <span style="color:#75715e">//初始化套接字地址
+</span><span style="color:#75715e"></span>    bzero(<span style="color:#f92672">&amp;</span>servaddr,<span style="color:#66d9ef">sizeof</span>(servaddr));
+    servaddr.sin_port <span style="color:#f92672">=</span> AF_INET;
+    servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);<span style="color:#75715e">//通配地址
+</span><span style="color:#75715e"></span>    servaddr.sin_port <span style="color:#f92672">=</span> htons(SERV_PORT);
+    <span style="color:#75715e">//将本地协议地址赋值给套接字
+</span><span style="color:#75715e"></span>    Bind(listenfd,(SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr,<span style="color:#66d9ef">sizeof</span>(servaddr));
+    <span style="color:#75715e">//监听
+</span><span style="color:#75715e"></span>    Listen(listenfd,LISTENQ);
+    <span style="color:#66d9ef">while</span>(<span style="color:#ae81ff">1</span>)
     {
-        clilen = sizeof(cliaddr);//客户端套接字地址长度
-        connfd = Accept(listenfd,(SA *)&amp;cliaddr,&amp;clilen);//接受客户端的信息
-        if((pid = Fork())==0)//调用子进程去处理与客户的通信
-        {
-            Close(listenfd);//listenfd套接字的引用技术减1
-            str_echo(connfd);//消息回射函数
-            exit(0);    
+        clilen <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);<span style="color:#75715e">//客户端套接字地址长度
+</span><span style="color:#75715e"></span>        connfd <span style="color:#f92672">=</span> Accept(listenfd,(SA <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>cliaddr,<span style="color:#f92672">&amp;</span>clilen);<span style="color:#75715e">//接受客户端的信息
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>((pid <span style="color:#f92672">=</span> Fork())<span style="color:#f92672">==</span><span style="color:#ae81ff">0</span>)<span style="color:#75715e">//调用子进程去处理与客户的通信
+</span><span style="color:#75715e"></span>        {
+            Close(listenfd);<span style="color:#75715e">//listenfd套接字的引用技术减1
+</span><span style="color:#75715e"></span>            str_echo(connfd);<span style="color:#75715e">//消息回射函数
+</span><span style="color:#75715e"></span>            exit(<span style="color:#ae81ff">0</span>);    
         }
-        Close(connfd);//connfd客户套接字引用计数减1
-    }
+        Close(connfd);<span style="color:#75715e">//connfd客户套接字引用计数减1
+</span><span style="color:#75715e"></span>    }
 }
-void str_echo(int sockfd)
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">str_echo</span>(<span style="color:#66d9ef">int</span> sockfd)
 {
     ssize_t n;
-    char buf[MAXLINE];
+    <span style="color:#66d9ef">char</span> buf[MAXLINE];
 again:
-    while((n=read(sockfd,buf,MAXLINE))&gt;0)//读取客户传来的消息
-    {
-        Write(sockfd,buf,n);//回传给客户
-    }    
-    if(n&lt;0 &amp;&amp; errno == EINTR)
-        goto again;
-    else if(n&lt;0)
-        err_sys(&quot;str_echo:read error&quot;);
+    <span style="color:#66d9ef">while</span>((n<span style="color:#f92672">=</span>read(sockfd,buf,MAXLINE))<span style="color:#f92672">&gt;</span><span style="color:#ae81ff">0</span>)<span style="color:#75715e">//读取客户传来的消息
+</span><span style="color:#75715e"></span>    {
+        Write(sockfd,buf,n);<span style="color:#75715e">//回传给客户
+</span><span style="color:#75715e"></span>    }    
+    <span style="color:#66d9ef">if</span>(n<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span> <span style="color:#f92672">&amp;&amp;</span> errno <span style="color:#f92672">==</span> EINTR)
+        <span style="color:#66d9ef">goto</span> again;
+    <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span>(n<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span>)
+        err_sys(<span style="color:#e6db74">&#34;str_echo:read error&#34;</span>);
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="三-tcp回射客户端程序清单">三、TCP回射客户端程序清单</h1>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unp.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">str_cli</span>(FILE<span style="color:#f92672">*</span> fp, <span style="color:#66d9ef">int</span> sockfd);
 
-<pre><code class="language-cpp">#include &lt;unp.h&gt;
-void str_cli(FILE* fp, int sockfd);
-
-int main(int argc,char **argv)
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc,<span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-    int sockfd;
-    struct sockaddr_in servaddr;
-    if(argc != 2){
-        err_quit(&quot;usage:tcpcli &lt;IPaddress&gt;&quot;);
+    <span style="color:#66d9ef">int</span> sockfd;
+    <span style="color:#66d9ef">struct</span> sockaddr_in servaddr;
+    <span style="color:#66d9ef">if</span>(argc <span style="color:#f92672">!=</span> <span style="color:#ae81ff">2</span>){
+        err_quit(<span style="color:#e6db74">&#34;usage:tcpcli &lt;IPaddress&gt;&#34;</span>);
     }
-    //创建套接字
-    sockfd = Socket(AF_INET , SOCK_STREAM , 0);
-    //初始化套接地地址
-    bzero(&amp;servaddr,sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(SERV_PORT);
-    Inet_pton(AF_INET,argv[1],&amp;servaddr.sin_addr);//将输入的点分十进制串转换成网络字节序二进制值
-    Connect(sockfd,(SA*)&amp;servaddr , sizeof(servaddr));//连接服务器
-    str_cli(stdin,sockfd);//客户处理函数
-    exit(0);
+    <span style="color:#75715e">//创建套接字
+</span><span style="color:#75715e"></span>    sockfd <span style="color:#f92672">=</span> Socket(AF_INET , SOCK_STREAM , <span style="color:#ae81ff">0</span>);
+    <span style="color:#75715e">//初始化套接地地址
+</span><span style="color:#75715e"></span>    bzero(<span style="color:#f92672">&amp;</span>servaddr,<span style="color:#66d9ef">sizeof</span>(servaddr));
+    servaddr.sin_family <span style="color:#f92672">=</span> AF_INET;
+    servaddr.sin_port <span style="color:#f92672">=</span> htons(SERV_PORT);
+    Inet_pton(AF_INET,argv[<span style="color:#ae81ff">1</span>],<span style="color:#f92672">&amp;</span>servaddr.sin_addr);<span style="color:#75715e">//将输入的点分十进制串转换成网络字节序二进制值
+</span><span style="color:#75715e"></span>    Connect(sockfd,(SA<span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>servaddr , <span style="color:#66d9ef">sizeof</span>(servaddr));<span style="color:#75715e">//连接服务器
+</span><span style="color:#75715e"></span>    str_cli(stdin,sockfd);<span style="color:#75715e">//客户处理函数
+</span><span style="color:#75715e"></span>    exit(<span style="color:#ae81ff">0</span>);
 }
-void str_cli(FILE *fp,int sockfd)
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">str_cli</span>(FILE <span style="color:#f92672">*</span>fp,<span style="color:#66d9ef">int</span> sockfd)
 {
-    char sendline[MAXLINE], recvline[MAXLINE];
-    //获取客户端标准输入的字节
-    while(Fgets(sendline,MAXLINE,fp)!=NULL)
+    <span style="color:#66d9ef">char</span> sendline[MAXLINE], recvline[MAXLINE];
+    <span style="color:#75715e">//获取客户端标准输入的字节
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(Fgets(sendline,MAXLINE,fp)<span style="color:#f92672">!=</span>NULL)
     {
-        //将标准输入读入的字节传给服务器
-        Write(sockfd,sendline,strlen(sendline));
-        //读取服务器回射的字节
-        if(Readline(sockfd,recvline,MAXLINE)==0)
+        <span style="color:#75715e">//将标准输入读入的字节传给服务器
+</span><span style="color:#75715e"></span>        Write(sockfd,sendline,strlen(sendline));
+        <span style="color:#75715e">//读取服务器回射的字节
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>(Readline(sockfd,recvline,MAXLINE)<span style="color:#f92672">==</span><span style="color:#ae81ff">0</span>)
         {
-            err_quit(&quot;strcli:server terminated prematurely&quot;);
+            err_quit(<span style="color:#e6db74">&#34;strcli:server terminated prematurely&#34;</span>);
         }
-        //将获取的服务器回射字节打印到标准输出
-        Fputs(recvline,stdout);
+        <span style="color:#75715e">//将获取的服务器回射字节打印到标准输出
+</span><span style="color:#75715e"></span>        Fputs(recvline,stdout);
     }
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="四-正常启动">四、正常启动</h1>
 
 <p>写完上述代码后，首先运行服务器端程序，正常启动后，它调用socket，bind，listen和accept，并阻塞于accept调用。让我们运行netstat程序来检查服务器监听套接字的状态。</p>
-
-<pre><code class="language-cpp">～$netstat -a
-Proto Recv-Q Send-Q Local Address           Foreign Address         State          
-tcp        0      0 *:9877                  *:*                     LISTEN
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">～$</span>netstat <span style="color:#f92672">-</span>a
+Proto Recv<span style="color:#f92672">-</span>Q Send<span style="color:#f92672">-</span>Q Local Address           Foreign Address         State          
+tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> <span style="color:#f92672">*:</span><span style="color:#ae81ff">9877</span>                  <span style="color:#f92672">*:*</span>                     LISTEN
+</code></pre></div>
 <p>这个正是该服务器建立起的套接字，*:9877表示一个为0的IP地址(INADDR_ANY，通配地址)，然后内核分配的9877端口号。此套接字处于LISTEN状态，即阻塞于accept调用，等待客户连接。
 接着，我们启动客户端程序，并指定服务器主机的IP地址为127.0.0.1，</p>
-
-<pre><code class="language-cpp"># ./tcpcli 127.0.0.1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e"># ./tcpcli 127.0.0.1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>客户端依次调用socket，connect，后者引起TCP的三次握手过程，当三次握手完成后，客户中的connect和服务器的accept均返回，连接于是建立。接着发生以下步骤：</p>
 
 <p>(1) 客户调用str_cli函数，该函数阻塞于fgets调用，然后等待客户输入一行文本</p>
@@ -303,36 +296,30 @@ tcp        0      0 *:9877                  *:*                     LISTEN
 <p>(3) 另一方面，服务器父进程再次调用accept并阻塞，等待下一个客户连接。</p>
 
 <p>此时的网络状态如下：</p>
-
-<pre><code class="language-cpp">Active Internet connections (servers and established)
-Proto Recv-Q Send-Q Local Address           Foreign Address         State      
-tcp        0      0 localhost:56490         localhost:9877          ESTABLISHED
-tcp        0      0 localhost:9877          localhost:56490         ESTABLISHED
-tcp        0      0 *:9877                  *:*                     LISTEN
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Active Internet connections (servers and established)
+Proto Recv<span style="color:#f92672">-</span>Q Send<span style="color:#f92672">-</span>Q Local Address           Foreign Address         State      
+tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> localhost:<span style="color:#ae81ff">56490</span>         localhost:<span style="color:#ae81ff">9877</span>          ESTABLISHED
+tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> localhost:<span style="color:#ae81ff">9877</span>          localhost:<span style="color:#ae81ff">56490</span>         ESTABLISHED
+tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> <span style="color:#f92672">*:</span><span style="color:#ae81ff">9877</span>                  <span style="color:#f92672">*:*</span>                     LISTEN
+</code></pre></div>
 <p>如上，列出了三个套接字状态，第一个对应于客户进程的套接字，它的本地端口号为56490；第二个对应于服务器子进程的套接字，本地端口号为9877；第三个为服务器父进程则继续监听客户。</p>
 
 <h1 id="五-正常终止">五、正常终止</h1>
 
 <p>至此，连接已经建立，在客户端键入一行文本后，都会被服务器回射回来，然后用标准输出。如下：</p>
-
-<pre><code class="language-cpp">root@zc-Inspiron-N4010:/home/zc/Documents/unp# ./tcpcli 127.0.0.1
-hello,world
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">root<span style="color:#960050;background-color:#1e0010">@</span>zc<span style="color:#f92672">-</span>Inspiron<span style="color:#f92672">-</span>N4010:<span style="color:#f92672">/</span>home<span style="color:#f92672">/</span>zc<span style="color:#f92672">/</span>Documents<span style="color:#f92672">/</span>unp<span style="color:#75715e"># ./tcpcli 127.0.0.1
+</span><span style="color:#75715e"></span>hello,world
 hello,world
 goodbye
 goodbye
 nice to meet you
 nice to meet you
-</code></pre>
-
+</code></pre></div>
 <p>接着我们键入ctrl+D，代表终端EOF字符，以终止客户。此刻调用netstat会得到如下一行：</p>
-
-<pre><code class="language-cpp">tcp        0      0 localhost:56490         localhost:9877          TIME_WAIT  
-//监听套接字
-tcp        0      0 *:9877                  *:*                     LISTEN
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> localhost:<span style="color:#ae81ff">56490</span>         localhost:<span style="color:#ae81ff">9877</span>          TIME_WAIT  
+<span style="color:#75715e">//监听套接字
+</span><span style="color:#75715e"></span>tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> <span style="color:#f92672">*:</span><span style="color:#ae81ff">9877</span>                  <span style="color:#f92672">*:*</span>                     LISTEN
+</code></pre></div>
 <p>之前连接的客户进入TIME_WAIT状态，而服务器还在等待下一个客户的连接。</p>
 
 <p>下面为正常终止客户和服务器的步骤:</p>
@@ -350,11 +337,9 @@ tcp        0      0 *:9877                  *:*                     LISTEN
 <p>(6) 服务器打开的所有描述符随之关闭，由子进程来关闭已连接套接字会引发TCP连接终止序列的最后两个分节：一个从服务器到客户的FIN，一个从客户到服务器的ACK。至此，连接完全终止，客户套接字进入TIME_WAIT状态。</p>
 
 <p>(7) 进程终止处理的另一部分内容：在服务器子进程终止时，给父进程发送一个SIGCHLD信号。本例中父进程未对此信号进程处理，子进程于是进入僵死状态。如下，所示</p>
-
-<pre><code class="language-cpp"># ps -t pts/3 -o pid,ppid,tty,stat,args,wchan
- 6057  6055 pts/3    Z   [tcpsrv] &lt;defunct&gt;          exit
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e"># ps -t pts/3 -o pid,ppid,tty,stat,args,wchan
+</span><span style="color:#75715e"></span> <span style="color:#ae81ff">6057</span>  <span style="color:#ae81ff">6055</span> pts<span style="color:#f92672">/</span><span style="color:#ae81ff">3</span>    Z   [tcpsrv] <span style="color:#f92672">&lt;</span>defunct<span style="color:#f92672">&gt;</span>          exit
+</code></pre></div>
 <h1 id="六-posix信号处理">六、POSIX信号处理</h1>
 
 <p>信号是告知某个进程发生了某个事件的通知，有时也叫做软件中断。信号通常时异步发生的。</p>
@@ -375,10 +360,8 @@ tcp        0      0 *:9877                  *:*                     LISTEN
 <h2 id="signal函数">signal函数</h2>
 
 <p>建立信号处置的POSIX方法就是调用sigaction函数，不过这有点复杂，因为该函数的参数之一是我们必须分配并填写结构。简单的方法时调用signal函数，其第一个参数是信号名，第二个参数或为指向函数的指针，或为常值SIG_IGN或SIG_DFL。调用如下：</p>
-
-<pre><code class="language-cpp">signal(SIGCHLD,SIG_DFL);//代表捕捉SIGCHLD信号并启用默认处置。
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">signal(SIGCHLD,SIG_DFL);<span style="color:#75715e">//代表捕捉SIGCHLD信号并启用默认处置。
+</span><span style="color:#75715e"></span></code></pre></div>
 <h2 id="posix信号语义">POSIX信号语义</h2>
 
 <p>符合POSIX的系统上的信号处理总结为一下几点：</p>
@@ -400,23 +383,19 @@ tcp        0      0 *:9877                  *:*                     LISTEN
 <p>留存僵死进程会占用内核中的空间，最终可能导致我们耗尽进程资源。
 无论何时，我们fork子进程都得wait它们！
 于是我们必须调用信号处理函数(在LISTEN之后添加如下函数)，并在函数体内调用wait。</p>
-
-<pre><code class="language-cpp">Signal(SIGCHLD,sig_child); //第二个参数为我们定义的信号处理函数的函数指针
-void sig_child(int signo)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Signal(SIGCHLD,sig_child); <span style="color:#75715e">//第二个参数为我们定义的信号处理函数的函数指针
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sig_child</span>(<span style="color:#66d9ef">int</span> signo)
 {
     pid_t pid ;
-    int stat;
-    pid = wait(&amp;stat);//调用wait函数
-    printf(&quot;child %d terminated\n&quot;, pid);
-    return;
+    <span style="color:#66d9ef">int</span> stat;
+    pid <span style="color:#f92672">=</span> wait(<span style="color:#f92672">&amp;</span>stat);<span style="color:#75715e">//调用wait函数
+</span><span style="color:#75715e"></span>    printf(<span style="color:#e6db74">&#34;child %d terminated</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, pid);
+    <span style="color:#66d9ef">return</span>;
 }
-</code></pre>
-
+</code></pre></div>
 <p>运行以上程序得到输出：</p>
-
-<pre><code class="language-cpp">child 6625 terminated
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">child <span style="color:#ae81ff">6625</span> terminated
+</code></pre></div>
 <p>具体步骤如下：</p>
 
 <p>(1) 当键入EOF字符来终止客户，客户TCP发送一个FIN给服务器，服务器响应以一个ACK</p>
@@ -444,52 +423,46 @@ void sig_child(int signo)
 
 <p>适用于慢系统调用的基本规则：当阻塞于某个慢系统调用的一个进程捕获某个信号且相应信号处理函数返回时，该系统调用可能返回一个EINTR错误。
 例如：</p>
-
-<pre><code class="language-cpp">for(;;){
-    clilen  = sizeof(cliaddr);
-    if((connfd = accept(listenfd,(SA*)&amp;addcli,&amp;clilen))&lt;0){
-        if(errno == EINTR){//返回一个EINTR错误，重启被中断的系统调用
-            continue;//继续for循环
-        }
-        else
-            err_sys(&quot;accepted error&quot;);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">for</span>(;;){
+    clilen  <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);
+    <span style="color:#66d9ef">if</span>((connfd <span style="color:#f92672">=</span> accept(listenfd,(SA<span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>addcli,<span style="color:#f92672">&amp;</span>clilen))<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span>){
+        <span style="color:#66d9ef">if</span>(errno <span style="color:#f92672">==</span> EINTR){<span style="color:#75715e">//返回一个EINTR错误，重启被中断的系统调用
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">continue</span>;<span style="color:#75715e">//继续for循环
+</span><span style="color:#75715e"></span>        }
+        <span style="color:#66d9ef">else</span>
+            err_sys(<span style="color:#e6db74">&#34;accepted error&#34;</span>);
     }
 }
-</code></pre>
-
+</code></pre></div>
 <p>对于accept以及诸如read，write，select和open之类的函数来说，可以重启被中断的系统调用。
 不过，connect函数不能重启，如果该函数返回EINTR，我们不能再次调用它，否则将立即返回一个错误。当connect呗一个捕获的信号中断而且不自动重启时，我们必须调用select来等待连接完成。</p>
 
 <h1 id="八-wait和waitpid函数">八、wait和waitpid函数</h1>
 
 <p>调用wait函数来处理已终止的子进程，函数原型如下：</p>
-
-<pre><code class="language-cpp">#include &lt;sys/wait.h&gt;
-//此函数均返回两个值：已终止子进程的进程ID号，以及通过指针statloc返回的子进程中止状态。
-pid_t wait(int *statloc);
-pid_t waitpid(pid_t pid , int *statloc , int options);//若成功则返回子进程ID，若出错则返回0或-1
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/wait.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">//此函数均返回两个值：已终止子进程的进程ID号，以及通过指针statloc返回的子进程中止状态。
+</span><span style="color:#75715e"></span>pid_t <span style="color:#a6e22e">wait</span>(<span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>statloc);
+pid_t <span style="color:#a6e22e">waitpid</span>(pid_t pid , <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>statloc , <span style="color:#66d9ef">int</span> options);<span style="color:#75715e">//若成功则返回子进程ID，若出错则返回0或-1
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>需要说明一点：如果调用wait的进程没有已终止的子进程，不过有一个或者多个子进程仍在执行，那么wait将阻塞到现有子进程的第一个终止为止。</p>
 
 <h2 id="wait和waitpid的区别">wait和waitpid的区别</h2>
 
 <p>由于Unix信号一般时不排队的，所以当多个客户同时终止连接时，就会产生多个僵死进程，而wait函数只能处理其中一个。
 这时候，就需要调用waitpid函数，我们采用在一个循环中调用waitpid，以获取所有已终止子进程的状态。如下代码：</p>
-
-<pre><code class="language-cpp">void sig_child(int signo)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sig_child</span>(<span style="color:#66d9ef">int</span> signo)
 {
     pid_t pid ;
-    int stat;
-    //第一个参数为-1：表示等到第一个终止的子进程
-    //第三个参数指定为WHOCHANG，它告知waitpid在有尚未终止的子进程在运行时不要阻塞
-    while((pid = waitpid(-1, &amp;stat , WHOHANG))&gt;0)  {//调用waitpid函数
-        printf(&quot;child %d terminated\n&quot;, pid);
+    <span style="color:#66d9ef">int</span> stat;
+    <span style="color:#75715e">//第一个参数为-1：表示等到第一个终止的子进程
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//第三个参数指定为WHOCHANG，它告知waitpid在有尚未终止的子进程在运行时不要阻塞
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>((pid <span style="color:#f92672">=</span> waitpid(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">&amp;</span>stat , WHOHANG))<span style="color:#f92672">&gt;</span><span style="color:#ae81ff">0</span>)  {<span style="color:#75715e">//调用waitpid函数
+</span><span style="color:#75715e"></span>        printf(<span style="color:#e6db74">&#34;child %d terminated</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, pid);
     }
-    return;
+    <span style="color:#66d9ef">return</span>;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="三种情况的总结">三种情况的总结</h2>
 
 <p>(1) 当fork子进程时，必须捕获SIGCHLD信号</p>
@@ -499,74 +472,72 @@ pid_t waitpid(pid_t pid , int *statloc , int options);//若成功则返回子进
 <p>(3) SIGCHLD的信号处理函数必须正确编写，应使用waitpid函数以免留下僵死进程。</p>
 
 <p>到目前为止，完整的客户端程序如下：</p>
-
-<pre><code class="language-cpp">#include &lt;unp.h&gt;
-#include &lt;stdio.h&gt;
-void str_echo(int sockfd);//回射函数
-void sig_chld(int signo);
-int main(int argc , char **argv)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unp.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">str_echo</span>(<span style="color:#66d9ef">int</span> sockfd);<span style="color:#75715e">//回射函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sig_chld</span>(<span style="color:#66d9ef">int</span> signo);
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">int</span> argc , <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>argv)
 {
-    int listenfd,connfd;
+    <span style="color:#66d9ef">int</span> listenfd,connfd;
     pid_t pid;
     socklen_t clilen;
-    struct sockaddr_in cliaddr,servaddr;
-    //创建套接字
-    listenfd = Socket(AF_INET,SOCK_STREAM,0);
-    //初始化套接字地址
-    bzero(&amp;servaddr,sizeof(servaddr));
-    servaddr.sin_port = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);//通配地址
-    servaddr.sin_port = htons(SERV_PORT);
-    //将本地协议地址赋值给套接字
-    Bind(listenfd,(SA *) &amp;servaddr,sizeof(servaddr));
-    //监听
-    Listen(listenfd,LISTENQ);
+    <span style="color:#66d9ef">struct</span> sockaddr_in cliaddr,servaddr;
+    <span style="color:#75715e">//创建套接字
+</span><span style="color:#75715e"></span>    listenfd <span style="color:#f92672">=</span> Socket(AF_INET,SOCK_STREAM,<span style="color:#ae81ff">0</span>);
+    <span style="color:#75715e">//初始化套接字地址
+</span><span style="color:#75715e"></span>    bzero(<span style="color:#f92672">&amp;</span>servaddr,<span style="color:#66d9ef">sizeof</span>(servaddr));
+    servaddr.sin_port <span style="color:#f92672">=</span> AF_INET;
+    servaddr.sin_addr.s_addr <span style="color:#f92672">=</span> htonl(INADDR_ANY);<span style="color:#75715e">//通配地址
+</span><span style="color:#75715e"></span>    servaddr.sin_port <span style="color:#f92672">=</span> htons(SERV_PORT);
+    <span style="color:#75715e">//将本地协议地址赋值给套接字
+</span><span style="color:#75715e"></span>    Bind(listenfd,(SA <span style="color:#f92672">*</span>) <span style="color:#f92672">&amp;</span>servaddr,<span style="color:#66d9ef">sizeof</span>(servaddr));
+    <span style="color:#75715e">//监听
+</span><span style="color:#75715e"></span>    Listen(listenfd,LISTENQ);
     Signal(SIGCHLD,sig_chld);
-    while(1)
+    <span style="color:#66d9ef">while</span>(<span style="color:#ae81ff">1</span>)
     {
-        clilen = sizeof(cliaddr);//客户端套接字地址长度
-        if((connfd = accept(listenfd,(SA*)&amp;addcli,&amp;clilen))&lt;0){//接受客户端的消息
-        if(errno == EINTR){//当返回一个EINTR错误
-            continue;//继续for循环,重启被中断的系统调用
+        clilen <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(cliaddr);<span style="color:#75715e">//客户端套接字地址长度
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>((connfd <span style="color:#f92672">=</span> accept(listenfd,(SA<span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>addcli,<span style="color:#f92672">&amp;</span>clilen))<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span>){<span style="color:#75715e">//接受客户端的消息
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>(errno <span style="color:#f92672">==</span> EINTR){<span style="color:#75715e">//当返回一个EINTR错误
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">continue</span>;<span style="color:#75715e">//继续for循环,重启被中断的系统调用
+</span><span style="color:#75715e"></span>        }
+        <span style="color:#66d9ef">else</span>
+            err_sys(<span style="color:#e6db74">&#34;accepted error&#34;</span>);
+        <span style="color:#66d9ef">if</span>((pid <span style="color:#f92672">=</span> Fork())<span style="color:#f92672">==</span><span style="color:#ae81ff">0</span>)<span style="color:#75715e">//调用子进程去处理与客户的通信
+</span><span style="color:#75715e"></span>        {
+            Close(listenfd);<span style="color:#75715e">//listenfd套接字的引用技术减1
+</span><span style="color:#75715e"></span>            str_echo(connfd);<span style="color:#75715e">//消息回射函数
+</span><span style="color:#75715e"></span>            exit(<span style="color:#ae81ff">0</span>);
         }
-        else
-            err_sys(&quot;accepted error&quot;);
-        if((pid = Fork())==0)//调用子进程去处理与客户的通信
-        {
-            Close(listenfd);//listenfd套接字的引用技术减1
-            str_echo(connfd);//消息回射函数
-            exit(0);
-        }
-        Close(connfd);//connfd客户套接字引用计数减1
-    }
+        Close(connfd);<span style="color:#75715e">//connfd客户套接字引用计数减1
+</span><span style="color:#75715e"></span>    }
 }
-void sig_child(int signo)
+<span style="color:#66d9ef">void</span> sig_child(<span style="color:#66d9ef">int</span> signo)
 {
     pid_t pid ;
-    int stat;
-    //第一个参数为-1：表示等到第一个终止的子进程
-    //第三个参数指定为WHOCHANG，它告知waitpid在有尚未终止的子进程在运行时不要阻塞
-    while((pid = waitpid(-1, &amp;stat , WHOHANG))&gt;0)  {//调用waitpid函数
-        printf(&quot;child %d terminated\n&quot;, pid);
+    <span style="color:#66d9ef">int</span> stat;
+    <span style="color:#75715e">//第一个参数为-1：表示等到第一个终止的子进程
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//第三个参数指定为WHOCHANG，它告知waitpid在有尚未终止的子进程在运行时不要阻塞
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>((pid <span style="color:#f92672">=</span> waitpid(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#f92672">&amp;</span>stat , WHOHANG))<span style="color:#f92672">&gt;</span><span style="color:#ae81ff">0</span>)  {<span style="color:#75715e">//调用waitpid函数
+</span><span style="color:#75715e"></span>        printf(<span style="color:#e6db74">&#34;child %d terminated</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, pid);
     }
-    return;
+    <span style="color:#66d9ef">return</span>;
 }
-void str_echo(int sockfd)
+<span style="color:#66d9ef">void</span> str_echo(<span style="color:#66d9ef">int</span> sockfd)
 {
     ssize_t n;
-    char buf[MAXLINE];
+    <span style="color:#66d9ef">char</span> buf[MAXLINE];
 again:
-    while((n=read(sockfd,buf,MAXLINE))&gt;0)//读取客户传来的消息
-    {
-        Write(sockfd,buf,n);//回传回去
-    }
-    if(n&lt;0 &amp;&amp; errno == EINTR)
-        goto again;
-    else if(n&lt;0)
-        err_sys(&quot;str_echo:read error&quot;);
+    <span style="color:#66d9ef">while</span>((n<span style="color:#f92672">=</span>read(sockfd,buf,MAXLINE))<span style="color:#f92672">&gt;</span><span style="color:#ae81ff">0</span>)<span style="color:#75715e">//读取客户传来的消息
+</span><span style="color:#75715e"></span>    {
+        Write(sockfd,buf,n);<span style="color:#75715e">//回传回去
+</span><span style="color:#75715e"></span>    }
+    <span style="color:#66d9ef">if</span>(n<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span> <span style="color:#f92672">&amp;&amp;</span> errno <span style="color:#f92672">==</span> EINTR)
+        <span style="color:#66d9ef">goto</span> again;
+    <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span>(n<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">0</span>)
+        err_sys(<span style="color:#e6db74">&#34;str_echo:read error&#34;</span>);
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="九-服务器进程终止">九、服务器进程终止</h1>
 
 <p>本节讨论当服务器子进程意外崩溃的情况下，客户进程会发生什么。</p>
@@ -578,15 +549,13 @@ again:
 <p>(3) SIGCHLD信号被发送给服务器父进程，并得到正确处理，即处理僵死进程</p>
 
 <p>(4) 客户此时正阻塞在fgets调用上，等待从终端接受一行文本，当我们再键入一行时，会出现如下现象：</p>
-
-<pre><code class="language-cpp">root@zc-Inspiron-N4010:/home/zc/Documents/unp# ./tcpcli 127.0.0.1      //启动客户
-hello        //测试
-hello        //正常回射
-            //此处找到服务器子进程的进程ID，执行sudo kill XXXX杀死该进程
-line        //再键入一行文本
-strcli:server terminated prematurely //出错信息：服务器过早终止
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">root<span style="color:#960050;background-color:#1e0010">@</span>zc<span style="color:#f92672">-</span>Inspiron<span style="color:#f92672">-</span>N4010:<span style="color:#f92672">/</span>home<span style="color:#f92672">/</span>zc<span style="color:#f92672">/</span>Documents<span style="color:#f92672">/</span>unp<span style="color:#75715e"># ./tcpcli 127.0.0.1      </span><span style="color:#75715e">//启动客户
+</span><span style="color:#75715e"></span>hello        <span style="color:#75715e">//测试
+</span><span style="color:#75715e"></span>hello        <span style="color:#75715e">//正常回射
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">//此处找到服务器子进程的进程ID，执行sudo kill XXXX杀死该进程
+</span><span style="color:#75715e"></span>line        <span style="color:#75715e">//再键入一行文本
+</span><span style="color:#75715e"></span>strcli:server terminated prematurely <span style="color:#75715e">//出错信息：服务器过早终止
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>(5) 我们可以分析，当键入最后一行时，str_cli调用writen，客户TCP接着把数据发送给服务器，之所以可以这么做，是因为客户TCP接收到FIN只是表示服务器进程已关闭了连接的服务器端，从而不再往其中发送数据，FIN并没有告知客户TCP服务器进程已经中止。</p>
 
 <p>当服务器接收到来自客户的数据时，既然先前打开的那个套接字已经关闭，就返回一个RST。</p>
@@ -601,35 +570,33 @@ strcli:server terminated prematurely //出错信息：服务器过早终止
 当一个进程向某个已收到RST的套接字执行写操作时，内核向该进程发送一个SIGPIPE信号。该信号的默认行为是终止进程。
 不管该进程时捕获了该信号并从信号处理函数返回，还是简单的忽略，第二次写操作都将返回EPIPE错误。
 测试代码：</p>
-
-<pre><code class="language-cpp">void str_cli(FILE *fp,int sockfd)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">str_cli</span>(FILE <span style="color:#f92672">*</span>fp,<span style="color:#66d9ef">int</span> sockfd)
 {
-    char sendline[MAXLINE], recvline[MAXLINE];
-    //获取客户端标准输入的字节
-    while(Fgets(sendline,MAXLINE,fp)!=NULL)
+    <span style="color:#66d9ef">char</span> sendline[MAXLINE], recvline[MAXLINE];
+    <span style="color:#75715e">//获取客户端标准输入的字节
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(Fgets(sendline,MAXLINE,fp)<span style="color:#f92672">!=</span>NULL)
     {
-        Write(sockfd,sendline,1);
-        //将标准输入读入的字节传给服务器
-        sleep(1);
-        Write(sockfd,sendline+1,strlen(sendline)-1);//连续写两次来测试是否产生SIGPIPE信号
-        //读取服务器回射的字节
-        if(Readline(sockfd,recvline,MAXLINE)==0)
+        Write(sockfd,sendline,<span style="color:#ae81ff">1</span>);
+        <span style="color:#75715e">//将标准输入读入的字节传给服务器
+</span><span style="color:#75715e"></span>        sleep(<span style="color:#ae81ff">1</span>);
+        Write(sockfd,sendline<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,strlen(sendline)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);<span style="color:#75715e">//连续写两次来测试是否产生SIGPIPE信号
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">//读取服务器回射的字节
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>(Readline(sockfd,recvline,MAXLINE)<span style="color:#f92672">==</span><span style="color:#ae81ff">0</span>)
         {
-            err_quit(&quot;strcli:server terminated prematurely&quot;);
+            err_quit(<span style="color:#e6db74">&#34;strcli:server terminated prematurely&#34;</span>);
         }
-        //将获取的服务器回射字节打印到标准输出
-        Fputs(recvline,stdout);
+        <span style="color:#75715e">//将获取的服务器回射字节打印到标准输出
+</span><span style="color:#75715e"></span>        Fputs(recvline,stdout);
     }
 }
-/**********测试输出**************/
-unp# ./tcpcli 127.0.0.1
-hello  //键入第一行文本
-hello    ﻿    //正常回射
-    ﻿    ﻿    ﻿ //此处杀死服务器子进程
-bye    ﻿    ﻿  //然后继续键入此行，发现并没有任何输出
-Broken pipe  //此行由shell显示，告诉我们客户因为SIGPIPE信号而死亡了
-</code></pre>
-
+<span style="color:#75715e">/**********测试输出**************/</span>
+unp<span style="color:#75715e"># ./tcpcli 127.0.0.1
+</span><span style="color:#75715e"></span>hello  <span style="color:#75715e">//键入第一行文本
+</span><span style="color:#75715e"></span>hello    <span style="color:#960050;background-color:#1e0010">﻿</span>    <span style="color:#75715e">//正常回射
+</span><span style="color:#75715e"></span>    <span style="color:#960050;background-color:#1e0010">﻿</span>    <span style="color:#960050;background-color:#1e0010">﻿</span>    <span style="color:#960050;background-color:#1e0010">﻿</span> <span style="color:#75715e">//此处杀死服务器子进程
+</span><span style="color:#75715e"></span>bye    <span style="color:#960050;background-color:#1e0010">﻿</span>    <span style="color:#960050;background-color:#1e0010">﻿</span>  <span style="color:#75715e">//然后继续键入此行，发现并没有任何输出
+</span><span style="color:#75715e"></span>Broken pipe  <span style="color:#75715e">//此行由shell显示，告诉我们客户因为SIGPIPE信号而死亡了
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="十一-服务器主机崩溃">十一、服务器主机崩溃</h1>
 
 <p>本小节讨论服务器主机崩溃的情况下，客户端会发生什么
@@ -650,16 +617,14 @@ Broken pipe  //此行由shell显示，告诉我们客户因为SIGPIPE信号而�
 
 <p>在客户和服务器间传送文本串，不论客户和服务器主机的字节序如何，都能很好的工作。
 在客户和服务器间传送二进制结构，如下结构体：</p>
-
-<pre><code class="language-cpp">struct args{
-  long arg1;
-  long arg2;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> args{
+  <span style="color:#66d9ef">long</span> arg1;
+  <span style="color:#66d9ef">long</span> arg2;
 };
-struct result{
-  long sum;
+<span style="color:#66d9ef">struct</span> result{
+  <span style="color:#66d9ef">long</span> sum;
 };
-</code></pre>
-
+</code></pre></div>
 <p>socket不提倡传送这种二进制结构，因为如果客户或者服务器端某一方不支持这种数据结构，或字节序不一样，支持的long的字节不一样，这都会导致异常的现象
 所以在socket传输时，应当把所有的二进制结构转换成字符型文本串，再进行传输。
 或者，还有一种解决办法：显示的定义所支持的数据类型的二进制格式(位数，大端或小端字节序)，并以这样的格式在客户与服务器之间传递所有数据。</p>

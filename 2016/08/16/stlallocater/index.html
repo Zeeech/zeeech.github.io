@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -125,57 +126,55 @@
 <p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfo9n8psj30ql08z3zm.jpg" alt="构造和析构" /></center></p>
 
 <p>下面是源代码：</p>
-
-<pre><code class="language-cpp">#include &lt;new.h&gt;        // 需要placement new的原型
-// -----------------构造函数---------------------------------//
-// 使用placement new在已经分配的内存上构造对象
-template &lt;class T1, class T2&gt;
-inline void construct(T1* p, const T2&amp; value)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;new.h&gt;        // 需要placement new的原型</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#75715e">// -----------------构造函数---------------------------------//
+</span><span style="color:#75715e">// 使用placement new在已经分配的内存上构造对象
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T1</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T2</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> construct(T1<span style="color:#f92672">*</span> p, <span style="color:#66d9ef">const</span> T2<span style="color:#f92672">&amp;</span> value)
 {
-  new (p) T1(value);//将value设定到指针p所指的空间上
+  <span style="color:#66d9ef">new</span> (p) T1(value);<span style="color:#75715e">//将value设定到指针p所指的空间上
+</span><span style="color:#75715e"></span>}
+
+<span style="color:#75715e">// -----------------析构函数---------------------------------//
+</span><span style="color:#75715e">// -----------第一个版本：接受一个指针--------------------------//
+</span><span style="color:#75715e">// 调用成员的析构函数, 需要类型具有non-trivial destructor
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> destroy(T<span style="color:#f92672">*</span> pointer)
+{
+    pointer<span style="color:#f92672">-&gt;~</span>T();
 }
 
-// -----------------析构函数---------------------------------//
-// -----------第一个版本：接受一个指针--------------------------//
-// 调用成员的析构函数, 需要类型具有non-trivial destructor
-template &lt;class T&gt;
-inline void destroy(T* pointer)
-{
-    pointer-&gt;~T();
-}
-
-// -----------第二个版本：接受两个迭代器------------------------//
-template &lt;class ForwardIterator&gt;
-inline void destroy(ForwardIterator first, ForwardIterator last)
+<span style="color:#75715e">// -----------第二个版本：接受两个迭代器------------------------//
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> destroy(ForwardIterator first, ForwardIterator last)
 {
   __destroy(first, last, value_type(first));
 }
-// 首先是两个特化版本
-inline void destroy(char*, char*) {}
-inline void destroy(wchar_t*, wchar_t*) {}
+<span style="color:#75715e">// 首先是两个特化版本
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> destroy(<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>, <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>) {}
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> destroy(wchar_t<span style="color:#f92672">*</span>, wchar_t<span style="color:#f92672">*</span>) {}
 
-// 析构一组对象, 用于具有non-trivial destructor
-template &lt;class ForwardIterator&gt;
-inline void
+<span style="color:#75715e">// 析构一组对象, 用于具有non-trivial destructor
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span>
 __destroy_aux(ForwardIterator first, ForwardIterator last, __false_type)
 {
-  for ( ; first &lt; last; ++first)
-    destroy(&amp;*first);
+  <span style="color:#66d9ef">for</span> ( ; first <span style="color:#f92672">&lt;</span> last; <span style="color:#f92672">++</span>first)
+    destroy(<span style="color:#f92672">&amp;*</span>first);
 }
 
-// 如果没有类型non-trivial destructor, 则使用此函数
-template &lt;class ForwardIterator&gt;
-inline void __destroy_aux(ForwardIterator, ForwardIterator, __true_type) {}
+<span style="color:#75715e">// 如果没有类型non-trivial destructor, 则使用此函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> __destroy_aux(ForwardIterator, ForwardIterator, __true_type) {}
 
-// 使用traits技术, 判断类型是否就有non-trivial destructor, 然后调用不同的函数
-template &lt;class ForwardIterator, class T&gt;
-inline void __destroy(ForwardIterator first, ForwardIterator last, T*)
+<span style="color:#75715e">// 使用traits技术, 判断类型是否就有non-trivial destructor, 然后调用不同的函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">void</span> __destroy(ForwardIterator first, ForwardIterator last, T<span style="color:#f92672">*</span>)
 {
-  typedef typename __type_traits&lt;T&gt;::has_trivial_destructor trivial_destructor;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> __type_traits<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;::</span>has_trivial_destructor trivial_destructor;
   __destroy_aux(first, last, trivial_destructor());
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="内存的配置和释放">内存的配置和释放</h1>
 
 <p>在内存配置方面，STL分为两级配置器，当请求的内存大于128b的时候调用第一级配置器，当请求的内存小于等于128b的时候调用第二级配置器。先来看看下面这张表，大概就能知道第一级和第二级配置器主要干了些什么，其他的一些细节如内存池是怎么工作的，下面会给出具体解释。</p>
@@ -185,103 +184,97 @@ inline void __destroy(ForwardIterator first, ForwardIterator last, T*)
 <h2 id="第一级配置器">第一级配置器</h2>
 
 <p>首先我们来看第一级配置器的源码：</p>
-
-<pre><code class="language-cpp">template &lt;int inst&gt;  
-class __malloc_alloc_template  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">__malloc_alloc_template</span>  
 {  
-private:
-	//调用malloc函数不成功后调用
-	static void *oom_malloc(size_t);
+<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">//调用malloc函数不成功后调用
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>oom_malloc(size_t);
 
-	//调用realloc函数不成功后调用 
-	static void *oom_realloc(void *, size_t);
+	<span style="color:#75715e">//调用realloc函数不成功后调用 
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">oom_realloc</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>, size_t);
 
-	//类似于C++的set_new_handle错误处理函数一样，如果不设置，在内存不足时，返回THROW_BAD_ALLOC
-	#ifndef __STL_STATIC_TEMPLATE_MEMBER_BUG  
-		static void (* __malloc_alloc_oom_handler)();  
-	#endif  
-
-	public:  
-	//直接调用malloc来分配内存
-	static void * allocate(size_t n)  
+	<span style="color:#75715e">//类似于C++的set_new_handle错误处理函数一样，如果不设置，在内存不足时，返回THROW_BAD_ALLOC
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">#ifndef __STL_STATIC_TEMPLATE_MEMBER_BUG  
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">static</span> <span style="color:#a6e22e">void</span> (<span style="color:#f92672">*</span> __malloc_alloc_oom_handler)();  
+	<span style="color:#75715e">#endif  
+</span><span style="color:#75715e"></span>
+	<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>  
+	<span style="color:#75715e">//直接调用malloc来分配内存
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> allocate(size_t n)  
 	{  
-	 void *result = malloc(n);  
-	 if (0 == result) result = oom_malloc(n);  //如果分配失败，则调用oom_malloc()
-	 return result;  
+	 <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>result <span style="color:#f92672">=</span> malloc(n);  
+	 <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">0</span> <span style="color:#f92672">==</span> result) result <span style="color:#f92672">=</span> oom_malloc(n);  <span style="color:#75715e">//如果分配失败，则调用oom_malloc()
+</span><span style="color:#75715e"></span>	 <span style="color:#66d9ef">return</span> result;  
 	}  
- 	//第一级配置器直接调用free来释放内存
-	static void deallocate(void *p, size_t /* n */)  
+ 	<span style="color:#75715e">//第一级配置器直接调用free来释放内存
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> deallocate(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>p, size_t <span style="color:#75715e">/* n */</span>)  
 	{ 
 		free(p); 
 	}  
-	//直接调用reallloc来分配内存
-	static void * reallocate(void *p, size_t /* old_sz */, size_t new_sz)  
+	<span style="color:#75715e">//直接调用reallloc来分配内存
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> reallocate(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>p, size_t <span style="color:#75715e">/* old_sz */</span>, size_t new_sz)  
 	{  
-	 void * result = realloc(p, new_sz);  
-	 if (0 == result) result = oom_realloc(p, new_sz);  //如果realloc分配不成功，调用oom_realloc()
-	 return result;  
+	 <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> result <span style="color:#f92672">=</span> realloc(p, new_sz);  
+	 <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">0</span> <span style="color:#f92672">==</span> result) result <span style="color:#f92672">=</span> oom_realloc(p, new_sz);  <span style="color:#75715e">//如果realloc分配不成功，调用oom_realloc()
+</span><span style="color:#75715e"></span>	 <span style="color:#66d9ef">return</span> result;  
 	}  
 
-	//异常处理函数，即内存分配失败后的处理
-	static void (* set_malloc_handler(void (*f)()))()  
+	<span style="color:#75715e">//异常处理函数，即内存分配失败后的处理
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span> set_malloc_handler(<span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span>f)()))()  
 	{  
-	 void (* old)() = __malloc_alloc_oom_handler;  
-	 __malloc_alloc_oom_handler = f;  
-	 return(old);  
+	 <span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span> old)() <span style="color:#f92672">=</span> __malloc_alloc_oom_handler;  
+	 __malloc_alloc_oom_handler <span style="color:#f92672">=</span> f;  
+	 <span style="color:#66d9ef">return</span>(old);  
 	}  
 };   
-</code></pre>
-
+</code></pre></div>
 <p>从上述源码中可以看到，STL的第一级配置器仅仅是调用了malloc，free等函数，然后增加了内存分配错误下的异常处理函数，下面我们就通过源码来看看在内存分配失败后，STL是怎么处理的。</p>
-
-<pre><code class="language-cpp">// 以下是针对内存分配失败后的处理
-//首先，将__malloc_alloc_oom_handler的默认值设为0
-template &lt;int inst&gt;  
-void (* __malloc_alloc_template&lt;inst&gt;::__malloc_alloc_oom_handler)() = 0;  
-#endif  
-
-template &lt;int inst&gt;  
-void * __malloc_alloc_template&lt;inst&gt;::oom_malloc(size_t n)  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 以下是针对内存分配失败后的处理
+</span><span style="color:#75715e">//首先，将__malloc_alloc_oom_handler的默认值设为0
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span> __malloc_alloc_template<span style="color:#f92672">&lt;</span>inst<span style="color:#f92672">&gt;::</span>__malloc_alloc_oom_handler)() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  
+<span style="color:#75715e">#endif  
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> __malloc_alloc_template<span style="color:#f92672">&lt;</span>inst<span style="color:#f92672">&gt;::</span>oom_malloc(size_t n)  
 {  
-	void (* my_malloc_handler)();  
-	void *result;  
+	<span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span> my_malloc_handler)();  
+	<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>result;  
 
-	for (;;) {  // 不断地尝试释放、再配置、再释放、再配置
-		my_malloc_handler = __malloc_alloc_oom_handler;  
-		if (0 == my_malloc_handler) { __THROW_BAD_ALLOC; }  //这里是当没有设置处理函数的时候，直接抛出异常
-		(*my_malloc_handler)();   // 调用处理例程，尝试释放内存
-		result = malloc(n);  	  // 再重新分配内存
-		if (result) return(result);  // 如果分配成功则返回指针
-	}  
+	<span style="color:#66d9ef">for</span> (;;) {  <span style="color:#75715e">// 不断地尝试释放、再配置、再释放、再配置
+</span><span style="color:#75715e"></span>		my_malloc_handler <span style="color:#f92672">=</span> __malloc_alloc_oom_handler;  
+		<span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">0</span> <span style="color:#f92672">==</span> my_malloc_handler) { __THROW_BAD_ALLOC; }  <span style="color:#75715e">//这里是当没有设置处理函数的时候，直接抛出异常
+</span><span style="color:#75715e"></span>		(<span style="color:#f92672">*</span>my_malloc_handler)();   <span style="color:#75715e">// 调用处理例程，尝试释放内存
+</span><span style="color:#75715e"></span>		result <span style="color:#f92672">=</span> malloc(n);  	  <span style="color:#75715e">// 再重新分配内存
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> (result) <span style="color:#66d9ef">return</span>(result);  <span style="color:#75715e">// 如果分配成功则返回指针
+</span><span style="color:#75715e"></span>	}  
 }  
 
-template &lt;int inst&gt;  
-void * __malloc_alloc_template&lt;inst&gt;::oom_realloc(void *p, size_t n)  
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> __malloc_alloc_template<span style="color:#f92672">&lt;</span>inst<span style="color:#f92672">&gt;::</span>oom_realloc(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>p, size_t n)  
 {  
-	void (* my_malloc_handler)();  
-	void *result;  
+	<span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span> my_malloc_handler)();  
+	<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>result;  
 
-	for (;;) {  //不断地尝试释放、再配置、再释放、再配置
-		my_malloc_handler = __malloc_alloc_oom_handler;  
-		if (0 == my_malloc_handler) { __THROW_BAD_ALLOC; } //这里是当没有设置处理函数的时候，直接抛出异常 
-		(*my_malloc_handler)();  // 调用处理例程，尝试释放内存
-		result = realloc(p, n);  // 再重新分配内存
-		if (result) return(result);  // 如果分配成功则返回指针
-	}  
+	<span style="color:#66d9ef">for</span> (;;) {  <span style="color:#75715e">//不断地尝试释放、再配置、再释放、再配置
+</span><span style="color:#75715e"></span>		my_malloc_handler <span style="color:#f92672">=</span> __malloc_alloc_oom_handler;  
+		<span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">0</span> <span style="color:#f92672">==</span> my_malloc_handler) { __THROW_BAD_ALLOC; } <span style="color:#75715e">//这里是当没有设置处理函数的时候，直接抛出异常 
+</span><span style="color:#75715e"></span>		(<span style="color:#f92672">*</span>my_malloc_handler)();  <span style="color:#75715e">// 调用处理例程，尝试释放内存
+</span><span style="color:#75715e"></span>		result <span style="color:#f92672">=</span> realloc(p, n);  <span style="color:#75715e">// 再重新分配内存
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> (result) <span style="color:#66d9ef">return</span>(result);  <span style="color:#75715e">// 如果分配成功则返回指针
+</span><span style="color:#75715e"></span>	}  
 }  
-</code></pre>
-
+</code></pre></div>
 <h2 id="第二级配置器">第二级配置器</h2>
 
 <p>当申请内存小于128b的时候，会调用第二级配置器。第二级配置器有一个内存池和一个对应的自由链表，其定义如下：</p>
-
-<pre><code class="language-cpp">union obj  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">union</span> obj  
 {  
-	union obj * free_list_link;  
-	char client_data[1];
+	<span style="color:#66d9ef">union</span> obj <span style="color:#f92672">*</span> free_list_link;  
+	<span style="color:#66d9ef">char</span> client_data[<span style="color:#ae81ff">1</span>];
 };  
-</code></pre>
-
+</code></pre></div>
 <p>这里有一个技巧，如果使用union的第一个成员，则指向另一个相同的union obj；而如果使用第二个成员，则指向实际的内存区域，这样一来，既实现了链表结点只用一个指针的大小空间，却能同时做索引和指向内存区域。</p>
 
 <blockquote>
@@ -289,68 +282,66 @@ void * __malloc_alloc_template&lt;inst&gt;::oom_realloc(void *p, size_t n)
 </blockquote>
 
 <p>我们先来看看第二级配置器的部分源码，然后再去分析其中每个函数的功能。</p>
-
-<pre><code class="language-cpp">enum {__ALIGN = 8};   //小型区块的上调边界
-enum {__MAX_BYTES = 128};  //小型区块的上限
-enum {__NFREELISTS = __MAX_BYTES/__ALIGN};   //free-lists个数
-
-//第一参数用于多线程，这里不做讨论。
-template &lt;bool threads, int inst&gt;  
-class __default_alloc_template  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">enum</span> {__ALIGN <span style="color:#f92672">=</span> <span style="color:#ae81ff">8</span>};   <span style="color:#75715e">//小型区块的上调边界
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">enum</span> {__MAX_BYTES <span style="color:#f92672">=</span> <span style="color:#ae81ff">128</span>};  <span style="color:#75715e">//小型区块的上限
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">enum</span> {__NFREELISTS <span style="color:#f92672">=</span> __MAX_BYTES<span style="color:#f92672">/</span>__ALIGN};   <span style="color:#75715e">//free-lists个数
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">//第一参数用于多线程，这里不做讨论。
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">bool</span> threads, <span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">__default_alloc_template</span>  
 {  
-private:
-	// 此函数将bytes的边界上调至8的倍数
-	static size_t ROUND_UP(size_t bytes)  
+<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// 此函数将bytes的边界上调至8的倍数
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> size_t ROUND_UP(size_t bytes)  
 	{  
-	return (((bytes) + __ALIGN-1) &amp; ~(__ALIGN - 1));  
+	<span style="color:#66d9ef">return</span> (((bytes) <span style="color:#f92672">+</span> __ALIGN<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">&amp;</span> <span style="color:#f92672">~</span>(__ALIGN <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>));  
 	}  
-private:    
-	// 此union结构体上面已经解释过了
-	union obj  
+<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>    
+	<span style="color:#75715e">// 此union结构体上面已经解释过了
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">union</span> obj  
 	{  
-	union obj * free_list_link;  
-	char client_data[1];
+	<span style="color:#66d9ef">union</span> obj <span style="color:#f92672">*</span> free_list_link;  
+	<span style="color:#66d9ef">char</span> client_data[<span style="color:#ae81ff">1</span>];
 	};  
-private: 
-	//16个free-lists
-	static obj * __VOLATILE free_list[__NFREELISTS];
-	// 根据待待分配的空间大小, 在free_list中选择合适的大小  
-	static  size_t FREELIST_INDEX(size_t bytes)  
+<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span> 
+	<span style="color:#75715e">//16个free-lists
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> obj <span style="color:#f92672">*</span> __VOLATILE free_list[__NFREELISTS];
+	<span style="color:#75715e">// 根据待待分配的空间大小, 在free_list中选择合适的大小  
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span>  size_t <span style="color:#a6e22e">FREELIST_INDEX</span>(size_t bytes)  
 	{  
-	return (((bytes) + __ALIGN-1)/__ALIGN - 1);  
+	<span style="color:#66d9ef">return</span> (((bytes) <span style="color:#f92672">+</span> __ALIGN<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">/</span>__ALIGN <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>);  
 	}
-	// 返回一个大小为n的对象，并可能加入大小为n的其它区块到free-lists
-	static void *refill(size_t n);  
-	// 配置一大块空间，可容纳nobjs个大小为“size”的区块
-	// 如果配置nobjs个区块有所不便，nobjs可能会降低，所以需要用引用传递
-	static char *chunk_alloc(size_t size, int &amp;nobjs);  
-	// 内存池  
-	static char *start_free;      // 内存池起始点，只在chunk_alloc()中变化 
-	static char *end_free;        // 内存池结束点，只在chunk_alloc()中变化 
-	static size_t heap_size;      // 已经在堆上分配的空间大小
-public:
-	static void* allocate(size_t n);// 空间配置函数
-	static void deallocate(void *p, size_t n); // 空间释放函数
-	static void* reallocate(void* p, size_t old_sz , size_t new_sz); //空间重新配置函数
-}
+	<span style="color:#75715e">// 返回一个大小为n的对象，并可能加入大小为n的其它区块到free-lists
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">refill</span>(size_t n);  
+	<span style="color:#75715e">// 配置一大块空间，可容纳nobjs个大小为“size”的区块
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 如果配置nobjs个区块有所不便，nobjs可能会降低，所以需要用引用传递
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">chunk_alloc</span>(size_t size, <span style="color:#66d9ef">int</span> <span style="color:#f92672">&amp;</span>nobjs);  
+	<span style="color:#75715e">// 内存池  
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>start_free;      <span style="color:#75715e">// 内存池起始点，只在chunk_alloc()中变化 
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>end_free;        <span style="color:#75715e">// 内存池结束点，只在chunk_alloc()中变化 
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> size_t heap_size;      <span style="color:#75715e">// 已经在堆上分配的空间大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> allocate(size_t n);<span style="color:#75715e">// 空间配置函数
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">deallocate</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>p, size_t n); <span style="color:#75715e">// 空间释放函数
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> <span style="color:#a6e22e">reallocate</span>(<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> p, size_t old_sz , size_t new_sz); <span style="color:#75715e">//空间重新配置函数
+</span><span style="color:#75715e"></span>}
 
-// 一些静态成员变量的初始化
-// 内存池起始位置  
-template &lt;bool threads, int inst&gt;  
-char *__default_alloc_template&lt;threads, inst&gt;::start_free = 0;  
-// 内存池结束位置  
-template &lt;bool threads, int inst&gt;  
-char *__default_alloc_template&lt;threads, inst&gt;::end_free = 0;  
-// 已经在堆上分配的空间大小
-template &lt;bool threads, int inst&gt;  
-size_t __default_alloc_template&lt;threads, inst&gt;::heap_size = 0;  
-// 内存池容量索引数组  
-template &lt;bool threads, int inst&gt;  
-__default_alloc_template&lt;threads, inst&gt;::obj * __VOLATILE  
-__default_alloc_template&lt;threads, inst&gt; ::free_list[__NFREELISTS ] = 
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };  
-</code></pre>
-
+<span style="color:#75715e">// 一些静态成员变量的初始化
+</span><span style="color:#75715e">// 内存池起始位置  
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">bool</span> threads, <span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>__default_alloc_template<span style="color:#f92672">&lt;</span>threads, inst<span style="color:#f92672">&gt;::</span>start_free <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  
+<span style="color:#75715e">// 内存池结束位置  
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">bool</span> threads, <span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>__default_alloc_template<span style="color:#f92672">&lt;</span>threads, inst<span style="color:#f92672">&gt;::</span>end_free <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  
+<span style="color:#75715e">// 已经在堆上分配的空间大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">bool</span> threads, <span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+size_t __default_alloc_template<span style="color:#f92672">&lt;</span>threads, inst<span style="color:#f92672">&gt;::</span>heap_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  
+<span style="color:#75715e">// 内存池容量索引数组  
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">bool</span> threads, <span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+__default_alloc_template<span style="color:#f92672">&lt;</span>threads, inst<span style="color:#f92672">&gt;::</span>obj <span style="color:#f92672">*</span> __VOLATILE  
+__default_alloc_template<span style="color:#f92672">&lt;</span>threads, inst<span style="color:#f92672">&gt;</span> <span style="color:#f92672">::</span>free_list[__NFREELISTS ] <span style="color:#f92672">=</span> 
+	{<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, };  
+</code></pre></div>
 <p>看完上面这一堆源码，你可能早就头晕眼花，一脸懵逼了，没事，我再来用一张思维导图来帮你理一理思绪：</p>
 
 <p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkfocm8q6j30ri0dl40t.jpg" alt="二级配置器1" /></center></p>
@@ -362,138 +353,132 @@ __default_alloc_template&lt;threads, inst&gt; ::free_list[__NFREELISTS ] =
 <p>借用《STL源码剖析》里面的一张图，来说明空间配置函数的调用过程：(看图放松，放松完继续看源码！别偷懒)</p>
 
 <p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfobir1sj30mz0fw402.jpg" alt="空间配置函数" /></center></p>
-
-<pre><code class="language-cpp">static void * allocate(size_t n)  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">allocate</span>(size_t n)  
 {  
-	obj * volatile * my_free_list;  
-	obj * result;  
-	// 大于128就调用第一级配置器
-	if (n &gt; (size_t) __MAX_BYTES) {  
-	 return(malloc_alloc::allocate(n));  
+	obj <span style="color:#f92672">*</span> <span style="color:#66d9ef">volatile</span> <span style="color:#f92672">*</span> my_free_list;  
+	obj <span style="color:#f92672">*</span> result;  
+	<span style="color:#75715e">// 大于128就调用第一级配置器
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> (n <span style="color:#f92672">&gt;</span> (size_t) __MAX_BYTES) {  
+	 <span style="color:#66d9ef">return</span>(malloc_alloc<span style="color:#f92672">::</span>allocate(n));  
 	}  
-	// 寻找16个free_lists中适当的一个
-	my_free_list = free_list + FREELIST_INDEX(n);  
-	result = *my_free_list;  
-	if (result == 0) {  
-		// 如果没有可用的free list，准备重新填充free_list
-		void *r = refill(ROUND_UP(n));  
-		return r;  
+	<span style="color:#75715e">// 寻找16个free_lists中适当的一个
+</span><span style="color:#75715e"></span>	my_free_list <span style="color:#f92672">=</span> free_list <span style="color:#f92672">+</span> FREELIST_INDEX(n);  
+	result <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>my_free_list;  
+	<span style="color:#66d9ef">if</span> (result <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {  
+		<span style="color:#75715e">// 如果没有可用的free list，准备重新填充free_list
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>r <span style="color:#f92672">=</span> refill(ROUND_UP(n));  
+		<span style="color:#66d9ef">return</span> r;  
 	}
-	// 调整free list
-	*my_free_list = result -&gt; free_list_link;  
-	return (result);  
+	<span style="color:#75715e">// 调整free list
+</span><span style="color:#75715e"></span>	<span style="color:#f92672">*</span>my_free_list <span style="color:#f92672">=</span> result <span style="color:#f92672">-&gt;</span> free_list_link;  
+	<span style="color:#66d9ef">return</span> (result);  
 };  
-</code></pre>
-
+</code></pre></div>
 <h3 id="重新填充函数refill">重新填充函数refill()</h3>
-
-<pre><code class="language-cpp">template &lt;bool threads, int inst&gt;  
-void* __default_alloc_template&lt;threads, inst&gt;::refill(size_t n)  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">bool</span> threads, <span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> __default_alloc_template<span style="color:#f92672">&lt;</span>threads, inst<span style="color:#f92672">&gt;::</span>refill(size_t n)  
 {  
-	int nobjs = 20;  //	默认获取20个
-	char * chunk = chunk_alloc(n, nobjs);  //找内存池要空间
-	obj * volatile * my_free_list;  
-	obj * result;  
-	obj * current_obj, * next_obj;  
-	int i;  
-	// 如果内存池仅仅只够分配一个对象的空间, 直接返回即可  
-	if(1 == nobjs) return(chunk);  
-	// 内存池能分配更多的空间，调整free_list纳入新节点
-	my_free_list = free_list + FREELIST_INDEX(n);
+	<span style="color:#66d9ef">int</span> nobjs <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>;  <span style="color:#75715e">//	默认获取20个
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span> chunk <span style="color:#f92672">=</span> chunk_alloc(n, nobjs);  <span style="color:#75715e">//找内存池要空间
+</span><span style="color:#75715e"></span>	obj <span style="color:#f92672">*</span> <span style="color:#66d9ef">volatile</span> <span style="color:#f92672">*</span> my_free_list;  
+	obj <span style="color:#f92672">*</span> result;  
+	obj <span style="color:#f92672">*</span> current_obj, <span style="color:#f92672">*</span> next_obj;  
+	<span style="color:#66d9ef">int</span> i;  
+	<span style="color:#75715e">// 如果内存池仅仅只够分配一个对象的空间, 直接返回即可  
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">==</span> nobjs) <span style="color:#66d9ef">return</span>(chunk);  
+	<span style="color:#75715e">// 内存池能分配更多的空间，调整free_list纳入新节点
+</span><span style="color:#75715e"></span>	my_free_list <span style="color:#f92672">=</span> free_list <span style="color:#f92672">+</span> FREELIST_INDEX(n);
 
-	// 在chunk的空间中建立free_list  
-	result = (obj *)chunk;
-	*my_free_list = next_obj = (obj *)(chunk + n); //导引free_list指向新配置的空间(取自内存池)
-
-	for(i = 1; ; i++) {	//从1开始，因为第0个返回给客端
-		current_obj = next_obj;  
-		next_obj = (obj *)((char *)next_obj + n);  
-		if(nobjs - 1 == i) {  
-			current_obj -&gt; free_list_link = 0;  
-			break;  
+	<span style="color:#75715e">// 在chunk的空间中建立free_list  
+</span><span style="color:#75715e"></span>	result <span style="color:#f92672">=</span> (obj <span style="color:#f92672">*</span>)chunk;
+	<span style="color:#f92672">*</span>my_free_list <span style="color:#f92672">=</span> next_obj <span style="color:#f92672">=</span> (obj <span style="color:#f92672">*</span>)(chunk <span style="color:#f92672">+</span> n); <span style="color:#75715e">//导引free_list指向新配置的空间(取自内存池)
+</span><span style="color:#75715e"></span>
+	<span style="color:#66d9ef">for</span>(i <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; ; i<span style="color:#f92672">++</span>) {	<span style="color:#75715e">//从1开始，因为第0个返回给客端
+</span><span style="color:#75715e"></span>		current_obj <span style="color:#f92672">=</span> next_obj;  
+		next_obj <span style="color:#f92672">=</span> (obj <span style="color:#f92672">*</span>)((<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>)next_obj <span style="color:#f92672">+</span> n);  
+		<span style="color:#66d9ef">if</span>(nobjs <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">==</span> i) {  
+			current_obj <span style="color:#f92672">-&gt;</span> free_list_link <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  
+			<span style="color:#66d9ef">break</span>;  
 		} 
-		else {  
-			current_obj -&gt; free_list_link = next_obj;  
+		<span style="color:#66d9ef">else</span> {  
+			current_obj <span style="color:#f92672">-&gt;</span> free_list_link <span style="color:#f92672">=</span> next_obj;  
 		}  
 	}  
-	return(result);//返回头指针
-}  
-</code></pre>
-
+	<span style="color:#66d9ef">return</span>(result);<span style="color:#75715e">//返回头指针
+</span><span style="color:#75715e"></span>}  
+</code></pre></div>
 <h3 id="内存池函数chunk-alloc">内存池函数chunk_alloc()</h3>
-
-<pre><code class="language-cpp">template &lt;bool threads, int inst&gt;  
-char*  
-__default_alloc_template&lt;threads, inst&gt;::chunk_alloc(size_t size, int&amp; nobjs)  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">bool</span> threads, <span style="color:#66d9ef">int</span> inst<span style="color:#f92672">&gt;</span>  
+<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>  
+__default_alloc_template<span style="color:#f92672">&lt;</span>threads, inst<span style="color:#f92672">&gt;::</span>chunk_alloc(size_t size, <span style="color:#66d9ef">int</span><span style="color:#f92672">&amp;</span> nobjs)  
 {  
-    char * result;  
-    size_t total_bytes = size * nobjs;  
-    size_t bytes_left = end_free - start_free;  // 计算内存池剩余容量  
-   
-    //内存池中的剩余空间满足需求 
-    if (bytes_left &gt;= total_bytes) {  
-        result = start_free;
-        start_free += total_bytes;
-        return(result);//返回起始地址
+    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span> result;  
+    size_t total_bytes <span style="color:#f92672">=</span> size <span style="color:#f92672">*</span> nobjs;  
+    size_t bytes_left <span style="color:#f92672">=</span> end_free <span style="color:#f92672">-</span> start_free;  <span style="color:#75715e">// 计算内存池剩余容量  
+</span><span style="color:#75715e"></span>   
+    <span style="color:#75715e">//内存池中的剩余空间满足需求 
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (bytes_left <span style="color:#f92672">&gt;=</span> total_bytes) {  
+        result <span style="color:#f92672">=</span> start_free;
+        start_free <span style="color:#f92672">+=</span> total_bytes;
+        <span style="color:#66d9ef">return</span>(result);<span style="color:#75715e">//返回起始地址
+</span><span style="color:#75715e"></span>    }  
+    <span style="color:#75715e">// 如果内存池中剩余的容量不够分配, 但是能至少分配一个节点时,  
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 返回所能分配的最多的节点, 返回start_free指向的内存块  
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 并且重新设置内存池起始点  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span>(bytes_left <span style="color:#f92672">&gt;=</span> size) {
+        nobjs <span style="color:#f92672">=</span> bytes_left<span style="color:#f92672">/</span>size;  
+        total_bytes <span style="color:#f92672">=</span> size <span style="color:#f92672">*</span> nobjs;  
+        result <span style="color:#f92672">=</span> start_free;  
+        start_free <span style="color:#f92672">+=</span> total_bytes;  
+        <span style="color:#66d9ef">return</span>(result);  
     }  
-    // 如果内存池中剩余的容量不够分配, 但是能至少分配一个节点时,  
-    // 返回所能分配的最多的节点, 返回start_free指向的内存块  
-    // 并且重新设置内存池起始点  
-    else if(bytes_left &gt;= size) {
-        nobjs = bytes_left/size;  
-        total_bytes = size * nobjs;  
-        result = start_free;  
-        start_free += total_bytes;  
-        return(result);  
-    }  
-    // 内存池剩余内存连一个节点也不够分配  
-    else {  
-        size_t bytes_to_get = 2 * total_bytes + ROUND_UP(heap_size &gt;&gt; 4);  
-        // 将剩余的内存分配给指定的free_list[FREELIST_INDEX(bytes_left)]  
-        if (bytes_left &gt; 0) {  
-        	//内存池内还有一些零头，先分给适当的free_list
-        	//寻找适当的free_list
-            obj * __VOLATILE * my_free_list =  
-                   	free_list + FREELIST_INDEX(bytes_left);
-            // 调整free_list，将内存池中的残余空间编入 
-            ((obj *)start_free) -&gt; free_list_link = *my_free_list;  
-            *my_free_list = (obj *)start_free;  
+    <span style="color:#75715e">// 内存池剩余内存连一个节点也不够分配  
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">else</span> {  
+        size_t bytes_to_get <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> total_bytes <span style="color:#f92672">+</span> ROUND_UP(heap_size <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">4</span>);  
+        <span style="color:#75715e">// 将剩余的内存分配给指定的free_list[FREELIST_INDEX(bytes_left)]  
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (bytes_left <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {  
+        	<span style="color:#75715e">//内存池内还有一些零头，先分给适当的free_list
+</span><span style="color:#75715e"></span>        	<span style="color:#75715e">//寻找适当的free_list
+</span><span style="color:#75715e"></span>            obj <span style="color:#f92672">*</span> __VOLATILE <span style="color:#f92672">*</span> my_free_list <span style="color:#f92672">=</span>  
+                   	free_list <span style="color:#f92672">+</span> FREELIST_INDEX(bytes_left);
+            <span style="color:#75715e">// 调整free_list，将内存池中的残余空间编入 
+</span><span style="color:#75715e"></span>            ((obj <span style="color:#f92672">*</span>)start_free) <span style="color:#f92672">-&gt;</span> free_list_link <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>my_free_list;  
+            <span style="color:#f92672">*</span>my_free_list <span style="color:#f92672">=</span> (obj <span style="color:#f92672">*</span>)start_free;  
         }  
-        start_free = (char *)malloc(bytes_to_get);  
-        // 分配失败, 搜索原来已经分配的内存块, 看是否有大于等于当前请求的内存块  
-        if (0 == start_free) {// heap里面空间不足，malloc失败
-            int i;  
-            obj * __VOLATILE * my_free_list, *p;  
-            // 试着检查检查free_list中的可用空间，即尚有未用的空间，且区块够大  
-            for (i = size; i &lt;= __MAX_BYTES; i += __ALIGN) {  
-                my_free_list = free_list + FREELIST_INDEX(i);  
-                p = *my_free_list;  
-                // 找到了一个, 将其加入内存池中  
-                if (0 != p) {  
-                    *my_free_list = p -&gt; free_list_link;  
-                    start_free = (char *)p;  
-                    end_free = start_free + i;  
-                    // 内存池更新完毕, 重新分配需要的内存  
-                    return(chunk_alloc(size, nobjs));  
-                    //任何剩余零头将被编入适当的free_list以留备用 
-               }  
+        start_free <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>)malloc(bytes_to_get);  
+        <span style="color:#75715e">// 分配失败, 搜索原来已经分配的内存块, 看是否有大于等于当前请求的内存块  
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">0</span> <span style="color:#f92672">==</span> start_free) {<span style="color:#75715e">// heap里面空间不足，malloc失败
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">int</span> i;  
+            obj <span style="color:#f92672">*</span> __VOLATILE <span style="color:#f92672">*</span> my_free_list, <span style="color:#f92672">*</span>p;  
+            <span style="color:#75715e">// 试着检查检查free_list中的可用空间，即尚有未用的空间，且区块够大  
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> size; i <span style="color:#f92672">&lt;=</span> __MAX_BYTES; i <span style="color:#f92672">+=</span> __ALIGN) {  
+                my_free_list <span style="color:#f92672">=</span> free_list <span style="color:#f92672">+</span> FREELIST_INDEX(i);  
+                p <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>my_free_list;  
+                <span style="color:#75715e">// 找到了一个, 将其加入内存池中  
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">0</span> <span style="color:#f92672">!=</span> p) {  
+                    <span style="color:#f92672">*</span>my_free_list <span style="color:#f92672">=</span> p <span style="color:#f92672">-&gt;</span> free_list_link;  
+                    start_free <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>)p;  
+                    end_free <span style="color:#f92672">=</span> start_free <span style="color:#f92672">+</span> i;  
+                    <span style="color:#75715e">// 内存池更新完毕, 重新分配需要的内存  
+</span><span style="color:#75715e"></span>                    <span style="color:#66d9ef">return</span>(chunk_alloc(size, nobjs));  
+                    <span style="color:#75715e">//任何剩余零头将被编入适当的free_list以留备用 
+</span><span style="color:#75715e"></span>               }  
             }  
  
-        // 再次失败, 直接调用一级配置器分配, 期待异常处理函数能提供帮助  
-        // 不过在我看来, 内存分配失败进行其它尝试已经没什么意义了,  
-        // 最好直接log, 然后让程序崩溃  
-        end_free = 0;
-        	//调用第一级配置器，看看out-of-memory机制能不能起点作用
-            start_free = (char *)malloc_alloc::allocate(bytes_to_get);  
+        <span style="color:#75715e">// 再次失败, 直接调用一级配置器分配, 期待异常处理函数能提供帮助  
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 不过在我看来, 内存分配失败进行其它尝试已经没什么意义了,  
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 最好直接log, 然后让程序崩溃  
+</span><span style="color:#75715e"></span>        end_free <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        	<span style="color:#75715e">//调用第一级配置器，看看out-of-memory机制能不能起点作用
+</span><span style="color:#75715e"></span>            start_free <span style="color:#f92672">=</span> (<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>)malloc_alloc<span style="color:#f92672">::</span>allocate(bytes_to_get);  
         }
-        heap_size += bytes_to_get;  
-        end_free = start_free + bytes_to_get;  
-        // 内存池更新完毕, 重新分配需要的内存  
-        return(chunk_alloc(size, nobjs));  
+        heap_size <span style="color:#f92672">+=</span> bytes_to_get;  
+        end_free <span style="color:#f92672">=</span> start_free <span style="color:#f92672">+</span> bytes_to_get;  
+        <span style="color:#75715e">// 内存池更新完毕, 重新分配需要的内存  
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span>(chunk_alloc(size, nobjs));  
     }  
 }
-</code></pre>
-
+</code></pre></div>
 <h3 id="内存释放函数deallocate">内存释放函数deallocate()</h3>
 
 <p>内存释放函数会将释放的空间交还给free_list以留备用。其过程如下图所示：</p>
@@ -501,65 +486,59 @@ __default_alloc_template&lt;threads, inst&gt;::chunk_alloc(size_t size, int&amp;
 <p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfoariykj30mp0gitai.jpg" alt="空间释放函数" /></center></p>
 
 <p>其实就是一个简单的单链表插入的过程。其源代码如下：</p>
-
-<pre><code class="language-cpp">static void deallocate(void *p, size_t n)  
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">deallocate</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>p, size_t n)  
 {  
-	obj *q = (obj *)p;  
-	obj * volatile * my_free_list;  
+	obj <span style="color:#f92672">*</span>q <span style="color:#f92672">=</span> (obj <span style="color:#f92672">*</span>)p;  
+	obj <span style="color:#f92672">*</span> <span style="color:#66d9ef">volatile</span> <span style="color:#f92672">*</span> my_free_list;  
 
-	// 大于128的直接交由第一级配置器释放  
-	if (n &gt; (size_t) __MAX_BYTES) {  
-		malloc_alloc::deallocate(p, n);  
-		return;  
+	<span style="color:#75715e">// 大于128的直接交由第一级配置器释放  
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> (n <span style="color:#f92672">&gt;</span> (size_t) __MAX_BYTES) {  
+		malloc_alloc<span style="color:#f92672">::</span>deallocate(p, n);  
+		<span style="color:#66d9ef">return</span>;  
 	}
-	// 寻找适当的free_list  
-	my_free_list = free_list + FREELIST_INDEX(n);  
-	// 调整free_list，回收区块
-	q -&gt; free_list_link = *my_free_list;  
-	*my_free_list = q;  
+	<span style="color:#75715e">// 寻找适当的free_list  
+</span><span style="color:#75715e"></span>	my_free_list <span style="color:#f92672">=</span> free_list <span style="color:#f92672">+</span> FREELIST_INDEX(n);  
+	<span style="color:#75715e">// 调整free_list，回收区块
+</span><span style="color:#75715e"></span>	q <span style="color:#f92672">-&gt;</span> free_list_link <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>my_free_list;  
+	<span style="color:#f92672">*</span>my_free_list <span style="color:#f92672">=</span> q;  
 }
-</code></pre>
-
+</code></pre></div>
 <h1 id="配置器的使用">配置器的使用</h1>
 
 <p>通过以上的图和源代码，基本上将STL的两层配置器讲完了，接下来就来熟悉一下怎么使用配置器。</p>
 
 <p>STL将上述配置器封装在类simple_alloc中，提供了四个用于内存操作的借口函数，分别如下：</p>
-
-<pre><code class="language-cpp">template&lt;class T, class Alloc&gt;
-class simple_alloc {
-public:
-    static T *allocate(size_t n)
-                { return 0 == n? 0 : (T*) Alloc::allocate(n * sizeof (T)); }
-    static T *allocate(void)	
-                { return (T*) Alloc::allocate(sizeof (T)); }
-    static void deallocate(T *p, size_t n) 
-                { if (0 != n) Alloc::deallocate(p, n * sizeof (T)); }
-    static void deallocate(T *p)
-                { Alloc::deallocate(p, sizeof (T)); }
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">simple_alloc</span> {
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+    <span style="color:#66d9ef">static</span> T <span style="color:#f92672">*</span>allocate(size_t n)
+                { <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">==</span> n<span style="color:#f92672">?</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">:</span> (T<span style="color:#f92672">*</span>) Alloc<span style="color:#f92672">::</span>allocate(n <span style="color:#f92672">*</span> <span style="color:#66d9ef">sizeof</span> (T)); }
+    <span style="color:#66d9ef">static</span> T <span style="color:#f92672">*</span>allocate(<span style="color:#66d9ef">void</span>)	
+                { <span style="color:#66d9ef">return</span> (T<span style="color:#f92672">*</span>) Alloc<span style="color:#f92672">::</span>allocate(<span style="color:#66d9ef">sizeof</span> (T)); }
+    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> deallocate(T <span style="color:#f92672">*</span>p, size_t n) 
+                { <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">0</span> <span style="color:#f92672">!=</span> n) Alloc<span style="color:#f92672">::</span>deallocate(p, n <span style="color:#f92672">*</span> <span style="color:#66d9ef">sizeof</span> (T)); }
+    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> deallocate(T <span style="color:#f92672">*</span>p)
+                { Alloc<span style="color:#f92672">::</span>deallocate(p, <span style="color:#66d9ef">sizeof</span> (T)); }
 };
-</code></pre>
-
+</code></pre></div>
 <p>接下来就示范在vector中是怎么使用它的。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>  <span style="color:#75715e">//alloc被默认为第二级配置器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">vector</span> {
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">typedef</span> T value_type;
+  	<span style="color:#75715e">//...
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// 专属的空间配置器，每次只分配一个元素的大小
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">typedef</span> simple_alloc<span style="color:#f92672">&lt;</span>value_type, Alloc<span style="color:#f92672">&gt;</span> data_allocator;
 
-<pre><code class="language-cpp">template &lt;class T, class Alloc = alloc&gt;  //alloc被默认为第二级配置器
-class vector {
-public:
-	typedef T value_type;
-  	//...
-protected:
-	// 专属的空间配置器，每次只分配一个元素的大小
-	typedef simple_alloc&lt;value_type, Alloc&gt; data_allocator;
-
-	// 在释放内存的时候直接调用借口函数即可
-	void deallocate(){
-		if(...){
-			data_allocator::deallocate(start , end_of_storage - start);
+	<span style="color:#75715e">// 在释放内存的时候直接调用借口函数即可
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">deallocate</span>(){
+		<span style="color:#66d9ef">if</span>(...){
+			data_allocator<span style="color:#f92672">::</span>deallocate(start , end_of_storage <span style="color:#f92672">-</span> start);
 		}
 	}
 };
-</code></pre>
-
+</code></pre></div>
 <p>至此，STL的空间配置器的原理和使用都已讲述完毕，读者们是否懂了呢？ 没懂就戳下方的联系方式或者留言说出你的疑惑吧！</p>
 
 <h1 id="about-me">About Me</h1>

@@ -28,9 +28,11 @@
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -63,7 +65,6 @@
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -128,17 +129,15 @@
 <h1 id="list的节点">List的节点</h1>
 
 <p>List的节点结构如下：</p>
-
-<pre><code class="language-cpp">template &lt;class T&gt;
-struct __list_node
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> __list_node
 {
-  typedef void* void_pointer; 
-  void_pointer next;	//型别为void*，也可以设为__list_node&lt;T&gt;*
-  void_pointer prev;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> void_pointer; 
+  void_pointer next;	<span style="color:#75715e">//型别为void*，也可以设为__list_node&lt;T&gt;*
+</span><span style="color:#75715e"></span>  void_pointer prev;
   T data;
 };
-</code></pre>
-
+</code></pre></div>
 <p>从节点结构可以看出，List就是一个双向链表，其结构如下图所示：</p>
 
 <p><center><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkfthawhhj30ri07874t.jpg" alt="STLListNode" /></center></p>
@@ -148,156 +147,146 @@ struct __list_node
 <p>在Vector中，由于是连续的存储空间，支持随机存取，所以其迭代器可以直接用普通指针代替。但是，在List中行不通。List必须有能力指向List的节点，并有能力进行正确的递增、递减、取值和成员存取等操作。</p>
 
 <p>List是一个双向链表，迭代器必须具备前移、后退的能力，所以List的迭代器是一个Bidirectional Iterator！在Vector中如果进行插入和删除操作后迭代器会失效，List有一个重要的性质就是插入和接合操作都不会造成原有的List迭代器失效。而且，再删除一个节点时，也仅有指向被删除元素的那个迭代器失效，其他迭代器不受任何影响。下面来看看List迭代器的源码。</p>
-
-<pre><code class="language-cpp">template&lt;class T, class Ref, class Ptr&gt;
-struct __list_iterator
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Ref</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Ptr</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> __list_iterator
 {
-  typedef __list_iterator&lt;T, T&amp;, T*&gt;             iterator;   // 支持Iterator_traits
-  typedef __list_iterator&lt;T, const T&amp;, const T*&gt; const_iterator;
-  typedef __list_iterator&lt;T, Ref, Ptr&gt;           self;
+  <span style="color:#66d9ef">typedef</span> __list_iterator<span style="color:#f92672">&lt;</span>T, T<span style="color:#f92672">&amp;</span>, T<span style="color:#f92672">*&gt;</span>             iterator;   <span style="color:#75715e">// 支持Iterator_traits
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> __list_iterator<span style="color:#f92672">&lt;</span>T, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">*&gt;</span> const_iterator;
+  <span style="color:#66d9ef">typedef</span> __list_iterator<span style="color:#f92672">&lt;</span>T, Ref, Ptr<span style="color:#f92672">&gt;</span>           self;
 
-	// 以下为支持Iterator_traits而定义的一些类型
-  typedef bidirectional_iterator_tag iterator_category;	//List的迭代器类型为双向迭代器
-  typedef T value_type;                                
-  typedef Ptr pointer;    
-  typedef Ref reference;                                
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
+	<span style="color:#75715e">// 以下为支持Iterator_traits而定义的一些类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> bidirectional_iterator_tag iterator_category;	<span style="color:#75715e">//List的迭代器类型为双向迭代器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> T value_type;                                
+  <span style="color:#66d9ef">typedef</span> Ptr pointer;    
+  <span style="color:#66d9ef">typedef</span> Ref reference;                                
+  <span style="color:#66d9ef">typedef</span> size_t size_type;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t difference_type;
 
-  typedef __list_node&lt;T&gt;* link_type;                     
+  <span style="color:#66d9ef">typedef</span> __list_node<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;*</span> link_type;                     
 
-  // 这个是迭代器实际管理的资源指针
-  link_type node;
+  <span style="color:#75715e">// 这个是迭代器实际管理的资源指针
+</span><span style="color:#75715e"></span>  link_type node;
 
-  // 迭代器构造函数
-  __list_iterator(link_type x) : node(x) {}
+  <span style="color:#75715e">// 迭代器构造函数
+</span><span style="color:#75715e"></span>  __list_iterator(link_type x) <span style="color:#f92672">:</span> node(x) {}
   __list_iterator() {}
-  __list_iterator(const iterator&amp; x) : node(x.node) {}
+  __list_iterator(<span style="color:#66d9ef">const</span> iterator<span style="color:#f92672">&amp;</span> x) <span style="color:#f92672">:</span> node(x.node) {}
 
-  // 在STL算法中需要迭代器提供支持
-  bool operator==(const self&amp; x) const { return node == x.node; }
-  bool operator!=(const self&amp; x) const { return node != x.node; }
+  <span style="color:#75715e">// 在STL算法中需要迭代器提供支持
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> self<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> node <span style="color:#f92672">==</span> x.node; }
+  <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">!=</span>(<span style="color:#66d9ef">const</span> self<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> node <span style="color:#f92672">!=</span> x.node; }
 
-  // 重载operator *, 返回实际维护的数据
-  reference operator*() const { return (*node).data; }
+  <span style="color:#75715e">// 重载operator *, 返回实际维护的数据
+</span><span style="color:#75715e"></span>  reference <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> (<span style="color:#f92672">*</span>node).data; }
 
-  // 成员调用操作符
-  pointer operator-&gt;() const { return &amp;(operator*()); }
+  <span style="color:#75715e">// 成员调用操作符
+</span><span style="color:#75715e"></span>  pointer <span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span>(<span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>()); }
 
-  // 前缀自加
-  self&amp; operator++()
+  <span style="color:#75715e">// 前缀自加
+</span><span style="color:#75715e"></span>  self<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">++</span>()
   {
-    node = (link_type)((*node).next);
-    return *this;
+    node <span style="color:#f92672">=</span> (link_type)((<span style="color:#f92672">*</span>node).next);
+    <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
   }
 
-  // 后缀自加, 需要先产生自身的一个副本, 然会再对自身操作, 最后返回副本
-  self operator++(int)
+  <span style="color:#75715e">// 后缀自加, 需要先产生自身的一个副本, 然会再对自身操作, 最后返回副本
+</span><span style="color:#75715e"></span>  self <span style="color:#66d9ef">operator</span><span style="color:#f92672">++</span>(<span style="color:#66d9ef">int</span>)
   {
-    self tmp = *this;
-    ++*this;
-    return tmp;
+    self tmp <span style="color:#f92672">=</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
+    <span style="color:#f92672">++*</span><span style="color:#66d9ef">this</span>;
+    <span style="color:#66d9ef">return</span> tmp;
   }
 
-  self&amp; operator--()
+  self<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">--</span>()
   {
-    node = (link_type)((*node).prev);
-    return *this;
+    node <span style="color:#f92672">=</span> (link_type)((<span style="color:#f92672">*</span>node).prev);
+    <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
   }
 
-  self operator--(int)
+  self <span style="color:#66d9ef">operator</span><span style="color:#f92672">--</span>(<span style="color:#66d9ef">int</span>)
   {
-    self tmp = *this;
-    --*this;
-    return tmp;
+    self tmp <span style="color:#f92672">=</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
+    <span style="color:#f92672">--*</span><span style="color:#66d9ef">this</span>;
+    <span style="color:#66d9ef">return</span> tmp;
   }
 }
-</code></pre>
-
+</code></pre></div>
 <p>List的迭代器实现了==,!=,++,&ndash;,取值和成员调用等操作，由于是存放在不连续的内存空间，所以并不支持vector那样的p+n的操作。</p>
 
 <h1 id="list的数据结构">List的数据结构</h1>
 
 <p>List的数据结构个List的节点数据结构是分开定义的，SGI的List不仅是一个双向链表，而且还是一个环状双向链表，所以它只需要一个指针，就能完整表现一个链表。</p>
-
-<pre><code class="language-cpp">template &lt;class T, class Alloc = alloc&gt;
-class list
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">list</span>
 {
-protected:
-  typedef void* void_pointer;
-  typedef __list_node&lt;T&gt; list_node;
+<span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> void_pointer;
+  <span style="color:#66d9ef">typedef</span> __list_node<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> list_node;
 
-  // 这个提供STL标准的allocator接口
-  typedef simple_alloc&lt;list_node, Alloc&gt; list_node_allocator;
+  <span style="color:#75715e">// 这个提供STL标准的allocator接口
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> simple_alloc<span style="color:#f92672">&lt;</span>list_node, Alloc<span style="color:#f92672">&gt;</span> list_node_allocator;
 
-  // 链表的头结点，并不存放数据
-  link_type node;
+  <span style="color:#75715e">// 链表的头结点，并不存放数据
+</span><span style="color:#75715e"></span>  link_type node;
 
-  //....以下还有一堆List的操作函数
-}
-</code></pre>
-
+  <span style="color:#75715e">//....以下还有一堆List的操作函数
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p><center><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkftit4nmj30jw0g7ab2.jpg" alt="STLList" />)</center></p>
 
 <h1 id="list构造函数">List构造函数</h1>
 
 <p>List提供了一个空构造函数，如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">list() { empty_initialize(); }
 
-<pre><code class="language-cpp">list() { empty_initialize(); }
-
-// 用于空链表的建立
-void empty_initialize()
+<span style="color:#75715e">// 用于空链表的建立
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> empty_initialize()
 {
-  node = get_node();
-  node-&gt;next = node;  // 前置节点指向自己
-  node-&gt;prev = node;  // 后置节点指向自己
-}
-</code></pre>
-
+  node <span style="color:#f92672">=</span> get_node();
+  node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> node;  <span style="color:#75715e">// 前置节点指向自己
+</span><span style="color:#75715e"></span>  node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node;  <span style="color:#75715e">// 后置节点指向自己
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <p>另外，List还提供了带参的构造函数，支持如下初始化操作：</p>
-
-<pre><code class="language-cpp">List&lt;int&gt; myList(5,1); // 初始化5个1的链表，{1,1,1,1,1}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">List<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> myList(<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">1</span>); <span style="color:#75715e">// 初始化5个1的链表，{1,1,1,1,1}
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>其构造函数源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 带参构造函数
+</span><span style="color:#75715e"></span>list(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value) { fill_initialize(n, value); }
 
-<pre><code class="language-cpp">// 带参构造函数
-list(size_type n, const T&amp; value) { fill_initialize(n, value); }
-
-// 创建值为value共n个结点的链表
-void fill_initialize(size_type n, const T&amp; value)
+<span style="color:#75715e">// 创建值为value共n个结点的链表
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> fill_initialize(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value)
 {
-  empty_initialize();  // 先创建一个空链表
-  insert(begin(), n, value); // 插入n个值为value的节点
-}
+  empty_initialize();  <span style="color:#75715e">// 先创建一个空链表
+</span><span style="color:#75715e"></span>  insert(begin(), n, value); <span style="color:#75715e">// 插入n个值为value的节点
+</span><span style="color:#75715e"></span>}
 
-// 在指定位置插入n个值为x的节点
-void insert(iterator pos, int n, const T&amp; x)
+<span style="color:#75715e">// 在指定位置插入n个值为x的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> insert(iterator pos, <span style="color:#66d9ef">int</span> n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
   insert(pos, (size_type)n, x);
 }
 
-// 在position前插入n个值为x的元素
-template &lt;class T, class Alloc&gt;
-void list&lt;T, Alloc&gt;::insert(iterator position, size_type n, const T&amp; x)
+<span style="color:#75715e">// 在position前插入n个值为x的元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>insert(iterator position, size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-  for ( ; n &gt; 0; --n)
+  <span style="color:#66d9ef">for</span> ( ; n <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>; <span style="color:#f92672">--</span>n)
     insert(position, x);
 }
 
-// 好吧，到这里才是真正的插入操作
-// 很简单的双向链表插入操作
-iterator insert(iterator position, const T&amp; x)
+<span style="color:#75715e">// 好吧，到这里才是真正的插入操作
+</span><span style="color:#75715e">// 很简单的双向链表插入操作
+</span><span style="color:#75715e"></span>iterator insert(iterator position, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-  link_type tmp = create_node(x);
-  tmp-&gt;next = position.node;
-  tmp-&gt;prev = position.node-&gt;prev;
-  (link_type(position.node-&gt;prev))-&gt;next = tmp;
-  position.node-&gt;prev = tmp;
-  return tmp;
+  link_type tmp <span style="color:#f92672">=</span> create_node(x);
+  tmp<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> position.node;
+  tmp<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> position.node<span style="color:#f92672">-&gt;</span>prev;
+  (link_type(position.node<span style="color:#f92672">-&gt;</span>prev))<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> tmp;
+  position.node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> tmp;
+  <span style="color:#66d9ef">return</span> tmp;
 }
-</code></pre>
-
+</code></pre></div>
 <p>STL的List提供了很多种构造函数，此处我列举了其中一个，以此为例。</p>
 
 <h1 id="list的其他操作函数">List的其他操作函数</h1>
@@ -305,194 +294,168 @@ iterator insert(iterator position, const T&amp; x)
 <h2 id="get-node">get_node</h2>
 
 <p>此函数用来配置一个节点。</p>
-
-<pre><code class="language-cpp">// 配置一个节点并返回
-link_type get_node() { 
-	return list_node_allocator::allocate(); 
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 配置一个节点并返回
+</span><span style="color:#75715e"></span>link_type <span style="color:#a6e22e">get_node</span>() { 
+	<span style="color:#66d9ef">return</span> list_node_allocator<span style="color:#f92672">::</span>allocate(); 
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="put-node">put_node</h2>
 
 <p>此函数用来释放一个节点。</p>
-
-<pre><code class="language-cpp">// 释放指定结点, 不进行析构, 析构交给全局的destroy,
-void put_node(link_type p) {
-	list_node_allocator::deallocate(p); 
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 释放指定结点, 不进行析构, 析构交给全局的destroy,
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">put_node</span>(link_type p) {
+	list_node_allocator<span style="color:#f92672">::</span>deallocate(p); 
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="create-node">create_node</h2>
 
 <p>此函数用来配置并构造一个节点，并初始化其值</p>
-
-<pre><code class="language-cpp">// 配置一个节点，并初始化其值为x
-link_type create_node(const T&amp; x)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 配置一个节点，并初始化其值为x
+</span><span style="color:#75715e"></span>link_type <span style="color:#a6e22e">create_node</span>(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-  link_type p = get_node();
-  construct(&amp;p-&gt;data, x);	//全局函数
-  return p;
+  link_type p <span style="color:#f92672">=</span> get_node();
+  construct(<span style="color:#f92672">&amp;</span>p<span style="color:#f92672">-&gt;</span>data, x);	<span style="color:#75715e">//全局函数
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">return</span> p;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="destory-node">destory_node</h2>
 
 <p>此函数用来析构一个节点。</p>
-
-<pre><code class="language-cpp">// 析构结点元素, 并释放内存
-void destroy_node(link_type p)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 析构结点元素, 并释放内存
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">destroy_node</span>(link_type p)
 {
-	destroy(&amp;p-&gt;data);	//全局函数
-	put_node(p);
+	destroy(<span style="color:#f92672">&amp;</span>p<span style="color:#f92672">-&gt;</span>data);	<span style="color:#75715e">//全局函数
+</span><span style="color:#75715e"></span>	put_node(p);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="insert">insert</h2>
 
 <p>此函数用来在制定位置插入一个节点(上面提到过这个函数，这里重复一下，List的主要插入工作都交给这个函数)，该函数是一个重载函数，其有多种形式。</p>
-
-<pre><code class="language-cpp">// 好吧，到这里才是真正的插入操作
-// 很简单的双向链表插入操作
-iterator insert(iterator position, const T&amp; x)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 好吧，到这里才是真正的插入操作
+</span><span style="color:#75715e">// 很简单的双向链表插入操作
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">insert</span>(iterator position, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
 {
-  link_type tmp = create_node(x);
-  tmp-&gt;next = position.node;
-  tmp-&gt;prev = position.node-&gt;prev;
-  (link_type(position.node-&gt;prev))-&gt;next = tmp;
-  position.node-&gt;prev = tmp;
-  return tmp;
+  link_type tmp <span style="color:#f92672">=</span> create_node(x);
+  tmp<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> position.node;
+  tmp<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> position.node<span style="color:#f92672">-&gt;</span>prev;
+  (link_type(position.node<span style="color:#f92672">-&gt;</span>prev))<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> tmp;
+  position.node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> tmp;
+  <span style="color:#66d9ef">return</span> tmp;
 }
-// 其还有如下多种形式的重载函数
-// 在[first,last]区间内插入元素
-template &lt;class T, class Alloc&gt; template &lt;class InputIterator&gt;
-void list&lt;T, Alloc&gt;::insert(iterator position,
+<span style="color:#75715e">// 其还有如下多种形式的重载函数
+</span><span style="color:#75715e">// 在[first,last]区间内插入元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>insert(iterator position,
                             InputIterator first, InputIterator last)
 {
-  for ( ; first != last; ++first)
-    insert(position, *first);
+  <span style="color:#66d9ef">for</span> ( ; first <span style="color:#f92672">!=</span> last; <span style="color:#f92672">++</span>first)
+    insert(position, <span style="color:#f92672">*</span>first);
 }
-// 在position位置插入元素，元素调用该型别默认构造函数
-iterator insert(iterator position) { return insert(position, T()); }
-</code></pre>
-
+<span style="color:#75715e">// 在position位置插入元素，元素调用该型别默认构造函数
+</span><span style="color:#75715e"></span>iterator insert(iterator position) { <span style="color:#66d9ef">return</span> insert(position, T()); }
+</code></pre></div>
 <h2 id="push-back">push_back</h2>
 
 <p>在尾部插入元素，有了上面的insert函数之后，push_back就比较容易实现了。</p>
-
-<pre><code class="language-cpp">// 在链表最后插入结点
-void push_back(const T&amp; x) { insert(end(), x); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 在链表最后插入结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">push_back</span>(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x) { insert(end(), x); }
+</code></pre></div>
 <h2 id="push-front">push_front</h2>
-
-<pre><code class="language-cpp">// 在链表前端插入结点
-void push_front(const T&amp; x) { insert(begin(), x); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 在链表前端插入结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">push_front</span>(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x) { insert(begin(), x); }
+</code></pre></div>
 <h2 id="earse">earse</h2>
 
 <p>移除迭代器所指的元素</p>
-
-<pre><code class="language-cpp">// 擦除指定结点
-iterator erase(iterator position)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 擦除指定结点
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">erase</span>(iterator position)
 {
-	// 双向链表移除节点的操作
-	link_type next_node = link_type(position.node-&gt;next);
-	link_type prev_node = link_type(position.node-&gt;prev);
-	prev_node-&gt;next = next_node;
-	next_node-&gt;prev = prev_node;
+	<span style="color:#75715e">// 双向链表移除节点的操作
+</span><span style="color:#75715e"></span>	link_type next_node <span style="color:#f92672">=</span> link_type(position.node<span style="color:#f92672">-&gt;</span>next);
+	link_type prev_node <span style="color:#f92672">=</span> link_type(position.node<span style="color:#f92672">-&gt;</span>prev);
+	prev_node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> next_node;
+	next_node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> prev_node;
 	destroy_node(position.node);
-	return iterator(next_node);
+	<span style="color:#66d9ef">return</span> iterator(next_node);
 }
 
-// 上述函数还有一个重载版本，移除区间内所有的节点
-// 擦除[first, last)间的结点
-template &lt;class T, class Alloc&gt;
-list&lt;T, Alloc&gt;::iterator list&lt;T, Alloc&gt;::erase(iterator first, iterator last)
+<span style="color:#75715e">// 上述函数还有一个重载版本，移除区间内所有的节点
+</span><span style="color:#75715e">// 擦除[first, last)间的结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>iterator list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>erase(iterator first, iterator last)
 {
-	while (first != last) erase(first++);
-	return last;
+	<span style="color:#66d9ef">while</span> (first <span style="color:#f92672">!=</span> last) erase(first<span style="color:#f92672">++</span>);
+	<span style="color:#66d9ef">return</span> last;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="pop-front">pop_front</h2>
 
 <p>移除头节点元素，有了上述的erase函数，就很方便的实现了。</p>
-
-<pre><code class="language-cpp">// 删除链表第一个结点
-void pop_front() { erase(begin()); }
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除链表第一个结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pop_front</span>() { erase(begin()); }
+</code></pre></div>
 <h2 id="pop-back">pop_back</h2>
 
 <p>移除链表中最后一个元素</p>
-
-<pre><code class="language-cpp">// 删除链表最后一个结点
-void pop_back()
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除链表最后一个结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pop_back</span>()
 {
-	iterator tmp = end();
-	erase(--tmp);
+	iterator tmp <span style="color:#f92672">=</span> end();
+	erase(<span style="color:#f92672">--</span>tmp);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="clear">clear</h2>
 
 <p>清除链表中的所有节点，也就是一个一个的清除</p>
-
-<pre><code class="language-cpp">// 销毁所有结点, 将链表置空
-template &lt;class T, class Alloc&gt;
-void list&lt;T, Alloc&gt;::clear()
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 销毁所有结点, 将链表置空
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>clear()
 {
-  link_type cur = (link_type) node-&gt;next;
-  while (cur != node) {	//遍历每一个节点
-    link_type tmp = cur;
-    cur = (link_type) cur-&gt;next;
+  link_type cur <span style="color:#f92672">=</span> (link_type) node<span style="color:#f92672">-&gt;</span>next;
+  <span style="color:#66d9ef">while</span> (cur <span style="color:#f92672">!=</span> node) {	<span style="color:#75715e">//遍历每一个节点
+</span><span style="color:#75715e"></span>    link_type tmp <span style="color:#f92672">=</span> cur;
+    cur <span style="color:#f92672">=</span> (link_type) cur<span style="color:#f92672">-&gt;</span>next;
     destroy_node(tmp);
   }
-  node-&gt;next = node;// 移除后注意要保持链表是一个循环链表
-  node-&gt;prev = node;
+  node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> node;<span style="color:#75715e">// 移除后注意要保持链表是一个循环链表
+</span><span style="color:#75715e"></span>  node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node;
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="remove">remove</h2>
 
 <p>将链表中值为value的节点移除</p>
-
-<pre><code class="language-cpp">// 移除特定值的所有结点
-// 时间复杂度O(n)
-template &lt;class T, class Alloc&gt;
-void list&lt;T, Alloc&gt;::remove(const T&amp; value)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 移除特定值的所有结点
+</span><span style="color:#75715e">// 时间复杂度O(n)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>remove(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value)
 {
-	iterator first = begin();
-	iterator last = end();
-	while (first != last) {	//保证链表非空
-		iterator next = first;
-		++next;
-		if (*first == value) erase(first);	//擦除该节点
-		first = next;
+	iterator first <span style="color:#f92672">=</span> begin();
+	iterator last <span style="color:#f92672">=</span> end();
+	<span style="color:#66d9ef">while</span> (first <span style="color:#f92672">!=</span> last) {	<span style="color:#75715e">//保证链表非空
+</span><span style="color:#75715e"></span>		iterator next <span style="color:#f92672">=</span> first;
+		<span style="color:#f92672">++</span>next;
+		<span style="color:#66d9ef">if</span> (<span style="color:#f92672">*</span>first <span style="color:#f92672">==</span> value) erase(first);	<span style="color:#75715e">//擦除该节点
+</span><span style="color:#75715e"></span>		first <span style="color:#f92672">=</span> next;
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="transfer">transfer</h2>
 
 <p>将某段连续范围内的元素迁移到指定位置。（非公开接口）</p>
-
-<pre><code class="language-cpp">void transfer(iterator position, iterator first, iterator last)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">transfer</span>(iterator position, iterator first, iterator last)
 {
-	if (position != last)
+	<span style="color:#66d9ef">if</span> (position <span style="color:#f92672">!=</span> last)
 	{
-		(*(link_type((*last.node).prev))).next = position.node;
-		(*(link_type((*first.node).prev))).next = last.node;
-		(*(link_type((*position.node).prev))).next = first.node;
-		link_type tmp = link_type((*position.node).prev);
-		(*position.node).prev = (*last.node).prev;
-		(*last.node).prev = (*first.node).prev;
-		(*first.node).prev = tmp;
+		(<span style="color:#f92672">*</span>(link_type((<span style="color:#f92672">*</span>last.node).prev))).next <span style="color:#f92672">=</span> position.node;
+		(<span style="color:#f92672">*</span>(link_type((<span style="color:#f92672">*</span>first.node).prev))).next <span style="color:#f92672">=</span> last.node;
+		(<span style="color:#f92672">*</span>(link_type((<span style="color:#f92672">*</span>position.node).prev))).next <span style="color:#f92672">=</span> first.node;
+		link_type tmp <span style="color:#f92672">=</span> link_type((<span style="color:#f92672">*</span>position.node).prev);
+		(<span style="color:#f92672">*</span>position.node).prev <span style="color:#f92672">=</span> (<span style="color:#f92672">*</span>last.node).prev;
+		(<span style="color:#f92672">*</span>last.node).prev <span style="color:#f92672">=</span> (<span style="color:#f92672">*</span>first.node).prev;
+		(<span style="color:#f92672">*</span>first.node).prev <span style="color:#f92672">=</span> tmp;
 	}
 }
-</code></pre>
-
+</code></pre></div>
 <p>这里借用侯捷先生的《STL源码剖析》中的一幅图来说明这个过程。</p>
 
 <p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkftghh04j30eq0exwfs.jpg" alt="STLTransfer" /></center></p>
@@ -500,112 +463,104 @@ void list&lt;T, Alloc&gt;::remove(const T&amp; value)
 <h2 id="splice">splice</h2>
 
 <p>List提供的接合函数是Splice，上述transfer是非公开的函数。splice函数有如下几个版本:</p>
-
-<pre><code class="language-cpp">// 将链表x移动到position之前
-void splice(iterator position, list&amp; x)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 将链表x移动到position之前
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">splice</span>(iterator position, list<span style="color:#f92672">&amp;</span> x)
 {
-	if (!x.empty())
-		transfer(position, x.begin(), x.end());	//仅仅调用了transfer函数
-}
+	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>x.empty())
+		transfer(position, x.begin(), x.end());	<span style="color:#75715e">//仅仅调用了transfer函数
+</span><span style="color:#75715e"></span>}
 
-// 将链表中i指向的内容移动到position之前
-void splice(iterator position, list&amp;, iterator i)
+<span style="color:#75715e">// 将链表中i指向的内容移动到position之前
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">splice</span>(iterator position, list<span style="color:#f92672">&amp;</span>, iterator i)
 {
-	iterator j = i;
-	++j;
-	if (position == i || position == j) return;
+	iterator j <span style="color:#f92672">=</span> i;
+	<span style="color:#f92672">++</span>j;
+	<span style="color:#66d9ef">if</span> (position <span style="color:#f92672">==</span> i <span style="color:#f92672">||</span> position <span style="color:#f92672">==</span> j) <span style="color:#66d9ef">return</span>;
 	transfer(position, i, j);
 }
 
-// 将[first, last}元素移动到position之前
-void splice(iterator position, list&amp;, iterator first, iterator last)
+<span style="color:#75715e">// 将[first, last}元素移动到position之前
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">splice</span>(iterator position, list<span style="color:#f92672">&amp;</span>, iterator first, iterator last)
 {
-	if (first != last)
+	<span style="color:#66d9ef">if</span> (first <span style="color:#f92672">!=</span> last)
 		transfer(position, first, last);
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="merge">merge</h2>
 
 <p>此函数用来合并两个链表，这里两个链表必须是已拍好序的。</p>
-
-<pre><code class="language-cpp">// 假设当前容器和x都已序, 保证两容器合并后仍然有序
-template &lt;class T, class Alloc&gt;
-void list&lt;T, Alloc&gt;::merge(list&lt;T, Alloc&gt;&amp; x)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 假设当前容器和x都已序, 保证两容器合并后仍然有序
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>merge(list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;&amp;</span> x)
 {
-  iterator first1 = begin();
-  iterator last1 = end();
-  iterator first2 = x.begin();
-  iterator last2 = x.end();
-  while (first1 != last1 &amp;&amp; first2 != last2)
-    if (*first2 &lt; *first1) {
-      iterator next = first2;
-      transfer(first1, first2, ++next);	//将first2节点迁移到first1之后
-      first2 = next;
+  iterator first1 <span style="color:#f92672">=</span> begin();
+  iterator last1 <span style="color:#f92672">=</span> end();
+  iterator first2 <span style="color:#f92672">=</span> x.begin();
+  iterator last2 <span style="color:#f92672">=</span> x.end();
+  <span style="color:#66d9ef">while</span> (first1 <span style="color:#f92672">!=</span> last1 <span style="color:#f92672">&amp;&amp;</span> first2 <span style="color:#f92672">!=</span> last2)
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">*</span>first2 <span style="color:#f92672">&lt;</span> <span style="color:#f92672">*</span>first1) {
+      iterator next <span style="color:#f92672">=</span> first2;
+      transfer(first1, first2, <span style="color:#f92672">++</span>next);	<span style="color:#75715e">//将first2节点迁移到first1之后
+</span><span style="color:#75715e"></span>      first2 <span style="color:#f92672">=</span> next;
     }
-    else
-      ++first1;
-  if (first2 != last2) transfer(last1, first2, last2);	//如果first2还有剩余的，直接接合再链表1尾部
-}
-</code></pre>
-
+    <span style="color:#66d9ef">else</span>
+      <span style="color:#f92672">++</span>first1;
+  <span style="color:#66d9ef">if</span> (first2 <span style="color:#f92672">!=</span> last2) transfer(last1, first2, last2);	<span style="color:#75715e">//如果first2还有剩余的，直接接合再链表1尾部
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
 <h2 id="reverse">reverse</h2>
 
 <p>此函数用来反转链表，其具体实现如下：</p>
-
-<pre><code class="language-cpp">// 将链表倒置
-template &lt;class T, class Alloc&gt;
-void list&lt;T, Alloc&gt;::reverse()
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 将链表倒置
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>reverse()
 {
-  if (node-&gt;next == node || link_type(node-&gt;next)-&gt;next == node) return;
-  iterator first = begin();
-  ++first;
-  while (first != end()) {
-    iterator old = first;	// 取出一个节点
-    ++first;
-    transfer(begin(), old, first);	// 插入到begin()之后
-  }
+  <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">==</span> node <span style="color:#f92672">||</span> link_type(node<span style="color:#f92672">-&gt;</span>next)<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">==</span> node) <span style="color:#66d9ef">return</span>;
+  iterator first <span style="color:#f92672">=</span> begin();
+  <span style="color:#f92672">++</span>first;
+  <span style="color:#66d9ef">while</span> (first <span style="color:#f92672">!=</span> end()) {
+    iterator old <span style="color:#f92672">=</span> first;	<span style="color:#75715e">// 取出一个节点
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">++</span>first;
+    transfer(begin(), old, first);	<span style="color:#75715e">// 插入到begin()之后
+</span><span style="color:#75715e"></span>  }
 }
-</code></pre>
-
+</code></pre></div>
 <h2 id="sort">sort</h2>
 
 <p>此函数对链表进行升序排序，具体实现如下：</p>
-
-<pre><code class="language-cpp">// 按照升序排序
-template &lt;class T, class Alloc&gt;
-void list&lt;T, Alloc&gt;::sort()
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 按照升序排序
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>sort()
 {
-  if (node-&gt;next == node || link_type(node-&gt;next)-&gt;next == node) return;
-  list&lt;T, Alloc&gt; carry;
-  list&lt;T, Alloc&gt; counter[64];
-  int fill = 0;
-  while (!empty()) {
-  	// 从链表中取出一个节点
-    carry.splice(carry.begin(), *this, begin());
-    int i = 0;
-    // 把carry中的新元素和counter中的结果逐一进行归并
-    while (i &lt; fill &amp;&amp; !counter[i].empty()) {
+  <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">==</span> node <span style="color:#f92672">||</span> link_type(node<span style="color:#f92672">-&gt;</span>next)<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">==</span> node) <span style="color:#66d9ef">return</span>;
+  list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;</span> carry;
+  list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;</span> counter[<span style="color:#ae81ff">64</span>];
+  <span style="color:#66d9ef">int</span> fill <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+  <span style="color:#66d9ef">while</span> (<span style="color:#f92672">!</span>empty()) {
+  	<span style="color:#75715e">// 从链表中取出一个节点
+</span><span style="color:#75715e"></span>    carry.splice(carry.begin(), <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>, begin());
+    <span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 把carry中的新元素和counter中的结果逐一进行归并
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span> (i <span style="color:#f92672">&lt;</span> fill <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>counter[i].empty()) {
       counter[i].merge(carry);
-      carry.swap(counter[i++]);
+      carry.swap(counter[i<span style="color:#f92672">++</span>]);
     }
-    // 把归并后的结果存放在counter[i]中
-    carry.swap(counter[i]);
-    // 已经达到2*fill，fill自增1
-    if (i == fill) ++fill;
+    <span style="color:#75715e">// 把归并后的结果存放在counter[i]中
+</span><span style="color:#75715e"></span>    carry.swap(counter[i]);
+    <span style="color:#75715e">// 已经达到2*fill，fill自增1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (i <span style="color:#f92672">==</span> fill) <span style="color:#f92672">++</span>fill;
   }
-  // 将counter中的所有元素进行归并
-  for (int i = 1; i &lt; fill; ++i) counter[i].merge(counter[i - 1]);
-  // 将counter链表和本链表进行交换
-  swap(counter[fill - 1]);
+  <span style="color:#75715e">// 将counter中的所有元素进行归并
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&lt;</span> fill; <span style="color:#f92672">++</span>i) counter[i].merge(counter[i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]);
+  <span style="color:#75715e">// 将counter链表和本链表进行交换
+</span><span style="color:#75715e"></span>  swap(counter[fill <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]);
 }
 
-// 交换本链表和链表x
-void swap(list&lt;T, Alloc&gt;&amp; x) { 
+<span style="color:#75715e">// 交换本链表和链表x
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> swap(list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;&amp;</span> x) { 
 	swap(node, x.node); 
 }
-</code></pre>
-
+</code></pre></div>
 <p>这里可以举个例子来说明一下这个过程：(以链表5,3,6,4,7,9,1,2,8)</p>
 
 <p>carry每次从数组中取一个数，然后归并到counter数组中，该算法最多只能排序2的64次方个数。</p>

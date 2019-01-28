@@ -32,9 +32,11 @@ C&#43;&#43;的成员函数分为静态函数、非静态函数和虚函数三种
 </head>
 <body class="body">
 	<div class="container container--outer">
-		<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/monokai.min.css" rel="stylesheet">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
 
 <header class="header">
 	<div class="container">
@@ -67,7 +69,6 @@ C&#43;&#43;的成员函数分为静态函数、非静态函数和虚函数三种
 
 	</div>
 </header>
-
 		<div class="wrapper flex">
 			<div class="primary">
 			
@@ -115,34 +116,28 @@ C&#43;&#43;的成员函数分为静态函数、非静态函数和虚函数三种
 <h1 id="非静态成员函数">非静态成员函数</h1>
 
 <p>C++的设计准则之一就是：非静态成员函数至少必须和一般的非成员函数有相同的效率。要达到这一点，成员函数的成员属性不会给其带来额外的负担。考虑以下两种函数调用：</p>
-
-<pre><code class="language-cpp">int getAge(Animal *_this);//非成员函数
-int Animal::getAge();//成员函数
-
-//getNum函数定义如下：
-int getAge(){
-	return age;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">getAge</span>(Animal <span style="color:#f92672">*</span>_this);<span style="color:#75715e">//非成员函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> Animal<span style="color:#f92672">::</span>getAge();<span style="color:#75715e">//成员函数
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">//getNum函数定义如下：
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">getAge</span>(){
+	<span style="color:#66d9ef">return</span> age;
 }
-</code></pre>
-
+</code></pre></div>
 <p>前者需要传入一个类指针，属于非成员函数调用，后者直接指明Animal类的函数调用。本质上，这两个函数是一样的，因为编译器会将后者转换为前者，其转换步骤如下：</p>
 
 <ul>
 <li>改写函数的原型，使得其接受一个额外的参数，这个额外的参数就是函数的this指针：</li>
 </ul>
-
-<pre><code class="language-cpp">int Animal::getNum(Animal *this);//在函数内安插一个this指针
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> Animal<span style="color:#f92672">::</span>getNum(Animal <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>);<span style="color:#75715e">//在函数内安插一个this指针
+</span><span style="color:#75715e"></span></code></pre></div>
 <ul>
 <li>将每一个对非静态成员变量的存取操作改为经由this指针来存取：</li>
 </ul>
-
-<pre><code class="language-cpp">{
-	return this.age;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">{
+	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">this</span>.age;
 }
-</code></pre>
-
+</code></pre></div>
 <ul>
 <li>将成员函数重写成一个外部函数，函数名称经过“mangling”处理，使它在程序中称为独一无二的语汇，如上述函数可能被处理为：getNum_AnimalFv(p)，这里需要保证名字不会有冲突！</li>
 </ul>
@@ -164,40 +159,32 @@ int getAge(){
 </ul>
 
 <p>所以，要想正确调用虚函数，只需找到该虚函数在虚函数表的相应位置即可，于是，考虑到以下示例。</p>
-
-<pre><code class="language-cpp">class Animal{
-public:
-	char name[10];//动物名字
-	int weight;//体重
-	virtual void eat(){}
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Animal</span>{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#66d9ef">char</span> name[<span style="color:#ae81ff">10</span>];<span style="color:#75715e">//动物名字
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">int</span> weight;<span style="color:#75715e">//体重
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">eat</span>(){}
 };
 
-Animal *animal;
-animal-&gt;eat();
-</code></pre>
-
+Animal <span style="color:#f92672">*</span>animal;
+animal<span style="color:#f92672">-&gt;</span>eat();
+</code></pre></div>
 <p>当调用虚函数eat的时候，编译器会自动转换成以下代码：</p>
-
-<pre><code class="language-cpp">//vptr为指向虚函数表的指针，eat存放在虚函数的第一位，
-//由于是成员函数，所以函数还必须传入一个this指针参数
-(* animal-&gt;vptr[0])(animal);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//vptr为指向虚函数表的指针，eat存放在虚函数的第一位，
+</span><span style="color:#75715e">//由于是成员函数，所以函数还必须传入一个this指针参数
+</span><span style="color:#75715e"></span>(<span style="color:#f92672">*</span> animal<span style="color:#f92672">-&gt;</span>vptr[<span style="color:#ae81ff">0</span>])(animal);
+</code></pre></div>
 <p>只有在指针和引用才能展现出多态的形式，如果我们显示调用或者直接用类对象来调用的话会是什么样呢？</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//显示调用eat函数
+</span><span style="color:#75715e"></span>Animal<span style="color:#f92672">::</span>eat();
 
-<pre><code class="language-cpp">//显示调用eat函数
-Animal::eat();
-
-//直接用对象来调用
-Animal animal;
+<span style="color:#75715e">//直接用对象来调用
+</span><span style="color:#75715e"></span>Animal animal;
 animal.eat();
-</code></pre>
-
+</code></pre></div>
 <p>在上述两种调用中，前者会抑制掉虚拟机制，直接将eat()作为非静态成员函数一样调用。对于后者，假设编译器将其转换成如下形式：</p>
-
-<pre><code class="language-cpp">(* animal.vptr[0])(&amp;animal);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">(<span style="color:#f92672">*</span> animal.vptr[<span style="color:#ae81ff">0</span>])(<span style="color:#f92672">&amp;</span>animal);
+</code></pre></div>
 <p>这样虽然在语意上正确，但是完全没有必要这样做，所以编译器会直接当成Animal::eat()显示调用来处理。</p>
 
 <h2 id="单一继承下的虚函数调用">单一继承下的虚函数调用</h2>
@@ -257,13 +244,11 @@ Fun(animal);//第二种调用方式，传入一个animal指针
 <p><center><img src="https://ww3.sinaimg.cn/large/006tNc79gw1fbkfl9u3i4j30n20ed0u0.jpg" alt="多重继承下的内存布局" /></center></p>
 
 <p>还是以上面的Fun函数为例，考虑下面几个调用方式：</p>
-
-<pre><code class="language-cpp">Dog *dog = new Dog();
-dog-&gt;eat();//第一种调用方式，直接传入一个dog指针
-dog-&gt;sleep();//第二种调用方式，传入一个animal指针
-dog-&gt;jump();//第三种调用方式，传入一个canidae指针
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Dog <span style="color:#f92672">*</span>dog <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Dog();
+dog<span style="color:#f92672">-&gt;</span>eat();<span style="color:#75715e">//第一种调用方式，直接传入一个dog指针
+</span><span style="color:#75715e"></span>dog<span style="color:#f92672">-&gt;</span>sleep();<span style="color:#75715e">//第二种调用方式，传入一个animal指针
+</span><span style="color:#75715e"></span>dog<span style="color:#f92672">-&gt;</span>jump();<span style="color:#75715e">//第三种调用方式，传入一个canidae指针
+</span><span style="color:#75715e"></span></code></pre></div>
 <p>针对前两种调用方式，其调用给方式与上一小节中基本相似，不需要改变this指针，因为第一顺位继承类的起点与子类对象的起点一致。对于第三种调用方式来说的话，就显得有些复杂了。如果继续传入一个没有经过调整的this指针的话，就难以获取Canidae的虚表地址了。这里首先来介绍一种Thunk方法。thunk的作用在于：</p>
 
 <ul>
@@ -272,22 +257,18 @@ dog-&gt;jump();//第三种调用方式，传入一个canidae指针
 </ul>
 
 <p>按照thunk的思想，再调用jump()函数时，其this指针需要做如下调整：</p>
-
-<pre><code class="language-cpp">thunk:
-	this+=sizeof(Animal);
-	Dog::eat(this);
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">thunk:
+	<span style="color:#66d9ef">this</span><span style="color:#f92672">+=</span><span style="color:#66d9ef">sizeof</span>(Animal);
+	Dog<span style="color:#f92672">::</span>eat(<span style="color:#66d9ef">this</span>);
+</code></pre></div>
 <p>好，我们的问题就变成多重继承关系中，除继承顺序的第一位外，其他位的类实现虚函数调用都需要做一些调整。这种调整发生在以下两种情况：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//一、将一个基类指针指向一个子类,当然是继承顺序第一位以后的基类
+</span><span style="color:#75715e"></span>Canidae <span style="color:#f92672">*</span>canidae <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Dog();
 
-<pre><code class="language-cpp">//一、将一个基类指针指向一个子类,当然是继承顺序第一位以后的基类
-Canidae *canidae = new Dog();
-
-//二、使用子类指针来调用基类的函数，当然是继承顺序第一位以后的基类函数
-Dog dog = new Dog();
-dog-&gt;jump();
-</code></pre>
-
+<span style="color:#75715e">//二、使用子类指针来调用基类的函数，当然是继承顺序第一位以后的基类函数
+</span><span style="color:#75715e"></span>Dog dog <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Dog();
+dog<span style="color:#f92672">-&gt;</span>jump();
+</code></pre></div>
 <p>前一种情况中，需要将canidae指针向后调整sizeof(Animal)位，指向子类中对应的基类部分。
 第二种情况，需要调整dog指针向后sizeof(Animal)位，指向dog中Canidae基类部分。</p>
 
@@ -312,12 +293,10 @@ dog-&gt;jump();
 </ul>
 
 <p>所以，对于静态成员函数的调用就几乎等同于非成员函数调用了。当然，为了指明他是一个类成员函数，在命名调整上必然会加上类的信息，如下：</p>
-
-<pre><code class="language-cpp">Animal::getAge();//假设getAge是一个静态成员函数
-//其经过命名调整后如下：
-getAge_AnimalSFv();//SFv表示他是一个静态成员函数，static member Function,其拥有一个空白的参数列表(void)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">Animal<span style="color:#f92672">::</span>getAge();<span style="color:#75715e">//假设getAge是一个静态成员函数
+</span><span style="color:#75715e">//其经过命名调整后如下：
+</span><span style="color:#75715e"></span>getAge_AnimalSFv();<span style="color:#75715e">//SFv表示他是一个静态成员函数，static member Function,其拥有一个空白的参数列表(void)
+</span><span style="color:#75715e"></span></code></pre></div>
 <h1 id="总结">总结</h1>
 
 <p>本篇博客讲解了三类成员函数(非静态、静态、虚函数)的底层调用机制，以及C++对函数命名，this指针的调整规则等。我们可以知道，C++在成员函数调用上，对于静态，非静态成员函数在函数调用效率上基本等同于非成员函数，而虚函数的调用上为了满足多态性，需要调整this指针，找到虚表地址等等操作，影响了其函数调用效率，不过这些也是值得的！</p>
