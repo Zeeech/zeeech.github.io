@@ -78,6 +78,40 @@
 <main class="main list" role="main"><article class="list__item post">
 	<header class="list__header">
 		<h3 class="list__title post__title ">
+			<a href="/imageprocess/vscodeopencvpython/" rel="bookmark">
+			python-opencv图像灰度化处理
+			</a>
+		</h3>
+		<div class="list__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2019-02-14T00:00:00">February 14, 2019</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86" rel="category">图像处理</a></span>
+</div>
+</div>
+	</header>
+	<div class="content list__excerpt post__content clearfix">
+		读研期间一直在做opencv c++方向的开发工作，由于工作之后对python情有独钟，故打算用python重学一遍opencv，从最基础的开始。
+开发环境搭建 使用vscode+python+opencv的开发环境，其版本如下：
+ python 3.7.2 opencv 4.0.1  python安装opencv的方法很简单，如下：
+pip install opencv-python 读取图像 采用import cv2导入opencv包，读取图像采用imread函数进行图片读取，该函数的第一个参数为图片的路径，第二个参数如下：
+ cv2.IMREAD_COLOR：读入一副彩色图像。图像的透明度会被忽略， 这是默认参数。 cv2.IMREAD_GRAYSCALE：以灰度模式读入图像  下面给出一段简单的入门，利用opencv完成图像的读取和显示。
+import cv2 img = cv2.imread(&#34;lena.bmp&#34;, 0) print(img[0]) cv2.namedWindow(&#39;image&#39;, cv2.WINDOW_AUTOSIZE) cv2.imshow(&#39;image&#39;, img) cv2.waitKey(0) cv2.destroyAllWindows() 图像灰度化方法 opencv的imread函数如果给定参数cv2.IMREAD_GRAYSCALE读取图片，那么读取上来的图片就是灰度图像，那么，图像灰度化算法的具体步骤呢？了解一下？
+图像灰度化有三种方法：
+ 分量法 对于每一个像素，取其任意一种（R，G，B）作为该点的灰度值
+ 最大值法 对于每一个像素，取max(R,G,B)作为该点的灰度值
+ 平均值法 对于每一个像素，取mean(R,G,B)作为该点的灰度值
+ 加权平均值法 对于每一个像素，由于人眼对红色、绿色和蓝色光的敏感程度不同而赋予不同的权重，从而得到该点的像素值。公式如下：Gray = 0.30*R+0.59*G+0.11*B
+  具体实现代码很简单，如下：
+# 最大值法实现图像灰度化 m, n, channel = img.shape grayMax = img.copy()[:, :, 0] R = img[:, :, 0] G = img[:, :, 1] B = img[:, :, 2] for i in range(m): for j in range(n): tempGray = max(R[i, j], G[i, j], B[i, j]) grayMax[i, j] = tempGray # 平均值法实现图像灰度化 m, n, channel = img.
+	</div>
+</article><article class="list__item post">
+	<header class="list__header">
+		<h3 class="list__title post__title ">
 			<a href="/machinelearning/machinelearninglogisticregression/" rel="bookmark">
 			机器学习学习笔记--逻辑回归
 			</a>
@@ -513,32 +547,6 @@
 
 <p>要想实现动态分配数组，Vector内部就需要对空间控制做到有效率的掌控，这些机制要如何运作才能高效地实现动态分配呢？本篇博客就从源代码的角度带你领略一下Vector容器内部的构造艺术。</p>
 	</div>
-</article><article class="list__item post">
-	<header class="list__header">
-		<h3 class="list__title post__title ">
-			<a href="/2016/08/22/stliterator/" rel="bookmark">
-			带你深入理解STL之迭代器和Traits技法
-			</a>
-		</h3>
-		<div class="list__meta meta">
-<div class="meta__item-datetime meta__item">
-	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
-	<time class="meta__text" datetime="2016-08-22T16:18:53">August 22, 2016</time>
-</div>
-</div>
-	</header>
-	<div class="content list__excerpt post__content clearfix">
-		<p>在开始讲迭代器之前，先列举几个例子，由浅入深的来理解一下为什么要设计迭代器。</p>
-
-<p>针对下面两个函数，我们来谈谈这种设计的缺陷所在：</p>
-
-<ul>
-<li>遍历int数组和单链表listNode时，需要设计两份不一样的sum求和函数，对于STL这样含有大量容器的代码库，针对每一种容器都设计sum的话，过于冗杂</li>
-<li>在sum函数中暴露了太多设计细节，如ListNode的节点值类型int，和指向下一个节点的指针next</li>
-<li>对于int数组来说，还必须知道数组的大小，以免越界访问</li>
-<li>算法的设计过多的依赖容器，容器的改动会造成大量算法函数的随之改动</li>
-</ul>
-	</div>
 </article>
 </main>
 
@@ -562,11 +570,11 @@
 	<h4 class="widget__title">Recent Posts</h4>
 	<div class="widget__content">
 		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/imageprocess/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
 			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
 			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
 			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
 			<li class="widget__item"><a class="widget__link" href="/2018/08/09/pythondatetimezone/">Python时区问题</a></li>
-			<li class="widget__item"><a class="widget__link" href="/2018/07/30/learncocoapods/">三分钟学会cocoapods</a></li>
 		</ul>
 	</div>
 </div>
