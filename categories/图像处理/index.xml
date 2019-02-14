@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>图像处理 on Zeech&#39;s Tech Blog</title>
+    <link>https://zcheng.ren/categories/%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/</link>
+    <description>Recent content in 图像处理 on Zeech&#39;s Tech Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Thu, 14 Feb 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://zcheng.ren/categories/%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>python-opencv图像灰度化处理</title>
+      <link>https://zcheng.ren/imageprocess/vscodeopencvpython/</link>
+      <pubDate>Thu, 14 Feb 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://zcheng.ren/imageprocess/vscodeopencvpython/</guid>
+      <description>读研期间一直在做opencv c++方向的开发工作，由于工作之后对python情有独钟，故打算用python重学一遍opencv，从最基础的开始。
+开发环境搭建 使用vscode+python+opencv的开发环境，其版本如下：
+ python 3.7.2 opencv 4.0.1  python安装opencv的方法很简单，如下：
+pip install opencv-python 读取图像 采用import cv2导入opencv包，读取图像采用imread函数进行图片读取，该函数的第一个参数为图片的路径，第二个参数如下：
+ cv2.IMREAD_COLOR：读入一副彩色图像。图像的透明度会被忽略， 这是默认参数。 cv2.IMREAD_GRAYSCALE：以灰度模式读入图像  下面给出一段简单的入门，利用opencv完成图像的读取和显示。
+import cv2 img = cv2.imread(&amp;#34;lena.bmp&amp;#34;, 0) print(img[0]) cv2.namedWindow(&amp;#39;image&amp;#39;, cv2.WINDOW_AUTOSIZE) cv2.imshow(&amp;#39;image&amp;#39;, img) cv2.waitKey(0) cv2.destroyAllWindows() 图像灰度化方法 opencv的imread函数如果给定参数cv2.IMREAD_GRAYSCALE读取图片，那么读取上来的图片就是灰度图像，那么，图像灰度化算法的具体步骤呢？了解一下？
+图像灰度化有三种方法：
+ 分量法 对于每一个像素，取其任意一种（R，G，B）作为该点的灰度值
+ 最大值法 对于每一个像素，取max(R,G,B)作为该点的灰度值
+ 平均值法 对于每一个像素，取mean(R,G,B)作为该点的灰度值
+ 加权平均值法 对于每一个像素，由于人眼对红色、绿色和蓝色光的敏感程度不同而赋予不同的权重，从而得到该点的像素值。公式如下：Gray = 0.30*R+0.59*G+0.11*B
+  具体实现代码很简单，如下：
+# 最大值法实现图像灰度化 m, n, channel = img.shape grayMax = img.copy()[:, :, 0] R = img[:, :, 0] G = img[:, :, 1] B = img[:, :, 2] for i in range(m): for j in range(n): tempGray = max(R[i, j], G[i, j], B[i, j]) grayMax[i, j] = tempGray # 平均值法实现图像灰度化 m, n, channel = img.</description>
+    </item>
+    
+  </channel>
+</rss>
