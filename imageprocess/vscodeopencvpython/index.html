@@ -140,18 +140,28 @@ cv2<span style="color:#f92672">.</span>destroyAllWindows()</code></pre></div>
 <p>图像灰度化有三种方法：</p>
 
 <ol>
-<li><p>分量法
-对于每一个像素，取其任意一种（R，G，B）作为该点的灰度值</p></li>
-
-<li><p>最大值法
-对于每一个像素，取max(R,G,B)作为该点的灰度值</p></li>
-
-<li><p>平均值法
-对于每一个像素，取mean(R,G,B)作为该点的灰度值</p></li>
-
-<li><p>加权平均值法
-对于每一个像素，由于人眼对红色、绿色和蓝色光的敏感程度不同而赋予不同的权重，从而得到该点的像素值。公式如下：Gray = 0.30*R+0.59*G+0.11*B</p></li>
+<li>分量法</li>
 </ol>
+
+<p>对于每一个像素，取其任意一种（R，G，B）作为该点的灰度值</p>
+
+<ol>
+<li>最大值法</li>
+</ol>
+
+<p>对于每一个像素，取max(R,G,B)作为该点的灰度值</p>
+
+<ol>
+<li>平均值法</li>
+</ol>
+
+<p>对于每一个像素，取mean(R,G,B)作为该点的灰度值</p>
+
+<ol>
+<li>加权平均值法</li>
+</ol>
+
+<p>对于每一个像素，由于人眼对红色、绿色和蓝色光的敏感程度不同而赋予不同的权重，从而得到该点的像素值。公式如下：Gray = 0.30*R+0.59*G+0.11*B</p>
 
 <p>具体实现代码很简单，如下：</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># 最大值法实现图像灰度化</span>
@@ -173,7 +183,7 @@ G <span style="color:#f92672">=</span> img[:, :, <span style="color:#ae81ff">1</
 B <span style="color:#f92672">=</span> img[:, :, <span style="color:#ae81ff">2</span>]
 <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(m):
     <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(n):
-        tempGray <span style="color:#f92672">=</span> (R[i, j] <span style="color:#f92672">+</span> G[i, j] <span style="color:#f92672">+</span> B[i, j]) <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>
+        tempGray <span style="color:#f92672">=</span> (R[i, j] <span style="color:#f92672">+</span> G[i, j] <span style="color:#f92672">+</span> B[i, j]) <span style="color:#f92672">/</span> <span style="color:#ae81ff">3</span>
         grayMean[i, j] <span style="color:#f92672">=</span> tempGray
 
 <span style="color:#75715e"># 加权平均值法实现图像灰度化</span>
