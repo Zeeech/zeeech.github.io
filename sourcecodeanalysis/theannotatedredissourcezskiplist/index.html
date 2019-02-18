@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--跳跃表zskiplist</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--跳跃表zskiplist" />
+<meta property="og:description" content="跳跃表是一种有序的数据结构，它通过在每个节点中维持多个指向其他节点的指针，从而达到快速访问的目的。跳跃表在插入、删除和查找操作上的平均复杂度为O（logN），最坏为O（N），可以和红黑树相媲美，但是在实现起来，比红黑树简单很多。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourcezskiplist/" /><meta property="article:published_time" content="2016-12-06T14:35:07&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-06T14:35:07&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--跳跃表zskiplist"/>
+<meta name="twitter:description" content="跳跃表是一种有序的数据结构，它通过在每个节点中维持多个指向其他节点的指针，从而达到快速访问的目的。跳跃表在插入、删除和查找操作上的平均复杂度为O（logN），最坏为O（N），可以和红黑树相媲美，但是在实现起来，比红黑树简单很多。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--跳跃表zskiplist</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-06T14:35:07">December 06, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#跳跃表数据结构">跳跃表数据结构</a></li>
+<li><a href="#跳跃表基本操作">跳跃表基本操作</a>
+<ul>
+<li><a href="#创建跳跃表">创建跳跃表</a></li>
+<li><a href="#插入节点">插入节点</a></li>
+<li><a href="#跳跃表删除">跳跃表删除</a></li>
+<li><a href="#获取给定分值和成员的节点的排名">获取给定分值和成员的节点的排名</a></li>
+<li><a href="#区间操作">区间操作</a></li>
+</ul></li>
+<li><a href="#跳跃表小结">跳跃表小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>跳跃表是一种有序的数据结构，它通过在每个节点中维持多个指向其他节点的指针，从而达到快速访问的目的。跳跃表在插入、删除和查找操作上的平均复杂度为O（logN），最坏为O（N），可以和红黑树相媲美，但是在实现起来，比红黑树简单很多。</p>
+
+<blockquote>
+<p>说起跳跃表，在前段时间面试中可帮了我的大忙。腾讯一面的时候面试官要求设计一个数据结构，里面的元素要求按一定顺序存放，能以最低的复杂度获取每个元素的名次，且增、删等操作的复杂度尽可能低，博主最终就是用跳跃表来解决了这个问题，平均复杂度能达到O（logN）。</p>
+</blockquote>
+
+<h1 id="跳跃表数据结构">跳跃表数据结构</h1>
+
+<p>跳跃表的结构体定义在server.h文件中。其中包括跳跃表节点zskiplistNode和跳跃表zskiplist两个结构体。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> zskiplistNode {
+    robj <span style="color:#f92672">*</span>obj; <span style="color:#75715e">// 成员对象
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">double</span> score;  <span style="color:#75715e">// 分值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> zskiplistNode <span style="color:#f92672">*</span>backward; <span style="color:#75715e">// 后向指针
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 层
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> zskiplistLevel {
+        <span style="color:#66d9ef">struct</span> zskiplistNode <span style="color:#f92672">*</span>forward; <span style="color:#75715e">// 前向指针
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> span; <span style="color:#75715e">// 跨度
+</span><span style="color:#75715e"></span>    } level[];
+} zskiplistNode;
+
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> zskiplist {
+    <span style="color:#75715e">// 跳跃表的表头节点和表尾节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> zskiplistNode <span style="color:#f92672">*</span>header, <span style="color:#f92672">*</span>tail;
+    <span style="color:#75715e">// 表中节点的数量
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> length;
+    <span style="color:#75715e">// 表中层数最大的节点层数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> level;
+} zskiplist;
+</code></pre></div>
+<p>对于跳跃表节点来说：
++ obj 存放着该节点对于的成员对象，一般指向一个sds结构
++ score 表示该节点你的分值，跳跃表按照分值大小进行顺序排列
++ backward 指向跳跃表的前一个节点
++ level[] 这个属性至关重要，是跳跃表的核心所在，初始化一个跳跃表节点的时候会为其随机生成一个层大小，每个节点的每一层以链表的形式连接起来。</p>
+
+<p>看完上面的解释之后，可能读者对跳跃表还没有一个清晰的认识，下面我画了一张图来形象的描述一下跳跃表结构。</p>
+
+<div style="text-align: center">
+<img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkgef87naj30q20dfgnr.jpg"/>
+</div>
+
+<h1 id="跳跃表基本操作">跳跃表基本操作</h1>
+
+<p>Redis中关于跳跃表的相关操作函数定义在t_zset.c文件中，下面分别介绍几个基本操作函数的实现源码。</p>
+
+<h2 id="创建跳跃表">创建跳跃表</h2>
+
+<p>Redis在创建一个跳跃表的时候完成以下操作：</p>
+
+<ul>
+<li>创建一个zskiplist结构</li>
+<li>设定其level为1，长度length为0</li>
+<li>初始化一个表头结点，其层数为32层，每一层均指向NULL</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 创建跳跃表
+</span><span style="color:#75715e"></span>zskiplist <span style="color:#f92672">*</span><span style="color:#a6e22e">zslCreate</span>(<span style="color:#66d9ef">void</span>) {
+    <span style="color:#66d9ef">int</span> j;
+    zskiplist <span style="color:#f92672">*</span>zsl;
+    <span style="color:#75715e">// 申请内存
+</span><span style="color:#75715e"></span>    zsl <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>zsl));
+    <span style="color:#75715e">// 初始化跳跃表属性
+</span><span style="color:#75715e"></span>    zsl<span style="color:#f92672">-&gt;</span>level <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+    zsl<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 创建一个层数为32，分值为0，成员对象为NULL的表头结点
+</span><span style="color:#75715e"></span>    zsl<span style="color:#f92672">-&gt;</span>header <span style="color:#f92672">=</span> zslCreateNode(ZSKIPLIST_MAXLEVEL,<span style="color:#ae81ff">0</span>,NULL);
+    <span style="color:#75715e">// 设定每层的forward指针指向NULL
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> ZSKIPLIST_MAXLEVEL; j<span style="color:#f92672">++</span>) {
+        zsl<span style="color:#f92672">-&gt;</span>header<span style="color:#f92672">-&gt;</span>level[j].forward <span style="color:#f92672">=</span> NULL;
+        zsl<span style="color:#f92672">-&gt;</span>header<span style="color:#f92672">-&gt;</span>level[j].span <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    }
+    <span style="color:#75715e">// 设定backward指向NULL
+</span><span style="color:#75715e"></span>    zsl<span style="color:#f92672">-&gt;</span>header<span style="color:#f92672">-&gt;</span>backward <span style="color:#f92672">=</span> NULL;
+    zsl<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> NULL;
+    <span style="color:#66d9ef">return</span> zsl;
+}
+<span style="color:#75715e">// 创建一个跳跃表节点
+</span><span style="color:#75715e"></span>zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslCreateNode</span>(<span style="color:#66d9ef">int</span> level, <span style="color:#66d9ef">double</span> score, robj <span style="color:#f92672">*</span>obj) {
+    <span style="color:#75715e">// 申请内存
+</span><span style="color:#75715e"></span>    zskiplistNode <span style="color:#f92672">*</span>zn <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>zn)<span style="color:#f92672">+</span>level<span style="color:#f92672">*</span><span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">struct</span> zskiplistLevel));
+    <span style="color:#75715e">// 设定分值
+</span><span style="color:#75715e"></span>    zn<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">=</span> score;
+    <span style="color:#75715e">// 设定成员对象
+</span><span style="color:#75715e"></span>    zn<span style="color:#f92672">-&gt;</span>obj <span style="color:#f92672">=</span> obj;
+    <span style="color:#66d9ef">return</span> zn;
+}
+</code></pre></div>
+<h2 id="插入节点">插入节点</h2>
+
+<p>往跳跃表中插入一个节点，必然会改变跳表的长度，可能会改变其长度。而且对于插入位置处的前后节点的backward和forward指针均要改变。</p>
+
+<p>插入节点的关键在找到在何处插入该节点，跳跃表是按照score分值进行排序的，其查找步骤大致是：从当前最高的level开始，向前查找，如果当前节点的score小于插入节点的score，继续向前；反之，则降低一层继续查找，直到第一层为止。此时，插入点就位于找到的节点之后。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslInsert</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">double</span> score, robj <span style="color:#f92672">*</span>obj) {
+    <span style="color:#75715e">// updata[]数组记录每一层位于插入节点的前一个节点
+</span><span style="color:#75715e"></span>    zskiplistNode <span style="color:#f92672">*</span>update[ZSKIPLIST_MAXLEVEL], <span style="color:#f92672">*</span>x;
+    <span style="color:#75715e">// rank[]记录每一层位于插入节点的前一个节点的排名
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> rank[ZSKIPLIST_MAXLEVEL];
+    <span style="color:#66d9ef">int</span> i, level;
+
+    serverAssert(<span style="color:#f92672">!</span>isnan(score));
+    x <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>header; <span style="color:#75715e">// 表头节点
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 从最高层开始查找
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>) {
+        <span style="color:#75715e">// 存储rank值是为了交叉快速地到达插入位置
+</span><span style="color:#75715e"></span>        rank[i] <span style="color:#f92672">=</span> i <span style="color:#f92672">==</span> (zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">?</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">:</span> rank[i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>];
+        <span style="color:#75715e">// 前向指针不为空，前置指针的分值小于score或当前向指针的分值等// 于空但成员对象不等于o的情况下，继续向前查找
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">&amp;&amp;</span>
+            (x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">&lt;</span> score <span style="color:#f92672">||</span>
+                (x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">==</span> score <span style="color:#f92672">&amp;&amp;</span>
+                compareStringObjects(x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>obj,obj) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>))) {
+            rank[i] <span style="color:#f92672">+=</span> x<span style="color:#f92672">-&gt;</span>level[i].span;
+            x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[i].forward;
+        }
+        <span style="color:#75715e">// 存储当前层上位于插入节点的前一个节点
+</span><span style="color:#75715e"></span>        update[i] <span style="color:#f92672">=</span> x;
+    }
+    <span style="color:#75715e">// 此处假设插入节点的成员对象不存在于当前跳跃表内，即不存在重复的节点
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 随机生成一个level值
+</span><span style="color:#75715e"></span>    level <span style="color:#f92672">=</span> zslRandomLevel();
+    <span style="color:#66d9ef">if</span> (level <span style="color:#f92672">&gt;</span> zsl<span style="color:#f92672">-&gt;</span>level) {
+        <span style="color:#75715e">// 如果level大于当前存储的最大level值
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 设定rank数组中大于原level层以上的值为0
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 同时设定update数组大于原level层以上的数据
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>level; i <span style="color:#f92672">&lt;</span> level; i<span style="color:#f92672">++</span>) {
+            rank[i] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+            update[i] <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>header;
+            update[i]<span style="color:#f92672">-&gt;</span>level[i].span <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>length;
+        }
+        <span style="color:#75715e">// 更新level值
+</span><span style="color:#75715e"></span>        zsl<span style="color:#f92672">-&gt;</span>level <span style="color:#f92672">=</span> level;
+    }
+    <span style="color:#75715e">// 创建插入节点
+</span><span style="color:#75715e"></span>    x <span style="color:#f92672">=</span> zslCreateNode(level,score,obj);
+    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> level; i<span style="color:#f92672">++</span>) {
+        <span style="color:#75715e">// 针对跳跃表的每一层，改变其forward指针的指向
+</span><span style="color:#75715e"></span>        x<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">=</span> update[i]<span style="color:#f92672">-&gt;</span>level[i].forward;
+        update[i]<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">=</span> x;
+
+        <span style="color:#75715e">// 更新插入节点的span值
+</span><span style="color:#75715e"></span>        x<span style="color:#f92672">-&gt;</span>level[i].span <span style="color:#f92672">=</span> update[i]<span style="color:#f92672">-&gt;</span>level[i].span <span style="color:#f92672">-</span> (rank[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">-</span> rank[i]);
+        <span style="color:#75715e">// 更新插入点的前一个节点的span值
+</span><span style="color:#75715e"></span>        update[i]<span style="color:#f92672">-&gt;</span>level[i].span <span style="color:#f92672">=</span> (rank[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">-</span> rank[i]) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
+    }
+
+    <span style="color:#75715e">// 更新高层的span值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> level; i <span style="color:#f92672">&lt;</span> zsl<span style="color:#f92672">-&gt;</span>level; i<span style="color:#f92672">++</span>) {
+        update[i]<span style="color:#f92672">-&gt;</span>level[i].span<span style="color:#f92672">++</span>;
+    }
+    <span style="color:#75715e">// 设定插入节点的backward指针
+</span><span style="color:#75715e"></span>    x<span style="color:#f92672">-&gt;</span>backward <span style="color:#f92672">=</span> (update[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">==</span> zsl<span style="color:#f92672">-&gt;</span>header) <span style="color:#f92672">?</span> NULL <span style="color:#f92672">:</span> update[<span style="color:#ae81ff">0</span>];
+    <span style="color:#66d9ef">if</span> (x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward)
+        x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward<span style="color:#f92672">-&gt;</span>backward <span style="color:#f92672">=</span> x;
+    <span style="color:#66d9ef">else</span>
+        zsl<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> x;
+    <span style="color:#75715e">// 跳跃表长度+1
+</span><span style="color:#75715e"></span>    zsl<span style="color:#f92672">-&gt;</span>length<span style="color:#f92672">++</span>;
+    <span style="color:#66d9ef">return</span> x;
+}
+</code></pre></div>
+<h2 id="跳跃表删除">跳跃表删除</h2>
+
+<p>Redis提供了三种跳跃表节点删除操作。分别如下：
++ 根据给定分值和成员来删除节点，由zslDelete函数实现
++ 根据给定分值来删除节点，由zslDeleteByScore函数实现
++ 根据给定排名来删除节点，由zslDeleteByRank函数实现</p>
+
+<p>上述三种操作的删除节点部分都由zslDeleteNode函数完成。zslDeleteNode函数用于删除某个节点，需要给定当前节点和每一层下当前节点的前一个节点。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zslDeleteNode</span>(zskiplist <span style="color:#f92672">*</span>zsl, zskiplistNode <span style="color:#f92672">*</span>x, zskiplistNode <span style="color:#f92672">**</span>update) {
+    <span style="color:#66d9ef">int</span> i;
+    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> zsl<span style="color:#f92672">-&gt;</span>level; i<span style="color:#f92672">++</span>) {
+        <span style="color:#66d9ef">if</span> (update[i]<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">==</span> x) {
+            <span style="color:#75715e">// 如果x存在于该层，则需要修改前一个节点的前向指针
+</span><span style="color:#75715e"></span>            update[i]<span style="color:#f92672">-&gt;</span>level[i].span <span style="color:#f92672">+=</span> x<span style="color:#f92672">-&gt;</span>level[i].span <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>;
+            update[i]<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[i].forward;
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 反之，则只需要将span-1
+</span><span style="color:#75715e"></span>            update[i]<span style="color:#f92672">-&gt;</span>level[i].span <span style="color:#f92672">-=</span> <span style="color:#ae81ff">1</span>;
+        }
+    }
+    <span style="color:#75715e">// 修改backward指针，需要考虑x是否为尾节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward) {
+        x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward<span style="color:#f92672">-&gt;</span>backward <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>backward;
+    } <span style="color:#66d9ef">else</span> {
+        zsl<span style="color:#f92672">-&gt;</span>tail <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>backward;
+    }
+    <span style="color:#75715e">// 如果被删除的节点为当前层数最多的节点，
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(zsl<span style="color:#f92672">-&gt;</span>level <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span> zsl<span style="color:#f92672">-&gt;</span>header<span style="color:#f92672">-&gt;</span>level[zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>].forward <span style="color:#f92672">==</span> NULL)
+        zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">--</span>;
+    zsl<span style="color:#f92672">-&gt;</span>length<span style="color:#f92672">--</span>;
+}
+</code></pre></div>
+<p>以zslDelete为例，根据节点的分值和成员来删除该节点，其他两个操作无非是在查找节点上有区别。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zslDelete</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">double</span> score, robj <span style="color:#f92672">*</span>obj) {
+    zskiplistNode <span style="color:#f92672">*</span>update[ZSKIPLIST_MAXLEVEL], <span style="color:#f92672">*</span>x;
+    <span style="color:#66d9ef">int</span> i;
+
+    x <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>header;
+    <span style="color:#75715e">// 找到要删除的节点，以及每一层上该节点的前一个节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>) {
+        <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">&amp;&amp;</span>
+            (x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">&lt;</span> score <span style="color:#f92672">||</span>
+                (x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">==</span> score <span style="color:#f92672">&amp;&amp;</span>
+                compareStringObjects(x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>obj,obj) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)))
+            x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[i].forward;
+        update[i] <span style="color:#f92672">=</span> x;
+    }
+    <span style="color:#75715e">// 跳跃表中可能存在分值相同的节点
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 所以此处需要判断成员是否相等
+</span><span style="color:#75715e"></span>    x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward;
+    <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">&amp;&amp;</span> score <span style="color:#f92672">==</span> x<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">&amp;&amp;</span> equalStringObjects(x<span style="color:#f92672">-&gt;</span>obj,obj)) {
+        <span style="color:#75715e">// 调用底层删除节点函数
+</span><span style="color:#75715e"></span>        zslDeleteNode(zsl, x, update);
+        zslFreeNode(x);
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+    }
+    <span style="color:#75715e">// 没有删除成功
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>; 
+}
+</code></pre></div>
+<h2 id="获取给定分值和成员的节点的排名">获取给定分值和成员的节点的排名</h2>
+
+<p>开篇提到博主在腾讯一面中被问的问题，需要获取每个玩家的排名，跳跃表获取排名的平均复杂度为O（logN），最坏为O（n）。其实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">zslGetRank</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">double</span> score, robj <span style="color:#f92672">*</span>o) {
+    zskiplistNode <span style="color:#f92672">*</span>x;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> rank <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">int</span> i;
+
+    x <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>header;
+    <span style="color:#75715e">// 从最高层开始查询
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>) {
+        <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">&amp;&amp;</span>
+            (x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">&lt;</span> score <span style="color:#f92672">||</span>
+                (x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">==</span> score <span style="color:#f92672">&amp;&amp;</span>
+                compareStringObjects(x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>obj,o) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>))) {
+            <span style="color:#75715e">// 前向指针不为空，前置指针的分值小于score或当前向指针的// 分值等于空但成员对象不等于o的情况下，继续向前查找
+</span><span style="color:#75715e"></span>            rank <span style="color:#f92672">+=</span> x<span style="color:#f92672">-&gt;</span>level[i].span;
+            x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[i].forward;
+        }
+
+        <span style="color:#75715e">// 此时x可能是header，所以此处需要判断一下
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (x<span style="color:#f92672">-&gt;</span>obj <span style="color:#f92672">&amp;&amp;</span> equalStringObjects(x<span style="color:#f92672">-&gt;</span>obj,o)) {
+            <span style="color:#66d9ef">return</span> rank;
+        }
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div>
+<p>这里粗略的画了一张图来说明查找过程，红线代表查找的路线。</p>
+
+<div style="text-align: center">
+<img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkgeg3li4j30jn071mxy.jpg"/>
+</div>
+
+<h2 id="区间操作">区间操作</h2>
+
+<p>Redis提供了一些区间操作，用于获取某段区间上的节点或者删除某段区间上的所有节点等操作，这些操作大大提高了Redis的易用性。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 获取某个区间上第一个符合范围的节点。
+</span><span style="color:#75715e"></span>zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslFirstInRange</span>(zskiplist <span style="color:#f92672">*</span>zsl, zrangespec <span style="color:#f92672">*</span>range) {
+    zskiplistNode <span style="color:#f92672">*</span>x;
+    <span style="color:#66d9ef">int</span> i;
+
+    <span style="color:#75715e">// 判断给定的分值范围是否在跳跃表的范围内
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>zslIsInRange(zsl,range)) <span style="color:#66d9ef">return</span> NULL;
+
+    x <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>header;
+
+    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>) {
+        <span style="color:#75715e">// 如果当前节点的分值小于给定范围的下限则一直向前查找
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">&amp;&amp;</span>
+            <span style="color:#f92672">!</span>zslValueGteMin(x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score,range))
+                x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[i].forward;
+    }
+
+    <span style="color:#75715e">// x的下一个节点才是我们要找的节点
+</span><span style="color:#75715e"></span>    x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward;
+    serverAssert(x <span style="color:#f92672">!=</span> NULL);
+
+    <span style="color:#75715e">// 检查该节点不超过给定范围范围
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>zslValueLteMax(x<span style="color:#f92672">-&gt;</span>score,range)) <span style="color:#66d9ef">return</span> NULL;
+    <span style="color:#66d9ef">return</span> x;
+}
+<span style="color:#75715e">// 获取某个区间上最后一个符合范围的节点。
+</span><span style="color:#75715e"></span>zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslLastInRange</span>(zskiplist <span style="color:#f92672">*</span>zsl, zrangespec <span style="color:#f92672">*</span>range) {
+    zskiplistNode <span style="color:#f92672">*</span>x;
+    <span style="color:#66d9ef">int</span> i;
+
+    <span style="color:#75715e">// 判断给定的分值范围是否在跳跃表的范围内
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>zslIsInRange(zsl,range)) <span style="color:#66d9ef">return</span> NULL;
+
+    x <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>header;
+    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>) {
+        <span style="color:#75715e">// 如果在给定范围内则一直向前查找
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">&amp;&amp;</span>
+            zslValueLteMax(x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score,range))
+                x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[i].forward;
+    }
+
+    <span style="color:#75715e">// x即为要找的节点
+</span><span style="color:#75715e"></span>    serverAssert(x <span style="color:#f92672">!=</span> NULL);
+
+    <span style="color:#75715e">// 判断该分值是否在给定范围内
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>zslValueGteMin(x<span style="color:#f92672">-&gt;</span>score,range)) <span style="color:#66d9ef">return</span> NULL;
+    <span style="color:#66d9ef">return</span> x;
+}
+<span style="color:#75715e">// 删除给定分值范围内的所有元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">zslDeleteRangeByScore</span>(zskiplist <span style="color:#f92672">*</span>zsl, zrangespec <span style="color:#f92672">*</span>range, dict <span style="color:#f92672">*</span>dict) {
+    zskiplistNode <span style="color:#f92672">*</span>update[ZSKIPLIST_MAXLEVEL], <span style="color:#f92672">*</span>x;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> removed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">int</span> i;
+
+    x <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>header;
+    <span style="color:#75715e">// 找到小于或等于给定范围最小分值的节点
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 并将每层上的节点保存到update数组
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>) {
+        <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">&amp;&amp;</span> (range<span style="color:#f92672">-&gt;</span>minex <span style="color:#f92672">?</span>
+            x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">&lt;=</span> range<span style="color:#f92672">-&gt;</span>min :
+            x<span style="color:#f92672">-&gt;</span>level[i].forward<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">&lt;</span> range<span style="color:#f92672">-&gt;</span>min))
+                x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[i].forward;
+        update[i] <span style="color:#f92672">=</span> x;
+    }
+
+    <span style="color:#75715e">// x的下一个节点则是给定区间内分值最小的节点
+</span><span style="color:#75715e"></span>    x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward;
+
+    <span style="color:#75715e">// 删除该区间下的所有节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span> (x <span style="color:#f92672">&amp;&amp;</span>
+           (range<span style="color:#f92672">-&gt;</span>maxex <span style="color:#f92672">?</span> x<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">&lt;</span> range<span style="color:#f92672">-&gt;</span>max : x<span style="color:#f92672">-&gt;</span>score <span style="color:#f92672">&lt;=</span> range<span style="color:#f92672">-&gt;</span>max))
+    {
+        <span style="color:#75715e">// 保存下一个节点
+</span><span style="color:#75715e"></span>        zskiplistNode <span style="color:#f92672">*</span>next <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward;
+        <span style="color:#75715e">// 删除该节点
+</span><span style="color:#75715e"></span>        zslDeleteNode(zsl,x,update);
+        <span style="color:#75715e">// 删除该节点的成员
+</span><span style="color:#75715e"></span>        dictDelete(dict,x<span style="color:#f92672">-&gt;</span>obj);
+        <span style="color:#75715e">// 释放该节点
+</span><span style="color:#75715e"></span>        zslFreeNode(x);
+        removed<span style="color:#f92672">++</span>;
+        x <span style="color:#f92672">=</span> next;
+    }
+    <span style="color:#75715e">// 返回删除节点的个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> removed;
+}
+<span style="color:#75715e">// 删除给定排名区间内的所有节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">zslDeleteRangeByRank</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> start, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> end, dict <span style="color:#f92672">*</span>dict) {
+    zskiplistNode <span style="color:#f92672">*</span>update[ZSKIPLIST_MAXLEVEL], <span style="color:#f92672">*</span>x;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> traversed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, removed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">int</span> i;
+
+    x <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>header;
+    <span style="color:#75715e">// 找到给定排名区间内名次最小的节点
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 并保存每一层下该节点的前一个节点
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> zsl<span style="color:#f92672">-&gt;</span>level<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>) {
+        <span style="color:#66d9ef">while</span> (x<span style="color:#f92672">-&gt;</span>level[i].forward <span style="color:#f92672">&amp;&amp;</span> (traversed <span style="color:#f92672">+</span> x<span style="color:#f92672">-&gt;</span>level[i].span) <span style="color:#f92672">&lt;</span> start) {
+            traversed <span style="color:#f92672">+=</span> x<span style="color:#f92672">-&gt;</span>level[i].span;
+            x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[i].forward;
+        }
+        update[i] <span style="color:#f92672">=</span> x;
+    }
+    <span style="color:#75715e">// traversed保存当前删除节点的排名值
+</span><span style="color:#75715e"></span>    traversed<span style="color:#f92672">++</span>;
+    x <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward;
+    <span style="color:#66d9ef">while</span> (x <span style="color:#f92672">&amp;&amp;</span> traversed <span style="color:#f92672">&lt;=</span> end) {
+        <span style="color:#75715e">// 记录下一个节点
+</span><span style="color:#75715e"></span>        zskiplistNode <span style="color:#f92672">*</span>next <span style="color:#f92672">=</span> x<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward;
+        <span style="color:#75715e">// 删除该节点
+</span><span style="color:#75715e"></span>        zslDeleteNode(zsl,x,update);
+        <span style="color:#75715e">// 删除该节点的成员
+</span><span style="color:#75715e"></span>        dictDelete(dict,x<span style="color:#f92672">-&gt;</span>obj);
+        <span style="color:#75715e">// 释放该节点
+</span><span style="color:#75715e"></span>        zslFreeNode(x);
+        <span style="color:#75715e">// 个数+1
+</span><span style="color:#75715e"></span>        removed<span style="color:#f92672">++</span>;
+        <span style="color:#75715e">// 排名值加1
+</span><span style="color:#75715e"></span>        traversed<span style="color:#f92672">++</span>;
+        x <span style="color:#f92672">=</span> next;
+    }
+    <span style="color:#75715e">// 返回删除的节点个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> removed;
+}
+</code></pre></div>
+<h1 id="跳跃表小结">跳跃表小结</h1>
+
+<p>跳跃表是有序集合的底层实现之一。在同一个跳跃表中，多个节点可以包含相同的分值，但每个节点的成员对象必须是唯一的。跳跃表的节点是按照分值进行排序的，当分值相同时，节点按照成员对象的大小进行排序。</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcedict/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--字典dict</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcehyperloglog/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--基数统计hyperloglog</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

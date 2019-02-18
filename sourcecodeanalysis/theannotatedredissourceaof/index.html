@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--AOF持久化</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--AOF持久化" />
+<meta property="og:description" content="在前一篇博客Redis源码剖析&ndash;RDB持久化中，我们分析了RDB持久化就是按照特定的格式将服务器中数据库里面的数据写入到RDB文件中，在服务器下一次开启的时候，再按照该格式读取上来，从而保证了数据的持久化。今天，我们来看看另一种持久化操作&mdash;-AOF持久化。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourceaof/" /><meta property="article:published_time" content="2017-01-01T10:34:48&#43;08:00"/>
+<meta property="article:modified_time" content="2017-01-01T10:34:48&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--AOF持久化"/>
+<meta name="twitter:description" content="在前一篇博客Redis源码剖析&ndash;RDB持久化中，我们分析了RDB持久化就是按照特定的格式将服务器中数据库里面的数据写入到RDB文件中，在服务器下一次开启的时候，再按照该格式读取上来，从而保证了数据的持久化。今天，我们来看看另一种持久化操作&mdash;-AOF持久化。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--AOF持久化</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2017-01-01T10:34:48">January 01, 2017</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#aof概述">AOF概述</a></li>
+<li><a href="#aof写入步骤">AOF写入步骤</a>
+<ul>
+<li><a href="#命令追加">命令追加</a></li>
+<li><a href="#文件写入">文件写入</a></li>
+<li><a href="#文件同步">文件同步</a></li>
+</ul></li>
+<li><a href="#aof数据载入">AOF数据载入</a></li>
+<li><a href="#aof重写">AOF重写</a>
+<ul>
+<li><a href="#aof后台重写">AOF后台重写</a></li>
+</ul></li>
+<li><a href="#aof小结">AOF小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>在前一篇博客<a href="http://zcheng.ren/2016/12/30/TheAnnotatedRedisSourceRdb/">Redis源码剖析&ndash;RDB持久化</a>中，我们分析了RDB持久化就是按照特定的格式将服务器中数据库里面的数据写入到RDB文件中，在服务器下一次开启的时候，再按照该格式读取上来，从而保证了数据的持久化。今天，我们来看看另一种持久化操作&mdash;-AOF持久化。</p>
+
+<h1 id="aof概述">AOF概述</h1>
+
+<p>AOF，其英文全称是Append Only File，就是只进行追加操作的文件。那么写进AOF文件中的到底是键值对数据还是什么呢？我先从客户端命令测试一下，Redis提供了<code>BGREWRITEAOF</code>命令用于执行AOF操作，接下来开启服务器和客户端，写几个数据进去看看效果。</p>
+
+<pre><code>~ redis-cli 
+127.0.0.1:6379&gt; set hello world
+OK
+127.0.0.1:6379&gt; BGREWRITEAOF 
+Background append only file rewriting started
+</code></pre>
+
+<p>客户端执行完上述的命令之后，生成了一个<code>appendonly.aof</code>文件，我们用od命令打开。</p>
+
+<pre><code>od -c appendonly.aof
+0000000    *   2  \r  \n   $   6  \r  \n   S   E   L   E   C   T  \r  \n
+0000020    $   1  \r  \n   0  \r  \n   *   3  \r  \n   $   3  \r  \n   S
+0000040    E   T  \r  \n   $   5  \r  \n   h   e   l   l   o  \r  \n   $
+0000060    5  \r  \n   w   o   r   l   d  \r  \n 
+</code></pre>
+
+<p>读取出来的文件看起来可能不那么直观，大致有<code>SELECT</code>、<code>SET</code>、<code>hello</code>和<code>world</code>这几个词，这么一来，感觉AOF文件中存放的是客户端操作数据的命令。没错，AOF文件中的确存放的是客户端对数据库执行了写操作命令，因为读操作不会修改到数据库，存下来也没有什么意义。</p>
+
+<p>有了上述简单的认识之后，我们在来一一分析一下AOF文件中的这些信息到底是什么。这次我们直接用文本编辑器打开，就能很直观的看到了。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>   	<span style="color:#75715e">// *代表一个操作命令，2代表这个命令由两个参数
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">6</span>  	<span style="color:#75715e">// $代表后续命令或者数据的长度
+</span><span style="color:#75715e"></span>SELECT  <span style="color:#75715e">// 操作名称，长度为6
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">1</span> 		<span style="color:#75715e">// 长度
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">0</span>  		<span style="color:#75715e">// 表示切换到0号数据库
+</span><span style="color:#75715e"></span><span style="color:#f92672">*</span><span style="color:#ae81ff">3</span> 		<span style="color:#75715e">// 接下来的命令由三个参数
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">3</span> 		<span style="color:#75715e">// 长度为3
+</span><span style="color:#75715e"></span>SET  	<span style="color:#75715e">// SET操作
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">5</span>  	<span style="color:#75715e">// 长度为5
+</span><span style="color:#75715e"></span>hello  	<span style="color:#75715e">// 键
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">5</span>  	<span style="color:#75715e">// 长度为5
+</span><span style="color:#75715e"></span>world  	<span style="color:#75715e">// 值
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>到这一步，大家基本上都能懂AOF持久化到底是存放什么了吧？接下来，我们深入到源码中去了解一下AOF持久化的具体执行过程。</p>
+
+<h1 id="aof写入步骤">AOF写入步骤</h1>
+
+<p>AOF持久化功能的实现可以分为以下三个步骤：命令追加、文件写入和文件同步。每一步主要完成以下功能：</p>
+
+<ul>
+<li>命令追加：将命令数据写入aof_buf缓冲区</li>
+<li>文件写入：将aof_buf缓冲区的数据写入系统IO缓冲区</li>
+<li>文件同步：将系统IO缓冲区的数据同步到磁盘文件</li>
+</ul>
+
+<h2 id="命令追加">命令追加</h2>
+
+<p>在<code>redis.conf</code>文件中，有一个参数<code>appendonly</code>是用来控制服务器是否开启AOF持久化功能的。当AOF持久化处于开启状态时，服务器每执行一个写命令之后，都会按照协议格式将被执行的写命令追加到服务器状态的<code>aof_buf</code>缓冲区的末尾。其中<code>aof_buf</code>定义如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 在server.h文件中的redisServer结构体中 */</span>
+<span style="color:#66d9ef">struct</span> redisServer { 
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  sds aof_buf;  <span style="color:#75715e">// aof缓冲区
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// ....
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p>例如，在上例中，我们运行<code>SET hello world</code>命令的时候，其就往这个缓冲区中写入一下数据：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">*</span><span style="color:#ae81ff">3</span><span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>n<span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">3</span><span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>nSET<span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>n<span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">5</span><span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>nhello<span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>n<span style="color:#960050;background-color:#1e0010">$</span><span style="color:#ae81ff">5</span><span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>nworld<span style="color:#960050;background-color:#1e0010">\</span>r<span style="color:#960050;background-color:#1e0010">\</span>n
+</code></pre></div>
+<p>命令追加的函数由<code>feedAppendOnlyFile</code>函数执行，其源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 追加命令到aof_buf缓冲区 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">feedAppendOnlyFile</span>(<span style="color:#66d9ef">struct</span> redisCommand <span style="color:#f92672">*</span>cmd, <span style="color:#66d9ef">int</span> dictid, robj <span style="color:#f92672">**</span>argv, <span style="color:#66d9ef">int</span> argc) {
+    sds buf <span style="color:#f92672">=</span> sdsempty();
+    robj <span style="color:#f92672">*</span>tmpargv[<span style="color:#ae81ff">3</span>];
+
+    <span style="color:#75715e">// 确保切换到了正确的数据库，如果没有则追加切换数据库命令
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictid <span style="color:#f92672">!=</span> server.aof_selected_db) {
+        <span style="color:#66d9ef">char</span> seldb[<span style="color:#ae81ff">64</span>];
+
+        snprintf(seldb,<span style="color:#66d9ef">sizeof</span>(seldb),<span style="color:#e6db74">&#34;%d&#34;</span>,dictid);
+        <span style="color:#75715e">// 格式化命令数据
+</span><span style="color:#75715e"></span>        buf <span style="color:#f92672">=</span> sdscatprintf(buf,<span style="color:#e6db74">&#34;*2</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$6</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">SELECT</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$%lu</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">%s</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>,
+            (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span>)strlen(seldb),seldb);
+        <span style="color:#75715e">// 保存当前aof_buf执行的数据库
+</span><span style="color:#75715e"></span>        server.aof_selected_db <span style="color:#f92672">=</span> dictid;
+    }
+
+    <span style="color:#66d9ef">if</span> (cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> expireCommand <span style="color:#f92672">||</span> cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> pexpireCommand <span style="color:#f92672">||</span>
+        cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> expireatCommand) {
+        <span style="color:#75715e">// 追加过期键的命令
+</span><span style="color:#75715e"></span>        buf <span style="color:#f92672">=</span> catAppendOnlyExpireAtCommand(buf,cmd,argv[<span style="color:#ae81ff">1</span>],argv[<span style="color:#ae81ff">2</span>]);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> setexCommand <span style="color:#f92672">||</span> cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">==</span> psetexCommand) {
+        <span style="color:#75715e">// 追加setex或psetex这样带有过期时间设置的命令
+</span><span style="color:#75715e"></span>        tmpargv[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> createStringObject(<span style="color:#e6db74">&#34;SET&#34;</span>,<span style="color:#ae81ff">3</span>);
+        tmpargv[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> argv[<span style="color:#ae81ff">1</span>];
+        tmpargv[<span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> argv[<span style="color:#ae81ff">3</span>];
+        buf <span style="color:#f92672">=</span> catAppendOnlyGenericCommand(buf,<span style="color:#ae81ff">3</span>,tmpargv);
+        decrRefCount(tmpargv[<span style="color:#ae81ff">0</span>]);
+        buf <span style="color:#f92672">=</span> catAppendOnlyExpireAtCommand(buf,cmd,argv[<span style="color:#ae81ff">1</span>],argv[<span style="color:#ae81ff">2</span>]);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 追加其他一般的修改数据库操作的命令
+</span><span style="color:#75715e"></span>        buf <span style="color:#f92672">=</span> catAppendOnlyGenericCommand(buf,argc,argv);
+    }
+
+    <span style="color:#75715e">// 将格式化的命令字符串追加到AOF缓冲区中，AOF缓冲区中的数据会在重新进入时间循环前写入到磁盘中，相应的客户端也会受到关于此次操作的回复
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.aof_state <span style="color:#f92672">==</span> AOF_ON)
+        server.aof_buf <span style="color:#f92672">=</span> sdscatlen(server.aof_buf,buf,sdslen(buf));
+
+    <span style="color:#66d9ef">if</span> (server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+        <span style="color:#75715e">// 如果正在执行后台重写aof文件，将命令追加到新的AOF文件中，避免重写的AOF文件与当前数据库有差异
+</span><span style="color:#75715e"></span>        aofRewriteBufferAppend((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)buf,sdslen(buf));
+    sdsfree(buf);
+}</code></pre></div>
+<p>追加格式化命令的底层实现由<code>catAppendOnlyGenericCommand</code>函数实现，其按照之前概述中的格式化要求将命令写入缓冲区。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 通用格式化命令并写入到AOF缓冲区函数 */</span>
+sds <span style="color:#a6e22e">catAppendOnlyGenericCommand</span>(sds dst, <span style="color:#66d9ef">int</span> argc, robj <span style="color:#f92672">**</span>argv) {
+    <span style="color:#66d9ef">char</span> buf[<span style="color:#ae81ff">32</span>];
+    <span style="color:#66d9ef">int</span> len, j;
+    robj <span style="color:#f92672">*</span>o;
+	<span style="color:#75715e">// 初始化命令参数个数
+</span><span style="color:#75715e"></span>    buf[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;*&#39;</span>;
+    len <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>ll2string(buf<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,<span style="color:#66d9ef">sizeof</span>(buf)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,argc);
+    buf[len<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\r&#39;</span>;
+    buf[len<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\n&#39;</span>;
+    dst <span style="color:#f92672">=</span> sdscatlen(dst,buf,len);
+	<span style="color:#75715e">// 遍历每一个参数，并追加到aof缓冲区中
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> argc; j<span style="color:#f92672">++</span>) {
+        o <span style="color:#f92672">=</span> getDecodedObject(argv[j]);
+        buf[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;$&#39;</span>;
+        len <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>ll2string(buf<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,<span style="color:#66d9ef">sizeof</span>(buf)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,sdslen(o<span style="color:#f92672">-&gt;</span>ptr));
+        buf[len<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\r&#39;</span>;
+        buf[len<span style="color:#f92672">++</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;\n&#39;</span>;
+        dst <span style="color:#f92672">=</span> sdscatlen(dst,buf,len);
+        dst <span style="color:#f92672">=</span> sdscatlen(dst,o<span style="color:#f92672">-&gt;</span>ptr,sdslen(o<span style="color:#f92672">-&gt;</span>ptr));
+        dst <span style="color:#f92672">=</span> sdscatlen(dst,<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>,<span style="color:#ae81ff">2</span>);
+        decrRefCount(o);
+    }
+    <span style="color:#66d9ef">return</span> dst;
+}
+</code></pre></div>
+<h2 id="文件写入">文件写入</h2>
+
+<p>Redis将格式化的命令存入缓冲区之后，等待服务器的指示，然后将这些命令写入到AOF文件中，写入文件的操作由<code>flushAppendOnlyFile</code>函数完成，这里简要的列出其源码：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 将缓冲区的数据写入AOF文件中 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">flushAppendOnlyFile</span>(<span style="color:#66d9ef">int</span> force) {
+    ssize_t nwritten;
+    <span style="color:#66d9ef">int</span> sync_in_progress <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    mstime_t latency;
+	<span style="color:#75715e">// 缓冲区为空
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (sdslen(server.aof_buf) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span>;
+  
+	<span style="color:#75715e">// ①...
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 此处省略了一些同步方面的代码，将在下一节分析
+</span><span style="color:#75715e"></span>  
+    <span style="color:#75715e">// 调用write命令将缓冲区的数据写入磁盘文件中，此处还监听了延迟
+</span><span style="color:#75715e"></span>    latencyStartMonitor(latency);
+    nwritten <span style="color:#f92672">=</span> write(server.aof_fd,server.aof_buf,sdslen(server.aof_buf));
+    latencyEndMonitor(latency);
+	<span style="color:#75715e">// 如果同步正在进行
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (sync_in_progress) {
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-write-pending-fsync&#34;</span>,latency);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span> server.rdb_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-write-active-child&#34;</span>,latency);
+    } <span style="color:#66d9ef">else</span> {
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-write-alone&#34;</span>,latency);
+    }
+    latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-write&#34;</span>,latency);
+
+    <span style="color:#75715e">// 重置aof写入的延迟时间
+</span><span style="color:#75715e"></span>    server.aof_flush_postponed_start <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#75715e">// 写操作出现错误，需要进行修复
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (nwritten <span style="color:#f92672">!=</span> (<span style="color:#66d9ef">signed</span>)sdslen(server.aof_buf)) {
+                <span style="color:#66d9ef">static</span> time_t last_write_error_log <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        <span style="color:#66d9ef">int</span> can_log <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        <span style="color:#75715e">// 将日志的记录频率限制在每行AOF_WRITE_LOG_ERROR_RATE 秒
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> ((server.unixtime <span style="color:#f92672">-</span> last_write_error_log) <span style="color:#f92672">&gt;</span> AOF_WRITE_LOG_ERROR_RATE) {
+            can_log <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+            last_write_error_log <span style="color:#f92672">=</span> server.unixtime;
+        }
+        <span style="color:#75715e">// 如果写入出错，那么尝试将出错情况写入日志
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (nwritten <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+            <span style="color:#66d9ef">if</span> (can_log) {
+                serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Error writing to the AOF file: %s&#34;</span>,
+                    strerror(errno));
+                server.aof_last_write_errno <span style="color:#f92672">=</span> errno;
+            }
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#66d9ef">if</span> (can_log) {
+                serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Short write while writing to &#34;</span>
+                                       <span style="color:#e6db74">&#34;the AOF file: (nwritten=%lld, &#34;</span>
+                                       <span style="color:#e6db74">&#34;expected=%lld)&#34;</span>,
+                                       (<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span>)nwritten,
+                                       (<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span>)sdslen(server.aof_buf));
+            }
+			<span style="color:#75715e">// 尝试移除新追加的不完整内容
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (ftruncate(server.aof_fd, server.aof_current_size) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+                <span style="color:#66d9ef">if</span> (can_log) {
+                    serverLog(LL_WARNING, <span style="color:#e6db74">&#34;Could not remove short write &#34;</span>
+                             <span style="color:#e6db74">&#34;from the append-only file.  Redis may refuse &#34;</span>
+                             <span style="color:#e6db74">&#34;to load the AOF the next time it starts.  &#34;</span>
+                             <span style="color:#e6db74">&#34;ftruncate: %s&#34;</span>, strerror(errno));
+                }
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#75715e">/* If the ftruncate() succeeded we can set nwritten to
+</span><span style="color:#75715e">                 * -1 since there is no longer partial data into the AOF. */</span>
+                nwritten <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            }
+            server.aof_last_write_errno <span style="color:#f92672">=</span> ENOSPC;
+        }
+
+        <span style="color:#75715e">// 处理写入AOF文件时出现的错误
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_ALWAYS) {
+            <span style="color:#75715e">/* We can&#39;t recover when the fsync policy is ALWAYS since the
+</span><span style="color:#75715e">             * reply for the client is already in the output buffers, and we
+</span><span style="color:#75715e">             * have the contract with the user that on acknowledged write data
+</span><span style="color:#75715e">             * is synced on disk. */</span>
+            serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Can&#39;t recover from AOF write error when the AOF fsync policy is &#39;always&#39;. Exiting...&#34;</span>);
+            exit(<span style="color:#ae81ff">1</span>);
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">/* Recover from failed write leaving data into the buffer. However
+</span><span style="color:#75715e">             * set an error to stop accepting writes as long as the error
+</span><span style="color:#75715e">             * condition is not cleared. */</span>
+            server.aof_last_write_status <span style="color:#f92672">=</span> C_ERR;
+
+            <span style="color:#75715e">/* Trim the sds buffer if there was a partial write, and there
+</span><span style="color:#75715e">             * was no way to undo it with ftruncate(2). */</span>
+            <span style="color:#66d9ef">if</span> (nwritten <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+                server.aof_current_size <span style="color:#f92672">+=</span> nwritten;
+                sdsrange(server.aof_buf,nwritten,<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+            }
+            <span style="color:#66d9ef">return</span>; <span style="color:#75715e">/* We&#39;ll try again on the next call... */</span>
+        }
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 写入成功，更新最后写入状态
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (server.aof_last_write_status <span style="color:#f92672">==</span> C_ERR) {
+            serverLog(LL_WARNING,
+                <span style="color:#e6db74">&#34;AOF write error looks solved, Redis can write again.&#34;</span>);
+            server.aof_last_write_status <span style="color:#f92672">=</span> C_OK;
+        }
+    }
+    <span style="color:#75715e">// 更新aof文件的当前大小
+</span><span style="color:#75715e"></span>    server.aof_current_size <span style="color:#f92672">+=</span> nwritten;
+
+    <span style="color:#75715e">// 当缓冲区使用量很小时，可以考虑重用缓冲区
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((sdslen(server.aof_buf)<span style="color:#f92672">+</span>sdsavail(server.aof_buf)) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">4000</span>) {
+        sdsclear(server.aof_buf);
+    } <span style="color:#66d9ef">else</span> {
+        sdsfree(server.aof_buf);
+        server.aof_buf <span style="color:#f92672">=</span> sdsempty();
+    }
+
+  	<span style="color:#75715e">// ②...
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 后续为同步方面的代码，我们下一小节来分析
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<h2 id="文件同步">文件同步</h2>
+
+<p>上述文件写入操作采用write函数来执行，但是在操作系统中，当用户将数据写入一个文件中时，为了提高效率，操作系统往往会将待写入的数据存放在一个缓冲区，等到缓冲区满或者超过规定的时间后才真正将缓冲区的内容写入到磁盘文件中。用户可以调用<code>fsync()</code>函数强制让操作系统将缓冲区的数据写入到磁盘文件中，这就称为文件同步。Redis对AOF文件的同步提供了一下三种策略。</p>
+
+<ul>
+<li>AOF_FSYNC_ALWAYS  每次事件循环都要将aof_buf缓冲区的所有内容都写入AOF文件，并且同步AOF文件</li>
+<li>AOF_FSYNC_EVERSEC  每个事件循环都要将aof_buf缓冲区的所有内容都写入AOF文件，并且每隔1秒就要在子进程中对AOF文件进行一次同步</li>
+<li>AOF_FSYNC_NO  每个事件循环都要将aof_buf缓冲区的所有内容都写入AOF文件，至于何时对AOF文件进行同步，则由操作系统控制。</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 将缓冲区的数据写入AOF文件中 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">flushAppendOnlyFile</span>(<span style="color:#66d9ef">int</span> force) {
+  	<span style="color:#75715e">// ...文件写入中已分析
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 从标记为①开始
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_EVERYSEC)
+        sync_in_progress <span style="color:#f92672">=</span> bioPendingJobsOfType(BIO_AOF_FSYNC) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#66d9ef">if</span> (server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_EVERYSEC <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>force) {
+        <span style="color:#75715e">/* With this append fsync policy we do background fsyncing.
+</span><span style="color:#75715e">         * If the fsync is still in progress we can try to delay
+</span><span style="color:#75715e">         * the write for a couple of seconds. */</span>
+        <span style="color:#66d9ef">if</span> (sync_in_progress) {
+            <span style="color:#66d9ef">if</span> (server.aof_flush_postponed_start <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+                <span style="color:#75715e">/* No previous write postponing, remember that we are
+</span><span style="color:#75715e">                 * postponing the flush and return. */</span>
+                server.aof_flush_postponed_start <span style="color:#f92672">=</span> server.unixtime;
+                <span style="color:#66d9ef">return</span>;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (server.unixtime <span style="color:#f92672">-</span> server.aof_flush_postponed_start <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">2</span>) {
+                <span style="color:#75715e">/* We were already waiting for fsync to finish, but for less
+</span><span style="color:#75715e">                 * than two seconds this is still ok. Postpone again. */</span>
+                <span style="color:#66d9ef">return</span>;
+            }
+            <span style="color:#75715e">/* Otherwise fall trough, and go write since we can&#39;t wait
+</span><span style="color:#75715e">             * over two seconds. */</span>
+            server.aof_delayed_fsync<span style="color:#f92672">++</span>;
+            serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;Asynchronous AOF fsync is taking too long (disk is busy?). Writing the AOF buffer without waiting for fsync to complete, this may slow down Redis.&#34;</span>);
+        }
+    }
+    <span style="color:#75715e">// ....文件写入中已分析
+</span><span style="color:#75715e"></span>  
+    <span style="color:#75715e">// 从标记为②处开始
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 根据同步设定执行文件同步
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 如果设定为NO，即不主动同步，由操作系统决定
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> (server.aof_no_fsync_on_rewrite <span style="color:#f92672">&amp;&amp;</span>
+        (server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span> server.rdb_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>))
+            <span style="color:#66d9ef">return</span>;
+    <span style="color:#66d9ef">if</span> (server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_ALWAYS) {
+        <span style="color:#75715e">// 如果设定为ALWAYS，则每次时间循环都要同步
+</span><span style="color:#75715e"></span>        latencyStartMonitor(latency);
+        aof_fsync(server.aof_fd); <span style="color:#75715e">// 执行同步，写入到磁盘文件中
+</span><span style="color:#75715e"></span>        latencyEndMonitor(latency);
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;aof-fsync-always&#34;</span>,latency);
+        server.aof_last_fsync <span style="color:#f92672">=</span> server.unixtime;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> ((server.aof_fsync <span style="color:#f92672">==</span> AOF_FSYNC_EVERYSEC <span style="color:#f92672">&amp;&amp;</span>
+                server.unixtime <span style="color:#f92672">&gt;</span> server.aof_last_fsync)) {
+      	<span style="color:#75715e">// 如果设定为EVERYSEC，每秒执行一次同步，则判断时间然后执行同步
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>sync_in_progress) aof_background_fsync(server.aof_fd);
+        server.aof_last_fsync <span style="color:#f92672">=</span> server.unixtime;  <span style="color:#75715e">// 更新上一次同步时间
+</span><span style="color:#75715e"></span>    }
+}</code></pre></div>
+<p>从源码中，可以看出根据设定的同步策略，Redis都做了相应的处理，<code>aof_fsync</code>函数用来强制将缓冲区的数据写入到磁盘文件。分析这三种同步方式，其中，</p>
+
+<ul>
+<li><code>ALWAYS</code>是最安全的，最多只会丢失一个事件循环的数据，但是其效率最低，缓冲区有一个数据都要同步，同步次数大大增多；</li>
+<li><code>EVERYSEC</code>最多丢失一秒钟的命令数据，其效率也足够高，属于折中方案；</li>
+<li><code>NO</code>的话，写入速度也是最快的，但累计起来的命令数据最多，单词同步时间较长，每次最多丢失上一次同步成功到现在的命令数据。</li>
+</ul>
+
+<h1 id="aof数据载入">AOF数据载入</h1>
+
+<p>当数据存储在AOF文件中后，服务器在下一次重启需要载入数据，AOF数据载入比较有意思，其会开一个伪Redis客户端，然后模仿客户端对服务器执行命令的过程，将AOF中存储的命令一一执行，执行完毕后服务器数据库中的数据就和上次一样了。这里我简要的用伪码来表示一下整个过程。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># AOF数据载入 </span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">loadAppendOnlyFile</span>(char <span style="color:#f92672">*</span>filename):
+  fakeClient <span style="color:#f92672">=</span> createRedisCli() <span style="color:#75715e"># 创建伪客户端</span>
+     <span style="color:#66d9ef">while</span> True:
+  command <span style="color:#f92672">=</span> getFromAof()  <span style="color:#75715e"># 从AOF文件中取出命令</span>
+  flag <span style="color:#f92672">=</span> fakeClient(command) <span style="color:#75715e"># 伪客户端执行命令</span>
+  <span style="color:#66d9ef">if</span> finish():  <span style="color:#75715e"># 如果命令执行完，就退出</span>
+     <span style="color:#66d9ef">return</span> E_OK
+  <span style="color:#75715e"># 没有就继续执行</span></code></pre></div>
+<h1 id="aof重写">AOF重写</h1>
+
+<p>现在我们来分析一种情况，假设服务器执行了以下两个命令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">SET key value
+DEL key
+</code></pre></div>
+<p>如果上述两个命令都执行成功了，AOF中必然会增加两条命令字符串，然而这对数据库根本没什么影响，如果服务器执行了大量这样的命令对，AOF是只能追加不能删除的，所以其文件体积会无限增大。考虑周全的Redis为客户提供了重写操作，用来重写AOF文件，剔除掉里面的无效命令对。</p>
+
+<p>要执行AOF重写，最简单的步骤就是：遍历服务器每一个数据库中的数据，将每一个key对应的对象，都用一条命令来表达，并存储在AOF文件中。</p>
+
+<p>有了这个思路，我们就去源码中看看，AOF重写的功能由<code>rewriteAppendOnlyFile</code>函数实现。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* AOF重写功能实现 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rewriteAppendOnlyFile</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>filename) {
+    dictIterator <span style="color:#f92672">*</span>di <span style="color:#f92672">=</span> NULL;
+    dictEntry <span style="color:#f92672">*</span>de;
+    rio aof;
+    FILE <span style="color:#f92672">*</span>fp;
+    <span style="color:#66d9ef">char</span> tmpfile[<span style="color:#ae81ff">256</span>];
+    <span style="color:#66d9ef">int</span> j;
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> now <span style="color:#f92672">=</span> mstime();
+    <span style="color:#66d9ef">char</span> byte;
+    size_t processed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#75715e">/* Note that we have to use a different temp name here compared to the
+</span><span style="color:#75715e">     * one used by rewriteAppendOnlyFileBackground() function. */</span>
+    <span style="color:#75715e">// 创建临时文件
+</span><span style="color:#75715e"></span>    snprintf(tmpfile,<span style="color:#ae81ff">256</span>,<span style="color:#e6db74">&#34;temp-rewriteaof-%d.aof&#34;</span>, (<span style="color:#66d9ef">int</span>) getpid());
+    fp <span style="color:#f92672">=</span> fopen(tmpfile,<span style="color:#e6db74">&#34;w&#34;</span>);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>fp) {
+        serverLog(LL_WARNING, <span style="color:#e6db74">&#34;Opening the temp file for AOF rewrite in rewriteAppendOnlyFile(): %s&#34;</span>, strerror(errno));
+        <span style="color:#66d9ef">return</span> C_ERR;
+    }
+
+    server.aof_child_diff <span style="color:#f92672">=</span> sdsempty();
+  	<span style="color:#75715e">// 获取文件描述符
+</span><span style="color:#75715e"></span>    rioInitWithFile(<span style="color:#f92672">&amp;</span>aof,fp);
+    <span style="color:#66d9ef">if</span> (server.aof_rewrite_incremental_fsync)
+        rioSetAutoSync(<span style="color:#f92672">&amp;</span>aof,AOF_AUTOSYNC_BYTES);
+    <span style="color:#75715e">// 遍历服务器的每一个数据库
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> server.dbnum; j<span style="color:#f92672">++</span>) {
+        <span style="color:#66d9ef">char</span> selectcmd[] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;*2</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$6</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">SELECT</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>;
+        redisDb <span style="color:#f92672">*</span>db <span style="color:#f92672">=</span> server.db<span style="color:#f92672">+</span>j;
+        dict <span style="color:#f92672">*</span>d <span style="color:#f92672">=</span> db<span style="color:#f92672">-&gt;</span>dict;
+        <span style="color:#66d9ef">if</span> (dictSize(d) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">continue</span>;
+        di <span style="color:#f92672">=</span> dictGetSafeIterator(d);
+        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>di) {
+            fclose(fp);
+            <span style="color:#66d9ef">return</span> C_ERR;
+        }
+
+        <span style="color:#75715e">// 写入SELECT语句
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (rioWrite(<span style="color:#f92672">&amp;</span>aof,selectcmd,<span style="color:#66d9ef">sizeof</span>(selectcmd)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+        <span style="color:#66d9ef">if</span> (rioWriteBulkLongLong(<span style="color:#f92672">&amp;</span>aof,j) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+
+        <span style="color:#75715e">// 迭代当前数据库中的每一个键，并转换成命令字符串写入AOF文件
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span>((de <span style="color:#f92672">=</span> dictNext(di)) <span style="color:#f92672">!=</span> NULL) {
+            sds keystr;
+            robj key, <span style="color:#f92672">*</span>o;
+            <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> expiretime;
+
+            keystr <span style="color:#f92672">=</span> dictGetKey(de);
+            o <span style="color:#f92672">=</span> dictGetVal(de);
+            initStaticStringObject(key,keystr);
+
+            expiretime <span style="color:#f92672">=</span> getExpire(db,<span style="color:#f92672">&amp;</span>key);
+
+            <span style="color:#75715e">// 如果此键过期，就跳过
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (expiretime <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span> expiretime <span style="color:#f92672">&lt;</span> now) <span style="color:#66d9ef">continue</span>;
+
+            <span style="color:#75715e">// 保存该键以及对应的值
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_STRING) {
+                <span style="color:#75715e">// 重写字符串对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">char</span> cmd[]<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;*3</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$3</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">SET</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>;
+                <span style="color:#66d9ef">if</span> (rioWrite(<span style="color:#f92672">&amp;</span>aof,cmd,<span style="color:#66d9ef">sizeof</span>(cmd)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+                <span style="color:#75715e">// 写入键值
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rioWriteBulkObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+                <span style="color:#66d9ef">if</span> (rioWriteBulkObject(<span style="color:#f92672">&amp;</span>aof,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_LIST) {
+                <span style="color:#75715e">// 重写列表对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rewriteListObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_SET) {
+                <span style="color:#75715e">// 重写集合对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rewriteSetObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_ZSET) {
+                <span style="color:#75715e">// 重写有序集合对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rewriteSortedSetObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_HASH) {
+                <span style="color:#75715e">// 重写哈希对象
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (rewriteHashObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key,o) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            } <span style="color:#66d9ef">else</span> {
+                serverPanic(<span style="color:#e6db74">&#34;Unknown object type&#34;</span>);
+            }
+            <span style="color:#75715e">// 保存过期时间信息
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (expiretime <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+                <span style="color:#66d9ef">char</span> cmd[]<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;*3</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">$9</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">PEXPIREAT</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>;
+                <span style="color:#66d9ef">if</span> (rioWrite(<span style="color:#f92672">&amp;</span>aof,cmd,<span style="color:#66d9ef">sizeof</span>(cmd)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+                <span style="color:#66d9ef">if</span> (rioWriteBulkObject(<span style="color:#f92672">&amp;</span>aof,<span style="color:#f92672">&amp;</span>key) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+                <span style="color:#66d9ef">if</span> (rioWriteBulkLongLong(<span style="color:#f92672">&amp;</span>aof,expiretime) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+            }
+            <span style="color:#75715e">/* Read some diff from the parent process from time to time. */</span>
+            <span style="color:#66d9ef">if</span> (aof.processed_bytes <span style="color:#f92672">&gt;</span> processed<span style="color:#f92672">+</span><span style="color:#ae81ff">1024</span><span style="color:#f92672">*</span><span style="color:#ae81ff">10</span>) {
+                processed <span style="color:#f92672">=</span> aof.processed_bytes;
+                aofReadDiffFromParent();
+            }
+        }
+        dictReleaseIterator(di);
+        di <span style="color:#f92672">=</span> NULL;
+    }
+
+    <span style="color:#75715e">/* Do an initial slow fsync here while the parent is still sending
+</span><span style="color:#75715e">     * data, in order to make the next final fsync faster. */</span>
+    <span style="color:#66d9ef">if</span> (fflush(fp) <span style="color:#f92672">==</span> EOF) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (fsync(fileno(fp)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+
+    <span style="color:#75715e">/* Read again a few times to get more data from the parent.
+</span><span style="color:#75715e">     * We can&#39;t read forever (the server may receive data from clients
+</span><span style="color:#75715e">     * faster than it is able to send data to the child), so we try to read
+</span><span style="color:#75715e">     * some more data in a loop as soon as there is a good chance more data
+</span><span style="color:#75715e">     * will come. If it looks like we are wasting time, we abort (this
+</span><span style="color:#75715e">     * happens after 20 ms without new data). */</span>
+    <span style="color:#66d9ef">int</span> nodata <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    mstime_t start <span style="color:#f92672">=</span> mstime();
+    <span style="color:#66d9ef">while</span>(mstime()<span style="color:#f92672">-</span>start <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">1000</span> <span style="color:#f92672">&amp;&amp;</span> nodata <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">20</span>) {
+        <span style="color:#66d9ef">if</span> (aeWait(server.aof_pipe_read_data_from_parent, AE_READABLE, <span style="color:#ae81ff">1</span>) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span>)
+        {
+            nodata<span style="color:#f92672">++</span>;
+            <span style="color:#66d9ef">continue</span>;
+        }
+        nodata <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">/* Start counting from zero, we stop on N *contiguous*
+</span><span style="color:#75715e">                       timeouts. */</span>
+        aofReadDiffFromParent();
+    }
+	<span style="color:#75715e">// 以下是读取在重写AOF文件时，服务器新加入的数据
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 告诉父进程停止增加数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (write(server.aof_pipe_write_ack_to_parent,<span style="color:#e6db74">&#34;!&#34;</span>,<span style="color:#ae81ff">1</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (anetNonBlock(NULL,server.aof_pipe_read_ack_from_parent) <span style="color:#f92672">!=</span> ANET_OK)
+        <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#75715e">/* We read the ACK from the server using a 10 seconds timeout. Normally
+</span><span style="color:#75715e">     * it should reply ASAP, but just in case we lose its reply, we are sure
+</span><span style="color:#75715e">     * the child will eventually get terminated. */</span>
+    <span style="color:#66d9ef">if</span> (syncRead(server.aof_pipe_read_ack_from_parent,<span style="color:#f92672">&amp;</span>byte,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">5000</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span>
+        byte <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#39;!&#39;</span>) <span style="color:#66d9ef">goto</span> werr;
+    serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;Parent agreed to stop sending diffs. Finalizing AOF...&#34;</span>);
+
+    <span style="color:#75715e">// 读取最终的差异数据
+</span><span style="color:#75715e"></span>    aofReadDiffFromParent();
+
+    <span style="color:#75715e">/* Write the received diff to the file. */</span>
+    serverLog(LL_NOTICE,
+        <span style="color:#e6db74">&#34;Concatenating %.2f MB of AOF diff received from parent.&#34;</span>,
+        (<span style="color:#66d9ef">double</span>) sdslen(server.aof_child_diff) <span style="color:#f92672">/</span> (<span style="color:#ae81ff">1024</span><span style="color:#f92672">*</span><span style="color:#ae81ff">1024</span>));
+    <span style="color:#66d9ef">if</span> (rioWrite(<span style="color:#f92672">&amp;</span>aof,server.aof_child_diff,sdslen(server.aof_child_diff)) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+        <span style="color:#66d9ef">goto</span> werr;
+
+    <span style="color:#75715e">// 保证系统不会残留在IO输出缓冲区
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (fflush(fp) <span style="color:#f92672">==</span> EOF) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (fsync(fileno(fp)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (fclose(fp) <span style="color:#f92672">==</span> EOF) <span style="color:#66d9ef">goto</span> werr;
+
+    <span style="color:#75715e">// 重命名AOF文件
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (rename(tmpfile,filename) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Error moving temp append only file on the final destination: %s&#34;</span>, strerror(errno));
+        unlink(tmpfile);
+        <span style="color:#66d9ef">return</span> C_ERR;
+    }
+    serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;SYNC append only file rewrite performed&#34;</span>);
+    <span style="color:#66d9ef">return</span> C_OK;
+<span style="color:#75715e">// 出错处理
+</span><span style="color:#75715e"></span>werr:
+    serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Write error writing append only file on disk: %s&#34;</span>, strerror(errno));
+    fclose(fp);
+    unlink(tmpfile);
+    <span style="color:#66d9ef">if</span> (di) dictReleaseIterator(di);
+    <span style="color:#66d9ef">return</span> C_ERR;
+}</code></pre></div>
+<p>上述，具体到每一个键对应的值对象重写时，可能没有想象的那么简单，因为可能该值里面存放的数据较多，如果还是在一条命令中执行的话会造成缓冲区溢出。于是，Redis提供了如下参数：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">REDIS_AOF_REWRITE_ITEMS_PER_CMD  <span style="color:#ae81ff">64</span>
+</code></pre></div>
+<p>如果这些值对象中的数据超过64个（默认值），系统会将其拆分成多个命令来执行，即每个命令最多能操作64个元素。</p>
+
+<h2 id="aof后台重写">AOF后台重写</h2>
+
+<p>上述的重写会阻塞服务器，如果数据量大的话，服务器会一直阻塞于此，所以和RDB一样，Redis也为AOF持久化提供了后台重写的函数。</p>
+
+<p>很明显，提到后台重写就需要创建一个子进程，来执行AOF重写操作，这样就可以避免主线程被阻塞，服务器长时间无法工作。</p>
+
+<p>但是，子进程在执行AOF重写的时候，服务器当前还在发生数据变化，为此，Redis提供了一个AOF后台重写缓冲区，用来存放子进程在执行AOF重写过程中插入的新数据。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define AOF_RW_BUF_BLOCK_SIZE (1024*1024*10)    </span><span style="color:#75715e">// 每个块最多10M
+</span><span style="color:#75715e">// 之所以规定每个块的大小是因为不知道新加入的字符串命令的个数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> aofrwblock {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> used, free;  <span style="color:#75715e">// 已使用和空闲的
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span> buf[AOF_RW_BUF_BLOCK_SIZE];  <span style="color:#75715e">// 字符串命令
+</span><span style="color:#75715e"></span>} aofrwblock;
+</code></pre></div>
+<p>这样一来，在子进程执行AOF命令的时候，服务器如果有新数据到来，其字符串命令会添加到两个缓冲区，</p>
+
+<ul>
+<li>一是AOF缓冲区，保证原AOF缓冲区的的内容会定期被写入和同步到现有的AOF文件中</li>
+<li>二是AOF后台重写缓冲区，可以使得AOF后台重写不会错过新数据，相当于做了双重保险，命令不会丢失。</li>
+</ul>
+
+<p>那么子进程在整个AOF后台重写命令时，会进行如下三个操作：</p>
+
+<ul>
+<li>对现有数据库中的键值对转换成字符串命令，并写入和同步到临时AOF后台重写文件中</li>
+<li>完成上述步骤后，将AOF后台重写缓冲区的数据存入临时AOF后台重写文件中</li>
+<li>最后，执行更名操作，覆盖原有的AOF文件，完成新旧更替</li>
+</ul>
+
+<p>AOF后台重写操作由如下两个函数完成，这里就不列出源码了。代码太多了而且都差不多。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 后台执行AOF重写操作
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rewriteAppendOnlyFileBackground</span>(<span style="color:#66d9ef">void</span>);
+<span style="color:#75715e">// 执行AOF后台重写缓冲区内数据的重写和更名操作，完成整个AOF后台重写功能
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">backgroundRewriteDoneHandler</span>(<span style="color:#66d9ef">int</span> exitcode, <span style="color:#66d9ef">int</span> bysignal);
+</code></pre></div>
+<p>最后，只剩下最后一个问题了，除了显示运行命令执行，Redis还在什么时候执行后台重写操作，我一路追溯到这段代码：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 此段代码截取自server.c文件中的serverCron函数中 */</span>
+<span style="color:#75715e">// 如果后台没有执行rdb，aof，以及aof重写操作，而且aof文件的大于执行BGREWRITEAOF所需的最小大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">if</span> (server.rdb_child_pid <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
+    server.aof_child_pid <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span>
+    server.aof_rewrite_perc <span style="color:#f92672">&amp;&amp;</span>
+    server.aof_current_size <span style="color:#f92672">&gt;</span> server.aof_rewrite_min_size)
+{
+  <span style="color:#75715e">// 上一次完成AOF写入之后，AOF文件的大小
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> base <span style="color:#f92672">=</span> server.aof_rewrite_base_size <span style="color:#f92672">?</span>
+    	server.aof_rewrite_base_size : <span style="color:#ae81ff">1</span>;
+  <span style="color:#75715e">// AOF文件当前的体积相对于base的体积百分比
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> growth <span style="color:#f92672">=</span> (server.aof_current_size<span style="color:#f92672">*</span><span style="color:#ae81ff">100</span><span style="color:#f92672">/</span>base) <span style="color:#f92672">-</span> <span style="color:#ae81ff">100</span>;
+  <span style="color:#75715e">// 如果增长百分比超过了规定的aof_rewrite_perc，那么执行BGREWRITEAOF
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (growth <span style="color:#f92672">&gt;=</span> server.aof_rewrite_perc) {
+    serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;Starting automatic rewriting of AOF on %lld%% 			growth&#34;</span>,growth);
+    rewriteAppendOnlyFileBackground();
+  }
+}
+
+<span style="color:#75715e">/* 此段代码截取自server.c文件中的serverCron函数中 */</span>
+<span style="color:#75715e">// 接收子进程发来的信号，非阻塞
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">if</span> ((pid <span style="color:#f92672">=</span> wait3(<span style="color:#f92672">&amp;</span>statloc,WNOHANG,NULL)) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+  <span style="color:#66d9ef">int</span> exitcode <span style="color:#f92672">=</span> WEXITSTATUS(statloc);
+  <span style="color:#66d9ef">int</span> bysignal <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+  <span style="color:#66d9ef">if</span> (WIFSIGNALED(statloc)) bysignal <span style="color:#f92672">=</span> WTERMSIG(statloc);
+
+  <span style="color:#75715e">// BGSAVE 执行完毕
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (pid <span style="color:#f92672">==</span> server.rdb_child_pid) {
+    backgroundSaveDoneHandler(exitcode,bysignal);
+
+    <span style="color:#75715e">// BGREWRITEAOF 执行完毕
+</span><span style="color:#75715e"></span>  } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (pid <span style="color:#f92672">==</span> server.aof_child_pid) {
+    backgroundRewriteDoneHandler(exitcode,bysignal);
+
+  } <span style="color:#66d9ef">else</span> {
+    redisLog(REDIS_WARNING,
+             <span style="color:#e6db74">&#34;Warning, detected child with unmatched pid: %ld&#34;</span>,
+             (<span style="color:#66d9ef">long</span>)pid);
+  }
+  updateDictResizePolicy();
+}
+</code></pre></div>
+<p>如源代码中显示的，先判断当前aof文件的大小是否大于执行BGREWRITEAOF所需的最小大小，如果大于，再判断其增长系数是否超过了规定，如超过，就执行AOF后台重写操作。并在服务器定期事件中判断AOF后台重写是否完成，如完成，将AOF后台重写缓冲区的数据写入临时AOF文件，最后覆盖原来的AOF文件，完美的完成替换操作！Over！</p>
+
+<h1 id="aof小结">AOF小结</h1>
+
+<p>本篇博客分析了Redis的AOF持久化机制，源码较多，思路倒是有点混乱了，不过总算是弄清楚了AOF写入的过程，以及AOF重写，后台重写的执行步骤，Redis的各种缓存设计的真是巧妙，不得不佩服想问题这么全面。</p>
+
+<p>感觉越分析到后面的代码越感觉有点吃力了，因为代码实在是太多太杂，耦合性比较高，要弄懂一个机制只从源码的角度出发会无从下手，所幸有网上分析Redis的人，以及黄建宏大神指路，一路上边看他们的博客和书籍，一路深入源码看看这个功能的实现步骤，最后能弄懂觉得很好了。坚持就是胜利，越到后面越是核心代码，越是整个Redis的精华所在！</p>
+
+<p>各位元旦快乐，学习了一天，有点累和乏了&hellip;&hellip;</p>
+
+<p>欢迎转载本篇博客，不过请注明博客原地址：<a href="http://zcheng.ren/2016/12/31/TheAnnotatedRedisSourceAof/">http://zcheng.ren/2016/12/31/TheAnnotatedRedisSourceAof/</a></p>
+
+<p><p style="text-align:right">张程<p></p>
+
+<p><p style="text-align:right">于湖北·武汉 <p></p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcerdb/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--RDB持久化</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcemulti/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--事务Multi</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--集合t_set</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--集合t_set" />
+<meta property="og:description" content="今天来看看Redis的另一个数据类型—集合set。在RedisObject一篇中，有介绍到集合对象的底层有两种编码形式，分别是OBJ_ENCODING_INTSET（底层数据结构为整数集合）和OBJ_ENCODING_HT（底层数据结构为字典），如果对整数集合Intset和字典dict不熟悉的，可以点击跳转去复习一下。下面，就一起去剖析一下set的实现源码吧。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourceset/" /><meta property="article:published_time" content="2016-12-21T16:01:05&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-21T16:01:05&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--集合t_set"/>
+<meta name="twitter:description" content="今天来看看Redis的另一个数据类型—集合set。在RedisObject一篇中，有介绍到集合对象的底层有两种编码形式，分别是OBJ_ENCODING_INTSET（底层数据结构为整数集合）和OBJ_ENCODING_HT（底层数据结构为字典），如果对整数集合Intset和字典dict不熟悉的，可以点击跳转去复习一下。下面，就一起去剖析一下set的实现源码吧。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--集合t_set</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-21T16:01:05">December 21, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#set概述">Set概述</a></li>
+<li><a href="#set迭代器">Set迭代器</a></li>
+<li><a href="#编码转换">编码转换</a></li>
+<li><a href="#set基本接口">Set基本接口</a></li>
+<li><a href="#set命令">Set命令</a>
+<ul>
+<li><a href="#集合运算">集合运算</a></li>
+</ul></li>
+<li><a href="#set小结">Set小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>今天来看看Redis的另一个数据类型—集合set。在<a href="http://zcheng.ren/2016/12/14/TheAnnotatedRedisSourceObject/">RedisObject</a>一篇中，有介绍到集合对象的底层有两种编码形式，分别是OBJ_ENCODING_INTSET（底层数据结构为整数集合）和OBJ_ENCODING_HT（底层数据结构为字典），如果对<a href="http://zcheng.ren/2016/12/09/TheAnnotatedRedisSourceIntset/">整数集合Intset</a>和<a href="http://zcheng.ren/2016/12/04/TheAnnotatedRedisSourceDict/">字典dict</a>不熟悉的，可以点击跳转去复习一下。下面，就一起去剖析一下set的实现源码吧。</p>
+
+<h1 id="set概述">Set概述</h1>
+
+<p>关于集合set的源码在server.h和t_set.c文件中，与前面分析字符串和列表一样，先来看看它的一些定义。Redis采用RedisObject数据结构来表示它的所有对外开放的数据类型。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> redisObject {
+    <span style="color:#66d9ef">unsigned</span> type:<span style="color:#ae81ff">4</span>;  <span style="color:#75715e">// 此字段为OBJ_SET
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> encoding:<span style="color:#ae81ff">4</span>;  <span style="color:#75715e">// 如果是set结构，编码为OBJ_ENCODING_INTSET或OBJ_ENCODING_HT
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> lru:LRU_BITS; 
+    <span style="color:#66d9ef">int</span> refcount;
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr;
+} robj;
+</code></pre></div>
+<p>在RedisObject结构中，如果encoding字段为OBJ_ENCODING_INTSET或OBJ_ENCODING_HT时，就说明这个对象表示一个set对象。那么，ptr字段就指向一个整数集合或者字典结构。</p>
+
+<h1 id="set迭代器">Set迭代器</h1>
+
+<p>每个数据类型都拥有其迭代器结构，用来遍历集合中的每一个元素，set的迭代器结构定义如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> {
+    robj <span style="color:#f92672">*</span>subject;  <span style="color:#75715e">// 指向的set对象
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> encoding;  <span style="color:#75715e">// 编码类型
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> ii; <span style="color:#75715e">// 如果是intset，则用下标即可代表迭代器
+</span><span style="color:#75715e"></span>    dictIterator <span style="color:#f92672">*</span>di; <span style="color:#75715e">// 如果是ht编码，则采用字典的迭代器
+</span><span style="color:#75715e"></span>} setTypeIterator;
+</code></pre></div>
+<p>有了迭代器结构之后，Redis为它提供了一些操作函数，用于迭代操作。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 初始化迭代器
+</span><span style="color:#75715e"></span>setTypeIterator <span style="color:#f92672">*</span><span style="color:#a6e22e">setTypeInitIterator</span>(robj <span style="color:#f92672">*</span>subject) {
+    setTypeIterator <span style="color:#f92672">*</span>si <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(setTypeIterator));
+    si<span style="color:#f92672">-&gt;</span>subject <span style="color:#f92672">=</span> subject;
+    si<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> subject<span style="color:#f92672">-&gt;</span>encoding;
+    <span style="color:#66d9ef">if</span> (si<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_HT) {
+        si<span style="color:#f92672">-&gt;</span>di <span style="color:#f92672">=</span> dictGetIterator(subject<span style="color:#f92672">-&gt;</span>ptr);  <span style="color:#75715e">// 获取字典迭代器
+</span><span style="color:#75715e"></span>    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (si<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_INTSET) {
+        si<span style="color:#f92672">-&gt;</span>ii <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 整数集合的下标
+</span><span style="color:#75715e"></span>    } <span style="color:#66d9ef">else</span> {
+        serverPanic(<span style="color:#e6db74">&#34;Unknown set encoding&#34;</span>);
+    }
+    <span style="color:#66d9ef">return</span> si;
+}
+<span style="color:#75715e">// 释放迭代器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">setTypeReleaseIterator</span>(setTypeIterator <span style="color:#f92672">*</span>si) {
+    <span style="color:#66d9ef">if</span> (si<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_HT)
+        dictReleaseIterator(si<span style="color:#f92672">-&gt;</span>di);
+    zfree(si);
+}
+<span style="color:#75715e">// 指向下一个迭代器，返回迭代器的编码类型
+</span><span style="color:#75715e">// 另外objele传出迭代器指向的字典节点对象
+</span><span style="color:#75715e">// llele传出迭代器指向整数值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">setTypeNext</span>(setTypeIterator <span style="color:#f92672">*</span>si, robj <span style="color:#f92672">**</span>objele, int64_t <span style="color:#f92672">*</span>llele) {
+    <span style="color:#66d9ef">if</span> (si<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_HT) {
+        dictEntry <span style="color:#f92672">*</span>de <span style="color:#f92672">=</span> dictNext(si<span style="color:#f92672">-&gt;</span>di);
+        <span style="color:#66d9ef">if</span> (de <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        <span style="color:#f92672">*</span>objele <span style="color:#f92672">=</span> dictGetKey(de);
+        <span style="color:#f92672">*</span>llele <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">123456789</span>; <span style="color:#75715e">/* Not needed. Defensive. */</span>
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (si<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_INTSET) {
+        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>intsetGet(si<span style="color:#f92672">-&gt;</span>subject<span style="color:#f92672">-&gt;</span>ptr,si<span style="color:#f92672">-&gt;</span>ii<span style="color:#f92672">++</span>,llele))
+            <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        <span style="color:#f92672">*</span>objele <span style="color:#f92672">=</span> NULL; <span style="color:#75715e">/* Not needed. Defensive. */</span>
+    } <span style="color:#66d9ef">else</span> {
+        serverPanic(<span style="color:#e6db74">&#34;Wrong set encoding in setTypeNext&#34;</span>);
+    }
+    <span style="color:#66d9ef">return</span> si<span style="color:#f92672">-&gt;</span>encoding;
+}
+</code></pre></div>
+<h1 id="编码转换">编码转换</h1>
+
+<p>我们知道，当一个集合满足只保存整数元素且元素数量不多时，就采用整数集合来存放。所以，当往集合set中添加的元素不是整数类型或者数据量较多时，就需要将内部编码转换为字典结构。Redis的配置文件中提供了set-max-intset-entries参数用来表示整数集合中最大能存放的整数数量。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">set<span style="color:#f92672">-</span>max<span style="color:#f92672">-</span>intset<span style="color:#f92672">-</span>entries <span style="color:#ae81ff">512</span>  <span style="color:#75715e">// 默认整数集合intset的最多能存放512个整数
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>编码转换的功能由setTypeConvert函数实现，其利用set类型迭代器遍历intset中的每一个元素，然后添加到字典dict结构中。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 将set类型的intset编码转换成ht编码
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">setTypeConvert</span>(robj <span style="color:#f92672">*</span>setobj, <span style="color:#66d9ef">int</span> enc) {
+    setTypeIterator <span style="color:#f92672">*</span>si;
+    <span style="color:#75715e">// 判断当前编码类型是否为intset
+</span><span style="color:#75715e"></span>    serverAssertWithInfo(NULL,setobj,setobj<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_SET <span style="color:#f92672">&amp;&amp;</span>
+                             setobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_INTSET);
+    <span style="color:#75715e">// 判断enc提供的编码类型是不是HT
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (enc <span style="color:#f92672">==</span> OBJ_ENCODING_HT) {
+        int64_t intele;
+        dict <span style="color:#f92672">*</span>d <span style="color:#f92672">=</span> dictCreate(<span style="color:#f92672">&amp;</span>setDictType,NULL);
+        robj <span style="color:#f92672">*</span>element;
+
+        <span style="color:#75715e">// 扩张字典结构的大小，避免出现rehash过程
+</span><span style="color:#75715e"></span>        dictExpand(d,intsetLen(setobj<span style="color:#f92672">-&gt;</span>ptr));
+
+        <span style="color:#75715e">// 初始化迭代器，遍历intset，然后依次加入到dict中
+</span><span style="color:#75715e"></span>        si <span style="color:#f92672">=</span> setTypeInitIterator(setobj);
+        <span style="color:#66d9ef">while</span> (setTypeNext(si,<span style="color:#f92672">&amp;</span>element,<span style="color:#f92672">&amp;</span>intele) <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+            <span style="color:#75715e">// 将整数类型转换成字符串对象
+</span><span style="color:#75715e"></span>            element <span style="color:#f92672">=</span> createStringObjectFromLongLong(intele);
+            serverAssertWithInfo(NULL,element,
+                                dictAdd(d,element,NULL) <span style="color:#f92672">==</span> DICT_OK);
+        }
+        <span style="color:#75715e">// 释放迭代器
+</span><span style="color:#75715e"></span>        setTypeReleaseIterator(si);
+        <span style="color:#75715e">// 设定编码类型
+</span><span style="color:#75715e"></span>        setobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> OBJ_ENCODING_HT;
+        zfree(setobj<span style="color:#f92672">-&gt;</span>ptr);
+        setobj<span style="color:#f92672">-&gt;</span>ptr <span style="color:#f92672">=</span> d;
+    } <span style="color:#66d9ef">else</span> {
+        serverPanic(<span style="color:#e6db74">&#34;Unsupported set conversion&#34;</span>);
+    }
+}
+</code></pre></div>
+<h1 id="set基本接口">Set基本接口</h1>
+
+<p>set作为Redis的一个数据结构，必然会提供丰富的接口函数，其实现相对简单，和string，list一样，都是调用底层数据结构的接口来实现。下面罗列出所有的接口函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 创建set类型的Redis对象
+</span><span style="color:#75715e"></span>robj <span style="color:#f92672">*</span><span style="color:#a6e22e">setTypeCreate</span>(robj <span style="color:#f92672">*</span>value);
+<span style="color:#75715e">// 往set集合中添加数据
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">setTypeAdd</span>(robj <span style="color:#f92672">*</span>subject, robj <span style="color:#f92672">*</span>value);
+<span style="color:#75715e">// 移除set集合中的数据
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">setTypeRemove</span>(robj <span style="color:#f92672">*</span>setobj, robj <span style="color:#f92672">*</span>value);
+<span style="color:#75715e">// 判断指定的value是否存在于set集合中
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">setTypeIsMember</span>(robj <span style="color:#f92672">*</span>subject, robj <span style="color:#f92672">*</span>value);
+<span style="color:#75715e">// 随机返回set集合中的某个元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">setTypeRandomElement</span>(robj <span style="color:#f92672">*</span>setobj, robj <span style="color:#f92672">**</span>objele, int64_t <span style="color:#f92672">*</span>llele);
+<span style="color:#75715e">// 获取set集合的大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">setTypeSize</span>(robj <span style="color:#f92672">*</span>subject);
+</code></pre></div>
+<p>以setTypeAdd为例，来分析一下它的源码实现（其他接口函数的源码可以去t_set查看，这里就不再赘述，实现都比较简单）。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 添加数据到集合set中
+</span><span style="color:#75715e">// 如果底层编码是intset需要考虑元素个数是否超过了set_max_intset_entries
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">setTypeAdd</span>(robj <span style="color:#f92672">*</span>subject, robj <span style="color:#f92672">*</span>value) {
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> llval;
+    <span style="color:#75715e">// 如果底层编码是HT，则直接调用字典的添加元素函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (subject<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_HT) {
+        <span style="color:#66d9ef">if</span> (dictAdd(subject<span style="color:#f92672">-&gt;</span>ptr,value,NULL) <span style="color:#f92672">==</span> DICT_OK) {
+            incrRefCount(value);
+            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+        }
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (subject<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_INTSET) {
+        <span style="color:#75715e">// 编码类型是iNTSET，则需要判断待添加元素的类型
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (isObjectRepresentableAsLongLong(value,<span style="color:#f92672">&amp;</span>llval) <span style="color:#f92672">==</span> C_OK) {
+            <span style="color:#75715e">// 待添加元素是整数类型
+</span><span style="color:#75715e"></span>            uint8_t success <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+            <span style="color:#75715e">// 调用intset的添加元素函数
+</span><span style="color:#75715e"></span>            subject<span style="color:#f92672">-&gt;</span>ptr <span style="color:#f92672">=</span> intsetAdd(subject<span style="color:#f92672">-&gt;</span>ptr,llval,<span style="color:#f92672">&amp;</span>success);
+            <span style="color:#66d9ef">if</span> (success) {
+                <span style="color:#75715e">// 判断intset的长度是否超过了set_max_intset_entries
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (intsetLen(subject<span style="color:#f92672">-&gt;</span>ptr) <span style="color:#f92672">&gt;</span> server.set_max_intset_entries)
+                    <span style="color:#75715e">// 将底层编码转换成HT
+</span><span style="color:#75715e"></span>                    setTypeConvert(subject,OBJ_ENCODING_HT);
+                <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+            }
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 执行到此，说明待添加元素不为整数
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 此时就需要将底层编码转换成HT，因为intset只能存放整数类型
+</span><span style="color:#75715e"></span>            setTypeConvert(subject,OBJ_ENCODING_HT);
+
+            <span style="color:#75715e">// 一样，调用字典的添加函数
+</span><span style="color:#75715e"></span>            serverAssertWithInfo(NULL,value,
+                                dictAdd(subject<span style="color:#f92672">-&gt;</span>ptr,value,NULL) <span style="color:#f92672">==</span> DICT_OK);
+            incrRefCount(value);
+            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+        }
+    } <span style="color:#66d9ef">else</span> {
+        serverPanic(<span style="color:#e6db74">&#34;Unknown set encoding&#34;</span>);
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div>
+<h1 id="set命令">Set命令</h1>
+
+<p>当我们启动一个Redis客户端的时候，如果输入如下指令：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SADD numbers <span style="color:#ae81ff">1</span> <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">5</span>  <span style="color:#75715e">// 往集合键中添加元素
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>那么，此时的编码类型我们也可以查看到：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> OBJECT ENCODING numbers
+<span style="color:#e6db74">&#34;intset&#34;</span>
+</code></pre></div>
+<p>知道SADD指令怎么使用之后，就要深入到源码中来了解它的具体实现。SADD命令的实现由saddCommand函数实现。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 往集合键中添加元素，如果该元素存在，则不做任何处理；反之则添加
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">saddCommand</span>(client <span style="color:#f92672">*</span>c) {
+    robj <span style="color:#f92672">*</span>set;
+    <span style="color:#66d9ef">int</span> j, added <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 查看数据库中是否存在该集合键
+</span><span style="color:#75715e"></span>    set <span style="color:#f92672">=</span> lookupKeyWrite(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]);
+    <span style="color:#66d9ef">if</span> (set <span style="color:#f92672">==</span> NULL) {
+        <span style="color:#75715e">// 不存在就创建一个
+</span><span style="color:#75715e"></span>        set <span style="color:#f92672">=</span> setTypeCreate(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">2</span>]);
+        dbAdd(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],set);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 存在就检查它是否是一个集合类型的对象
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (set<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">!=</span> OBJ_SET) {
+            addReply(c,shared.wrongtypeerr);
+            <span style="color:#66d9ef">return</span>;
+        }
+    }
+    <span style="color:#75715e">// 从第三个参数开始，为待添加的函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>) {
+        <span style="color:#75715e">// 试图将待添加的元素编码成字符串类型，以节省内存
+</span><span style="color:#75715e"></span>        c<span style="color:#f92672">-&gt;</span>argv[j] <span style="color:#f92672">=</span> tryObjectEncoding(c<span style="color:#f92672">-&gt;</span>argv[j]);
+        <span style="color:#75715e">// 调用集合set的添加函数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (setTypeAdd(set,c<span style="color:#f92672">-&gt;</span>argv[j])) added<span style="color:#f92672">++</span>;
+    }
+    <span style="color:#75715e">// 如果至少添加成功了一个元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (added) {
+        <span style="color:#75715e">// 发送通知
+</span><span style="color:#75715e"></span>        signalModifiedKey(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]);
+        <span style="color:#75715e">// 发送事件通知
+</span><span style="color:#75715e"></span>        notifyKeyspaceEvent(NOTIFY_SET,<span style="color:#e6db74">&#34;sadd&#34;</span>,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
+    }
+    server.dirty <span style="color:#f92672">+=</span> added;
+    addReplyLongLong(c,added);
+}
+</code></pre></div>
+<p>添加元素的底层实现是不是很简单！是不是！基本上就是一些逻辑判断，调用底层函数等。那么，Redis到底为set提供了多少操作命令呢？我们用一张表格来汇总一下。</p>
+
+<table>
+<thead>
+<tr>
+<th align="center">命令样式</th>
+<th align="center">命令描述</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="center">SADD key number1 [number2&hellip;]</td>
+<td align="center">向集合键中添加一个或多个元素</td>
+</tr>
+
+<tr>
+<td align="center">SCARD key</td>
+<td align="center">返回集合键中的元素个数</td>
+</tr>
+
+<tr>
+<td align="center">SMEMBERS key</td>
+<td align="center">返回集合中的所有成员</td>
+</tr>
+
+<tr>
+<td align="center">SISMEMBER key member</td>
+<td align="center">判断元素是否是集合成员</td>
+</tr>
+
+<tr>
+<td align="center">SPOP key</td>
+<td align="center">随机返回并移除一个元素</td>
+</tr>
+
+<tr>
+<td align="center">SRANDMEMBER key [count]</td>
+<td align="center">随机返回一个或多个元素</td>
+</tr>
+
+<tr>
+<td align="center">SREM key member [member &hellip;]</td>
+<td align="center">移除指定的元素</td>
+</tr>
+
+<tr>
+<td align="center">SMOVE source destination member</td>
+<td align="center">将元素从集合移至另一个集合</td>
+</tr>
+
+<tr>
+<td align="center">SDIFF key [key &hellip;]</td>
+<td align="center">将一或多个集合的差集保存至另一集合</td>
+</tr>
+
+<tr>
+<td align="center">SINTER key [key &hellip;]</td>
+<td align="center">将一或多个集合的交集保存至另一集合</td>
+</tr>
+
+<tr>
+<td align="center">SINTERSTORE destination key [key &hellip;]</td>
+<td align="center">将一或多个集合的交集存储到新集合</td>
+</tr>
+
+<tr>
+<td align="center">SUNION key [key &hellip;]</td>
+<td align="center">返回集合的并集</td>
+</tr>
+
+<tr>
+<td align="center">SUNIONSTORE destination key [key &hellip;]</td>
+<td align="center">将集合的并集插入新集合</td>
+</tr>
+</tbody>
+</table>
+
+<p>这里，我挑两个集合运算的命令进行剖析一下，SDIFF和SUNION，其他的函数都相对比较简单。</p>
+
+<h2 id="集合运算">集合运算</h2>
+
+<p>集合运算包括交集和并集运算，在客户端输入下面的指令会得到一个或多个集合的交集或并集。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 设定集合key1的元素
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SADD key1 <span style="color:#ae81ff">1</span> <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">5</span> 
+(integer) <span style="color:#ae81ff">5</span>
+<span style="color:#75715e">// 设定集合key2的元素
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SADD key2 <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">5</span> <span style="color:#ae81ff">6</span> <span style="color:#ae81ff">7</span>
+(integer) <span style="color:#ae81ff">5</span>
+<span style="color:#75715e">// 求集合key1和key2的差集
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SDIFF key1 key2
+<span style="color:#ae81ff">1</span>) <span style="color:#e6db74">&#34;1&#34;</span>
+<span style="color:#ae81ff">2</span>) <span style="color:#e6db74">&#34;2&#34;</span>
+<span style="color:#75715e">// 求集合key1和key2的并集
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SUNION key1 key2
+<span style="color:#ae81ff">1</span>) <span style="color:#e6db74">&#34;1&#34;</span>
+<span style="color:#ae81ff">2</span>) <span style="color:#e6db74">&#34;2&#34;</span>
+<span style="color:#ae81ff">3</span>) <span style="color:#e6db74">&#34;3&#34;</span>
+<span style="color:#ae81ff">4</span>) <span style="color:#e6db74">&#34;4&#34;</span>
+<span style="color:#ae81ff">5</span>) <span style="color:#e6db74">&#34;5&#34;</span>
+<span style="color:#ae81ff">6</span>) <span style="color:#e6db74">&#34;6&#34;</span>
+<span style="color:#ae81ff">7</span>) <span style="color:#e6db74">&#34;7&#34;</span>
+</code></pre></div>
+<p>这两个命令分别由底层函数sdiffCommand和sunionCommand实现，源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 并集运算
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sunionCommand</span>(client <span style="color:#f92672">*</span>c) {
+    sunionDiffGenericCommand(c,c<span style="color:#f92672">-&gt;</span>argv<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,c<span style="color:#f92672">-&gt;</span>argc<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,NULL,SET_OP_UNION);
+}
+<span style="color:#75715e">// 差集运算
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sdiffCommand</span>(client <span style="color:#f92672">*</span>c) {
+    sunionDiffGenericCommand(c,c<span style="color:#f92672">-&gt;</span>argv<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,c<span style="color:#f92672">-&gt;</span>argc<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,NULL,SET_OP_DIFF);
+}
+</code></pre></div>
+<p>从源码中我们可以看到，并集和差集运算都调用了同一个底层函数，也就是并集差集的泛型运算函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define SET_OP_UNION 0  </span><span style="color:#75715e">// 并集运算
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define SET_OP_DIFF 1  </span><span style="color:#75715e">// 差集运算
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">// 并集差集运算的泛型实现
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sunionDiffGenericCommand</span>(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">**</span>setkeys, <span style="color:#66d9ef">int</span> setnum,
+                              robj <span style="color:#f92672">*</span>dstkey, <span style="color:#66d9ef">int</span> op) {
+    robj <span style="color:#f92672">**</span>sets <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(robj<span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>setnum);
+    setTypeIterator <span style="color:#f92672">*</span>si;
+    robj <span style="color:#f92672">*</span>ele, <span style="color:#f92672">*</span>dstset <span style="color:#f92672">=</span> NULL;
+    <span style="color:#66d9ef">int</span> j, cardinality <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">int</span> diff_algo <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+	<span style="color:#75715e">// 取出所有集合对象，并添加到集合数组中
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> setnum; j<span style="color:#f92672">++</span>) {
+        robj <span style="color:#f92672">*</span>setobj <span style="color:#f92672">=</span> dstkey <span style="color:#f92672">?</span>
+            lookupKeyWrite(c<span style="color:#f92672">-&gt;</span>db,setkeys[j]) <span style="color:#f92672">:</span>
+            lookupKeyRead(c<span style="color:#f92672">-&gt;</span>db,setkeys[j]);
+        <span style="color:#75715e">// 不存在的集合当做NULL处理
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>setobj) {
+            sets[j] <span style="color:#f92672">=</span> NULL;
+            <span style="color:#66d9ef">continue</span>;
+        }
+        <span style="color:#75715e">// 检查取出的对象的类型，有对象不是集合则停止执行，并清理集合数组
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (checkType(c,setobj,OBJ_SET)) {
+            zfree(sets);
+            <span style="color:#66d9ef">return</span>;
+        }
+        <span style="color:#75715e">// 记录对象
+</span><span style="color:#75715e"></span>        sets[j] <span style="color:#f92672">=</span> setobj;
+    }
+
+    <span style="color:#75715e">// Redis提供了两个算法来进行差集运算
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 算法1的复杂度为O(N*M)，N表示第一个集合中的元素个数，M表示集合数组中的集合个数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 算法2的复杂度为O(N)，N表示所有集合中的元素个数总和
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 此处需要计算输入来考察选用何种算法比较好
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (op <span style="color:#f92672">==</span> SET_OP_DIFF <span style="color:#f92672">&amp;&amp;</span> sets[<span style="color:#ae81ff">0</span>]) {
+        <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> algo_one_work <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, algo_two_work <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+		<span style="color:#75715e">// 遍历所有集合
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> setnum; j<span style="color:#f92672">++</span>) {
+            <span style="color:#66d9ef">if</span> (sets[j] <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">continue</span>;
+			<span style="color:#75715e">// 计算N*M，也就是setNum*（set[0]中集合的个数）
+</span><span style="color:#75715e"></span>            algo_one_work <span style="color:#f92672">+=</span> setTypeSize(sets[<span style="color:#ae81ff">0</span>]);
+            <span style="color:#75715e">// 计算所有集合的元素总个数
+</span><span style="color:#75715e"></span>            algo_two_work <span style="color:#f92672">+=</span> setTypeSize(sets[j]);
+        }
+
+        <span style="color:#75715e">// 算法1的常数比较低，优先选用算法1
+</span><span style="color:#75715e"></span>        algo_one_work <span style="color:#f92672">/=</span> <span style="color:#ae81ff">2</span>;
+        diff_algo <span style="color:#f92672">=</span> (algo_one_work <span style="color:#f92672">&lt;=</span> algo_two_work) <span style="color:#f92672">?</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">:</span> <span style="color:#ae81ff">2</span>;
+
+        <span style="color:#66d9ef">if</span> (diff_algo <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">&amp;&amp;</span> setnum <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span>) {
+            <span style="color:#75715e">// 如果选用算法1的话，对除set[0]以外的集合进行排序，这样有助于优化算法的性能
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 如下是比较函数，其实就是比较每个集合的大小来进行排序
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">/* int qsortCompareSetsByRevCardinality(const void *s1, const void *s2) {
+</span><span style="color:#75715e">             *      robj *o1 = *(robj**)s1, *o2 = *(robj**)s2;
+</span><span style="color:#75715e">             *
+</span><span style="color:#75715e">             *      return  (o2 ? setTypeSize(o2) : 0) - (o1 ? setTypeSize(o1) : 0);
+</span><span style="color:#75715e">             *  }
+</span><span style="color:#75715e">             */</span>
+            qsort(sets<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,setnum<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,<span style="color:#66d9ef">sizeof</span>(robj<span style="color:#f92672">*</span>),
+                qsortCompareSetsByRevCardinality);
+        }
+    }
+
+    <span style="color:#75715e">// 使用一个临时集合来保存结果集
+</span><span style="color:#75715e"></span>    dstset <span style="color:#f92672">=</span> createIntsetObject();
+
+    <span style="color:#66d9ef">if</span> (op <span style="color:#f92672">==</span> SET_OP_UNION) {
+        <span style="color:#75715e">// 执行到此，说明执行的是并集计算
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> setnum; j<span style="color:#f92672">++</span>) {
+            <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>sets[j]) <span style="color:#66d9ef">continue</span>; <span style="color:#75715e">// 空集的话直接跳过
+</span><span style="color:#75715e"></span>
+            si <span style="color:#f92672">=</span> setTypeInitIterator(sets[j]);
+            <span style="color:#66d9ef">while</span>((ele <span style="color:#f92672">=</span> setTypeNextObject(si)) <span style="color:#f92672">!=</span> NULL) {
+                <span style="color:#75715e">// 直接把元素加入到结果集，如果元素不存在就添加，返回1，反之不作处理并返回0
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (setTypeAdd(dstset,ele)) cardinality<span style="color:#f92672">++</span>;
+                <span style="color:#75715e">// 引用计数减1，此处会销毁ele
+</span><span style="color:#75715e"></span>                decrRefCount(ele);
+            }
+            setTypeReleaseIterator(si);
+        }
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (op <span style="color:#f92672">==</span> SET_OP_DIFF <span style="color:#f92672">&amp;&amp;</span> sets[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">&amp;&amp;</span> diff_algo <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>) {
+        <span style="color:#75715e">// 执行到此说明采用算法1来求差集
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 程序遍历集合set[0]中的所有元素
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 并将这个元素和其他集合中的所有元素进行对比
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 只有这个元素不存在于其他集合时，才会将它添加到结果集中
+</span><span style="color:#75715e"></span>        si <span style="color:#f92672">=</span> setTypeInitIterator(sets[<span style="color:#ae81ff">0</span>]);
+        <span style="color:#66d9ef">while</span>((ele <span style="color:#f92672">=</span> setTypeNextObject(si)) <span style="color:#f92672">!=</span> NULL) {
+            <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; j <span style="color:#f92672">&lt;</span> setnum; j<span style="color:#f92672">++</span>) {
+                <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>sets[j]) <span style="color:#66d9ef">continue</span>; <span style="color:#75715e">// 空集合直接跳过
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (sets[j] <span style="color:#f92672">==</span> sets[<span style="color:#ae81ff">0</span>]) <span style="color:#66d9ef">break</span>; <span style="color:#75715e">// 相同的集合直接跳过
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (setTypeIsMember(sets[j],ele)) <span style="color:#66d9ef">break</span>; <span style="color:#75715e">// 查看ele是否存在于此集合
+</span><span style="color:#75715e"></span>            }
+            <span style="color:#66d9ef">if</span> (j <span style="color:#f92672">==</span> setnum) {
+                <span style="color:#75715e">// 此元素不存在其他任何集合中，添加到结果集
+</span><span style="color:#75715e"></span>                setTypeAdd(dstset,ele);
+                cardinality<span style="color:#f92672">++</span>;
+            }
+            decrRefCount(ele);
+        }
+        setTypeReleaseIterator(si);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (op <span style="color:#f92672">==</span> SET_OP_DIFF <span style="color:#f92672">&amp;&amp;</span> sets[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">&amp;&amp;</span> diff_algo <span style="color:#f92672">==</span> <span style="color:#ae81ff">2</span>) {
+        <span style="color:#75715e">// 算法2，遍历所有的集合
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 如果是集合0，则添加到结果集合
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 如果非集合0，则将相同的元素从结果集合中移除
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 算法复杂度为O(N)，N为所有集合元素的总个数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> setnum; j<span style="color:#f92672">++</span>) {
+            <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>sets[j]) <span style="color:#66d9ef">continue</span>; <span style="color:#75715e">// 跳过空集
+</span><span style="color:#75715e"></span>
+            si <span style="color:#f92672">=</span> setTypeInitIterator(sets[j]);
+            <span style="color:#66d9ef">while</span>((ele <span style="color:#f92672">=</span> setTypeNextObject(si)) <span style="color:#f92672">!=</span> NULL) {
+                <span style="color:#66d9ef">if</span> (j <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+                    <span style="color:#75715e">// 将set[0]添加到结果集
+</span><span style="color:#75715e"></span>                    <span style="color:#66d9ef">if</span> (setTypeAdd(dstset,ele)) cardinality<span style="color:#f92672">++</span>;
+                } <span style="color:#66d9ef">else</span> {
+                    <span style="color:#75715e">// 将相同的元素从结果集中移除
+</span><span style="color:#75715e"></span>                    <span style="color:#66d9ef">if</span> (setTypeRemove(dstset,ele)) cardinality<span style="color:#f92672">--</span>;
+                }
+                decrRefCount(ele);
+            }
+            setTypeReleaseIterator(si);
+            <span style="color:#75715e">// 如果结果集是空的话就退出，因为set[0]中的元素都出现到其他集合中
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 后面的运算也没意义了
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (cardinality <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">break</span>;
+        }
+    }
+
+    <span style="color:#75715e">/* Output the content of the resulting set, if not in STORE mode */</span>
+    <span style="color:#75715e">// 输出结果集合
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>dstkey) {
+        <span style="color:#75715e">// 执行到此，说明执行的是SDIFF或SUNION
+</span><span style="color:#75715e"></span>        addReplyMultiBulkLen(c,cardinality);
+        si <span style="color:#f92672">=</span> setTypeInitIterator(dstset);
+        <span style="color:#75715e">// 遍历并返回结果集合dstset中所有的元素
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span>((ele <span style="color:#f92672">=</span> setTypeNextObject(si)) <span style="color:#f92672">!=</span> NULL) {
+            addReplyBulk(c,ele);
+            decrRefCount(ele);
+        }
+        setTypeReleaseIterator(si);
+        decrRefCount(dstset);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 执行到此，说明执行的是SDIFFSTORE或SUNIONSTORE
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">int</span> deleted <span style="color:#f92672">=</span> dbDelete(c<span style="color:#f92672">-&gt;</span>db,dstkey);  <span style="color:#75715e">// 删除数据库中的dstkey
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (setTypeSize(dstset) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+            <span style="color:#75715e">// 如果结果集合不为空，则关联到数据库
+</span><span style="color:#75715e"></span>            dbAdd(c<span style="color:#f92672">-&gt;</span>db,dstkey,dstset);
+            addReplyLongLong(c,setTypeSize(dstset));
+            notifyKeyspaceEvent(NOTIFY_SET,
+                op <span style="color:#f92672">==</span> SET_OP_UNION <span style="color:#f92672">?</span> <span style="color:#e6db74">&#34;sunionstore&#34;</span> <span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;sdiffstore&#34;</span>,
+                dstkey,c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 如果结果集合为空，删除
+</span><span style="color:#75715e"></span>            decrRefCount(dstset);
+            addReply(c,shared.czero);
+            <span style="color:#66d9ef">if</span> (deleted)
+                <span style="color:#75715e">// 发送事件通知
+</span><span style="color:#75715e"></span>                notifyKeyspaceEvent(NOTIFY_GENERIC,<span style="color:#e6db74">&#34;del&#34;</span>,
+                    dstkey,c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
+        }
+        <span style="color:#75715e">// 发送消息
+</span><span style="color:#75715e"></span>        signalModifiedKey(c<span style="color:#f92672">-&gt;</span>db,dstkey);
+        server.dirty<span style="color:#f92672">++</span>;
+    }
+    zfree(sets);
+}
+</code></pre></div>
+<p>上述代码比较长，但是认真看的话就很好懂了，算法的主要思路都写出来了，如有不理解可以在下方留言。</p>
+
+<h1 id="set小结">Set小结</h1>
+
+<p>本篇博客分析了Set集合的接口函数，迭代器实现以及命令的源码实现，并在最后对交集并集运算的源码进行了分析。目前，我们对Redis的命令执行源码已经有很深的理解了，但是源码中出现的关于通知，网络，数据库这一块，还是一片模糊，只能靠函数名来稍微理解是什么意思，没事，不急，现在我们先知其然，后面必然会知其所以然。还是一样，大家如果有什么疑惑或者建议，可以在留言区留言，一起学习和讨论Redis！</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcelist/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--列表t_list</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcehash/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--哈希t_hash</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

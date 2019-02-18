@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--事务Multi</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--事务Multi" />
+<meta property="og:description" content="数据库事务，是指作为单个逻辑工作单元执行的一系列操作，这些操作要么全部执行，要么全部不执行。事务处理可以确保除非事务性单元内的所有操作都成功完成，否则不会永久更新面向数据的资源，这样可以简化错误恢复并使应用程序更加可靠。事务包括ACID特性，分别是Atomic（原子性）、Consistency（一致性）、Isolation（隔离性）和Durablity（持久性）。Redis作为一个key-value数据库，当然也必须拥有事务处理功能，下面就一起去看看它是怎么实现的吧？" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourcemulti/" /><meta property="article:published_time" content="2017-01-02T10:20:14&#43;08:00"/>
+<meta property="article:modified_time" content="2017-01-02T10:20:14&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--事务Multi"/>
+<meta name="twitter:description" content="数据库事务，是指作为单个逻辑工作单元执行的一系列操作，这些操作要么全部执行，要么全部不执行。事务处理可以确保除非事务性单元内的所有操作都成功完成，否则不会永久更新面向数据的资源，这样可以简化错误恢复并使应用程序更加可靠。事务包括ACID特性，分别是Atomic（原子性）、Consistency（一致性）、Isolation（隔离性）和Durablity（持久性）。Redis作为一个key-value数据库，当然也必须拥有事务处理功能，下面就一起去看看它是怎么实现的吧？"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--事务Multi</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2017-01-02T10:20:14">January 02, 2017</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#事务概述">事务概述</a></li>
+<li><a href="#事务实现">事务实现</a>
+<ul>
+<li><a href="#事务开始">事务开始</a></li>
+<li><a href="#事务队列">事务队列</a></li>
+<li><a href="#事务执行">事务执行</a></li>
+<li><a href="#事务取消">事务取消</a></li>
+</ul></li>
+<li><a href="#watch实现">WATCH实现</a></li>
+<li><a href="#事务小结">事务小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>数据库事务，是指作为单个逻辑工作单元执行的一系列操作，这些操作要么全部执行，要么全部不执行。事务处理可以确保除非事务性单元内的所有操作都成功完成，否则不会永久更新面向数据的资源，这样可以简化错误恢复并使应用程序更加可靠。事务包括ACID特性，分别是Atomic（原子性）、Consistency（一致性）、Isolation（隔离性）和Durablity（持久性）。Redis作为一个key-value数据库，当然也必须拥有事务处理功能，下面就一起去看看它是怎么实现的吧？</p>
+
+<h1 id="事务概述">事务概述</h1>
+
+<p>Redis事务允许用户将多个命令包裹起来，然后一次性地、按顺序地执行被包裹的所有命令。在事务的处理过程中，服务器不会中断事务而去执行其他的操作，只有在包裹的命令全部执行完毕后，服务器才会去处理其他命令请求。</p>
+
+<p>Redis事务提供了一下五个命令，用于用户操作事务功能，其分别是：</p>
+
+<table>
+<thead>
+<tr>
+<th align="center">命令</th>
+<th align="center">功能</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="center">MULTI</td>
+<td align="center">开始一个新的事务</td>
+</tr>
+
+<tr>
+<td align="center">DISCARD</td>
+<td align="center">放弃执行事务</td>
+</tr>
+
+<tr>
+<td align="center">EXEC</td>
+<td align="center">执行事务中的所有命令</td>
+</tr>
+
+<tr>
+<td align="center">WATCH</td>
+<td align="center">监视一个或多个key，如果至少有一个key在EXEC之前被修改，则放弃执行事务</td>
+</tr>
+
+<tr>
+<td align="center">UNWATCH</td>
+<td align="center">取消WATCH命令对所有键的监视</td>
+</tr>
+</tbody>
+</table>
+
+<p>为了更好的分析Redis事务功能，我们先来实验感受一下如何使用事务功能及它的功效！</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>cli 
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> MULTI     <span style="color:#75715e">// 开启一个事务  
+</span><span style="color:#75715e"></span>OK
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SET key value   <span style="color:#75715e">// 添加命令
+</span><span style="color:#75715e"></span>QUEUED   <span style="color:#75715e">// 将命令添加到命令队列
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SADD key1 value1
+QUEUED 
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> EXEC  <span style="color:#75715e">// 执行事务
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">1</span>) OK
+<span style="color:#ae81ff">2</span>) (integer) <span style="color:#ae81ff">1</span>
+</code></pre></div>
+<p>如上，我们先开启了一个事务，然后添加了两条命令，最后执行此事务，两条命令全部执行并收到了回复。我们就从这个简单的事务处理过程，来一步一步分析Redis事务的具体实现过程。</p>
+
+<h1 id="事务实现">事务实现</h1>
+
+<p>由上述的小例子可以看出，Redis对于事务的实现由三个步骤：事务开始、事务队列和事务执行。下面就分别从这三个步骤入手，分析整个事务的实现过程。</p>
+
+<h2 id="事务开始">事务开始</h2>
+
+<p>当我们发送<code>MULTI</code>命令是，表示客户端需要执行一个事务。客户端定义了几个参数，来标记事务是否开始。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> flags; <span style="color:#75715e">// 客户端当前事件标记
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define CLIENT_MULTI (1&lt;&lt;3)  </span><span style="color:#75715e">// 客户端事务标记
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>客户端通过<code>flags |= CLIENT_MULTI</code>语句来标记事务开启与否，然后服务器在执行命令的时候只需要检查flags参数，就能知道事务是否开启。下面是<code>MULTI</code>命令的源码实现：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">multiCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI) {  <span style="color:#75715e">// 检查是否开启了事务
+</span><span style="color:#75715e"></span>        addReplyError(c,<span style="color:#e6db74">&#34;MULTI calls can not be nested&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
+    }
+    c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">|=</span> CLIENT_MULTI;  <span style="color:#75715e">// 标记事务已经开启
+</span><span style="color:#75715e"></span>    addReply(c,shared.ok);  <span style="color:#75715e">// 回复客户端
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<h2 id="事务队列">事务队列</h2>
+
+<p>既然事务中包含了一系列的操作，这些操作不能立即被执行，Redis必然会找个位置来存放这些命令。于是Redis定义了下面的结构体：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 客户端结构体 */</span>
+<span style="color:#66d9ef">struct</span> client {
+  	<span style="color:#75715e">// ....
+</span><span style="color:#75715e"></span>  	multiState mstate;
+    <span style="color:#75715e">// ....
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">/* 事务状态 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> multiState {
+    multiCmd <span style="color:#f92672">*</span>commands;     <span style="color:#75715e">// 事务队列，存放命令，FIFO结构
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> count;              <span style="color:#75715e">// 事务中所有命令的个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> minreplicas;        <span style="color:#75715e">// 用于同步复制
+</span><span style="color:#75715e"></span>    time_t minreplicas_timeout; <span style="color:#75715e">// 超时时间
+</span><span style="color:#75715e"></span>} multiState;
+<span style="color:#75715e">/* 命令队列 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> multiCmd {
+    robj <span style="color:#f92672">**</span>argv; <span style="color:#75715e">// 参数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> argc; <span style="color:#75715e">// 参数个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> redisCommand <span style="color:#f92672">*</span>cmd; <span style="color:#75715e">// 命令指针
+</span><span style="color:#75715e"></span>} multiCmd;
+</code></pre></div>
+<p>其中，所有在事务期间的命令都存放在事务队列中，也就是<code>commands</code>指针内。Redis在<code>processCommand</code>执行命令的函数里面判断此时是否开启了一个事务，如开启，则将命令压入命令队列，等待事务来处理。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* Redis的命令处理函数 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">processCommand</span>(client <span style="color:#f92672">*</span>c){
+    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  	<span style="color:#75715e">// 检查此时是否开启的事务，检查当前执行的命令不是EXEC、DISCARD、MULTI和WATCH
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI <span style="color:#f92672">&amp;&amp;</span>
+        c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">!=</span> execCommand <span style="color:#f92672">&amp;&amp;</span> c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">!=</span> discardCommand <span style="color:#f92672">&amp;&amp;</span>
+        c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">!=</span> multiCommand <span style="color:#f92672">&amp;&amp;</span> c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>proc <span style="color:#f92672">!=</span> watchCommand)
+    {
+        <span style="color:#75715e">// 执行命令入队
+</span><span style="color:#75715e"></span>        queueMultiCommand(c);
+        addReply(c,shared.queued);
+    }
+    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p>事务命令入队的功能由<code>queueMultiCommand</code>函数执行，其源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 添加命令到事务队列 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">queueMultiCommand</span>(client <span style="color:#f92672">*</span>c) {
+    multiCmd <span style="color:#f92672">*</span>mc;
+    <span style="color:#66d9ef">int</span> j;
+    <span style="color:#75715e">// 重新申请内存
+</span><span style="color:#75715e"></span>    c<span style="color:#f92672">-&gt;</span>mstate.commands <span style="color:#f92672">=</span> zrealloc(c<span style="color:#f92672">-&gt;</span>mstate.commands,
+            <span style="color:#66d9ef">sizeof</span>(multiCmd)<span style="color:#f92672">*</span>(c<span style="color:#f92672">-&gt;</span>mstate.count<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>));
+    <span style="color:#75715e">// 找到新命令存放的位置
+</span><span style="color:#75715e"></span>    mc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>mstate.commands<span style="color:#f92672">+</span>c<span style="color:#f92672">-&gt;</span>mstate.count;
+    <span style="color:#75715e">// 存放命令
+</span><span style="color:#75715e"></span>    mc<span style="color:#f92672">-&gt;</span>cmd <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>cmd;
+    mc<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argc; <span style="color:#75715e">// 存放参数个数
+</span><span style="color:#75715e"></span>    mc<span style="color:#f92672">-&gt;</span>argv <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(robj<span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>c<span style="color:#f92672">-&gt;</span>argc);  <span style="color:#75715e">// 存放参数
+</span><span style="color:#75715e"></span>    memcpy(mc<span style="color:#f92672">-&gt;</span>argv,c<span style="color:#f92672">-&gt;</span>argv,<span style="color:#66d9ef">sizeof</span>(robj<span style="color:#f92672">*</span>)<span style="color:#f92672">*</span>c<span style="color:#f92672">-&gt;</span>argc); <span style="color:#75715e">// 拷贝参数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>)  <span style="color:#75715e">// 引用计数加1
+</span><span style="color:#75715e"></span>        incrRefCount(mc<span style="color:#f92672">-&gt;</span>argv[j]);
+    c<span style="color:#f92672">-&gt;</span>mstate.count<span style="color:#f92672">++</span>;  <span style="color:#75715e">// 命令个数加1
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<h2 id="事务执行">事务执行</h2>
+
+<p>前面事务开始后的命令都存放在命令队列中，当客户端执行<code>EXEC</code>命令时，服务器会将事务队列中存放的命令以『先进先出』的方式一一执行，然后回复给客户端。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">execCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">int</span> j;
+    robj <span style="color:#f92672">**</span>orig_argv;
+    <span style="color:#66d9ef">int</span> orig_argc;
+    <span style="color:#66d9ef">struct</span> redisCommand <span style="color:#f92672">*</span>orig_cmd;
+    <span style="color:#66d9ef">int</span> must_propagate <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">// 是否需要将MULTI/EXEC命令传播给slave节点或AOF
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 如果客户端不处于事务状态，直接报错
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI)) {
+        addReplyError(c,<span style="color:#e6db74">&#34;EXEC without MULTI&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
+    }
+    <span style="color:#75715e">// 检查是否需要终止EXEC操作，因为：
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (1) 有被监控的键被修改
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (2) 命令入队时发生错误
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 第一种情况会返回多个nil空对象，准确地说这不是一个错误而是一种特殊行为
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 第二种情况会返回一个EXECABORT错误
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> (CLIENT_DIRTY_CAS<span style="color:#f92672">|</span>CLIENT_DIRTY_EXEC)) {
+        addReply(c, c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_DIRTY_EXEC <span style="color:#f92672">?</span> shared.execaborterr :
+                                                  shared.nullmultibulk);
+        <span style="color:#75715e">// 取消事务，Redis不支持事务回滚
+</span><span style="color:#75715e"></span>        discardTransaction(c);
+        <span style="color:#66d9ef">goto</span> handle_monitor;
+    }
+
+    unwatchAllKeys(c); <span style="color:#75715e">// 取消所有对键的监控	
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 先备份一次命令队列中的命令
+</span><span style="color:#75715e"></span>    orig_argv <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argv;
+    orig_argc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argc;
+    orig_cmd <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>cmd;
+    addReplyMultiBulkLen(c,c<span style="color:#f92672">-&gt;</span>mstate.count);
+    <span style="color:#75715e">// 遍历事务中的命令，一一交给客户端处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>mstate.count; j<span style="color:#f92672">++</span>) {
+        c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>mstate.commands[j].argc;
+        c<span style="color:#f92672">-&gt;</span>argv <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>mstate.commands[j].argv;
+        c<span style="color:#f92672">-&gt;</span>cmd <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>mstate.commands[j].cmd;
+
+        <span style="color:#75715e">// 当我们第一次遇到写命令的时候，传播MULTI命令
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 这里我们MULTI/.../EXEC当做一个整体传输，保证服务器和AOF以及附属节点的一致性
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>must_propagate <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>(c<span style="color:#f92672">-&gt;</span>cmd<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CMD_READONLY)) {
+            execCommandPropagateMulti(c);
+            must_propagate <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        }
+		<span style="color:#75715e">// 执行命令
+</span><span style="color:#75715e"></span>        call(c,CMD_CALL_FULL);
+
+        <span style="color:#75715e">// 命令执行后可能会被修改，需要更新操作
+</span><span style="color:#75715e"></span>        c<span style="color:#f92672">-&gt;</span>mstate.commands[j].argc <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argc;
+        c<span style="color:#f92672">-&gt;</span>mstate.commands[j].argv <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argv;
+        c<span style="color:#f92672">-&gt;</span>mstate.commands[j].cmd <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>cmd;
+    }
+    <span style="color:#75715e">// 回复原命令
+</span><span style="color:#75715e"></span>    c<span style="color:#f92672">-&gt;</span>argv <span style="color:#f92672">=</span> orig_argv;
+    c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">=</span> orig_argc;
+    c<span style="color:#f92672">-&gt;</span>cmd <span style="color:#f92672">=</span> orig_cmd;
+    <span style="color:#75715e">// 消除事务状态
+</span><span style="color:#75715e"></span>    scardTransaction(c);
+    <span style="color:#75715e">// 确保MULTI命令确实被传播了
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (must_propagate) server.dirty<span style="color:#f92672">++</span>;
+
+handle_monitor:
+    <span style="color:#75715e">/* Send EXEC to clients waiting data from MONITOR. We do it here
+</span><span style="color:#75715e">     * since the natural order of commands execution is actually:
+</span><span style="color:#75715e">     * MUTLI, EXEC, ... commands inside transaction ...
+</span><span style="color:#75715e">     * Instead EXEC is flagged as CMD_SKIP_MONITOR in the command
+</span><span style="color:#75715e">     * table, and we do it here with correct ordering. */</span>
+    <span style="color:#66d9ef">if</span> (listLength(server.monitors) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>server.loading)
+        replicationFeedMonitors(c,server.monitors,c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id,c<span style="color:#f92672">-&gt;</span>argv,c<span style="color:#f92672">-&gt;</span>argc);
+}
+</code></pre></div>
+<h2 id="事务取消">事务取消</h2>
+
+<p>Redis提供了<code>DISCARD</code>函数来取消当前客户端的事务状态，其主要操作是：</p>
+
+<ul>
+<li>清空命令队列</li>
+<li>初始化命令队列</li>
+<li>取消标记flag</li>
+<li>取消所有被监视的键</li>
+</ul>
+
+<p>它的实现很简单，源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 取消事务 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">discardCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#75715e">// 如果当前不处在事务状态，则报错
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> CLIENT_MULTI)) {
+        addReplyError(c,<span style="color:#e6db74">&#34;DISCARD without MULTI&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
+    }
+    discardTransaction(c);
+    addReply(c,shared.ok);
+}
+<span style="color:#75715e">/* 取消事务的底层实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">discardTransaction</span>(client <span style="color:#f92672">*</span>c) {
+    freeClientMultiState(c); <span style="color:#75715e">// 释放事务队列
+</span><span style="color:#75715e"></span>    initClientMultiState(c);  <span style="color:#75715e">// 初始化事务队列
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 取消所有有关事务的标记
+</span><span style="color:#75715e"></span>    c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;=</span> <span style="color:#f92672">~</span>(CLIENT_MULTI<span style="color:#f92672">|</span>CLIENT_DIRTY_CAS<span style="color:#f92672">|</span>CLIENT_DIRTY_EXEC);
+    <span style="color:#75715e">// 取消所有被监视的键
+</span><span style="color:#75715e"></span>    unwatchAllKeys(c);
+}</code></pre></div>
+<h1 id="watch实现">WATCH实现</h1>
+
+<p>事务功能中还提供了监视键的功能，当我们对某个键执行了监视之后，如果事务执行期间该键被修改，则不执行该事务。同样，先看个小例子来试试<code>WATCH</code>的功能。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 客户端一，执行监视和事务*/</span>
+<span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>cli
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> WATCH key1  <span style="color:#75715e">// 监视key1
+</span><span style="color:#75715e"></span>OK
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> MULTI
+OK
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SET key1 value1
+QUEUED
+<span style="color:#75715e">/* 客户端二，执行修改 */</span>
+<span style="color:#f92672">~</span> redis<span style="color:#f92672">-</span>cli
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SET key1 value2
+OK
+</code></pre></div>
+<p>当客户端一执行<code>EXEC</code>时，其返回结果如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> EXEC
+(nil)
+</code></pre></div>
+<p>表示该事务没有被执行，进一步验证了<code>WATCH</code>的功能。接下来，就去源码里真正理解它是如何工作的吧。为了实现<code>WATCH/UNWATCH</code>功能，Redis在服务器的数据库结构中定义了一个字典结构用来存放被监听的键及其相应的客户端。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* redisDB数据库结构体 
+</span><span style="color:#75715e"> * | key1 | —— | client1 | -&gt; | client2 |-&gt; | client3 |
+</span><span style="color:#75715e"> * | key2 | —— | client4 |
+</span><span style="color:#75715e"> * | key3 | —— | client5 | -&gt; | client6 |
+</span><span style="color:#75715e"> * 该字典结构的键为被监视的键，值为链表，保存监视该键的所有客户端
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> redisDb {
+	<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>    dict <span style="color:#f92672">*</span>watched_keys;      <span style="color:#75715e">// 保存所有被监视的键及相应客户端
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>} redisDb;
+</code></pre></div>
+<p>另外，在客户端结构中，也定义了一个链表结构，用来保存该客户端所有监视的键，该链表的每一个接待都是一个<code>watchedKey</code>结构。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 客户端结构 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> client {
+    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>    list <span style="color:#f92672">*</span>watched_keys;  <span style="color:#75715e">// 保存该客户端所有被监视的键
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+<span style="color:#75715e">/* 被监视的键结构体 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> watchedKey {
+    robj <span style="color:#f92672">*</span>key;  <span style="color:#75715e">// 保存键
+</span><span style="color:#75715e"></span>    redisDb <span style="color:#f92672">*</span>db;  <span style="color:#75715e">// 保存键所在的数据库
+</span><span style="color:#75715e"></span>} watchedKey;
+</code></pre></div>
+<p>这么做的原因是，当客户端添加监视键的时候，能快速判断该键是否已经被监视；而且，当客户端取消所有被监视键的时候，可以快速找到该键所在的数据库，从而在<code>redisDb-&gt;watched_keys</code>删除该被监视的键。下面来看看添加监视键和取消监视键的源码实现。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* 监视一个或多个键 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">watchForKey</span>(client <span style="color:#f92672">*</span>c, robj <span style="color:#f92672">*</span>key) {
+    list <span style="color:#f92672">*</span>clients <span style="color:#f92672">=</span> NULL;
+    listIter li;
+    listNode <span style="color:#f92672">*</span>ln;
+    watchedKey <span style="color:#f92672">*</span>wk;
+
+    <span style="color:#75715e">// 检查该键是否已经被监视
+</span><span style="color:#75715e"></span>    listRewind(c<span style="color:#f92672">-&gt;</span>watched_keys,<span style="color:#f92672">&amp;</span>li);
+    <span style="color:#66d9ef">while</span>((ln <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>li))) {
+        wk <span style="color:#f92672">=</span> listNodeValue(ln);
+        <span style="color:#66d9ef">if</span> (wk<span style="color:#f92672">-&gt;</span>db <span style="color:#f92672">==</span> c<span style="color:#f92672">-&gt;</span>db <span style="color:#f92672">&amp;&amp;</span> equalStringObjects(key,wk<span style="color:#f92672">-&gt;</span>key))
+            <span style="color:#66d9ef">return</span>; <span style="color:#75715e">// 已经被监视直接返回
+</span><span style="color:#75715e"></span>    }
+    <span style="color:#75715e">// 该键没有被监视，添加该键
+</span><span style="color:#75715e"></span>    clients <span style="color:#f92672">=</span> dictFetchValue(c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>watched_keys,key);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>clients) {
+        clients <span style="color:#f92672">=</span> listCreate();
+        dictAdd(c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>watched_keys,key,clients);
+        incrRefCount(key);
+    }
+    listAddNodeTail(clients,c);
+    <span style="color:#75715e">// 添加新键到客户端的watched_keys链表中
+</span><span style="color:#75715e"></span>    wk <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>wk));
+    wk<span style="color:#f92672">-&gt;</span>key <span style="color:#f92672">=</span> key;
+    wk<span style="color:#f92672">-&gt;</span>db <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>db;
+    incrRefCount(key);
+    listAddNodeTail(c<span style="color:#f92672">-&gt;</span>watched_keys,wk);
+}
+<span style="color:#75715e">/* 取消对所有键的监视 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">unwatchAllKeys</span>(client <span style="color:#f92672">*</span>c) {
+    listIter li;
+    listNode <span style="color:#f92672">*</span>ln;
+	<span style="color:#75715e">// 当前没有监视的键，直接返回
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (listLength(c<span style="color:#f92672">-&gt;</span>watched_keys) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span>;
+    <span style="color:#75715e">// 遍历所有监视的键，并一一取消监视
+</span><span style="color:#75715e"></span>    listRewind(c<span style="color:#f92672">-&gt;</span>watched_keys,<span style="color:#f92672">&amp;</span>li);
+    <span style="color:#66d9ef">while</span>((ln <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>li))) {
+        list <span style="color:#f92672">*</span>clients;
+        watchedKey <span style="color:#f92672">*</span>wk;
+
+        <span style="color:#75715e">// 在db-&gt;watched_keys中查找该键，并在客户端链表中删除该客户端
+</span><span style="color:#75715e"></span>        wk <span style="color:#f92672">=</span> listNodeValue(ln);
+        clients <span style="color:#f92672">=</span> dictFetchValue(wk<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>watched_keys, wk<span style="color:#f92672">-&gt;</span>key);
+        serverAssertWithInfo(c,NULL,clients <span style="color:#f92672">!=</span> NULL);
+        listDelNode(clients,listSearchKey(clients,c));
+        <span style="color:#75715e">// 如果没有客户端监视该键了，直接删除键
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (listLength(clients) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+            dictDelete(wk<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>watched_keys, wk<span style="color:#f92672">-&gt;</span>key);
+        <span style="color:#75715e">// 从客户端的watched_keys链表中移除监视的键
+</span><span style="color:#75715e"></span>        listDelNode(c<span style="color:#f92672">-&gt;</span>watched_keys,ln);
+        decrRefCount(wk<span style="color:#f92672">-&gt;</span>key);
+        zfree(wk);
+    }
+}</code></pre></div>
+<p>以上源码就是对字典结构和链表结构的添加和删除操作，很好理解。那么服务器运行过程中，在哪里判断该键有没有被修改呢？我们找到了<code>touchWatchedKey</code>函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 标记被监视的键已被修改 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">touchWatchedKey</span>(redisDb <span style="color:#f92672">*</span>db, robj <span style="color:#f92672">*</span>key) {
+    list <span style="color:#f92672">*</span>clients;
+    listIter li;
+    listNode <span style="color:#f92672">*</span>ln;
+
+    <span style="color:#66d9ef">if</span> (dictSize(db<span style="color:#f92672">-&gt;</span>watched_keys) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span>;
+    <span style="color:#75715e">// 获取监视key的所有客户端
+</span><span style="color:#75715e"></span>    clients <span style="color:#f92672">=</span> dictFetchValue(db<span style="color:#f92672">-&gt;</span>watched_keys, key);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>clients) <span style="color:#66d9ef">return</span>;
+
+    <span style="color:#75715e">// 标记监视key的所有客户端为CLIENT_DIRTY_CAS
+</span><span style="color:#75715e"></span>    listRewind(clients,<span style="color:#f92672">&amp;</span>li);
+    <span style="color:#66d9ef">while</span>((ln <span style="color:#f92672">=</span> listNext(<span style="color:#f92672">&amp;</span>li))) {
+        client <span style="color:#f92672">*</span>c <span style="color:#f92672">=</span> listNodeValue(ln);
+		<span style="color:#75715e">// 在flag变量中标记
+</span><span style="color:#75715e"></span>        c<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">|=</span> CLIENT_DIRTY_CAS;
+    }
+}
+</code></pre></div>
+<p>当然，这只是对所有被修改键的客户端进行标记，还是没有弄清楚在什么时候标记这些客户端。于是，继续追溯，发现这个函数通常被<code>signalModifyKey() </code>函数进行封装，这下又见到了我们的『老朋友』了，这个总是在键被修改的函数里调用的函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 标记被修改的键 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">signalModifiedKey</span>(redisDb <span style="color:#f92672">*</span>db, robj <span style="color:#f92672">*</span>key) {
+    touchWatchedKey(db,key);
+}
+</code></pre></div>
+<p>这么一来算是理清了<code>WATCH</code>命令的整个实现流程。</p>
+
+<h1 id="事务小结">事务小结</h1>
+
+<p>本篇博客分析了事务MULTI/EXEC命令的实现以及WATCH监视命令的实现，从源码的角度剖析了其整个工作流程，涉及到multi.c、server.c和db.c文件，大家阅读的时候记得一定要理清整个流程。Redis的事务是具有ACID性质的，即原子性、一致性、隔离性和持久性，这个可以在源码中体现出来。另外，Redis的WATCH命令采用乐观锁的设计，只要被监视的键被修改，该事务就不执行。短短300多行代码就实现了这个实用强大的功能！值得学习！</p>
+
+<p>欢迎转载本篇博客，不过请注明博客原地址：<a href="http://zcheng.ren/2017/01/02/TheAnnotatedRedisSourceMulti/">http://zcheng.ren/2017/01/02/TheAnnotatedRedisSourceMulti/</a></p>
+
+<p><p style="text-align:right">张程<p></p>
+
+<p><p style="text-align:right">于湖北·武汉 <p></p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourceaof/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--AOF持久化</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourceae/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--事件ae</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

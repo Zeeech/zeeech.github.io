@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--整数集合Intset</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--整数集合Intset" />
+<meta property="og:description" content="本系列博客文章已经分析了Redis的大部分数据结构，包括动态字符串，双端链表，字典，跳跃表等，这些数据结构都非常强大实用，但是在内存消耗方面也非常“巨大”。Redis的数据都是存放在内存上面的，所以对内存的使用要求及其苛刻，Redis会想方设法的来节省内存。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourceintset/" /><meta property="article:published_time" content="2016-12-09T14:21:56&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-09T14:21:56&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--整数集合Intset"/>
+<meta name="twitter:description" content="本系列博客文章已经分析了Redis的大部分数据结构，包括动态字符串，双端链表，字典，跳跃表等，这些数据结构都非常强大实用，但是在内存消耗方面也非常“巨大”。Redis的数据都是存放在内存上面的，所以对内存的使用要求及其苛刻，Redis会想方设法的来节省内存。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--整数集合Intset</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-09T14:21:56">December 09, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#intset数据结构">intset数据结构</a></li>
+<li><a href="#升级">升级</a></li>
+<li><a href="#inset基本操作">inset基本操作</a>
+<ul>
+<li><a href="#创建intset">创建intset</a></li>
+<li><a href="#添加元素">添加元素</a></li>
+<li><a href="#移除数据">移除数据</a></li>
+<li><a href="#其他操作函数">其他操作函数</a></li>
+</ul></li>
+<li><a href="#intset小结">intset小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>本系列博客文章已经分析了Redis的大部分数据结构，包括动态字符串，双端链表，字典，跳跃表等，这些数据结构都非常强大实用，但是在内存消耗方面也非常“巨大”。Redis的数据都是存放在内存上面的，所以对内存的使用要求及其苛刻，Redis会想方设法的来节省内存。</p>
+
+<p>假设有一组集合\(\{1,2,3,6,5\}\)，如果采用上述的数据结构来存储的话，必然会付出昂贵的内存代价，因此，Redis在这种小数据量的条件下，会使用内存映射来代替内部数据结构。这就使得整数集合（intset）和压缩（ziplist）这两类节省内存的数据结构应运而生了。</p>
+
+<h1 id="intset数据结构">intset数据结构</h1>
+
+<p>Intset是集合键的底层实现之一，如果一个集合满足只保存整数元素和元素数量不多这两个条件，那么Redis就会采用intset来保存这个数据集。intset的数据结构如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> intset {
+    uint32_t encoding; <span style="color:#75715e">// 编码模式
+</span><span style="color:#75715e"></span>    uint32_t length;  <span style="color:#75715e">// 长度
+</span><span style="color:#75715e"></span>    int8_t contents[];  <span style="color:#75715e">// 数据部分
+</span><span style="color:#75715e"></span>} intset;
+</code></pre></div>
+<p>其中，encoding字段表示该整数集合的编码模式，Redis提供三种模式的宏定义如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 可以看出，虽然contents部分指明的类型是int8_t，但是数据并不以这个类型存放
+</span><span style="color:#75715e">// 数据以int16_t类型存放，每个占2个字节，能存放-32768~32767范围内的整数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define INTSET_ENC_INT16 (sizeof(int16_t)) 
+</span><span style="color:#75715e"></span><span style="color:#75715e">// 数据以int32_t类型存放，每个占4个字节，能存放-2^32-1~2^32范围内的整数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define INTSET_ENC_INT32 (sizeof(int32_t)) 
+</span><span style="color:#75715e"></span><span style="color:#75715e">// 数据以int64_t类型存放，每个占8个字节，能存放-2^64-1~2^64范围内的整数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define INTSET_ENC_INT64 (sizeof(int64_t)) 
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>length字段用来保存集合中元素的个数。</p>
+
+<p>contents字段用于保存整数，数组中的元素要求不含有重复的整数且按照从小到大的顺序排列。在读取和写入的时候，均按照指定的encoding编码模式读取和写入。</p>
+
+<h1 id="升级">升级</h1>
+
+<p>inset中最值得一提的就是升级操作。当intset中添加的整数超过当前编码类型的时候，intset会自定升级到能容纳该整数类型的编码模式，如\(\{1,2,3,4\}\)，创建该集合的时候，采用int16_t的类型存储，现在需要像集合中添加一个整数40000，超出了当前集合能存放的最大范围，这个时候就需要对该整数集合进行升级操作，将encoding字段改成int32_6类型，并对contents字段内的数据进行重排列。</p>
+
+<p>Redis提供intsetUpgradeAndAdd函数来对整数集合进行升级然后添加数据。其升级过程可以参考如下图示：</p>
+
+<p><div style="text-align: center">
+<img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkg8hvupwj30li0h1dhi.jpg"/>
+</div>
+其源代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 升级整数集合并添加元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> intset <span style="color:#f92672">*</span><span style="color:#a6e22e">intsetUpgradeAndAdd</span>(intset <span style="color:#f92672">*</span>is, int64_t value) {
+    <span style="color:#75715e">// 获取当前编码格式
+</span><span style="color:#75715e"></span>    uint8_t curenc <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding);
+    <span style="color:#75715e">// 获取需要升级到的编码格式
+</span><span style="color:#75715e"></span>    uint8_t newenc <span style="color:#f92672">=</span> _intsetValueEncoding(value);
+    <span style="color:#75715e">// 获取原整数集中的整数个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> length <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length);
+    <span style="color:#75715e">// 由于待添加的元素一定是大于或者小于整数集中所有元素，故此处需要判断添加到新数据集的头部或者尾部
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 如果value为正，则添加到新数据集的尾部；反之则添加到首部
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> prepend <span style="color:#f92672">=</span> value <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#75715e">// 设定新的编码格式
+</span><span style="color:#75715e"></span>    is<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> intrev32ifbe(newenc);
+    <span style="color:#75715e">// 对原数据集进行扩容
+</span><span style="color:#75715e"></span>    is <span style="color:#f92672">=</span> intsetResize(is,intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+
+    <span style="color:#75715e">// 采用从后往前的重编码顺序，这样就避免覆盖数据了。
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(length<span style="color:#f92672">--</span>)
+        <span style="color:#75715e">// 将原数据集中的数据依次赋值到新数据集中
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// _intsetGetEncoded(is,length,curenc)获取数据集is的第length位上的数据，curenc为原数据集的编码格式
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// _intsetSet将数据集is的第length+prepend位上设定为上一函数返回的值
+</span><span style="color:#75715e"></span>        _intsetSet(is,length<span style="color:#f92672">+</span>prepend,_intsetGetEncoded(is,length,curenc));
+
+    <span style="color:#75715e">// 将待添加的数据添加到首部或者尾部
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (prepend)
+        _intsetSet(is,<span style="color:#ae81ff">0</span>,value);
+    <span style="color:#66d9ef">else</span>
+        _intsetSet(is,intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length),value);
+    <span style="color:#75715e">// 修改新数据集的长度
+</span><span style="color:#75715e"></span>    is<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> intrev32ifbe(intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">return</span> is;
+}
+<span style="color:#75715e">// 将value设定到整数集合is的第pos位
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">_intsetSet</span>(intset <span style="color:#f92672">*</span>is, <span style="color:#66d9ef">int</span> pos, int64_t value) {
+    <span style="color:#75715e">// 获取整数集合is的编码格式
+</span><span style="color:#75715e"></span>    uint32_t encoding <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding);
+    <span style="color:#75715e">// 针对不同的编码格式做相应的处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">==</span> INTSET_ENC_INT64) {
+        <span style="color:#75715e">// 将对应的pos位设置成value
+</span><span style="color:#75715e"></span>        ((int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)[pos] <span style="color:#f92672">=</span> value;
+        <span style="color:#75715e">// 如果必要，对新值进行大小端转换
+</span><span style="color:#75715e"></span>        memrev64ifbe(((int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">==</span> INTSET_ENC_INT32) {
+        <span style="color:#75715e">// 同上
+</span><span style="color:#75715e"></span>        ((int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)[pos] <span style="color:#f92672">=</span> value;
+        memrev32ifbe(((int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 同上
+</span><span style="color:#75715e"></span>        ((int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)[pos] <span style="color:#f92672">=</span> value;
+        memrev16ifbe(((int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos);
+    }
+}
+<span style="color:#75715e">// 获取整数集is中，按照enc编码格式的第pos位上的元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> int64_t <span style="color:#a6e22e">_intsetGetEncoded</span>(intset <span style="color:#f92672">*</span>is, <span style="color:#66d9ef">int</span> pos, uint8_t enc) {
+    int64_t v64;
+    int32_t v32;
+    int16_t v16;
+
+    <span style="color:#75715e">// 针对不同的编码格式做相应的处理
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (enc*)is-&gt;contents获取整数集中的数据部分
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// (enc*)is-&gt;contents+pos获取第pos位上的元素
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// memrevEncifbe(&amp;vEnc)如有必要对拷贝出来的值进行大小端转换
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (enc <span style="color:#f92672">==</span> INTSET_ENC_INT64) {
+        memcpy(<span style="color:#f92672">&amp;</span>v64,((int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos,<span style="color:#66d9ef">sizeof</span>(v64));
+        memrev64ifbe(<span style="color:#f92672">&amp;</span>v64);
+        <span style="color:#66d9ef">return</span> v64;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (enc <span style="color:#f92672">==</span> INTSET_ENC_INT32) {
+        memcpy(<span style="color:#f92672">&amp;</span>v32,((int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos,<span style="color:#66d9ef">sizeof</span>(v32));
+        memrev32ifbe(<span style="color:#f92672">&amp;</span>v32);
+        <span style="color:#66d9ef">return</span> v32;
+    } <span style="color:#66d9ef">else</span> {
+        memcpy(<span style="color:#f92672">&amp;</span>v16,((int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents)<span style="color:#f92672">+</span>pos,<span style="color:#66d9ef">sizeof</span>(v16));
+        memrev16ifbe(<span style="color:#f92672">&amp;</span>v16);
+        <span style="color:#66d9ef">return</span> v16;
+    }
+}
+</code></pre></div>
+<blockquote>
+<p>Redis不提供降级操作，所以一旦对数组进行了升级，编码就会一直保持升级后的状态。</p>
+</blockquote>
+
+<h1 id="inset基本操作">inset基本操作</h1>
+
+<h2 id="创建intset">创建intset</h2>
+
+<p>Redis在创建intset集合时，默认采用int16_t编码格式。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">intset <span style="color:#f92672">*</span><span style="color:#a6e22e">intsetNew</span>(<span style="color:#66d9ef">void</span>) {
+    intset <span style="color:#f92672">*</span>is <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(intset));
+    is<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> intrev32ifbe(INTSET_ENC_INT16);
+    is<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">return</span> is;
+}
+</code></pre></div>
+<h2 id="添加元素">添加元素</h2>
+
+<p>intset在添加元素时需要判断新数据的大小，如果超出原编码格式能表示的范围，则调用上面的intsetUpgradeAndAdd函数进行添加，如果没有超出，则直接添加到指定位置。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 向整数集合中添加元素
+</span><span style="color:#75715e"></span>intset <span style="color:#f92672">*</span><span style="color:#a6e22e">intsetAdd</span>(intset <span style="color:#f92672">*</span>is, int64_t value, uint8_t <span style="color:#f92672">*</span>success) {
+    uint8_t valenc <span style="color:#f92672">=</span> _intsetValueEncoding(value);
+    uint32_t pos;
+    <span style="color:#66d9ef">if</span> (success) <span style="color:#f92672">*</span>success <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+
+    <span style="color:#75715e">// 如果超出了当前编码格式所能表示的范围，则升级整数集合并添加元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (valenc <span style="color:#f92672">&gt;</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding)) {
+        <span style="color:#66d9ef">return</span> intsetUpgradeAndAdd(is,value);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果没有超出，则计算待添加整数需要应添加到整数集合中的位置
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (intsetSearch(is,value,<span style="color:#f92672">&amp;</span>pos)) {
+            <span style="color:#75715e">// intset中应不存在相同元素，如果待添加的整数已存在，则直接返回
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (success) <span style="color:#f92672">*</span>success <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+            <span style="color:#66d9ef">return</span> is;
+        }
+        <span style="color:#75715e">// 调整整数集合的大小
+</span><span style="color:#75715e"></span>        is <span style="color:#f92672">=</span> intsetResize(is,intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+        <span style="color:#75715e">// 将整数集合中pos~end的数据移动到pos+1~newend上
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (pos <span style="color:#f92672">&lt;</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)) intsetMoveTail(is,pos,pos<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+    }
+    <span style="color:#75715e">// 添加数据到第pos位
+</span><span style="color:#75715e"></span>    _intsetSet(is,pos,value);
+    <span style="color:#75715e">// 更新length值
+</span><span style="color:#75715e"></span>    is<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> intrev32ifbe(intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>);
+    <span style="color:#66d9ef">return</span> is;
+}
+<span style="color:#75715e">// 查找value在整数集is中该添加到的位置
+</span><span style="color:#75715e">// 如果整数集中不存在value值，则返回0，并将插入位置存放在pos变量中
+</span><span style="color:#75715e">// 反之，返回1，表示value已存在
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> uint8_t <span style="color:#a6e22e">intsetSearch</span>(intset <span style="color:#f92672">*</span>is, int64_t value, uint32_t <span style="color:#f92672">*</span>pos) {
+    <span style="color:#66d9ef">int</span> min <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, max <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, mid <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+    int64_t cur <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+
+    <span style="color:#75715e">// 判断数据集是否为空
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果待查找的数超出了整数集中现有元素的最大和最小范围，则不需要查找
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&gt;</span> _intsetGet(is,intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)) {
+            <span style="color:#75715e">// value大于整数集中的最大值，则插入到整数集末尾
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length);
+            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&lt;</span> _intsetGet(is,<span style="color:#ae81ff">0</span>)) {
+            <span style="color:#75715e">// value小于整数集中的最小值，则插入到整数集头部
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+        }
+    }
+    <span style="color:#75715e">// 利用二分法进行查找，时间复杂度为O(logn)
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>(max <span style="color:#f92672">&gt;=</span> min) {
+        mid <span style="color:#f92672">=</span> ((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)min <span style="color:#f92672">+</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)max) <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">1</span>;
+        cur <span style="color:#f92672">=</span> _intsetGet(is,mid);
+        <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&gt;</span> cur) {
+            min <span style="color:#f92672">=</span> mid<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>;
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&lt;</span> cur) {
+            max <span style="color:#f92672">=</span> mid<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#66d9ef">break</span>;
+        }
+    }
+
+    <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">==</span> cur) {
+        <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> mid;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#66d9ef">if</span> (pos) <span style="color:#f92672">*</span>pos <span style="color:#f92672">=</span> min;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    }
+}
+<span style="color:#75715e">// 将整数集的from为开始的数据全部移动到to位以后
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">intsetMoveTail</span>(intset <span style="color:#f92672">*</span>is, uint32_t from, uint32_t to) {
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>src, <span style="color:#f92672">*</span>dst;
+    uint32_t bytes <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length)<span style="color:#f92672">-</span>from;
+    uint32_t encoding <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding);
+    <span style="color:#75715e">// 根据编码格式做相应处理
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// src为待移动内存的初始位置
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// dst为需要移动到的内存块的初始位置
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// bytes为需要移动的字节数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">==</span> INTSET_ENC_INT64) {
+        src <span style="color:#f92672">=</span> (int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>from;
+        dst <span style="color:#f92672">=</span> (int64_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>to;
+        bytes <span style="color:#f92672">*=</span> <span style="color:#66d9ef">sizeof</span>(int64_t);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">==</span> INTSET_ENC_INT32) {
+        src <span style="color:#f92672">=</span> (int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>from;
+        dst <span style="color:#f92672">=</span> (int32_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>to;
+        bytes <span style="color:#f92672">*=</span> <span style="color:#66d9ef">sizeof</span>(int32_t);
+    } <span style="color:#66d9ef">else</span> {
+        src <span style="color:#f92672">=</span> (int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>from;
+        dst <span style="color:#f92672">=</span> (int16_t<span style="color:#f92672">*</span>)is<span style="color:#f92672">-&gt;</span>contents<span style="color:#f92672">+</span>to;
+        bytes <span style="color:#f92672">*=</span> <span style="color:#66d9ef">sizeof</span>(int16_t);
+    }
+    memmove(dst,src,bytes);
+}
+</code></pre></div>
+<h2 id="移除数据">移除数据</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 将整数集合中值为value的整数移除
+</span><span style="color:#75715e"></span>intset <span style="color:#f92672">*</span><span style="color:#a6e22e">intsetRemove</span>(intset <span style="color:#f92672">*</span>is, int64_t value, <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>success) {
+    uint8_t valenc <span style="color:#f92672">=</span> _intsetValueEncoding(value);
+    uint32_t pos;
+    <span style="color:#66d9ef">if</span> (success) <span style="color:#f92672">*</span>success <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 符合删除条件的要求有两条：
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// -- 值不能超出当前编码格式能表示的范围
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// -- 整数集中能找到该值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (valenc <span style="color:#f92672">&lt;=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>encoding) <span style="color:#f92672">&amp;&amp;</span> intsetSearch(is,value,<span style="color:#f92672">&amp;</span>pos)) {
+        uint32_t len <span style="color:#f92672">=</span> intrev32ifbe(is<span style="color:#f92672">-&gt;</span>length);
+
+        <span style="color:#75715e">// 表示能删除
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (success) <span style="color:#f92672">*</span>success <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+
+        <span style="color:#75715e">// 移动内存，删除数据
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (pos <span style="color:#f92672">&lt;</span> (len<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)) intsetMoveTail(is,pos<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>,pos);
+        <span style="color:#75715e">// 调整内存大小
+</span><span style="color:#75715e"></span>        is <span style="color:#f92672">=</span> intsetResize(is,len<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+        <span style="color:#75715e">// 更新length值
+</span><span style="color:#75715e"></span>        is<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">=</span> intrev32ifbe(len<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+    }
+    <span style="color:#66d9ef">return</span> is;
+}
+</code></pre></div>
+<h2 id="其他操作函数">其他操作函数</h2>
+
+<ul>
+<li>intsetFind 用二分法判断给定值是否存在于集合中</li>
+<li>intsetRandom 随机返回整数集合中的一个数</li>
+<li>intsetGet 取出底层属猪在给定索引上的元素</li>
+<li>intsetLen 返回整数集合中的元素个数</li>
+<li>intsetloblen 返回整数集合占用的内存字节数</li>
+</ul>
+
+<h1 id="intset小结">intset小结</h1>
+
+<p>整数集合intset的底层实现为数组，该数组中的元素有序、无重复的存放，为了更好的节省内存，intset提供了升级操作，但是不支持降级操作。intset的源码实现比较简单，但功能上很实用。</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcehyperloglog/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--基数统计hyperloglog</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourceziplist/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--压缩列表ziplist</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

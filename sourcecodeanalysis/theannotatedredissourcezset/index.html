@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--有序集合t_zset</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--有序集合t_zset" />
+<meta property="og:description" content="今天来剖析一个比较有意思的数据类型—— 有序集合zset，说实话，它的源码真的是多，而且繁琐，不过，其中的一部分在Redis源码剖析&ndash;跳跃表zskiplist中分析过了。有序集合到底是什么呢？有序集合里面存放的元素都自带一个分值，根据这个分值来对元素进行排序，从而使其成为一个有序的集合。接下来，枯燥的Read Code时间到了。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourcezset/" /><meta property="article:published_time" content="2016-12-24T11:01:31&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-24T11:01:31&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--有序集合t_zset"/>
+<meta name="twitter:description" content="今天来剖析一个比较有意思的数据类型—— 有序集合zset，说实话，它的源码真的是多，而且繁琐，不过，其中的一部分在Redis源码剖析&ndash;跳跃表zskiplist中分析过了。有序集合到底是什么呢？有序集合里面存放的元素都自带一个分值，根据这个分值来对元素进行排序，从而使其成为一个有序的集合。接下来，枯燥的Read Code时间到了。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--有序集合t_zset</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-24T11:01:31">December 24, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#zset数据结构">Zset数据结构</a></li>
+<li><a href="#zset迭代器">Zset迭代器</a></li>
+<li><a href="#ziplist编码的zset">Ziplist编码的zset</a></li>
+<li><a href="#skiplist编码的zset">Skiplist编码的zset</a></li>
+<li><a href="#编码转换">编码转换</a></li>
+<li><a href="#zset命令">Zset命令</a></li>
+<li><a href="#zset小结">zset小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>今天来剖析一个比较有意思的数据类型—— 有序集合zset，说实话，它的源码真的是多，而且繁琐，不过，其中的一部分在<a href="http://zcheng.ren/2016/12/06/TheAnnotatedRedisSourceZskiplist/">Redis源码剖析&ndash;跳跃表zskiplist</a>中分析过了。有序集合到底是什么呢？有序集合里面存放的元素都自带一个分值，根据这个分值来对元素进行排序，从而使其成为一个有序的集合。接下来，枯燥的Read Code时间到了。</p>
+
+<h1 id="zset数据结构">Zset数据结构</h1>
+
+<p>有序集合zset是由<a href="http://zcheng.ren/2016/12/14/TheAnnotatedRedisSourceObject/">RedisObject</a>来管理，当Object结构中的type字段为OBJ_ZSET，且编码字段为OBJ_ENCODING_ZIPLIST或OBJ_ENCODING_SKIPLIST。这样才能被称为是一个有序集合对象。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* RedisObject结构 */</span>
+<span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> redisObject {
+    <span style="color:#66d9ef">unsigned</span> type:<span style="color:#ae81ff">4</span>;  <span style="color:#75715e">// OBJ_ZSET表示有序集合对象
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> encoding:<span style="color:#ae81ff">4</span>;  <span style="color:#75715e">// 编码字段为OBJ_ENCODING_ZIPLIST或OBJ_ENCODING_SKIPLIST
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> lru:LRU_BITS; <span style="color:#75715e">// LRU_BITS为24位
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> refcount;
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr;  <span style="color:#75715e">// 指向数据部分
+</span><span style="color:#75715e"></span>} robj;
+</code></pre></div>
+<p>通常涉及到两种编码结构时，都会在特定情况下，对底层数据结构进行转换，以达到效率和内存占用的平衡。zset规定了两个阈值如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define OBJ_ZSET_MAX_ZIPLIST_ENTRIES 128  </span><span style="color:#75715e">// ziplist中最多存放的节点数
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define OBJ_ZSET_MAX_ZIPLIST_VALUE 64  </span><span style="color:#75715e">// ziplist中最大存放的数据长度
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>当数据量很小且数据长度很小时，zset采用ziplist编码；一旦数据量超过规定的阈值（128）或者添加的元素长度大于规定的阈值（64）时，会将底层的数据结构转换为skiplist，从而提高效率。</p>
+
+<h1 id="zset迭代器">Zset迭代器</h1>
+
+<p>zset的迭代器用于范围性操作命令中遍历zset，Redis对于zset的迭代器的设计比较巧妙，采用union来设计。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* zset中的迭代器结构涉及，采用union可以节省内存 */</span>
+<span style="color:#66d9ef">union</span> _iterzset {
+    <span style="color:#75715e">// 编码为ziplist时的迭代器结构
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> {
+      <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl;
+      <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>eptr, <span style="color:#f92672">*</span>sptr;
+    } zl;
+    <span style="color:#75715e">// 编码为skiplist时的迭代器结构
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> {
+      zset <span style="color:#f92672">*</span>zs;
+      zskiplistNode <span style="color:#f92672">*</span>node;
+    } sl;
+  } zset;
+</code></pre></div>
+<p>关于其迭代器的操作函数，本片博客就省略了，因为大体上模式都相同。另外，redis3.2.5版本中貌似有一些遗留性的代码，把set结构的迭代器也混合在一起了，各位看的时候可以忽略掉。</p>
+
+<h1 id="ziplist编码的zset">Ziplist编码的zset</h1>
+
+<p>如果一个zset结构采用ziplist作为其底层数据，那么其结构的内存布局如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#f92672">|</span> zlbytes <span style="color:#f92672">|</span> zltail <span style="color:#f92672">|</span> zllen <span style="color:#f92672">|</span> ele1 <span style="color:#f92672">|</span> score1 <span style="color:#f92672">|</span> .... <span style="color:#f92672">|</span> zlend
+</code></pre></div>
+<p>其中，每一个元素与其对应的分值都是成对出现的。如果对ziplist数据结构不熟悉的可以参考<a href="http://zcheng.ren/2016/12/13/TheAnnotatedRedisSourceZiplist/">Redis数据结构ziplist</a>。我们继续，Redis没有向其他结构那样通过encoding字段来控制其接口函数，而是为ziplist和skiplist编码的zset各自提供了一套接口函数。关于ziplist编码的zset有如下接口函数：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 获取zset对象中sptr指向的分值score */</span>
+<span style="color:#66d9ef">double</span> <span style="color:#a6e22e">zzlGetScore</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>sptr);
+<span style="color:#75715e">/* 获取zset对象中sptr指向的元素，返回一个新的Redis string对象，该对象存放元素值*/</span>
+robj <span style="color:#f92672">*</span><span style="color:#a6e22e">ziplistGetObject</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>sptr);
+<span style="color:#75715e">/* 比较zset对象中eptr指向的元素与给定元素的大小*/</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zzlCompareElements</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>eptr, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>cstr, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> clen);
+<span style="color:#75715e">/* 获取zset对象中eptr指向元素的下一个元素*/</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zzlNext</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>eptr, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>sptr) ;
+<span style="color:#75715e">/* 获取zset对象中元素的个数，为ziplist中元素个数的一半*/</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zzlLength</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl);
+<span style="color:#75715e">/* 获取zset对象中eptr指向的元素的前一个元素*/</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zzlPrev</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>eptr, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">**</span>sptr);
+<span style="color:#75715e">/* 如果给定ziplist中至少有一个节点在range范围内，返回1；反之返回0 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zzlIsInRange</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, zrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 返回第一个score值在给定范围内的节点，没有则返回null */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlFirstInRange</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, zrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 返回最后一个score值在给定范围内的节点，没有则返回NULL */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlLastInRange</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, zrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 判断指定元素与给定范围的最小值的大小 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zzlLexValueGteMin</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p, zlexrangespec <span style="color:#f92672">*</span>spec);
+<span style="color:#75715e">/* 判断指定元素与给定范围的最大值的大小 */</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zzlLexValueLteMax</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>p, zlexrangespec <span style="color:#f92672">*</span>spec);
+<span style="color:#75715e">/* 判断指定元素是否存在于给定范围内，与zzlIsInRange不同的是，前者比较元素，后者比较score分值*/</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zzlIsInLexRange</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, zlexrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 返回ziplist中第一个存在于给定范围内的元素 */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlFirstInLexRange</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, zlexrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 返回ziplist中最后一个存在于给定范围内的元素 */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlLastInLexRange</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, zlexrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 查找ziplist中是否存在给定元素与分值 */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlFind</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, robj <span style="color:#f92672">*</span>ele, <span style="color:#66d9ef">double</span> <span style="color:#f92672">*</span>score);
+<span style="color:#75715e">/* 删除元素及其分值(element,score) */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlDelete</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>eptr);
+<span style="color:#75715e">/* 在指定位置插入一个元素及其分值(element score)
+</span><span style="color:#75715e"> * 如果eptr为空，插入到ziplist尾部 
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlInsertAt</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>eptr, robj <span style="color:#f92672">*</span>ele, <span style="color:#66d9ef">double</span> score);
+<span style="color:#75715e">/* 在指定位置插入一个元素及其分值(element,score)
+</span><span style="color:#75715e"> * 假定该元素不存在于该ziplist中，其中元素按分值大小排序
+</span><span style="color:#75715e"> * 如果分值相同，则按字典序排序
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlInsert</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, robj <span style="color:#f92672">*</span>ele, <span style="color:#66d9ef">double</span> score);
+<span style="color:#75715e">/* 删除给定score范围内的数据 */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlDeleteRangeByScore</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, zrangespec <span style="color:#f92672">*</span>range, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>deleted);
+<span style="color:#75715e">/* 删除给定元素范围内的数据 */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlDeleteRangeByLex</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, zlexrangespec <span style="color:#f92672">*</span>range, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>deleted);
+<span style="color:#75715e">/* 删除给定排名范围内的数据，zset根据分值排名，如分值相同根据字典序排名*/</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zzlDeleteRangeByRank(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> start, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> end, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>deleted)
+</code></pre></div>
+<p>看到这么多的接口函数，都傻眼了。挑个比较重要的来分析一下吧，其他的各位有兴趣的可以找源码看看。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 在指定位置插入一个元素及其分值(element,score)
+</span><span style="color:#75715e"> * 假定该元素不存在于该ziplist中，其中元素按分值大小排序
+</span><span style="color:#75715e"> * 如果分值相同，则按字典序排序
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zzlInsert</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl, robj <span style="color:#f92672">*</span>ele, <span style="color:#66d9ef">double</span> score) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>eptr <span style="color:#f92672">=</span> ziplistIndex(zl,<span style="color:#ae81ff">0</span>), <span style="color:#f92672">*</span>sptr;
+    <span style="color:#66d9ef">double</span> s;
+	<span style="color:#75715e">// 从ele中解码出元素
+</span><span style="color:#75715e"></span>    ele <span style="color:#f92672">=</span> getDecodedObject(ele);
+    <span style="color:#66d9ef">while</span> (eptr <span style="color:#f92672">!=</span> NULL) {
+        <span style="color:#75715e">// 得到eptr元素对应的分值对象score
+</span><span style="color:#75715e"></span>        sptr <span style="color:#f92672">=</span> ziplistNext(zl,eptr);
+        serverAssertWithInfo(NULL,ele,sptr <span style="color:#f92672">!=</span> NULL);
+        <span style="color:#75715e">// 获取分值
+</span><span style="color:#75715e"></span>        s <span style="color:#f92672">=</span> zzlGetScore(sptr);
+      
+        <span style="color:#66d9ef">if</span> (s <span style="color:#f92672">&gt;</span> score) {
+            <span style="color:#75715e">/* ziplist本身是排序的，如果找到第一个分值大于score的元素，则
+</span><span style="color:#75715e">             * 表明给定元素应该插在当前找的元素的前面
+</span><span style="color:#75715e">             */</span>
+            zl <span style="color:#f92672">=</span> zzlInsertAt(zl,eptr,ele,score);
+            <span style="color:#66d9ef">break</span>;
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (s <span style="color:#f92672">==</span> score) {
+            <span style="color:#75715e">/* 如果分值相同，则按字典排列 */</span>
+            <span style="color:#66d9ef">if</span> (zzlCompareElements(eptr,ele<span style="color:#f92672">-&gt;</span>ptr,sdslen(ele<span style="color:#f92672">-&gt;</span>ptr)) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+                zl <span style="color:#f92672">=</span> zzlInsertAt(zl,eptr,ele,score);
+                <span style="color:#66d9ef">break</span>;
+            }
+        }
+        <span style="color:#75715e">// 遍历到下一个元素
+</span><span style="color:#75715e"></span>        eptr <span style="color:#f92672">=</span> ziplistNext(zl,sptr);
+    }
+    <span style="color:#75715e">// 如果所有分值均小于score，则插入到ziplist末尾
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (eptr <span style="color:#f92672">==</span> NULL)
+        zl <span style="color:#f92672">=</span> zzlInsertAt(zl,NULL,ele,score);
+    <span style="color:#75715e">// 临时对象释放
+</span><span style="color:#75715e"></span>    decrRefCount(ele);
+    <span style="color:#66d9ef">return</span> zl;
+}
+</code></pre></div>
+<h1 id="skiplist编码的zset">Skiplist编码的zset</h1>
+
+<p>当zset对象的encoding字段为OBJ_ENCODING_SKIPLIST时，其底层的数据结构为skiplist。如果对跳跃表skiplist不熟悉的话可以跳转到<a href="http://zcheng.ren/2016/12/06/TheAnnotatedRedisSourceZskiplist/">Redis源码分析—跳跃表skiplist</a>。Redis为skiplist编码的有序列表提供了下面的结构体定义。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> zset {
+    dict <span style="color:#f92672">*</span>dict;  <span style="color:#75715e">// 字典结构
+</span><span style="color:#75715e"></span>    zskiplist <span style="color:#f92672">*</span>zsl;  <span style="color:#75715e">// 跳跃表
+</span><span style="color:#75715e"></span>} zset;
+</code></pre></div>
+<p>这里为什么要给跳跃表加上一个字典结构呢？我们知道跳跃表在插入、删除和查找操作上都可以做到O(logn)的时间复杂度，但是，zset还需要支持获取给定元素的分值、判断某元素是否存在于zset中等操作，这些如果在skiplist的基础上做就相对较复杂，效率不高，所以zset维护了一个字典结构，用来快速的获取给定元素的分值以及判断元素值是否存在于zset中等操作，这样可以提高zset的效率。</p>
+
+<p>底层数据结构为跳跃表的zset相关操作函数均在skiplist中分析过，这里简单罗列一下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 向skiplist插入给定的(element,score)对 */</span>
+zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslInsert</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">double</span> score, robj <span style="color:#f92672">*</span>obj);
+<span style="color:#75715e">/* 删除sjiplist中的给定的(element,score)对 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zslDelete</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">double</span> score, robj <span style="color:#f92672">*</span>obj);
+<span style="color:#75715e">/* 判断skiplist中的元素是否存在于range范围内，其中range为分值范围*/</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zslIsInRange</span>(zskiplist <span style="color:#f92672">*</span>zsl, zrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 返回skiplist中第一个存在于range分值范围内的节点*/</span>
+zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslFirstInRange</span>(zskiplist <span style="color:#f92672">*</span>zsl, zrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 返回skiplist中最后一个存在于range分值范围内的节点*/</span>
+zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslLastInRange</span>(zskiplist <span style="color:#f92672">*</span>zsl, zrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 删除skiplist中给定分值范围内的节点*/</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">zslDeleteRangeByScore</span>(zskiplist <span style="color:#f92672">*</span>zsl, zrangespec <span style="color:#f92672">*</span>range, dict <span style="color:#f92672">*</span>dict);
+<span style="color:#75715e">/* 删除skiplist中给定元素范围内的节点 */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">zslDeleteRangeByLex</span>(zskiplist <span style="color:#f92672">*</span>zsl, zlexrangespec <span style="color:#f92672">*</span>range, dict <span style="color:#f92672">*</span>dict);
+<span style="color:#75715e">/* 删除skiplist中给定排名范围内的节点 */</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">zslDeleteRangeByRank</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> start, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> end, dict <span style="color:#f92672">*</span>dict) ;
+<span style="color:#75715e">/* 获取给定节点(element,score)对的排名*/</span>
+<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">zslGetRank</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">double</span> score, robj <span style="color:#f92672">*</span>o);
+<span style="color:#75715e">/* 根据排名获取节点 */</span>
+zskiplistNode<span style="color:#f92672">*</span> <span style="color:#a6e22e">zslGetElementByRank</span>(zskiplist <span style="color:#f92672">*</span>zsl, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> rank);
+<span style="color:#75715e">/* 判断skiplist中的节点是否存在与对象范围range中*/</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">zslIsInLexRange</span>(zskiplist <span style="color:#f92672">*</span>zsl, zlexrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 返回skiplist中第一个存在于对象范围range中的节点*/</span>
+zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslFirstInLexRange</span>(zskiplist <span style="color:#f92672">*</span>zsl, zlexrangespec <span style="color:#f92672">*</span>range);
+<span style="color:#75715e">/* 返回skiplist中最后一个存在于对象范围range中的节点*/</span>
+zskiplistNode <span style="color:#f92672">*</span><span style="color:#a6e22e">zslLastInLexRange</span>(zskiplist <span style="color:#f92672">*</span>zsl, zlexrangespec <span style="color:#f92672">*</span>range);
+</code></pre></div>
+<h1 id="编码转换">编码转换</h1>
+
+<p>前面提到，当数据量超过规定的阈值或者添加的数据长度超过规定阈值的话，就需要改变zset的底层数据结构。那么，转换的操作怎么实现的呢？我们找到了zsetConvert函数，下面一起看看源代码吧。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zsetConvert</span>(robj <span style="color:#f92672">*</span>zobj, <span style="color:#66d9ef">int</span> encoding) {
+    zset <span style="color:#f92672">*</span>zs;
+    zskiplistNode <span style="color:#f92672">*</span>node, <span style="color:#f92672">*</span>next;
+    robj <span style="color:#f92672">*</span>ele;
+    <span style="color:#66d9ef">double</span> score;
+	<span style="color:#75715e">// 如果当前编码类型与待转换的类型一直，不需要处理
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (zobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> encoding) <span style="color:#66d9ef">return</span>;
+    <span style="color:#75715e">// 从ziplist转换成skiplist编码
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (zobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_ZIPLIST) {
+        <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl <span style="color:#f92672">=</span> zobj<span style="color:#f92672">-&gt;</span>ptr;
+        <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>eptr, <span style="color:#f92672">*</span>sptr;
+        <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>vstr;
+        <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> vlen;
+        <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> vlong;
+		<span style="color:#75715e">// 检查给定的编码类型是否为OBJ_ENCODING_SKIPLIST
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">!=</span> OBJ_ENCODING_SKIPLIST)
+            serverPanic(<span style="color:#e6db74">&#34;Unknown target encoding&#34;</span>);
+		<span style="color:#75715e">// 创建一个新的skiplist编码的zset
+</span><span style="color:#75715e"></span>        zs <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>zs));
+        zs<span style="color:#f92672">-&gt;</span>dict <span style="color:#f92672">=</span> dictCreate(<span style="color:#f92672">&amp;</span>zsetDictType,NULL);
+        zs<span style="color:#f92672">-&gt;</span>zsl <span style="color:#f92672">=</span> zslCreate();
+
+        eptr <span style="color:#f92672">=</span> ziplistIndex(zl,<span style="color:#ae81ff">0</span>);
+        serverAssertWithInfo(NULL,zobj,eptr <span style="color:#f92672">!=</span> NULL);
+        sptr <span style="color:#f92672">=</span> ziplistNext(zl,eptr);
+        serverAssertWithInfo(NULL,zobj,sptr <span style="color:#f92672">!=</span> NULL);
+		<span style="color:#75715e">// 遍历ziplist将元素添加到skiplist中
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span> (eptr <span style="color:#f92672">!=</span> NULL) {
+            <span style="color:#75715e">// 获取分值
+</span><span style="color:#75715e"></span>            score <span style="color:#f92672">=</span> zzlGetScore(sptr);
+            serverAssertWithInfo(NULL,zobj,ziplistGet(eptr,<span style="color:#f92672">&amp;</span>vstr,<span style="color:#f92672">&amp;</span>vlen,<span style="color:#f92672">&amp;</span>vlong));
+            <span style="color:#66d9ef">if</span> (vstr <span style="color:#f92672">==</span> NULL)
+                ele <span style="color:#f92672">=</span> createStringObjectFromLongLong(vlong);
+            <span style="color:#66d9ef">else</span>
+                ele <span style="color:#f92672">=</span> createStringObject((<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)vstr,vlen);
+
+            <span style="color:#75715e">// 插入元素到skiplist
+</span><span style="color:#75715e"></span>            node <span style="color:#f92672">=</span> zslInsert(zs<span style="color:#f92672">-&gt;</span>zsl,score,ele);
+            <span style="color:#75715e">// 插入元素和分值对到字典中
+</span><span style="color:#75715e"></span>            serverAssertWithInfo(NULL,zobj,dictAdd(zs<span style="color:#f92672">-&gt;</span>dict,ele,<span style="color:#f92672">&amp;</span>node<span style="color:#f92672">-&gt;</span>score) <span style="color:#f92672">==</span> DICT_OK);
+            incrRefCount(ele); 
+            zzlNext(zl,<span style="color:#f92672">&amp;</span>eptr,<span style="color:#f92672">&amp;</span>sptr);
+        }
+
+        zfree(zobj<span style="color:#f92672">-&gt;</span>ptr);
+        zobj<span style="color:#f92672">-&gt;</span>ptr <span style="color:#f92672">=</span> zs;
+        zobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> OBJ_ENCODING_SKIPLIST;
+    <span style="color:#75715e">// 从skiplist转换成ziplist编码
+</span><span style="color:#75715e"></span>    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (zobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_SKIPLIST) {
+        <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>zl <span style="color:#f92672">=</span> ziplistNew();
+		<span style="color:#75715e">// 检查给定编码类型是否为OBJ_ENCODING_ZIPLIST
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (encoding <span style="color:#f92672">!=</span> OBJ_ENCODING_ZIPLIST)
+            serverPanic(<span style="color:#e6db74">&#34;Unknown target encoding&#34;</span>);
+
+        <span style="color:#75715e">// 获取skiplist数据部分
+</span><span style="color:#75715e"></span>        zs <span style="color:#f92672">=</span> zobj<span style="color:#f92672">-&gt;</span>ptr;
+        <span style="color:#75715e">// 释放字典
+</span><span style="color:#75715e"></span>        dictRelease(zs<span style="color:#f92672">-&gt;</span>dict);
+        <span style="color:#75715e">// 取skiplist头节点
+</span><span style="color:#75715e"></span>        node <span style="color:#f92672">=</span> zs<span style="color:#f92672">-&gt;</span>zsl<span style="color:#f92672">-&gt;</span>header<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward;
+        <span style="color:#75715e">// 释放跳跃表表头
+</span><span style="color:#75715e"></span>        zfree(zs<span style="color:#f92672">-&gt;</span>zsl<span style="color:#f92672">-&gt;</span>header);
+        zfree(zs<span style="color:#f92672">-&gt;</span>zsl);
+        <span style="color:#75715e">// 遍历跳跃表，取出里面的元素，并将它们添加到ziplist
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span> (node) {
+            <span style="color:#75715e">// 取出解码后的值对象
+</span><span style="color:#75715e"></span>            ele <span style="color:#f92672">=</span> getDecodedObject(node<span style="color:#f92672">-&gt;</span>obj);
+            <span style="color:#75715e">// 插入到ziplist中
+</span><span style="color:#75715e"></span>            zl <span style="color:#f92672">=</span> zzlInsertAt(zl,NULL,ele,node<span style="color:#f92672">-&gt;</span>score);
+          	<span style="color:#75715e">// 释放临时对象
+</span><span style="color:#75715e"></span>            decrRefCount(ele);
+			<span style="color:#75715e">// 沿着跳跃表的第0层遍历
+</span><span style="color:#75715e"></span>            next <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>level[<span style="color:#ae81ff">0</span>].forward;
+            zslFreeNode(node);
+            node <span style="color:#f92672">=</span> next;
+        }
+
+        zfree(zs);
+        <span style="color:#75715e">// 更新zset对象的数据
+</span><span style="color:#75715e"></span>        zobj<span style="color:#f92672">-&gt;</span>ptr <span style="color:#f92672">=</span> zl;
+        <span style="color:#75715e">// 更新编码类型
+</span><span style="color:#75715e"></span>        zobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">=</span> OBJ_ENCODING_ZIPLIST;
+    } <span style="color:#66d9ef">else</span> {
+        serverPanic(<span style="color:#e6db74">&#34;Unknown sorted set encoding&#34;</span>);
+    }
+}
+</code></pre></div>
+<p>另外，Redis提供了一个函数，用来在需要的时候将skiplist转换成ziplist编码。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 在需要的时候讲skiplist转换成ziplist编码，用来节省内存*/</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zsetConvertToZiplistIfNeeded</span>(robj <span style="color:#f92672">*</span>zobj, size_t maxelelen) {
+    <span style="color:#66d9ef">if</span> (zobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_ZIPLIST) <span style="color:#66d9ef">return</span>;
+    zset <span style="color:#f92672">*</span>zset <span style="color:#f92672">=</span> zobj<span style="color:#f92672">-&gt;</span>ptr;
+	<span style="color:#75715e">// 当节点个数小于给定阈值或者元素的最大长度小于给定阈值时，转换成ziplist编码
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (zset<span style="color:#f92672">-&gt;</span>zsl<span style="color:#f92672">-&gt;</span>length <span style="color:#f92672">&lt;=</span> server.zset_max_ziplist_entries <span style="color:#f92672">&amp;&amp;</span>
+        maxelelen <span style="color:#f92672">&lt;=</span> server.zset_max_ziplist_value)
+            zsetConvert(zobj,OBJ_ENCODING_ZIPLIST);
+}
+</code></pre></div>
+<h1 id="zset命令">Zset命令</h1>
+
+<p>Redis为客户端提供了丰富的命令，用来操作zset对象，我们首先来看看添加元素的命令。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> zadd sort <span style="color:#ae81ff">100</span> num1 <span style="color:#ae81ff">1000</span> num2
+(integer) <span style="color:#ae81ff">2</span>
+</code></pre></div>
+<p>此命令表示向sort这个有序集合中添加两个[element, score]对，通过查资料，我得到了它的命令原型。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">ZADD key [NX<span style="color:#f92672">|</span>XX] [CH] [INCR] score member [score member ...]
+</code></pre></div>
+<p>其中，有几个参数需要解释一下：</p>
+
+<ul>
+<li>XX：表示只有当元素存在的时候才更新其分值，不存在时不添加新元素</li>
+<li>NX：表示只添加新元素，如果存在则不作处理</li>
+<li>CH：修改返回值为发生变化的成员总数，原始是返回新添加成员的总数。更改的成员是新添加的成员，已经存在的成员更新分数。所以在命令中指定的成员有相同的分数的话，不计算在内。注：在通常情况下，<code>ZADD</code>返回值只计算新添加成员的数量。</li>
+<li>INCR：当ZADD指定这个选项时，成员的操作就等同ZINCRBY命令，对成员的分数进行递增操作</li>
+</ul>
+
+<p>接下来，理解了上述参数的意义之后，就可以好好的看代码了。Redis定义了下面几个宏定义，用来标记上述的命令类型。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define ZADD_NONE 0
+</span><span style="color:#75715e">#define ZADD_INCR (1&lt;&lt;0)    </span><span style="color:#75715e">/* Increment the score instead of setting it. */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define ZADD_NX (1&lt;&lt;1)      </span><span style="color:#75715e">/* Don&#39;t touch elements not already existing. */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define ZADD_XX (1&lt;&lt;2)      </span><span style="color:#75715e">/* Only touch elements already exisitng. */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define ZADD_CH (1&lt;&lt;3)      </span><span style="color:#75715e">/* Return num of elements added or updated. */</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>ZADD命令由zaddCommand函数实现，其调用了zaddGenericCommand这个泛型函数来完成添加操作。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* ZADD命令的实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zaddCommand</span>(client <span style="color:#f92672">*</span>c) {
+    zaddGenericCommand(c,ZADD_NONE);
+}
+<span style="color:#75715e">/* 添加元素的泛型实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">zaddGenericCommand</span>(client <span style="color:#f92672">*</span>c, <span style="color:#66d9ef">int</span> flags) {
+    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>nanerr <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;resulting score is not a number (NaN)&#34;</span>;
+    robj <span style="color:#f92672">*</span>key <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>];
+    robj <span style="color:#f92672">*</span>ele;
+    robj <span style="color:#f92672">*</span>zobj;
+    robj <span style="color:#f92672">*</span>curobj;
+    <span style="color:#66d9ef">double</span> score <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, <span style="color:#f92672">*</span>scores <span style="color:#f92672">=</span> NULL, curscore <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>;
+    <span style="color:#66d9ef">int</span> j, elements;
+    <span style="color:#66d9ef">int</span> scoreidx <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 以下变量用来标记何种命令被执行，为了给客户端回复，发送事件通知等
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> added <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;      <span style="color:#75715e">// 添加的元素个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> updated <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;    <span style="color:#75715e">// 更新分值的元素个数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> processed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">// 被处理过的元素个数，XX命令下可能为0
+</span><span style="color:#75715e"></span>
+    <span style="color:#75715e">// 解析设置的参数，scoreidx最后为第一个元素的下标
+</span><span style="color:#75715e"></span>    scoreidx <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+    <span style="color:#66d9ef">while</span>(scoreidx <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc) {
+        <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>opt <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argv[scoreidx]<span style="color:#f92672">-&gt;</span>ptr;
+        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>strcasecmp(opt,<span style="color:#e6db74">&#34;nx&#34;</span>)) flags <span style="color:#f92672">|=</span> ZADD_NX;
+        <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>strcasecmp(opt,<span style="color:#e6db74">&#34;xx&#34;</span>)) flags <span style="color:#f92672">|=</span> ZADD_XX;
+        <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>strcasecmp(opt,<span style="color:#e6db74">&#34;ch&#34;</span>)) flags <span style="color:#f92672">|=</span> ZADD_CH;
+        <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>strcasecmp(opt,<span style="color:#e6db74">&#34;incr&#34;</span>)) flags <span style="color:#f92672">|=</span> ZADD_INCR;
+        <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">break</span>;
+        scoreidx<span style="color:#f92672">++</span>;
+    }
+
+    <span style="color:#75715e">// 将操作命令标识flags转换为简单的变量
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> incr <span style="color:#f92672">=</span> (flags <span style="color:#f92672">&amp;</span> ZADD_INCR) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">int</span> nx <span style="color:#f92672">=</span> (flags <span style="color:#f92672">&amp;</span> ZADD_NX) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">int</span> xx <span style="color:#f92672">=</span> (flags <span style="color:#f92672">&amp;</span> ZADD_XX) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#66d9ef">int</span> ch <span style="color:#f92672">=</span> (flags <span style="color:#f92672">&amp;</span> ZADD_CH) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#75715e">/* After the options, we expect to have an even number of args, since
+</span><span style="color:#75715e">     * we expect any number of score-element pairs. */</span>
+    <span style="color:#75715e">// 命令中的元素和分值总个数
+</span><span style="color:#75715e"></span>    elements <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argc<span style="color:#f92672">-</span>scoreidx;
+    <span style="color:#75715e">// 验证元素个数是否成对出现
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (elements <span style="color:#f92672">%</span> <span style="color:#ae81ff">2</span>) {
+        addReply(c,shared.syntaxerr);
+        <span style="color:#66d9ef">return</span>;
+    }
+    elements <span style="color:#f92672">/=</span> <span style="color:#ae81ff">2</span>; <span style="color:#75715e">// 此时，elements才表示所有的元素分值对的个数
+</span><span style="color:#75715e"></span>
+    <span style="color:#75715e">// 检查nx和xx不能同事设定
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (nx <span style="color:#f92672">&amp;&amp;</span> xx) {
+        addReplyError(c,
+            <span style="color:#e6db74">&#34;XX and NX options at the same time are not compatible&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
+    }
+	<span style="color:#75715e">// 检查：incr操作时，[element，scores]对只能有一个
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (incr <span style="color:#f92672">&amp;&amp;</span> elements <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span>) {
+        addReplyError(c,
+            <span style="color:#e6db74">&#34;INCR option supports a single increment-element pair&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
+    }
+
+    <span style="color:#75715e">// 开始解析所有的分数，验证分数对象是double类型的整数，否则直接退出
+</span><span style="color:#75715e"></span>    scores <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">double</span>)<span style="color:#f92672">*</span>elements);
+    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> elements; j<span style="color:#f92672">++</span>) {
+        <span style="color:#75715e">// 从对象中得到double类型的分数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (getDoubleFromObjectOrReply(c,c<span style="color:#f92672">-&gt;</span>argv[scoreidx<span style="color:#f92672">+</span>j<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>],<span style="color:#f92672">&amp;</span>scores[j],NULL)
+            <span style="color:#f92672">!=</span> C_OK) <span style="color:#66d9ef">goto</span> cleanup;
+    }
+
+    <span style="color:#75715e">// 检查zset键是否存在
+</span><span style="color:#75715e"></span>    zobj <span style="color:#f92672">=</span> lookupKeyWrite(c<span style="color:#f92672">-&gt;</span>db,key);
+    <span style="color:#66d9ef">if</span> (zobj <span style="color:#f92672">==</span> NULL) {
+        <span style="color:#75715e">// 如果键不存在，且设置了xx，则直接回复给客户端，不做任何处理
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (xx) <span style="color:#66d9ef">goto</span> reply_to_client;
+        <span style="color:#75715e">// 检查配置参数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (server.zset_max_ziplist_entries <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">||</span>
+            server.zset_max_ziplist_value <span style="color:#f92672">&lt;</span> sdslen(c<span style="color:#f92672">-&gt;</span>argv[scoreidx<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">-&gt;</span>ptr))
+        {
+            <span style="color:#75715e">// 创建以skiplist编码的zset对象
+</span><span style="color:#75715e"></span>            zobj <span style="color:#f92672">=</span> createZsetObject();
+        } <span style="color:#66d9ef">else</span> {
+            <span style="color:#75715e">// 执行到此，说明ziplist最大能存储的节点个数大于0且待添加的元素的长度没有
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 超过设定的阈值zset_max_ziplist_value
+</span><span style="color:#75715e"></span>            zobj <span style="color:#f92672">=</span> createZsetZiplistObject();
+        }
+        <span style="color:#75715e">// 添加键值对到数据库
+</span><span style="color:#75715e"></span>        dbAdd(c<span style="color:#f92672">-&gt;</span>db,key,zobj);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果键存在，但不是有序集合键，清理临时变量，回复，返回
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (zobj<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">!=</span> OBJ_ZSET) {
+            addReply(c,shared.wrongtypeerr);
+            <span style="color:#66d9ef">goto</span> cleanup;
+        }
+    }
+	<span style="color:#75715e">// 开始处理每一对[element，score]
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> elements; j<span style="color:#f92672">++</span>) {
+        score <span style="color:#f92672">=</span> scores[j];
+		<span style="color:#75715e">// 底层编码为ziplist的情况
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (zobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_ZIPLIST) {
+            <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>eptr;
+
+            <span style="color:#75715e">// 当编码类型为ziplist，首选非编码元素
+</span><span style="color:#75715e"></span>            ele <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argv[scoreidx<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>j<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>];
+            <span style="color:#66d9ef">if</span> ((eptr <span style="color:#f92672">=</span> zzlFind(zobj<span style="color:#f92672">-&gt;</span>ptr,ele,<span style="color:#f92672">&amp;</span>curscore)) <span style="color:#f92672">!=</span> NULL) {
+                <span style="color:#75715e">// 执行到此，说明该元素存在
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (nx) <span style="color:#66d9ef">continue</span>; <span style="color:#75715e">// nx选项被设定时，不处理当前元素，继续处理下一个元素
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (incr) {
+                    <span style="color:#75715e">// incr选项被设定，表示需要递增分数
+</span><span style="color:#75715e"></span>                    score <span style="color:#f92672">+=</span> curscore;
+                    <span style="color:#75715e">// isnan用来判断score是不是一个数
+</span><span style="color:#75715e"></span>                    <span style="color:#66d9ef">if</span> (isnan(score)) {
+                        addReplyError(c,nanerr);
+                        <span style="color:#66d9ef">goto</span> cleanup;
+                    }
+                }
+
+                <span style="color:#75715e">// 当分数发生变化的时候，需要删除旧的元素及其分数
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// 然后添加新的元素和分值
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (score <span style="color:#f92672">!=</span> curscore) {
+                    zobj<span style="color:#f92672">-&gt;</span>ptr <span style="color:#f92672">=</span> zzlDelete(zobj<span style="color:#f92672">-&gt;</span>ptr,eptr);
+                    zobj<span style="color:#f92672">-&gt;</span>ptr <span style="color:#f92672">=</span> zzlInsert(zobj<span style="color:#f92672">-&gt;</span>ptr,ele,score);
+                    server.dirty<span style="color:#f92672">++</span>;
+                    updated<span style="color:#f92672">++</span>;  <span style="color:#75715e">// 更新元素的个数加1
+</span><span style="color:#75715e"></span>                }
+                processed<span style="color:#f92672">++</span>; <span style="color:#75715e">// 处理的元素个数加1
+</span><span style="color:#75715e"></span>            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>xx) {
+                <span style="color:#75715e">// 执行到此，说明该元素不存在，且没有设定xx选项
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// 添加新元素及其分数到ziplist
+</span><span style="color:#75715e"></span>                zobj<span style="color:#f92672">-&gt;</span>ptr <span style="color:#f92672">=</span> zzlInsert(zobj<span style="color:#f92672">-&gt;</span>ptr,ele,score);
+                <span style="color:#75715e">// 检查ziplist中的元素个数是否超出设定值，如超出则需要转换成skiplist编码
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (zzlLength(zobj<span style="color:#f92672">-&gt;</span>ptr) <span style="color:#f92672">&gt;</span> server.zset_max_ziplist_entries)
+                    zsetConvert(zobj,OBJ_ENCODING_SKIPLIST);
+                <span style="color:#75715e">// 检查待添加元素的长度是否超过规定阈值，如超出则需要转换成skiplist编码
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (sdslen(ele<span style="color:#f92672">-&gt;</span>ptr) <span style="color:#f92672">&gt;</span> server.zset_max_ziplist_value)
+                    zsetConvert(zobj,OBJ_ENCODING_SKIPLIST);
+                server.dirty<span style="color:#f92672">++</span>;
+                added<span style="color:#f92672">++</span>;
+                processed<span style="color:#f92672">++</span>;
+            }
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (zobj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_SKIPLIST) {
+            <span style="color:#75715e">// 底层编码为skiplist的情况
+</span><span style="color:#75715e"></span>            zset <span style="color:#f92672">*</span>zs <span style="color:#f92672">=</span> zobj<span style="color:#f92672">-&gt;</span>ptr;
+            zskiplistNode <span style="color:#f92672">*</span>znode;
+            dictEntry <span style="color:#f92672">*</span>de;
+
+            ele <span style="color:#f92672">=</span> c<span style="color:#f92672">-&gt;</span>argv[scoreidx<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>j<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span>
+                tryObjectEncoding(c<span style="color:#f92672">-&gt;</span>argv[scoreidx<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#f92672">+</span>j<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>]);
+            <span style="color:#75715e">// 检查该元素是否存在，skiplist编码时，用一个字典结构保存了元素和分值
+</span><span style="color:#75715e"></span>            de <span style="color:#f92672">=</span> dictFind(zs<span style="color:#f92672">-&gt;</span>dict,ele);
+            <span style="color:#66d9ef">if</span> (de <span style="color:#f92672">!=</span> NULL) {
+                <span style="color:#75715e">// 该元素存在
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (nx) <span style="color:#66d9ef">continue</span>; <span style="color:#75715e">// nx选项被设定，元素存在的时候不做处理
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// 获取当前元素的节点和分数
+</span><span style="color:#75715e"></span>                curobj <span style="color:#f92672">=</span> dictGetKey(de);
+                curscore <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>(<span style="color:#66d9ef">double</span><span style="color:#f92672">*</span>)dictGetVal(de);
+                <span style="color:#75715e">// 如果设定的incr选项
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (incr) {
+                    score <span style="color:#f92672">+=</span> curscore;
+                    <span style="color:#66d9ef">if</span> (isnan(score)) { <span style="color:#75715e">// 检查score是否是一个数
+</span><span style="color:#75715e"></span>                        addReplyError(c,nanerr);
+                        <span style="color:#75715e">// 不需要检查有序列表是否为空，因为我们知道至少存在一个元素
+</span><span style="color:#75715e"></span>                        <span style="color:#66d9ef">goto</span> cleanup;
+                    }
+                }
+
+                <span style="color:#75715e">// 在skiplist中移除旧元素和分数，添加新元素及其分数
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// 字典中不需要移除，只需要更新分数即可
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (score <span style="color:#f92672">!=</span> curscore) {
+                    serverAssertWithInfo(c,curobj,zslDelete(zs<span style="color:#f92672">-&gt;</span>zsl,curscore,curobj));
+                    znode <span style="color:#f92672">=</span> zslInsert(zs<span style="color:#f92672">-&gt;</span>zsl,score,curobj);
+                    incrRefCount(curobj); 
+                    dictGetVal(de) <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>znode<span style="color:#f92672">-&gt;</span>score;
+                    server.dirty<span style="color:#f92672">++</span>;
+                    updated<span style="color:#f92672">++</span>;
+                }
+                processed<span style="color:#f92672">++</span>;
+            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>xx) {
+                <span style="color:#75715e">// 如果键不存在，且没有设定xx选项
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// 直接插入新的元素和分数
+</span><span style="color:#75715e"></span>                znode <span style="color:#f92672">=</span> zslInsert(zs<span style="color:#f92672">-&gt;</span>zsl,score,ele);
+                incrRefCount(ele);  <span style="color:#75715e">// 添加成功，引用计数加1
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// 新的元素和分值添加到字典结构中
+</span><span style="color:#75715e"></span>                serverAssertWithInfo(c,NULL,dictAdd(zs<span style="color:#f92672">-&gt;</span>dict,ele,<span style="color:#f92672">&amp;</span>znode<span style="color:#f92672">-&gt;</span>score) <span style="color:#f92672">==</span> DICT_OK); 
+                incrRefCount(ele); <span style="color:#75715e">// 添加成功，引用计数加1
+</span><span style="color:#75715e"></span>                server.dirty<span style="color:#f92672">++</span>;
+                added<span style="color:#f92672">++</span>;
+                processed<span style="color:#f92672">++</span>;
+            }
+        } <span style="color:#66d9ef">else</span> {
+            serverPanic(<span style="color:#e6db74">&#34;Unknown sorted set encoding&#34;</span>);
+        }
+    }
+
+reply_to_client:
+    <span style="color:#75715e">// 给客户端回复
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (incr) { <span style="color:#75715e">// INCR命令或者设定了incr选项
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (processed)
+            addReplyDouble(c,score);
+        <span style="color:#66d9ef">else</span>
+            addReply(c,shared.nullbulk);
+    } <span style="color:#66d9ef">else</span> { <span style="color:#75715e">// 回复执行了add命令
+</span><span style="color:#75715e"></span>        addReplyLongLong(c,ch <span style="color:#f92672">?</span> added<span style="color:#f92672">+</span>updated : added);
+    }
+
+cleanup:
+    <span style="color:#75715e">// 释放临时变量
+</span><span style="color:#75715e"></span>    zfree(scores);
+    <span style="color:#66d9ef">if</span> (added <span style="color:#f92672">||</span> updated) {
+        <span style="color:#75715e">// 标记修改的键
+</span><span style="color:#75715e"></span>        signalModifiedKey(c<span style="color:#f92672">-&gt;</span>db,key);
+        <span style="color:#75715e">// 发送事件通知
+</span><span style="color:#75715e"></span>        notifyKeyspaceEvent(NOTIFY_ZSET,
+            incr <span style="color:#f92672">?</span> <span style="color:#e6db74">&#34;zincr&#34;</span> <span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;zadd&#34;</span>, key, c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
+    }
+}
+</code></pre></div>
+<p>至此，有序集合的ZADD命令的执行流程已经完全弄清楚了，其他的命令这里就不再赘述了，我仅罗列出操作命令的形式及其功能，源码部分感兴趣的朋友可以去看看，反正我看完了，哈哈。</p>
+
+<table>
+<thead>
+<tr>
+<th align="center">命令格式</th>
+<th align="center">功能</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="center">ZCARD key</td>
+<td align="center">返回key的有序集元素个数</td>
+</tr>
+
+<tr>
+<td align="center">ZCOUNT key min max</td>
+<td align="center">返回指定分数范围内的元素个数</td>
+</tr>
+
+<tr>
+<td align="center">ZINCRBY key increment member</td>
+<td align="center">为指定zset中的指定元素的分数加上一个增量</td>
+</tr>
+
+<tr>
+<td align="center">ZLEXCOUNT key min max</td>
+<td align="center">计算有序集合中指定成员之间的成员数量</td>
+</tr>
+
+<tr>
+<td align="center">ZRANGE key start stop [WITHSCORES]</td>
+<td align="center">返回指定排名范围内的元素(可选是否返回分数)</td>
+</tr>
+
+<tr>
+<td align="center">ZRANGEBYLEX key min max [LIMIT offset count]</td>
+<td align="center">返回指定成员区间内的元素</td>
+</tr>
+
+<tr>
+<td align="center">ZRANGEBYSCOREkey min max [WITHSCORES][ LIMIT offset count]</td>
+<td align="center">返回指定分数范围内的元素</td>
+</tr>
+
+<tr>
+<td align="center">ZRANK key member</td>
+<td align="center">返回指定元素的排名</td>
+</tr>
+
+<tr>
+<td align="center">ZREM key member [member &hellip;]</td>
+<td align="center">移除一个或多个元素</td>
+</tr>
+
+<tr>
+<td align="center">ZREMRANGEBYLEX key min max</td>
+<td align="center">删除名称按字典由低到高排序成员之间的所有成员(注：不要在分值不同的有序集合中使用此命令)</td>
+</tr>
+
+<tr>
+<td align="center">ZREMRANGEBYRANK key start stop</td>
+<td align="center">删除[start,stop]排名内的所有元素</td>
+</tr>
+
+<tr>
+<td align="center">ZREMRANGEBYSCORE key min max</td>
+<td align="center">删除[min,max]分数范围内的所有元素</td>
+</tr>
+
+<tr>
+<td align="center">ZUNIONSTORE destination numkeys key [key …][WEIGHTS weight][SUM\MIN\MAX]</td>
+<td align="center">计算一个或多个集合的并集</td>
+</tr>
+</tbody>
+</table>
+
+<p>有了这些命令的格式，还不快去在自己的机子上跑一跑试试效果！「我现在就去一个一个试试」，对了，如果对指令还是不怎么了解的话，可以去<a href="https://redis.io/commands">redis官网</a>查看详细的命令操作示例。</p>
+
+<h1 id="zset小结">zset小结</h1>
+
+<p>本篇博客介绍了Redis中有序集合的相关知识，了解了命令的执行过程和典型命令的源码实现，对底层编码类型何时转换何时采用何种编码等都有了一个较深的理解。由于时间和篇幅有限，没有分析到每一个命令的实现源码，各位可以自行去源代码中阅读。如有疑惑的地方可以在下方留言，期待和大家一起交流学习Redis！</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcehash/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--哈希t_hash</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcedb/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--数据库db</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

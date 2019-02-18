@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--RDB持久化</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--RDB持久化" />
+<meta property="og:description" content="众所周知，Reids是一个高效的内存数据库，所有的数据都存放在内存中。这种模式的缺点就是一旦服务器关闭后会立刻丢失所有存储的数据，Redis当然要避免这种情况的发生，于是其提供了两种持久化机制：RDB和AOF。它们的功能都是将内存中存放的数据保存到磁盘文件上，等到服务器下次开启时能重载数据，以免数据丢失。今天，我们先来剖析一下RDB持久化机制。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourcerdb/" /><meta property="article:published_time" content="2016-12-30T10:30:33&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-30T10:30:33&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--RDB持久化"/>
+<meta name="twitter:description" content="众所周知，Reids是一个高效的内存数据库，所有的数据都存放在内存中。这种模式的缺点就是一旦服务器关闭后会立刻丢失所有存储的数据，Redis当然要避免这种情况的发生，于是其提供了两种持久化机制：RDB和AOF。它们的功能都是将内存中存放的数据保存到磁盘文件上，等到服务器下次开启时能重载数据，以免数据丢失。今天，我们先来剖析一下RDB持久化机制。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--RDB持久化</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-30T10:30:33">December 30, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#rdb概述">RDB概述</a></li>
+<li><a href="#rdb文件结构">RDB文件结构</a>
+<ul>
+<li><a href="#文件标识">文件标识</a></li>
+<li><a href="#辅助信息">辅助信息</a></li>
+<li><a href="#数据库">数据库</a>
+<ul>
+<li><a href="#键值数据">键值数据</a></li>
+</ul></li>
+<li><a href="#结束符">结束符</a></li>
+<li><a href="#校验和">校验和</a></li>
+</ul></li>
+<li><a href="#rdb编码格式">RDB编码格式</a>
+<ul>
+<li><a href="#长度编码">长度编码</a></li>
+<li><a href="#特殊编码">特殊编码</a></li>
+<li><a href="#lzf编码">LZF编码</a></li>
+<li><a href="#string对象编码">String对象编码</a></li>
+<li><a href="#list对象编码">List对象编码</a></li>
+<li><a href="#set对象编码">Set对象编码</a></li>
+<li><a href="#zset对象编码">Zset对象编码</a></li>
+<li><a href="#hash对象编码">Hash对象编码</a></li>
+</ul></li>
+<li><a href="#rdb命令">RDB命令</a>
+<ul>
+<li><a href="#save命令">SAVE命令</a></li>
+<li><a href="#bgsave命令">BGSAVE命令</a></li>
+</ul></li>
+<li><a href="#自动保存">自动保存</a></li>
+<li><a href="#rdb小结">RDB小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>众所周知，Reids是一个高效的内存数据库，所有的数据都存放在内存中。这种模式的缺点就是一旦服务器关闭后会立刻丢失所有存储的数据，Redis当然要避免这种情况的发生，于是其提供了两种持久化机制：RDB和AOF。它们的功能都是将内存中存放的数据保存到磁盘文件上，等到服务器下次开启时能重载数据，以免数据丢失。今天，我们先来剖析一下RDB持久化机制。</p>
+
+<h1 id="rdb概述">RDB概述</h1>
+
+<p>看过我系列博客的应该知道我分析源码的方式是，先学会使用它，再来一步一步的深入它。我先演示一个小例子来感受一下RDB持久化。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 开启一个redis-cli，执行添加数据操作如下 */</span>
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> flushdb
+OK
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> set hello world
+OK
+<span style="color:#ae81ff">127.0.0.1</span><span style="color:#f92672">:</span><span style="color:#ae81ff">6379</span><span style="color:#f92672">&gt;</span> SAVE
+OK
+</code></pre></div>
+<p>如下，我开启了一个Redis客户端，先清空了里面的数据，然后依次添加了一个键值对到数据库，最后通过SAVE文件将数据库中的数据保存到rdb文件中，实现数据的持久化。运行完SAVE命令之后，服务器会显示数据已经存放在磁盘文件上。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#ae81ff">78415</span><span style="color:#f92672">:</span>M <span style="color:#ae81ff">30</span> Dec <span style="color:#ae81ff">10</span><span style="color:#f92672">:</span><span style="color:#ae81ff">58</span><span style="color:#f92672">:</span><span style="color:#ae81ff">11.445</span> <span style="color:#f92672">*</span> DB saved on disk
+</code></pre></div>
+<p>接着，我们来看看这个文件中存放着什么数据，保存到磁盘的文件名为<code>dump.rdb</code>，利用od命令就能查看里面的数据。</p>
+
+<pre><code>~ od -c dump.rdb
+0000000    R   E   D   I   S   0   0   0   7 372  \t   r   e   d   i   s
+0000020    -   v   e   r 005   3   .   2   .   3 372  \n   r   e   d   i
+0000040    s   -   b   i   t   s 300   @ 372 005   c   t   i   m   e 164
+0000060    t 317   e   X 372  \b   u   s   e   d   -   m   e   m 302    
+0000100    _ 017  \0 376  \0 373 001  \0  \0 005   h   e   l   l   o 005
+0000120    w   o   r   l   d 377   l 320   E   e  \b   E  \a   @        
+</code></pre>
+
+<p>看二进制文档实在有点费力，不过大致可以看到里面有如下信息：</p>
+
+<ul>
+<li>RDB文件标识和版本号：REDIS0007</li>
+<li>Redis版本：redis-ver 3.2.3</li>
+<li>Redis系统位数（32位或64位）：redis-bits</li>
+<li>系统时间：ctime</li>
+<li>内存使用量：used-mem</li>
+<li>一组键值对：hello-word</li>
+</ul>
+
+<p>其他看不出来的信息，我们待会去源码中一一剖析出来，在源码面前，这些都不是秘密！</p>
+
+<h1 id="rdb文件结构">RDB文件结构</h1>
+
+<p>上面打印出来的二进制文件只能看出部分信息，Redis的RDB文件中具体包含了哪些信息，我们需要从源码中挖掘出来，不然在理解上可能会出问题，下面我画了一个表格来表示RDB的文件结构。</p>
+
+<pre><code>————————————————————————————————————————————
+| 文件标识 | 辅助信息 | 数据库 | 结束符 | 校验和 | 
+————————————————————————————————————————————
+</code></pre>
+
+<h2 id="文件标识">文件标识</h2>
+
+<p>Redis在每一个RDB文件的首部都写入了如下字符，用来标识这是一个Redis的RDB文件。</p>
+
+<pre><code>—————————————————————
+| REDIS  | 文件版本号 |
+—————————————————————
+</code></pre>
+
+<p>例如：示例中的文件以『REDIS0007』开头，0007代表RDB文件的版本号。</p>
+
+<h2 id="辅助信息">辅助信息</h2>
+
+<p>Redis在新的RDB文件版本上加入了辅助信息，其格式如下：</p>
+
+<pre><code>————————————————————————————————————————————
+| redis版本 | 系统位数 | 系统时间 | 已使用的内存 |
+————————————————————————————————————————————
+</code></pre>
+
+<p>例如：在上述的示例中，这些信息对应着：</p>
+
+<ul>
+<li><code>372</code> 表示是一个辅助信息</li>
+<li><code>\t redis-ver</code> 表示后面的数据代表Redis的版本号</li>
+<li><code>005 3.2.3</code> 表示当前Redis版本为3.2.3，005代表长度为5</li>
+<li><code>\n redis-bits</code>表示后面的数据为当前Redis服务器的位数</li>
+<li><code>300   @</code> 乱码，应该是代表系统为64位</li>
+<li><code>005 ctime</code> 表示后面跟着的数据为系统当前时间</li>
+<li><code>164 t 317 e X</code> 当前系统时间</li>
+<li><code>\b used-mem</code> 表示后面的数据为已使用的内存数</li>
+<li><code>302 _ 017 \0</code> 已使用的内存数</li>
+</ul>
+
+<p>示例中每一个信息的都是以372开头，表示这是一个辅助信息。其中，该类信息的宏定义如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 辅助信息标识量为250+信息长度，底层二进制就为372
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_OPCODE_AUX        250 
+</span><span style="color:#75715e"></span></code></pre></div>
+<h2 id="数据库">数据库</h2>
+
+<p>Redis服务器默认有16个数据库，每个数据的信息是一次写入rdb文件中，每个数据库的信息的存放格式如下：</p>
+
+<pre><code>————————————————————————————————————————————————————
+| select | dbnum | db_size | expires_size | 键值数据 |
+————————————————————————————————————————————————————
+</code></pre>
+
+<p>其中，select标识当前进行切换数据库操作，后面的dnum表示当前存放的是第dbnum号数据库的数据。示例中的二进制码对应的信息如下：</p>
+
+<ul>
+<li><code>376 \0</code>表示切换到第0号数据库；</li>
+<li><code>373 \1</code>表示当前数据库中只有一个数据；</li>
+<li><code>\0</code>表示当前没有过期键</li>
+</ul>
+
+<p>其中，切换，数据库大小，过期键个数这些都属于一个操作信息，Redis用宏定义来表示这些数据。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 初始化数据库字典的大小
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_OPCODE_RESIZEDB   251
+</span><span style="color:#75715e"></span><span style="color:#75715e">// 选择数据库
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_OPCODE_SELECTDB   254
+</span><span style="color:#75715e"></span></code></pre></div>
+<h3 id="键值数据">键值数据</h3>
+
+<p>键值数据的存放格式如下：</p>
+
+<pre><code>———————————————————————————————————————————————————————
+| 过期键标识 | 时间戳 | 键值对类型 | 键长度 | 键 | 值长度 | 值 |
+———————————————————————————————————————————————————————
+</code></pre>
+
+<p>其中，过期键标识和时间戳是可选项，如果该键设置了过期时间就需要在数据前面加上这些信息。过期键标识由以下两个宏定义给出：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 以ms为单位的过期时间 */</span>
+<span style="color:#75715e">#define RDB_OPCODE_EXPIRETIME_MS 252
+</span><span style="color:#75715e"></span><span style="color:#75715e">/* 以s为单位的过期时间 */</span>
+<span style="color:#75715e">#define RDB_OPCODE_EXPIRETIME 253
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>键值对类型为Redis的五个数据类型，其宏定义如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define RDB_TYPE_STRING 0  </span><span style="color:#75715e">// 字符串标识
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_TYPE_LIST   1  </span><span style="color:#75715e">// 链表标识
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_TYPE_SET    2  </span><span style="color:#75715e">// 集合标识
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_TYPE_ZSET   3  </span><span style="color:#75715e">// 有序集合标识
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_TYPE_HASH   4  </span><span style="color:#75715e">// 哈希标识
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>在示例中，各二进制位代表的含义如下：</p>
+
+<ul>
+<li><code>\0</code> 标识后面是一个字符串键</li>
+<li><code>005 hello</code> 长度为5的字符串hello</li>
+<li><code>005 world</code> 长度为5的字符串world</li>
+</ul>
+
+<h2 id="结束符">结束符</h2>
+
+<p>每个RDB文件都以EOF结束符结尾。上述示例中对应EOF的是：</p>
+
+<ul>
+<li><code>377</code> 标识EOF标志位</li>
+</ul>
+
+<p>其宏定义如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define RDB_OPCODE_EOF        255
+</span><span style="color:#75715e"></span></code></pre></div>
+<h2 id="校验和">校验和</h2>
+
+<p>Redis在每一个RDB文件的末尾加上了采用CRC校验的校验和，二进制中最后一串乱码标识的就是校验和，如果我们用<code>od  -cx dump.rdb</code>就可以更直观的看到检验和为多少。</p>
+
+<pre><code>~ od -cx dump.rdb 
+0000000    R   E   D   I   S   0   0   0   7 372  \t   r   e   d   i   s
+             4552    4944    3053    3030    fa37    7209    6465    7369
+0000020    -   v   e   r 005   3   .   2   .   3 372  \n   r   e   d   i
+             762d    7265    3305    322e    332e    0afa    6572    6964
+0000040    s   -   b   i   t   s 300   @ 372 005   c   t   i   m   e 164
+             2d73    6962    7374    40c0    05fa    7463    6d69    c265
+0000060    t 317   e   X 372  \b   u   s   e   d   -   m   e   m 302    
+             cf74    5865    08fa    7375    6465    6d2d    6d65    20c2
+0000100    _ 017  \0 376  \0 373 001  \0  \0 005   h   e   l   l   o 005
+             0f5f    fe00    fb00    0001    0500    6568    6c6c    056f
+0000120    w   o   r   l   d 377   l 320   E   e  \b   E  \a   @        
+             6f77    6c72    ff64    d06c    6545    4508    4007  
+</code></pre>
+
+<p>最后的<code>0x 4007 4508 6545 d06c</code>就代表的是该RDB文件的校验和（校验和以小端模式存储）。</p>
+
+<h1 id="rdb编码格式">RDB编码格式</h1>
+
+<p>对于Redis的数据存放结构，上述分析已经很明了了。接下来，我们要具体到Redis对于每种数据结构的编码方式。</p>
+
+<h2 id="长度编码">长度编码</h2>
+
+<p>在之前的压缩列表和整数集合中就多次见识到Redis为了节省内存做的各种措施，由于C语言中对于指针指向的内存无法计算长度，所以必须将该段内存的大小标识出来。在Redis中，有很多长度信息需要保存，如字符串的长度，链表的长度，数据库的大小等，针对不同大小的长度数据，Redis会使用不同的编码格式来节省内存。我们先来看看这些宏定义。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define RDB_6BITLEN 0 </span><span style="color:#75715e">// 6位长度，最大表示的长度为64
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_14BITLEN 1 </span><span style="color:#75715e">// 14位长度
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_32BITLEN 2 </span><span style="color:#75715e">// 32位长度
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define RDB_ENCVAL 3 </span><span style="color:#75715e">// 特殊编码
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>其具体的编码格式如下：</p>
+
+<pre><code>00|000000 // 6位长度值
+01|000000 00000000 // 14位长度值
+10|000000 [32位]  // 后续32位表示一个32位的长度值，所以其需要5个字节来表示
+11|000000 表示一个特殊编码
+</code></pre>
+
+<p>该编码方式对应的源代码函数如下，各位可以对着代码理解以下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 长度编码
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rdbSaveLen</span>(rio <span style="color:#f92672">*</span>rdb, uint32_t len) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> buf[<span style="color:#ae81ff">2</span>];
+    size_t nwritten;
+
+    <span style="color:#66d9ef">if</span> (len <span style="color:#f92672">&lt;</span> (<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">6</span>)) {
+        <span style="color:#75715e">/* Save a 6 bit len */</span>
+        buf[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> (len<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>)<span style="color:#f92672">|</span>(RDB_6BITLEN<span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">6</span>);
+        <span style="color:#66d9ef">if</span> (rdbWriteRaw(rdb,buf,<span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (len <span style="color:#f92672">&lt;</span> (<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">14</span>)) {
+        <span style="color:#75715e">/* Save a 14 bit len */</span>
+        buf[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> ((len<span style="color:#f92672">&gt;&gt;</span><span style="color:#ae81ff">8</span>)<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>)<span style="color:#f92672">|</span>(RDB_14BITLEN<span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">6</span>);
+        buf[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> len<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>;
+        <span style="color:#66d9ef">if</span> (rdbWriteRaw(rdb,buf,<span style="color:#ae81ff">2</span>) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">/* Save a 32 bit len */</span>
+        buf[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> (RDB_32BITLEN<span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">6</span>);
+        <span style="color:#66d9ef">if</span> (rdbWriteRaw(rdb,buf,<span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        len <span style="color:#f92672">=</span> htonl(len);
+        <span style="color:#66d9ef">if</span> (rdbWriteRaw(rdb,<span style="color:#f92672">&amp;</span>len,<span style="color:#ae81ff">4</span>) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">+</span><span style="color:#ae81ff">4</span>;
+    }
+    <span style="color:#66d9ef">return</span> nwritten;
+}
+</code></pre></div>
+<h2 id="特殊编码">特殊编码</h2>
+
+<p>特殊编码主要是将一些用字符串表示的小整数转换成整数编码，以节省内存，比如&rdquo;12&rdquo;，&rdquo;-1&rdquo;等。Redis对于这些小整数类型的字符串有以下几种不同的编码格式，用宏定义指出。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define RDB_ENC_INT8 0        </span><span style="color:#75715e">/* 8 bit signed integer */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define RDB_ENC_INT16 1       </span><span style="color:#75715e">/* 16 bit signed integer */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define RDB_ENC_INT32 2       </span><span style="color:#75715e">/* 32 bit signed integer */</span><span style="color:#75715e">
+</span><span style="color:#75715e">#define RDB_ENC_LZF 3         </span><span style="color:#75715e">/* string compressed with FASTLZ */</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>因此，其编码对应的内存布局如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#ae81ff">11</span><span style="color:#f92672">|</span><span style="color:#ae81ff">0000</span><span style="color:#f92672">|</span><span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00000000</span>  <span style="color:#75715e">// 后面八字节表示该整数
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">11</span><span style="color:#f92672">|</span><span style="color:#ae81ff">0000</span><span style="color:#f92672">|</span><span style="color:#ae81ff">01</span> <span style="color:#ae81ff">00000000</span> <span style="color:#ae81ff">00000000</span> <span style="color:#75715e">// 后面16字节表示该整数
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">11</span><span style="color:#f92672">|</span><span style="color:#ae81ff">0000</span><span style="color:#f92672">|</span><span style="color:#ae81ff">10</span> [<span style="color:#ae81ff">32</span> bits]  <span style="color:#75715e">// 后面32位表示该整数
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">11</span><span style="color:#f92672">|</span><span style="color:#ae81ff">0000</span><span style="color:#f92672">|</span><span style="color:#ae81ff">11</span> <span style="color:#75715e">// 表示LZF压缩后的数据
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>所以，存储一个能用八字节表示字符串有符整数需要2位；存储一个能用16字节表示的有符整数需要3字节；存储一个能用32字节表示的有符整数需要5个字节。</p>
+
+<p>特殊编码的实现由rdbTryIntegerEncoding和rdbEncodeInteger函数完成。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 判断能不能编码成小有符整数 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rdbTryIntegerEncoding</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>s, size_t len, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>enc) {
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> value;
+    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>endptr, buf[<span style="color:#ae81ff">32</span>];
+  
+    <span style="color:#75715e">// 检查该值能不能编码成一个数字
+</span><span style="color:#75715e"></span>    value <span style="color:#f92672">=</span> strtoll(s, <span style="color:#f92672">&amp;</span>endptr, <span style="color:#ae81ff">10</span>);
+    <span style="color:#75715e">// 转换失败，返回
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (endptr[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#39;\0&#39;</span>) <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 将数字转换成字符串
+</span><span style="color:#75715e"></span>    ll2string(buf,<span style="color:#ae81ff">32</span>,value);
+
+    <span style="color:#75715e">// 如果转换后的数字不能还原成原来的字符，则表示转换失败，返回0
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (strlen(buf) <span style="color:#f92672">!=</span> len <span style="color:#f92672">||</span> memcmp(buf,s,len)) <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#75715e">// 可以转换成整数，进行编码操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> rdbEncodeInteger(value,enc);
+}
+<span style="color:#75715e">/* 小整数编码底层实现 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rdbEncodeInteger</span>(<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> value, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>enc) {
+    <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&gt;=</span> <span style="color:#f92672">-</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">7</span>) <span style="color:#f92672">&amp;&amp;</span> value <span style="color:#f92672">&lt;=</span> (<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">7</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        enc[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> (RDB_ENCVAL<span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">6</span>)<span style="color:#f92672">|</span>RDB_ENC_INT8;
+        enc[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> value<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">2</span>;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&gt;=</span> <span style="color:#f92672">-</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">15</span>) <span style="color:#f92672">&amp;&amp;</span> value <span style="color:#f92672">&lt;=</span> (<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">15</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        enc[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> (RDB_ENCVAL<span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">6</span>)<span style="color:#f92672">|</span>RDB_ENC_INT16;
+        enc[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> value<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>;
+        enc[<span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> (value<span style="color:#f92672">&gt;&gt;</span><span style="color:#ae81ff">8</span>)<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">3</span>;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (value <span style="color:#f92672">&gt;=</span> <span style="color:#f92672">-</span>((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span>)<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">31</span>) <span style="color:#f92672">&amp;&amp;</span> value <span style="color:#f92672">&lt;=</span> ((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span>)<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">31</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        enc[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> (RDB_ENCVAL<span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">6</span>)<span style="color:#f92672">|</span>RDB_ENC_INT32;
+        enc[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> value<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>;
+        enc[<span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> (value<span style="color:#f92672">&gt;&gt;</span><span style="color:#ae81ff">8</span>)<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>;
+        enc[<span style="color:#ae81ff">3</span>] <span style="color:#f92672">=</span> (value<span style="color:#f92672">&gt;&gt;</span><span style="color:#ae81ff">16</span>)<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>;
+        enc[<span style="color:#ae81ff">4</span>] <span style="color:#f92672">=</span> (value<span style="color:#f92672">&gt;&gt;</span><span style="color:#ae81ff">24</span>)<span style="color:#f92672">&amp;</span><span style="color:#ae81ff">0xFF</span>;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">5</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    }
+}
+</code></pre></div>
+<h2 id="lzf编码">LZF编码</h2>
+
+<p>当Redis开启了字符串压缩功能且字符串长度大于20bytes时，会采用LZF编码对其进行压缩，开启字符串压缩功能的变量为：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"> rdbcompression yes  <span style="color:#75715e">// redis.conf中设定的，默认为开启状态
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>当字符串写入RDB文件时，判断上述条件成立与否，进而选择编码格式，其源码片段如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 在rdbSaveRawString函数内，判断是否开启字符串压缩功能，且字符串长度大于20bytes
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">if</span> (server.rdb_compression <span style="color:#f92672">&amp;&amp;</span> len <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">20</span>) {
+  n <span style="color:#f92672">=</span> rdbSaveLzfStringObject(rdb,s,len);
+  <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+  <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span> n;
+  <span style="color:#75715e">/* Return value of 0 means data can&#39;t be compressed, save the old way */</span>
+}
+</code></pre></div>
+<p>真正执行编码操作的函数是rdbSaveLzfStringObject，其按照上述的编码格式对数据进行压缩。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 将字符串进行lzf压缩 */</span>
+ssize_t <span style="color:#a6e22e">rdbSaveLzfStringObject</span>(rio <span style="color:#f92672">*</span>rdb, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>s, size_t len) {
+    size_t comprlen, outlen;
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>out;
+
+    <span style="color:#75715e">// 至少要求长度为4个字节以上，不然不值得用压缩算法
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (len <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">4</span>) <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    outlen <span style="color:#f92672">=</span> len<span style="color:#f92672">-</span><span style="color:#ae81ff">4</span>;
+    <span style="color:#75715e">// 	内存不足，返回0
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((out <span style="color:#f92672">=</span> zmalloc(outlen<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)) <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// LZF算法对其进行压缩，这里不讨论具体的算法
+</span><span style="color:#75715e"></span>    comprlen <span style="color:#f92672">=</span> lzf_compress(s, len, out, outlen);
+    <span style="color:#75715e">// 压缩失败，返回0
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (comprlen <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+        zfree(out);
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    }
+    <span style="color:#75715e">// 执行写入操作
+</span><span style="color:#75715e"></span>    ssize_t nwritten <span style="color:#f92672">=</span> rdbSaveLzfBlob(rdb, out, comprlen, len);
+    zfree(out);
+    <span style="color:#66d9ef">return</span> nwritten;
+}
+<span style="color:#75715e">/* 写入LZF压缩的字符串 */</span>
+ssize_t <span style="color:#a6e22e">rdbSaveLzfBlob</span>(rio <span style="color:#f92672">*</span>rdb, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>data, size_t compress_len,
+                       size_t original_len) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> byte;
+    ssize_t n, nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#75715e">// 数据已经被压缩了，写入RDB文件中
+</span><span style="color:#75715e"></span>    byte <span style="color:#f92672">=</span> (RDB_ENCVAL<span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">6</span>)<span style="color:#f92672">|</span>RDB_ENC_LZF;
+    <span style="color:#75715e">// 写入类型，表示这是一个LZF压缩的数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbWriteRaw(rdb,<span style="color:#f92672">&amp;</span>byte,<span style="color:#ae81ff">1</span>)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> writeerr;
+    nwritten <span style="color:#f92672">+=</span> n;
+	<span style="color:#75715e">// 写入压缩后的长度
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLen(rdb,compress_len)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> writeerr;
+    nwritten <span style="color:#f92672">+=</span> n;
+	<span style="color:#75715e">// 写入压缩前的长度
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLen(rdb,original_len)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> writeerr;
+    nwritten <span style="color:#f92672">+=</span> n;
+	<span style="color:#75715e">// 写入压缩的数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbWriteRaw(rdb,data,compress_len)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> writeerr;
+    nwritten <span style="color:#f92672">+=</span> n;
+
+    <span style="color:#66d9ef">return</span> nwritten;
+
+writeerr:
+    <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+}
+</code></pre></div>
+<p>从源码中可以看出，经过LZF算法压缩的字符串在内存中的布局如下：</p>
+
+<pre><code>——————————————————————————————————————————————————————
+| LZF标识(11000011) | 压缩后的长度 | 原长度 | 压缩后的数据 |
+——————————————————————————————————————————————————————
+</code></pre>
+
+<h2 id="string对象编码">String对象编码</h2>
+
+<p>前面在<a href="http://zcheng.ren/2016/12/16/TheAnnotatedRedisSourcetstring/">Redis源码剖析&ndash;字符串t_string</a>一文中，有介绍到string对象的底层编码有三种，分别是<code>OBJ_ENCODING_INT</code>、<code>OBJ_ENCODING_RAW</code>和<code>OBJ_ENCODING_EMBSTR</code>，这三种编码的不同之处各位可以跳转复习一下。在写入RDB文件时，会判断String对象的编码类型，从而选择以何种编码方式写入到RDB文件中。字符串是按照如下三种格式存放在RDB文件中的。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 按照字符串编码的形式 */</span>
+<span style="color:#960050;background-color:#1e0010">————————————————</span>
+<span style="color:#f92672">|</span>  len  <span style="color:#f92672">|</span> data <span style="color:#f92672">|</span>
+<span style="color:#960050;background-color:#1e0010">————————————————</span>
+<span style="color:#75715e">/* 按照INT编码的形式 */</span>
+<span style="color:#960050;background-color:#1e0010">——————————————————</span>
+<span style="color:#f92672">|</span> Encoding <span style="color:#f92672">|</span> <span style="color:#66d9ef">int</span> <span style="color:#f92672">|</span>
+<span style="color:#960050;background-color:#1e0010">——————————————————</span>
+<span style="color:#75715e">/* 按照LZF压缩后的形式 */</span>
+<span style="color:#960050;background-color:#1e0010">————————————————————————————————————————————</span>
+<span style="color:#f92672">|</span> LZF标识 <span style="color:#f92672">|</span> <span style="color:#960050;background-color:#1e0010">压缩后的长度</span> <span style="color:#f92672">|</span> <span style="color:#960050;background-color:#1e0010">原长度</span> <span style="color:#f92672">|</span> <span style="color:#960050;background-color:#1e0010">压缩后的数据</span> <span style="color:#f92672">|</span>
+<span style="color:#960050;background-color:#1e0010">————————————————————————————————————————————</span>
+</code></pre></div>
+<p>其实现源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* String对象编码 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rdbSaveStringObject</span>(rio <span style="color:#f92672">*</span>rdb, robj <span style="color:#f92672">*</span>obj) {
+    <span style="color:#75715e">/* Avoid to decode the object, then encode it again, if the
+</span><span style="color:#75715e">     * object is already integer encoded. */</span>
+    <span style="color:#66d9ef">if</span> (obj<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_INT) {
+        <span style="color:#75715e">// 如果是整数编码，则试图以字符串的形式写入
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span> rdbSaveLongLongAsStringObject(rdb,(<span style="color:#66d9ef">long</span>)obj<span style="color:#f92672">-&gt;</span>ptr);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 反之，直接以字符串的形式写入
+</span><span style="color:#75715e"></span>        serverAssertWithInfo(NULL,obj,sdsEncodedObject(obj));
+        <span style="color:#66d9ef">return</span> rdbSaveRawString(rdb,obj<span style="color:#f92672">-&gt;</span>ptr,sdslen(obj<span style="color:#f92672">-&gt;</span>ptr));
+    }
+}
+<span style="color:#75715e">/* 将整型数以字符串的形式写入 */</span>
+ssize_t <span style="color:#a6e22e">rdbSaveLongLongAsStringObject</span>(rio <span style="color:#f92672">*</span>rdb, <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> value) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> buf[<span style="color:#ae81ff">32</span>];
+    ssize_t n, nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 判断该整数是否能以整型数编码，此函数为上述为小整数准备的编码方式
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> enclen <span style="color:#f92672">=</span> rdbEncodeInteger(value,buf);
+    <span style="color:#75715e">// 如果可以，直接写入
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (enclen <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#66d9ef">return</span> rdbWriteRaw(rdb,buf,enclen);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 非小整数，以字符串的形式写入
+</span><span style="color:#75715e"></span>        enclen <span style="color:#f92672">=</span> ll2string((<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)buf,<span style="color:#ae81ff">32</span>,value);
+        serverAssert(enclen <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">32</span>);
+        <span style="color:#75715e">// 写入长度 
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLen(rdb,enclen)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        nwritten <span style="color:#f92672">+=</span> n;
+        <span style="color:#75715e">// 写入数据
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbWriteRaw(rdb,buf,enclen)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        nwritten <span style="color:#f92672">+=</span> n;
+    }
+    <span style="color:#66d9ef">return</span> nwritten;
+}
+<span style="color:#75715e">/* 将字符串对象以[len][data]的形式写入RDB文件 */</span>
+ssize_t <span style="color:#a6e22e">rdbSaveRawString</span>(rio <span style="color:#f92672">*</span>rdb, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>s, size_t len) {
+    <span style="color:#66d9ef">int</span> enclen;
+    ssize_t n, nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#75715e">// 试图编码为小整数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (len <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">11</span>) {
+        <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> buf[<span style="color:#ae81ff">5</span>];
+        <span style="color:#66d9ef">if</span> ((enclen <span style="color:#f92672">=</span> rdbTryIntegerEncoding((<span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)s,len,buf)) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+            <span style="color:#66d9ef">if</span> (rdbWriteRaw(rdb,buf,enclen) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            <span style="color:#66d9ef">return</span> enclen;
+        }
+    }
+
+    <span style="color:#75715e">// 检查能不能用LZF压缩后存储
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.rdb_compression <span style="color:#f92672">&amp;&amp;</span> len <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">20</span>) {
+        n <span style="color:#f92672">=</span> rdbSaveLzfStringObject(rdb,s,len);
+        <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span> n;
+    }
+	<span style="color:#75715e">// 按照[len][data]的形式存放
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLen(rdb,len)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+    nwritten <span style="color:#f92672">+=</span> n;
+    <span style="color:#66d9ef">if</span> (len <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#66d9ef">if</span> (rdbWriteRaw(rdb,s,len) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        nwritten <span style="color:#f92672">+=</span> len;
+    }
+    <span style="color:#66d9ef">return</span> nwritten;
+}
+</code></pre></div>
+<h2 id="list对象编码">List对象编码</h2>
+
+<p>在<a href="http://zcheng.ren/2016/12/19/TheAnnotatedRedisSourcet-list/">Redis源码剖析&ndash;列表t_list</a>一文中，解释到List的底层编码只有quicklist。其存放格式如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#960050;background-color:#1e0010">————————————————————————————————————————————————————————————————————————</span>
+<span style="color:#f92672">|</span> listLength <span style="color:#f92672">|</span> len1<span style="color:#f92672">|</span> data1 <span style="color:#f92672">|</span> len2 <span style="color:#f92672">|</span> CompressLength<span style="color:#f92672">|</span> OriginLength <span style="color:#f92672">|</span> data2 <span style="color:#f92672">|</span>
+<span style="color:#960050;background-color:#1e0010">————————————————————————————————————————————————————————————————————————</span>
+</code></pre></div>
+<p>其中，第一个节点直接按照字符串的形式存放；第二个节点采用LZF压缩后存放，其源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 存储对象 */</span>
+ssize_t <span style="color:#a6e22e">rdbSaveObject</span>(rio <span style="color:#f92672">*</span>rdb, robj <span style="color:#f92672">*</span>o) {
+    ssize_t n <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_STRING) {
+        <span style="color:#75715e">// 存放字符串对象
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveStringObject(rdb,o)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        nwritten <span style="color:#f92672">+=</span> n;
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_LIST) {
+        <span style="color:#75715e">// 存放链表对象
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_QUICKLIST) {
+            quicklist <span style="color:#f92672">*</span>ql <span style="color:#f92672">=</span> o<span style="color:#f92672">-&gt;</span>ptr;
+            quicklistNode <span style="color:#f92672">*</span>node <span style="color:#f92672">=</span> ql<span style="color:#f92672">-&gt;</span>head;
+			<span style="color:#75715e">// 存放长度
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLen(rdb,ql<span style="color:#f92672">-&gt;</span>len)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            nwritten <span style="color:#f92672">+=</span> n;
+
+            <span style="color:#66d9ef">do</span> {
+                <span style="color:#75715e">// 判断节点是否能压缩
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (quicklistNodeIsCompressed(node)) {
+                    <span style="color:#75715e">// 如能，采用yzf压缩后写入
+</span><span style="color:#75715e"></span>                  	<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>data;
+                    size_t compress_len <span style="color:#f92672">=</span> quicklistGetLzf(node, <span style="color:#f92672">&amp;</span>data);
+                    <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLzfBlob(rdb,data,compress_len,node<span style="color:#f92672">-&gt;</span>sz)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+                    nwritten <span style="color:#f92672">+=</span> n;
+                } <span style="color:#66d9ef">else</span> {
+                    <span style="color:#75715e">// 如果不能则直接写入
+</span><span style="color:#75715e"></span>                    <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveRawString(rdb,node<span style="color:#f92672">-&gt;</span>zl,node<span style="color:#f92672">-&gt;</span>sz)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+                    nwritten <span style="color:#f92672">+=</span> n;
+                }
+            } <span style="color:#66d9ef">while</span> ((node <span style="color:#f92672">=</span> node<span style="color:#f92672">-&gt;</span>next));
+        } <span style="color:#66d9ef">else</span> {
+            serverPanic(<span style="color:#e6db74">&#34;Unknown list encoding&#34;</span>);
+        }
+    }
+    <span style="color:#75715e">// ....
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<h2 id="set对象编码">Set对象编码</h2>
+
+<p>在<a href="http://zcheng.ren/2016/12/22/TheAnnotatedRedisSourcet-set/">Redis源码剖析&ndash;集合t_set</a>一文中讲到Set的实现原理和数据存储形式，set的底层采用字典或者整数集合的编码形式。Set对象在RDB文件中的存储形式为：</p>
+
+<pre><code>—————————————————————————————————————————
+| setSize | elem1 | elem2 | ... | elemN |
+—————————————————————————————————————————
+/* 集合存储示例 */
+————————————————————————————————————————————
+| 3 | 3 | &quot;zee&quot; | 5 | &quot;coder&quot; | 5 | &quot;cheng&quot; |
+————————————————————————————————————————————
+</code></pre>
+
+<p>集合中的每一个值都按照其值选取不同的编码存放，如字符串就按字符串，LZF压缩就压缩存储，小整数就按照小整数存储&hellip;..</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 存储对象 */</span>
+ssize_t <span style="color:#a6e22e">rdbSaveObject</span>(rio <span style="color:#f92672">*</span>rdb, robj <span style="color:#f92672">*</span>o) {
+    ssize_t n <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#75715e">// ...截取部分代码
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_SET) {
+        <span style="color:#75715e">// 存放集合对象
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_HT) {
+            <span style="color:#75715e">// 字典编码的时候，存放长度和键值
+</span><span style="color:#75715e"></span>          	dict <span style="color:#f92672">*</span>set <span style="color:#f92672">=</span> o<span style="color:#f92672">-&gt;</span>ptr;
+            dictIterator <span style="color:#f92672">*</span>di <span style="color:#f92672">=</span> dictGetIterator(set);
+            dictEntry <span style="color:#f92672">*</span>de;
+
+            <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLen(rdb,dictSize(set))) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            nwritten <span style="color:#f92672">+=</span> n;
+
+            <span style="color:#66d9ef">while</span>((de <span style="color:#f92672">=</span> dictNext(di)) <span style="color:#f92672">!=</span> NULL) {
+                <span style="color:#75715e">// 遍历每一个键，并存放在RDB中
+</span><span style="color:#75715e"></span>                robj <span style="color:#f92672">*</span>eleobj <span style="color:#f92672">=</span> dictGetKey(de);
+                <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveStringObject(rdb,eleobj)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+                nwritten <span style="color:#f92672">+=</span> n;
+            }
+            dictReleaseIterator(di);
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_INTSET) {
+            <span style="color:#75715e">// 直接将INTSET转换成字符串对象存放
+</span><span style="color:#75715e"></span>            size_t l <span style="color:#f92672">=</span> intsetBlobLen((intset<span style="color:#f92672">*</span>)o<span style="color:#f92672">-&gt;</span>ptr);
+
+            <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveRawString(rdb,o<span style="color:#f92672">-&gt;</span>ptr,l)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            nwritten <span style="color:#f92672">+=</span> n;
+        } <span style="color:#66d9ef">else</span> {
+            serverPanic(<span style="color:#e6db74">&#34;Unknown set encoding&#34;</span>);
+        }
+    }
+}
+</code></pre></div>
+<h2 id="zset对象编码">Zset对象编码</h2>
+
+<p>在<a href="http://zcheng.ren/2016/12/24/TheAnnotatedRedisSourcet-zset/">Redis源码剖析&ndash;有序集合t_zset</a>一文中提到，zset采用zskiplist或者ziplist编码，不过这两种编码不影响它在RDB文件中的存放格式。</p>
+
+<pre><code>———————————————————————————————————————————————————————————————————————
+| zset_length | elem1 | score1 | elem2 | score2 | ... | elem3 | score3 |
+———————————————————————————————————————————————————————————————————————
+</code></pre>
+
+<p>其源码实现如下，没什么特别的，不懂的看注释吧。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 存储对象 */</span>
+ssize_t <span style="color:#a6e22e">rdbSaveObject</span>(rio <span style="color:#f92672">*</span>rdb, robj <span style="color:#f92672">*</span>o) {
+    ssize_t n <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#75715e">// ...截取部分代码
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_ZSET) {
+        <span style="color:#75715e">// 保存有序集合对象
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_ZIPLIST) {
+            <span style="color:#75715e">// 采用ziplist编码的情况，直接按照字符串形式存储
+</span><span style="color:#75715e"></span>            size_t l <span style="color:#f92672">=</span> ziplistBlobLen((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)o<span style="color:#f92672">-&gt;</span>ptr);
+
+            <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveRawString(rdb,o<span style="color:#f92672">-&gt;</span>ptr,l)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            nwritten <span style="color:#f92672">+=</span> n;
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_SKIPLIST) {
+            <span style="color:#75715e">// 采用skiplist的情况，遍历所有节点，一次存放
+</span><span style="color:#75715e"></span>          	zset <span style="color:#f92672">*</span>zs <span style="color:#f92672">=</span> o<span style="color:#f92672">-&gt;</span>ptr;
+            dictIterator <span style="color:#f92672">*</span>di <span style="color:#f92672">=</span> dictGetIterator(zs<span style="color:#f92672">-&gt;</span>dict);
+            dictEntry <span style="color:#f92672">*</span>de;
+
+            <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLen(rdb,dictSize(zs<span style="color:#f92672">-&gt;</span>dict))) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            nwritten <span style="color:#f92672">+=</span> n;
+			<span style="color:#75715e">// zset如果是skiplist编码的话，内部有一个dict结构，存放所有的对象和分值
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">while</span>((de <span style="color:#f92672">=</span> dictNext(di)) <span style="color:#f92672">!=</span> NULL) {
+                robj <span style="color:#f92672">*</span>eleobj <span style="color:#f92672">=</span> dictGetKey(de);
+                <span style="color:#66d9ef">double</span> <span style="color:#f92672">*</span>score <span style="color:#f92672">=</span> dictGetVal(de);
+
+                <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveStringObject(rdb,eleobj)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+                nwritten <span style="color:#f92672">+=</span> n;
+                <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveDoubleValue(rdb,<span style="color:#f92672">*</span>score)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+                nwritten <span style="color:#f92672">+=</span> n;
+            }
+            dictReleaseIterator(di);
+        } <span style="color:#66d9ef">else</span> {
+            serverPanic(<span style="color:#e6db74">&#34;Unknown sorted set encoding&#34;</span>);
+        }
+    }
+}
+</code></pre></div>
+<h2 id="hash对象编码">Hash对象编码</h2>
+
+<p>在<a href="http://zcheng.ren/2016/12/23/TheAnnotatedRedisSourcet-hash/">Redis源码剖析&ndash;哈希t_hash</a>一文中，hash底层的数据结构有两种，ziplist和字典，同样在写入RDB文件的时候，需要判断编码类型，然后采用不同的形式存放。</p>
+
+<pre><code>—————————————————————————————————————————————————
+| hashSize | key1 | value1| .... | key2 | value2 |
+—————————————————————————————————————————————————
+</code></pre>
+
+<p>其源码实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 存储对象 */</span>
+ssize_t <span style="color:#a6e22e">rdbSaveObject</span>(rio <span style="color:#f92672">*</span>rdb, robj <span style="color:#f92672">*</span>o) {
+    ssize_t n <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, nwritten <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#75715e">// ...截取部分代码
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">==</span> OBJ_HASH) {
+        <span style="color:#75715e">// 存放hash对象
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_ZIPLIST) {
+            <span style="color:#75715e">// 采用ziplist编码的情况，直接按照字符串形式存储
+</span><span style="color:#75715e"></span>          	size_t l <span style="color:#f92672">=</span> ziplistBlobLen((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)o<span style="color:#f92672">-&gt;</span>ptr);
+
+            <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveRawString(rdb,o<span style="color:#f92672">-&gt;</span>ptr,l)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            nwritten <span style="color:#f92672">+=</span> n;
+
+        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (o<span style="color:#f92672">-&gt;</span>encoding <span style="color:#f92672">==</span> OBJ_ENCODING_HT) {
+            <span style="color:#75715e">// 字典采用字典方式，遍历，存放
+</span><span style="color:#75715e"></span>            dictIterator <span style="color:#f92672">*</span>di <span style="color:#f92672">=</span> dictGetIterator(o<span style="color:#f92672">-&gt;</span>ptr);
+            dictEntry <span style="color:#f92672">*</span>de;
+
+            <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveLen(rdb,dictSize((dict<span style="color:#f92672">*</span>)o<span style="color:#f92672">-&gt;</span>ptr))) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+            nwritten <span style="color:#f92672">+=</span> n;
+
+            <span style="color:#66d9ef">while</span>((de <span style="color:#f92672">=</span> dictNext(di)) <span style="color:#f92672">!=</span> NULL) {
+                robj <span style="color:#f92672">*</span>key <span style="color:#f92672">=</span> dictGetKey(de);
+                robj <span style="color:#f92672">*</span>val <span style="color:#f92672">=</span> dictGetVal(de);
+
+                <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveStringObject(rdb,key)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+                nwritten <span style="color:#f92672">+=</span> n;
+                <span style="color:#66d9ef">if</span> ((n <span style="color:#f92672">=</span> rdbSaveStringObject(rdb,val)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+                nwritten <span style="color:#f92672">+=</span> n;
+            }
+            dictReleaseIterator(di);
+
+        } <span style="color:#66d9ef">else</span> {
+            serverPanic(<span style="color:#e6db74">&#34;Unknown hash encoding&#34;</span>);
+        }
+
+    } 
+}
+</code></pre></div>
+<h1 id="rdb命令">RDB命令</h1>
+
+<p>RDB有两种命令，一种是SAVE，另一种是BGSAVE。我们一起来看看他们的实现源码。</p>
+
+<h2 id="save命令">SAVE命令</h2>
+
+<p>按照Redis的命令定义，可以知道SAVE命令的底层代码实现是由saveCommand实现，于是去源码中找到了它。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* SAVE命令的底层实现代码 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">saveCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">if</span> (server.rdb_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        <span style="color:#75715e">// 检查BGSAVE命令正在执行(BGSAVE是开一个进程来指定存储命令)
+</span><span style="color:#75715e"></span>        addReplyError(c,<span style="color:#e6db74">&#34;Background save already in progress&#34;</span>);
+        <span style="color:#66d9ef">return</span>;
+    }
+    <span style="color:#75715e">// 开始执行rdb持久化操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (rdbSave(server.rdb_filename) <span style="color:#f92672">==</span> C_OK) {
+        addReply(c,shared.ok);
+    } <span style="color:#66d9ef">else</span> {
+        addReply(c,shared.err);
+    }
+}
+</code></pre></div>
+<p>上述代码中，真正进行写rdb文件的函数是rdbSave函数，于是我们进一步跟踪到了它。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 在磁盘上保存rdb文件，如果出错返回C_ERR，反之C_OK */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rdbSave</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>filename) {
+    <span style="color:#66d9ef">char</span> tmpfile[<span style="color:#ae81ff">256</span>];
+    <span style="color:#66d9ef">char</span> cwd[MAXPATHLEN]; <span style="color:#75715e">// 当前工作目录
+</span><span style="color:#75715e"></span>    FILE <span style="color:#f92672">*</span>fp;
+    rio rdb;
+    <span style="color:#66d9ef">int</span> error <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#75715e">// 创建临时文件
+</span><span style="color:#75715e"></span>    snprintf(tmpfile,<span style="color:#ae81ff">256</span>,<span style="color:#e6db74">&#34;temp-%d.rdb&#34;</span>, (<span style="color:#66d9ef">int</span>) getpid());
+    fp <span style="color:#f92672">=</span> fopen(tmpfile,<span style="color:#e6db74">&#34;w&#34;</span>);
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>fp) {
+        <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>cwdp <span style="color:#f92672">=</span> getcwd(cwd,MAXPATHLEN);
+        serverLog(LL_WARNING,
+            <span style="color:#e6db74">&#34;Failed opening the RDB file %s (in server root dir %s) &#34;</span>
+            <span style="color:#e6db74">&#34;for saving: %s&#34;</span>,
+            filename,
+            cwdp <span style="color:#f92672">?</span> cwdp : <span style="color:#e6db74">&#34;unknown&#34;</span>,
+            strerror(errno));
+        <span style="color:#66d9ef">return</span> C_ERR;
+    }
+	<span style="color:#75715e">// 初始化I/0，便于后续写入文件
+</span><span style="color:#75715e"></span>    rioInitWithFile(<span style="color:#f92672">&amp;</span>rdb,fp);
+    <span style="color:#75715e">// 利用RIO来执行写入操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (rdbSaveRio(<span style="color:#f92672">&amp;</span>rdb,<span style="color:#f92672">&amp;</span>error) <span style="color:#f92672">==</span> C_ERR) {
+        errno <span style="color:#f92672">=</span> error;
+        <span style="color:#66d9ef">goto</span> werr;
+    }
+
+    <span style="color:#75715e">// 确保输出缓存中没有数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (fflush(fp) <span style="color:#f92672">==</span> EOF) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (fsync(fileno(fp)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">if</span> (fclose(fp) <span style="color:#f92672">==</span> EOF) <span style="color:#66d9ef">goto</span> werr;
+
+    <span style="color:#75715e">// 使用RENAME，原子性的对临时文件进行改名，覆盖原来的RDB文件
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (rename(tmpfile,filename) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>cwdp <span style="color:#f92672">=</span> getcwd(cwd,MAXPATHLEN);
+        serverLog(LL_WARNING,
+            <span style="color:#e6db74">&#34;Error moving temp DB file %s on the final &#34;</span>
+            <span style="color:#e6db74">&#34;destination %s (in server root dir %s): %s&#34;</span>,
+            tmpfile,
+            filename,
+            cwdp <span style="color:#f92672">?</span> cwdp : <span style="color:#e6db74">&#34;unknown&#34;</span>,
+            strerror(errno));
+        unlink(tmpfile);
+        <span style="color:#66d9ef">return</span> C_ERR;
+    }
+	<span style="color:#75715e">// 写入完成，打印日志
+</span><span style="color:#75715e"></span>    serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;DB saved on disk&#34;</span>);
+    <span style="color:#75715e">// 清零脏数据
+</span><span style="color:#75715e"></span>    server.dirty <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 记录最后一次完成SAVE的时间
+</span><span style="color:#75715e"></span>    server.lastsave <span style="color:#f92672">=</span> time(NULL);
+    <span style="color:#75715e">// 记录最后一次执行SAVE的状态
+</span><span style="color:#75715e"></span>    server.lastbgsave_status <span style="color:#f92672">=</span> C_OK;
+    <span style="color:#66d9ef">return</span> C_OK;
+
+werr:
+    <span style="color:#75715e">// 报错
+</span><span style="color:#75715e"></span>    serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Write error saving DB on disk: %s&#34;</span>, strerror(errno));
+    <span style="color:#75715e">// 关闭文件
+</span><span style="color:#75715e"></span>    fclose(fp);
+    <span style="color:#75715e">// 删除文件
+</span><span style="color:#75715e"></span>    unlink(tmpfile);
+    <span style="color:#75715e">// 返回错误
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> C_ERR;
+}
+</code></pre></div>
+<p>到这一步，还是没有看出来rdb的结构。不过可以知道在写RDB文件时，是先创建一个临时文件，向临时文件中写入数据，如果成功则改名，反之则删除。我们注意到调用了底层函数rdbSaveRio来执行的写操作。接着我们继续吧。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 利用RIO进行写数据操作 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rdbSaveRio</span>(rio <span style="color:#f92672">*</span>rdb, <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>error) {
+    dictIterator <span style="color:#f92672">*</span>di <span style="color:#f92672">=</span> NULL;
+    dictEntry <span style="color:#f92672">*</span>de;
+    <span style="color:#66d9ef">char</span> magic[<span style="color:#ae81ff">10</span>];
+    <span style="color:#66d9ef">int</span> j;
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> now <span style="color:#f92672">=</span> mstime();
+    uint64_t cksum;
+    <span style="color:#75715e">// 设置校验和
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.rdb_checksum)
+        rdb<span style="color:#f92672">-&gt;</span>update_cksum <span style="color:#f92672">=</span> rioGenericUpdateChecksum;
+    <span style="color:#75715e">// 写入REDIS文件标识和版本号
+</span><span style="color:#75715e"></span>    snprintf(magic,<span style="color:#66d9ef">sizeof</span>(magic),<span style="color:#e6db74">&#34;REDIS%04d&#34;</span>,RDB_VERSION);
+    <span style="color:#66d9ef">if</span> (rdbWriteRaw(rdb,magic,<span style="color:#ae81ff">9</span>) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#75715e">// 写入此时系统相关信息
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (rdbSaveInfoAuxFields(rdb) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+	<span style="color:#75715e">// 遍历所有数据库
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> server.dbnum; j<span style="color:#f92672">++</span>) {
+        redisDb <span style="color:#f92672">*</span>db <span style="color:#f92672">=</span> server.db<span style="color:#f92672">+</span>j;
+        dict <span style="color:#f92672">*</span>d <span style="color:#f92672">=</span> db<span style="color:#f92672">-&gt;</span>dict;
+        <span style="color:#66d9ef">if</span> (dictSize(d) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">continue</span>;
+        di <span style="color:#f92672">=</span> dictGetSafeIterator(d);
+        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>di) <span style="color:#66d9ef">return</span> C_ERR;
+
+        <span style="color:#75715e">// 写入当前数据类型
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (rdbSaveType(rdb,RDB_OPCODE_SELECTDB) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+        <span style="color:#75715e">// 写入数据库编号
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (rdbSaveLen(rdb,j) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+
+        <span style="color:#75715e">// 获取数据库字典的大小和过期键字典的大小
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 为了编码方便这些大小最大为UINT32_MAX，但是并不影响数据库和过期键的实际大小
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 因为此大小只是在加载rdb数据的时候申请哈希表的初始大小
+</span><span style="color:#75715e"></span>        uint32_t db_size, expires_size;
+        db_size <span style="color:#f92672">=</span> (dictSize(db<span style="color:#f92672">-&gt;</span>dict) <span style="color:#f92672">&lt;=</span> UINT32_MAX) <span style="color:#f92672">?</span>
+                                dictSize(db<span style="color:#f92672">-&gt;</span>dict) <span style="color:#f92672">:</span>
+                                UINT32_MAX;
+        expires_size <span style="color:#f92672">=</span> (dictSize(db<span style="color:#f92672">-&gt;</span>expires) <span style="color:#f92672">&lt;=</span> UINT32_MAX) <span style="color:#f92672">?</span>
+                                dictSize(db<span style="color:#f92672">-&gt;</span>expires) <span style="color:#f92672">:</span>
+                                UINT32_MAX;
+        <span style="color:#75715e">// 写入当前待写入数据的类型，此处为RDB_OPCODE_RESIZEDB
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (rdbSaveType(rdb,RDB_OPCODE_RESIZEDB) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+        <span style="color:#75715e">// 写入数据库大小
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (rdbSaveLen(rdb,db_size) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+        <span style="color:#75715e">// 写入过期键的个数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (rdbSaveLen(rdb,expires_size) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+
+        <span style="color:#75715e">// 迭代当前数据库中的每一个节点，并将键值对写入rdb文件
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span>((de <span style="color:#f92672">=</span> dictNext(di)) <span style="color:#f92672">!=</span> NULL) {
+            sds keystr <span style="color:#f92672">=</span> dictGetKey(de);
+            robj key, <span style="color:#f92672">*</span>o <span style="color:#f92672">=</span> dictGetVal(de);
+            <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> expire;
+
+            initStaticStringObject(key,keystr);
+            expire <span style="color:#f92672">=</span> getExpire(db,<span style="color:#f92672">&amp;</span>key);
+            <span style="color:#75715e">// 写入键值对数据
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (rdbSaveKeyValuePair(rdb,<span style="color:#f92672">&amp;</span>key,o,expire,now) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+        }
+        dictReleaseIterator(di);
+    }
+    di <span style="color:#f92672">=</span> NULL; <span style="color:#75715e">// 不释放，留下一次迭代用
+</span><span style="color:#75715e"></span>
+    <span style="color:#75715e">// 写入结束符
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (rdbSaveType(rdb,RDB_OPCODE_EOF) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">goto</span> werr;
+
+    <span style="color:#75715e">// 写入CRC64校验和
+</span><span style="color:#75715e"></span>    cksum <span style="color:#f92672">=</span> rdb<span style="color:#f92672">-&gt;</span>cksum;
+    memrev64ifbe(<span style="color:#f92672">&amp;</span>cksum);
+    <span style="color:#66d9ef">if</span> (rioWrite(rdb,<span style="color:#f92672">&amp;</span>cksum,<span style="color:#ae81ff">8</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">goto</span> werr;
+    <span style="color:#66d9ef">return</span> C_OK;
+
+werr:
+    <span style="color:#75715e">// 出错的处理代码
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (error) <span style="color:#f92672">*</span>error <span style="color:#f92672">=</span> errno;
+    <span style="color:#66d9ef">if</span> (di) dictReleaseIterator(di);
+    <span style="color:#66d9ef">return</span> C_ERR;
+}
+</code></pre></div>
+<h2 id="bgsave命令">BGSAVE命令</h2>
+
+<p>BGSAVE命令是开一个进程，然后存储RDB文件在该进程中执行，属于后台存储。该存储方式需要注意一下几种情况。</p>
+
+<ul>
+<li>如果后台正在进行RDB存储，则返回错误</li>
+<li>如果后台正在进行AOF存储，则将rdb_bgsave_scheduled参数置1，等到系统函数<code>serverCron</code>定期执行的时候，检查参数，并执行BGSAVE命令</li>
+</ul>
+
+<p>其源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* 后台SAVE命令实现 */</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">bgsaveCommand</span>(client <span style="color:#f92672">*</span>c) {
+    <span style="color:#66d9ef">int</span> schedule <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#75715e">// schedule参数是为了避免服务器在执行AOF持久化的时候影响RDB持久化
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 于是向系统添加一个日程计划，使得服务器在定期事件中检查该参数和AOF持久化结束没
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 然后执行BGSAVE命令
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span>) {
+        <span style="color:#66d9ef">if</span> (c<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">==</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>strcasecmp(c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">-&gt;</span>ptr,<span style="color:#e6db74">&#34;schedule&#34;</span>)) {
+            schedule <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        } <span style="color:#66d9ef">else</span> {
+            addReply(c,shared.syntaxerr);
+            <span style="color:#66d9ef">return</span>;
+        }
+    }
+	<span style="color:#75715e">// 后台正在运行BGSAVE，直接退出
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.rdb_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        addReplyError(c,<span style="color:#e6db74">&#34;Background save already in progress&#34;</span>);
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+        <span style="color:#75715e">// AOF正在后台执行，增加schedule，提醒客户端增加schedule参数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (schedule) {
+            server.rdb_bgsave_scheduled <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+            addReplyStatus(c,<span style="color:#e6db74">&#34;Background saving scheduled&#34;</span>);
+        } <span style="color:#66d9ef">else</span> {
+            addReplyError(c,
+                <span style="color:#e6db74">&#34;An AOF log rewriting in progress: can&#39;t BGSAVE right now. &#34;</span>
+                <span style="color:#e6db74">&#34;Use BGSAVE SCHEDULE in order to schedule a BGSAVE whenver &#34;</span>
+                <span style="color:#e6db74">&#34;possible.&#34;</span>);
+        }
+    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (rdbSaveBackground(server.rdb_filename) <span style="color:#f92672">==</span> C_OK) {
+        <span style="color:#75715e">// 执行BGSAVE命令
+</span><span style="color:#75715e"></span>        addReplyStatus(c,<span style="color:#e6db74">&#34;Background saving started&#34;</span>);
+    } <span style="color:#66d9ef">else</span> {
+        addReply(c,shared.err);
+    }
+}
+<span style="color:#75715e">/* 真正执行BGSAVE的代码 */</span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">rdbSaveBackground</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>filename) {
+    pid_t childpid;
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> start;
+	<span style="color:#75715e">// 检查后台是否在执行AOF或RDB持久化操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span> server.rdb_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">return</span> C_ERR;
+	<span style="color:#75715e">// 取出脏数据
+</span><span style="color:#75715e"></span>    server.dirty_before_bgsave <span style="color:#f92672">=</span> server.dirty;
+    server.lastbgsave_try <span style="color:#f92672">=</span> time(NULL);
+
+    start <span style="color:#f92672">=</span> ustime();
+    <span style="color:#75715e">// fork出一个子进程
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((childpid <span style="color:#f92672">=</span> fork()) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#66d9ef">int</span> retval;
+      	<span style="color:#75715e">// 子进程执行存储操作
+</span><span style="color:#75715e"></span>        closeListeningSockets(<span style="color:#ae81ff">0</span>);
+        redisSetProcTitle(<span style="color:#e6db74">&#34;redis-rdb-bgsave&#34;</span>);
+        <span style="color:#75715e">// 进程中执行rdbsave函数
+</span><span style="color:#75715e"></span>        retval <span style="color:#f92672">=</span> rdbSave(filename);
+        <span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">==</span> C_OK) {
+            size_t private_dirty <span style="color:#f92672">=</span> zmalloc_get_private_dirty();
+
+            <span style="color:#66d9ef">if</span> (private_dirty) {
+                serverLog(LL_NOTICE,
+                    <span style="color:#e6db74">&#34;RDB: %zu MB of memory used by copy-on-write&#34;</span>,
+                    private_dirty<span style="color:#f92672">/</span>(<span style="color:#ae81ff">1024</span><span style="color:#f92672">*</span><span style="color:#ae81ff">1024</span>));
+            }
+        }
+        exitFromChild((retval <span style="color:#f92672">==</span> C_OK) <span style="color:#f92672">?</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 父进程执行操作
+</span><span style="color:#75715e"></span>        server.stat_fork_time <span style="color:#f92672">=</span> ustime()<span style="color:#f92672">-</span>start;
+        server.stat_fork_rate <span style="color:#f92672">=</span> (<span style="color:#66d9ef">double</span>) zmalloc_used_memory() <span style="color:#f92672">*</span> <span style="color:#ae81ff">1000000</span> <span style="color:#f92672">/</span> server.stat_fork_time <span style="color:#f92672">/</span> (<span style="color:#ae81ff">1024</span><span style="color:#f92672">*</span><span style="color:#ae81ff">1024</span><span style="color:#f92672">*</span><span style="color:#ae81ff">1024</span>); <span style="color:#75715e">/* GB per second. */</span>
+        latencyAddSampleIfNeeded(<span style="color:#e6db74">&#34;fork&#34;</span>,server.stat_fork_time<span style="color:#f92672">/</span><span style="color:#ae81ff">1000</span>);
+        <span style="color:#66d9ef">if</span> (childpid <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+            <span style="color:#75715e">// 创建子进程失败
+</span><span style="color:#75715e"></span>            server.lastbgsave_status <span style="color:#f92672">=</span> C_ERR;
+            serverLog(LL_WARNING,<span style="color:#e6db74">&#34;Can&#39;t save in background: fork: %s&#34;</span>,
+                strerror(errno));
+            <span style="color:#66d9ef">return</span> C_ERR;
+        }
+        <span style="color:#75715e">// 通知客户端进程号
+</span><span style="color:#75715e"></span>        serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;Background saving started by pid %d&#34;</span>,childpid);
+        <span style="color:#75715e">// 保存rdb持久化开始时间
+</span><span style="color:#75715e"></span>        server.rdb_save_time_start <span style="color:#f92672">=</span> time(NULL);
+        <span style="color:#75715e">// 保存子进程号
+</span><span style="color:#75715e"></span>        server.rdb_child_pid <span style="color:#f92672">=</span> childpid;
+        server.rdb_child_type <span style="color:#f92672">=</span> RDB_CHILD_TYPE_DISK;
+        updateDictResizePolicy();
+        <span style="color:#66d9ef">return</span> C_OK;
+    }
+    <span style="color:#66d9ef">return</span> C_OK; <span style="color:#75715e">/* unreached */</span>
+}
+</code></pre></div>
+<p>以上代码中需要注意的是，fork的特性，在子进程中childPid为0，在父进程中childPid为父进程的ID号，所以子进程在执行SAVE操作，父进程在检查操作是否执行成功并存储相关变量。</p>
+
+<h1 id="自动保存">自动保存</h1>
+
+<p>在Redis.conf文件中，可以配置服务器定期执行SAVE命令，该参数如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">save <span style="color:#ae81ff">900</span> <span style="color:#ae81ff">1</span>
+save <span style="color:#ae81ff">300</span> <span style="color:#ae81ff">10</span>
+save <span style="color:#ae81ff">60</span> <span style="color:#ae81ff">10000</span>
+</code></pre></div>
+<p>其含义依次如下：</p>
+
+<ul>
+<li>服务器在900秒之内，对数据库至少进行了一次修改</li>
+<li>服务器在300秒之内，对数据库至少进行了10次修改</li>
+<li>服务器在60秒之内，对数据库至少进行了10000次修改</li>
+</ul>
+
+<p>所以，服务器只要满足这三个条件之一，就会自动执行SAVE操作。那么这一功能是如何实现的呢？我们先来看一个数据结构，在server.h文件夹中。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> saveparam {
+    time_t seconds;  <span style="color:#75715e">// 保存配置文件中的秒数要求
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> changes;  <span style="color:#75715e">// 保存配置文件中的修改次数要求
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p>另外，在redisServer结构体中有如下参数，用来记录上述要求。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> redisServer {
+  	<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> saveparam <span style="color:#f92672">*</span> saveparam ;
+    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p>有了配置文件中的参数，那么服务器中对数据的修改次数和事件存放在哪呢？其实，之前的源码分析中都见到过，每次修改数据的时候，都需要将系统的脏数据个数加1，而且还要保存修改时间，没错就是它俩。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> redisServer {
+  	<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> dirty; <span style="color:#75715e">// 服务器的脏数据，表示没有进行持久化的数据
+</span><span style="color:#75715e"></span>    time_t lastsave; <span style="color:#75715e">// 上一次执行保存的时间
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p>了解了这些参数和结构体在哪之后，就可以通过判断自动保存的条件是否符合来执行BGSAVE命令了，其源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">/* serverCron函数中的代码片段 */</span>
+<span style="color:#75715e">// 判断后台没有执行rdb或者aof持久化操作
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">if</span> (server.rdb_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span> server.aof_child_pid <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">||</span>
+    ldbPendingChildren())
+{
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>} <span style="color:#66d9ef">else</span> {
+  <span style="color:#75715e">// 执行到此，说明后台没有进行rdb或aof操作
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 对每一条时间和修改次数要求进行检查
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> server.saveparamslen; j<span style="color:#f92672">++</span>) {
+    <span style="color:#66d9ef">struct</span> saveparam <span style="color:#f92672">*</span>sp <span style="color:#f92672">=</span> server.saveparams<span style="color:#f92672">+</span>j;
+
+    <span style="color:#75715e">// 如脏数据个数大于规定的修改次数且距离上一次保存的时间也大于规定的时间
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 且上一次试图后台SAVE的间隔超过规定时间或者上一次BGSAVE命令执行成功
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 才执行BGSAVE操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (server.dirty <span style="color:#f92672">&gt;=</span> sp<span style="color:#f92672">-&gt;</span>changes <span style="color:#f92672">&amp;&amp;</span>
+        server.unixtime<span style="color:#f92672">-</span>server.lastsave <span style="color:#f92672">&gt;</span> sp<span style="color:#f92672">-&gt;</span>seconds <span style="color:#f92672">&amp;&amp;</span>
+        (server.unixtime<span style="color:#f92672">-</span>server.lastbgsave_try <span style="color:#f92672">&gt;</span>
+         CONFIG_BGSAVE_RETRY_DELAY <span style="color:#f92672">||</span>
+         server.lastbgsave_status <span style="color:#f92672">==</span> C_OK))
+    {
+      serverLog(LL_NOTICE,<span style="color:#e6db74">&#34;%d changes in %d seconds. Saving...&#34;</span>,
+                sp<span style="color:#f92672">-&gt;</span>changes, (<span style="color:#66d9ef">int</span>)sp<span style="color:#f92672">-&gt;</span>seconds);
+      rdbSaveBackground(server.rdb_filename);
+      <span style="color:#66d9ef">break</span>;
+    }
+  }
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<h1 id="rdb小结">RDB小结</h1>
+
+<p>本文简要分析了RDB结构中数据的存放格式，而后分析了SAVE和BGSAVE命令的执行步骤和源码，最后分析了自动保存功能的实现原理，基本上整个RDB持久化操作的过程以及了然于心了。我们现在可以放心的保证，Redis的RDB全过程已GET！由于本人也是边学边写博客，其中难免有错误的地方，希望大家在阅读的时候能及时指出！期待和大家一起学习交流Redis！</p>
+
+<p>欢迎转载本篇博客，不过请注明博客原地址：<a href="http://zcheng.ren/2016/12/29/TheAnnotatedRedisSourcePubsub">http://zcheng.ren/2016/12/29/TheAnnotatedRedisSourcePubsub</a></p>
+
+<p><p style="text-align:right">张程<p></p>
+
+<p><p style="text-align:right">于湖北·武汉 <p></p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcepubsub/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--发布与订阅Pubsub</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourceaof/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--AOF持久化</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

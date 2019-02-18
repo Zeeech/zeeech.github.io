@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--基数统计hyperloglog</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--基数统计hyperloglog" />
+<meta property="og:description" content="Redis中hyperloglog是用来做基数统计的，其优点是：在输入元素的数量或者体积非常非常大的时候，计算基数所需的空间总是固定的，并且是很小的。在Redis里面，每个Hyperloglog键只需要12Kb的大小就能计算接近2^64个不同元素的基数，但是hyperloglog只会根据输入元素来计算基数，而不会存储元素本身，所以不能像集合那样返回各个元素本身。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourcehyperloglog/" /><meta property="article:published_time" content="2016-12-08T11:48:53&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-08T11:48:53&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--基数统计hyperloglog"/>
+<meta name="twitter:description" content="Redis中hyperloglog是用来做基数统计的，其优点是：在输入元素的数量或者体积非常非常大的时候，计算基数所需的空间总是固定的，并且是很小的。在Redis里面，每个Hyperloglog键只需要12Kb的大小就能计算接近2^64个不同元素的基数，但是hyperloglog只会根据输入元素来计算基数，而不会存储元素本身，所以不能像集合那样返回各个元素本身。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--基数统计hyperloglog</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-08T11:48:53">December 08, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#基数统计">基数统计</a></li>
+<li><a href="#算法思路">算法思路</a>
+<ul>
+<li><a href="#伯努利过程">伯努利过程</a></li>
+<li><a href="#基数统计-1">基数统计</a></li>
+</ul></li>
+<li><a href="#hyperloglog实现">hyperloglog实现</a>
+<ul>
+<li><a href="#数据结构">数据结构</a></li>
+<li><a href="#添加元素">添加元素</a></li>
+<li><a href="#计算基数">计算基数</a></li>
+<li><a href="#合并hyperloglog键">合并hyperloglog键</a></li>
+</ul></li>
+<li><a href="#hyperloglog小结">hyperloglog小结</a></li>
+<li><a href="#update-2016-12-9">Update 2016-12-9</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>Redis中hyperloglog是用来做基数统计的，其优点是：在输入元素的数量或者体积非常非常大的时候，计算基数所需的空间总是固定的，并且是很小的。在Redis里面，每个Hyperloglog键只需要12Kb的大小就能计算接近2^64个不同元素的基数，但是hyperloglog只会根据输入元素来计算基数，而不会存储元素本身，所以不能像集合那样返回各个元素本身。</p>
+
+<h1 id="基数统计">基数统计</h1>
+
+<p>什么是基数呢？基数是指一个集合中不同元素的个数。假设有一组数据\(\{1，2，3，3，4，5，4，6\}\)，除去重复的数字之后，该组数据中不同的数有6个，则该组数据的基数为6。</p>
+
+<p>那什么是基数统计呢？基数统计是指在误差允许的情况下估算出一组数据的误差。</p>
+
+<p>从上述的概念中，我们可以很容易想到基数统计的用途，假设需要计算出某个网站一天中的独立ip访问量，相同ip访问多次的话值算作一次。这个问题即可转换成求一天内所有访问该网站的ip数组的基数。关键在于如何求这个基数？下面我就以最易懂的方法来给大家讲一下。</p>
+
+<h1 id="算法思路">算法思路</h1>
+
+<h2 id="伯努利过程">伯努利过程</h2>
+
+<p>投掷一次硬币出现正、反两面的概率均为\(<sup>1</sup>&frasl;<sub>2</sub>\)。如果我们不断的投掷硬币，直到出现一次正面，在这样的一个过程中，投掷一次得到正面的概率为\(<sup>1</sup>&frasl;<sub>2</sub>\)，投掷两次才得到正面的概率为\(<sup>1</sup>&frasl;<sub>2</sub>^{2}\)&hellip;.依次类推，投掷k次才得到一次正面的概率为\(<sup>1</sup>&frasl;<sub>2</sub>^{k}\)。这个过程在统计学上称为伯努利问题。</p>
+
+<p>有了以上的分析后，我们继续来思考下面两个问题：</p>
+
+<ul>
+<li>进行n次伯努利过程，所有投掷次数都小于k的概率</li>
+<li>进行n次伯努利过程，所有投掷次数都大于k的概率</li>
+</ul>
+
+<p>针对第一个问题，在一次伯努利过程中，投掷次数大于k的概率为\(<sup>1</sup>&frasl;<sub>2</sub>^{k}\)，也就是投了k次反面的概率。因此，在一次过程中投掷次数不大于k的概率为\(1-<sup>1</sup>&frasl;<sub>2</sub>^{k}\)。因此n次伯努利过程所有投掷次数都不大于k的概率为
+$$ P(x \leq k)=(1-<sup>1</sup>&frasl;<sub>2</sub>^{k})^{n}$$</p>
+
+<p>很显然，第二个问题，n次伯努利过程，所有投掷次数都不小于k的概率为
+$$ P(x \geq k)=(1-<sup>1</sup>&frasl;<sub>2</sub>^{k-1})^{n}$$</p>
+
+<p>从上述公式中可得出结论：当n远小于\(2^{k}\)时，\(P(x \geq k)\)几乎为0，即所有投掷次数都小于k；当n远大于\(2^{k}\)时，\(P(x \leq k)\)几乎为0，即所有投掷次数都大于k。因此，当x=k的情况下，我们可以把\(2^{k}\)当成n的一个粗糙估计。</p>
+
+<h2 id="基数统计-1">基数统计</h2>
+
+<p>将上述伯努利过程转换到比特位串上，假设我们有8位比特位串，每一位上出现0或者1的概率均为\(<sup>1</sup>&frasl;<sub>2</sub>\)，投掷k次才得到一次正面的过程可以理解为第k位上出现第一个1的过程。</p>
+
+<p>那么针对一个数据集来说，我们用某种变换将其转换成一个比特子串，就可以根据上述理论来估算出该数据集的技术。例如数据集转换成00001111，第一次出现1的位置为4，那么该数据集的基数为16。</p>
+
+<p>于是现在的问题就是如何将数据集转换成一个比特位串？很明显，哈希变换可以帮助我们解决这个问题。</p>
+
+<p>选取一个哈希函数，该函数满足一下条件：</p>
+
+<ul>
+<li>具有很好的均匀性，无论原始数据集分布如何，其哈希值几乎服从均匀分布。这就保证了伯努利过程中的概率均为1/2</li>
+<li>碰撞几乎忽略不计，也就是说，对于不同的原始值，其哈希结果相同的概率几乎为0</li>
+<li>哈希得出的结果比特位数是固定的。</li>
+</ul>
+
+<p>有了以上这些条件，就可以保证”伯努利过程“的随机性和均匀分布了。</p>
+
+<p>接下来，对于某个数据集，其基数为n，将其中的每一个元素都进行上述的哈希变换，这样就得到了一组固定长度的比特位串，设\(f(i)\)为第i个元素比特位上第一次出现”1“的位置，简单的取其最大值\(f_{max}\)为\(f(i)\)的最大值，这样，我们就可以得出以下结论：</p>
+
+<ul>
+<li>当n远小于\(2^{f_{max}}\)时，\(f{max}\)为当前值的概率为0</li>
+<li>当n远大于\(2^{f_{max}}\)时，\(f{max}\)为当前值的概率为0</li>
+</ul>
+
+<p>这样一来，我们就可以将\(2^{f_{max}}\)作为n的一个粗糙估计。当然，在实际应用中，由于数据存在偶然性，会导致估计量误差较大，这时候需要采用分组估计来消除误差，并且进行偏差修正。</p>
+
+<p>所谓分组估计就是，每一个数据进行hash之后存放在不同的桶中，然后计算每一个桶的\(f_{max}\)，最后对这些值求一个平均favg，即可得到基数的粗糙估计\(2^{favg}\)。</p>
+
+<h1 id="hyperloglog实现">hyperloglog实现</h1>
+
+<h2 id="数据结构">数据结构</h2>
+
+<p>每个hyperloglog键由一下结构体组成：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> hllhdr {
+    <span style="color:#66d9ef">char</span> magic[<span style="color:#ae81ff">4</span>];      <span style="color:#75715e">// 固定‘HYLL’，用于标识hyperloglog键
+</span><span style="color:#75715e"></span>    uint8_t encoding;   <span style="color:#75715e">// 编码模式，有密集标识Dence和稀疏模式sparse
+</span><span style="color:#75715e"></span>    uint8_t notused[<span style="color:#ae81ff">3</span>]; <span style="color:#75715e">// 未使用字段，留着日后用
+</span><span style="color:#75715e"></span>    uint8_t card[<span style="color:#ae81ff">8</span>];    <span style="color:#75715e">// 基数缓存，存储上一次计算的基数
+</span><span style="color:#75715e"></span>    uint8_t registers[]; <span style="color:#75715e">// 桶个数，用来存放数据，Redis中大小为16384
+</span><span style="color:#75715e"></span>};
+</code></pre></div>
+<h2 id="添加元素">添加元素</h2>
+
+<p>Redis提供一下命令来向hyperloglog键中添加数据。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">PFADD key element [element ...]
+</code></pre></div>
+<p>其源码实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pfaddCommand</span>(client <span style="color:#f92672">*</span>c) {
+    robj <span style="color:#f92672">*</span>o <span style="color:#f92672">=</span> lookupKeyWrite(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]);
+    <span style="color:#66d9ef">struct</span> hllhdr <span style="color:#f92672">*</span>hdr;
+    <span style="color:#66d9ef">int</span> updated <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, j;
+    <span style="color:#75715e">// 客户端交互部分，此处可以放着以后理解
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (o <span style="color:#f92672">==</span> NULL) { 
+        <span style="color:#75715e">// 创建一个hyperloglog键
+</span><span style="color:#75715e"></span>        o <span style="color:#f92672">=</span> createHLLObject();
+        dbAdd(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],o);
+        updated<span style="color:#f92672">++</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 判断是否是一个hyperloglog键，判断前四个字节是否为&#39;HYLL&#39;
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (isHLLObjectOrReply(c,o) <span style="color:#f92672">!=</span> C_OK) <span style="color:#66d9ef">return</span>;
+        o <span style="color:#f92672">=</span> dbUnshareStringValue(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],o);
+    }
+    <span style="color:#75715e">// 调用hllAdd函数来添加元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (j <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>; j <span style="color:#f92672">&lt;</span> c<span style="color:#f92672">-&gt;</span>argc; j<span style="color:#f92672">++</span>) {
+        <span style="color:#66d9ef">int</span> retval <span style="color:#f92672">=</span> hllAdd(o, (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span>)c<span style="color:#f92672">-&gt;</span>argv[j]<span style="color:#f92672">-&gt;</span>ptr,
+                               sdslen(c<span style="color:#f92672">-&gt;</span>argv[j]<span style="color:#f92672">-&gt;</span>ptr));
+        <span style="color:#66d9ef">switch</span>(retval) {
+        <span style="color:#66d9ef">case</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">:</span>
+            updated<span style="color:#f92672">++</span>;
+            <span style="color:#66d9ef">break</span>;
+        <span style="color:#66d9ef">case</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#f92672">:</span>
+            addReplySds(c,sdsnew(invalid_hll_err));
+            <span style="color:#66d9ef">return</span>;
+        }
+    }
+    hdr <span style="color:#f92672">=</span> o<span style="color:#f92672">-&gt;</span>ptr;
+    <span style="color:#66d9ef">if</span> (updated) {
+        signalModifiedKey(c<span style="color:#f92672">-&gt;</span>db,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>]);
+        notifyKeyspaceEvent(NOTIFY_STRING,<span style="color:#e6db74">&#34;pfadd&#34;</span>,c<span style="color:#f92672">-&gt;</span>argv[<span style="color:#ae81ff">1</span>],c<span style="color:#f92672">-&gt;</span>db<span style="color:#f92672">-&gt;</span>id);
+        server.dirty<span style="color:#f92672">++</span>;
+        HLL_INVALIDATE_CACHE(hdr);
+    }
+    <span style="color:#75715e">// 客户端交互部分，此处可以放着以后理解
+</span><span style="color:#75715e"></span>    addReply(c, updated <span style="color:#f92672">?</span> shared.cone : shared.czero);
+}
+</code></pre></div>
+<p>上述代码包含了很多与客户端交互的部分，此处可以先不看，添加元素主要由hllAdd函数实现。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">hllAdd</span>(robj <span style="color:#f92672">*</span>o, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>ele, size_t elesize) {
+    <span style="color:#66d9ef">struct</span> hllhdr <span style="color:#f92672">*</span>hdr <span style="color:#f92672">=</span> o<span style="color:#f92672">-&gt;</span>ptr;
+    <span style="color:#66d9ef">switch</span>(hdr<span style="color:#f92672">-&gt;</span>encoding) {
+    <span style="color:#66d9ef">case</span> HLL_DENSE: <span style="color:#66d9ef">return</span> hllDenseAdd(hdr<span style="color:#f92672">-&gt;</span>registers,ele,elesize);  <span style="color:#75715e">// 密集模式添加元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">case</span> HLL_SPARSE: <span style="color:#66d9ef">return</span> hllSparseAdd(o,ele,elesize); <span style="color:#75715e">// 稀疏模式添加元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; <span style="color:#75715e">// 非法模式
+</span><span style="color:#75715e"></span>    }
+}
+</code></pre></div>
+<p>以hllDenseAdd为例，首先计算待添加元素的第一次出现“1”的位置count和该元素添加到第index个桶内，然后查看registers部分，第index个桶内此时存放的第一次出现“1”的最大的位数oldcount，比较oldcount和count，如果前者大，则不处理；如果后者大，更新oldcount为count。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 密集模式添加元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">hllDenseAdd</span>(uint8_t <span style="color:#f92672">*</span>registers, <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>ele, size_t elesize) {
+    uint8_t oldcount, count;
+    <span style="color:#66d9ef">long</span> index;
+
+    <span style="color:#75715e">// 计算该元素第一个1出现的位置
+</span><span style="color:#75715e"></span>    count <span style="color:#f92672">=</span> hllPatLen(ele,elesize,<span style="color:#f92672">&amp;</span>index);
+    <span style="color:#75715e">// 得到第index个桶内的count值
+</span><span style="color:#75715e"></span>    HLL_DENSE_GET_REGISTER(oldcount,registers,index);
+    <span style="color:#66d9ef">if</span> (count <span style="color:#f92672">&gt;</span> oldcount) {
+        <span style="color:#75715e">// 如果比现有的最大值还大，则添加该值到数据部分
+</span><span style="color:#75715e"></span>        HLL_DENSE_SET_REGISTER(registers,index,count);
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#75715e">// 如果小于现有的最大值，则不做处理，因为不影响基数
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    }
+}
+<span style="color:#75715e">// 用于计算hash后的值中，第一个出现1的位置
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">hllPatLen</span>(<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>ele, size_t elesize, <span style="color:#66d9ef">long</span> <span style="color:#f92672">*</span>regp) {
+    uint64_t hash, bit, index;
+    <span style="color:#66d9ef">int</span> count;
+    <span style="color:#75715e">// 利用MurmurHash64A哈希函数来计算该元素的hash值
+</span><span style="color:#75715e"></span>    hash <span style="color:#f92672">=</span> MurmurHash64A(ele,elesize,<span style="color:#ae81ff">0xadc83b19ULL</span>);
+    <span style="color:#75715e">// 计算应该放在哪个桶
+</span><span style="color:#75715e"></span>    index <span style="color:#f92672">=</span> hash <span style="color:#f92672">&amp;</span> HLL_P_MASK;
+    <span style="color:#75715e">// 为了保证循环能够终止
+</span><span style="color:#75715e"></span>    hash <span style="color:#f92672">|=</span> ((uint64_t)<span style="color:#ae81ff">1</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">63</span>); 
+    bit <span style="color:#f92672">=</span> HLL_REGISTERS;
+    <span style="color:#75715e">// 存储第一个1出现的位置
+</span><span style="color:#75715e"></span>    count <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+    <span style="color:#75715e">// 计算count
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span>((hash <span style="color:#f92672">&amp;</span> bit) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+        count<span style="color:#f92672">++</span>;
+        bit <span style="color:#f92672">&lt;&lt;=</span> <span style="color:#ae81ff">1</span>;
+    }
+    <span style="color:#f92672">*</span>regp <span style="color:#f92672">=</span> (<span style="color:#66d9ef">int</span>) index;
+    <span style="color:#66d9ef">return</span> count;
+}
+</code></pre></div>
+<h2 id="计算基数">计算基数</h2>
+
+<p>Redis提供了下面的命令来计算数据集的基数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">PFCOUNT key [key ...]
+</code></pre></div>
+<p>如果只有一个key则计算其基数即可；如果存在多个键，则需要合并所有的键（求并集），然后计算其基数。</p>
+
+<p>上述讲到了分桶统计来消除误差，hyperloglog在误差方面对上述只取最大值平均的方法做了很多优化，具体优化部分可以参考<a href="http://blog.codinglabs.org/articles/algorithms-for-cardinality-estimation-part-iv.html">解读Cardinality Estimation算法（第四部分：HyperLogLog Counting及Adaptive Counting）</a>。</p>
+
+<h2 id="合并hyperloglog键">合并hyperloglog键</h2>
+
+<p>Redis提供了下面的命令来合并多个hyperloglog键。（源码部分就省略了）</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">PFMERGE destkey sourcekey [sourcekey ...]
+</code></pre></div>
+<h1 id="hyperloglog小结">hyperloglog小结</h1>
+
+<p>一开始以为hyperloglog是Redis的日志部分的实现，后来才发现，跟日志半毛钱的关系都没有。对于密集存储和稀疏存储，能够大大节约内存，后续有时间还是要详细的理一理实现思路。关于基数统计，各位可以参考下面几篇博客。
++ <a href="http://blog.codinglabs.org/articles/algorithms-for-cardinality-estimation-part-i.html">解读Cardinality Estimation算法（第一部分：基本概念）</a>
++ <a href="http://blog.codinglabs.org/articles/algorithms-for-cardinality-estimation-part-ii.html">解读Cardinality Estimation算法（第二部分：Linear Counting）</a>
++ <a href="http://blog.codinglabs.org/articles/algorithms-for-cardinality-estimation-part-iii.html">解读Cardinality Estimation算法（第三部分：LogLog Counting）</a></p>
+
+<h1 id="update-2016-12-9">Update 2016-12-9</h1>
+
+<p>** 为什么一个hyperloglog键的大小固定为12KB？**</p>
+
+<p>Redis的hyperloglog结构中，card数组为64位bit，理论上可以存储近\(2^{64}\)个值。以密集表示模式为例：</p>
+
+<p>Redis规定分桶个数为16384个，每一个桶内的数据采用6bit大小来存放</p>
+
+<blockquote>
+<p>注意：Redis此处存放的不是该元素，而是存放第一次出现“1”的位置的值，6bit可以表示0~64位，即可以支持\(2^{64}\)个基数。</p>
+</blockquote>
+
+<p>registers部分占用内存为（16384*6+7）/8 = 12288个字节，另外加上HLL结构的头占用了16个字节，加起来一共12304个字节，也就是说一个hyperloglog键占用了12KB左右的大小，最多可以计算\(2^{64}\)个不同元素的基数。</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcezskiplist/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--跳跃表zskiplist</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourceintset/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--整数集合Intset</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Redis源码剖析--字典dict</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="Redis源码剖析--字典dict" />
+<meta property="og:description" content="字典是Redis中的一个非常重要的底层数据结构，其应用相当广泛。Redis的数据库就是使用字典作为底层实现的，对数据库的增、删、查、改都是建立在对字典的操作上。此外，字典还是Redis中哈希键的底层实现，当一个哈希键包含的键值对比较多，或者键值对中的元素都是比较长的字符串时，Redis就会使用字典作为哈希键的底层实现。
+
+Redis中的字典采用哈希表作为底层实现，在Redis源码文件中，字典的实现代码在dict.c和dict.h文件中。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/theannotatedredissourcedict/" /><meta property="article:published_time" content="2016-12-04T15:55:05&#43;08:00"/>
+<meta property="article:modified_time" content="2016-12-04T15:55:05&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Redis源码剖析--字典dict"/>
+<meta name="twitter:description" content="字典是Redis中的一个非常重要的底层数据结构，其应用相当广泛。Redis的数据库就是使用字典作为底层实现的，对数据库的增、删、查、改都是建立在对字典的操作上。此外，字典还是Redis中哈希键的底层实现，当一个哈希键包含的键值对比较多，或者键值对中的元素都是比较长的字符串时，Redis就会使用字典作为哈希键的底层实现。
+
+Redis中的字典采用哈希表作为底层实现，在Redis源码文件中，字典的实现代码在dict.c和dict.h文件中。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">Redis源码剖析--字典dict</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-12-04T15:55:05">December 04, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#dict数据结构">dict数据结构</a>
+<ul>
+<li><a href="#哈希表节点-dictentry">哈希表节点（dictEntry）</a></li>
+<li><a href="#哈希表dictht">哈希表dictht</a></li>
+<li><a href="#字典dict">字典dict</a></li>
+<li><a href="#字典类型函数dicttype">字典类型函数dictType</a></li>
+</ul></li>
+<li><a href="#哈希算法">哈希算法</a></li>
+<li><a href="#rehash算法">rehash算法</a></li>
+<li><a href="#dict基本操作">dict基本操作</a>
+<ul>
+<li><a href="#dict创建">dict创建</a></li>
+<li><a href="#添加键值对">添加键值对</a></li>
+<li><a href="#查找键值对">查找键值对</a></li>
+<li><a href="#删除键值对">删除键值对</a></li>
+<li><a href="#字典删除">字典删除</a></li>
+</ul></li>
+<li><a href="#dict小结">dict小结</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>字典是Redis中的一个非常重要的底层数据结构，其应用相当广泛。Redis的数据库就是使用字典作为底层实现的，对数据库的增、删、查、改都是建立在对字典的操作上。此外，字典还是Redis中哈希键的底层实现，当一个哈希键包含的键值对比较多，或者键值对中的元素都是比较长的字符串时，Redis就会使用字典作为哈希键的底层实现。</p>
+
+<p>Redis中的字典采用哈希表作为底层实现，在Redis源码文件中，字典的实现代码在dict.c和dict.h文件中。</p>
+
+<h1 id="dict数据结构">dict数据结构</h1>
+
+<p>Redis定义了dictEntry，dictType，dictht和dict四个结构体来实现字典结构，下面来分别介绍这四个结构体。</p>
+
+<h2 id="哈希表节点-dictentry">哈希表节点（dictEntry）</h2>
+
+<p>字典中每一对键值都以dictEntry节点的形式存放，其结构体实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> dictEntry {
+    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key;  <span style="color:#75715e">// 键
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">union</span> {   
+        <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>val;
+        uint64_t u64;
+        int64_t s64;
+        <span style="color:#66d9ef">double</span> d;
+    } v;  <span style="color:#75715e">// 值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> dictEntry <span style="color:#f92672">*</span>next;  <span style="color:#75715e">// 指向下一个哈希表节点
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 此处可以看出字典采用了开链法才解决哈希冲突
+</span><span style="color:#75715e"></span>} dictEntry;
+</code></pre></div>
+<h2 id="哈希表dictht">哈希表dictht</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> dictht {
+    dictEntry <span style="color:#f92672">**</span>table; <span style="color:#75715e">// 哈希表数组
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> size;  <span style="color:#75715e">// 哈希表大小
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> sizemask; <span style="color:#75715e">// 哈希表大小掩码，用于计算索引值
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> used;  <span style="color:#75715e">// 该哈希表中已有节点的数量
+</span><span style="color:#75715e"></span>} dictht;
+</code></pre></div>
+<h2 id="字典dict">字典dict</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> dict {
+    dictType <span style="color:#f92672">*</span>type; <span style="color:#75715e">// 字典类型，保存一些用于操作特定类型键值对的函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privdata; <span style="color:#75715e">// 私有数据，保存需要传给那些类型特定函数的可选数据
+</span><span style="color:#75715e"></span>    dictht ht[<span style="color:#ae81ff">2</span>];  <span style="color:#75715e">// 一个字典结构包括两个哈希表
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> rehashidx; <span style="color:#75715e">// rehash索引，不进行rehash时其值为-1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> iterators; <span style="color:#75715e">// 当前正在使用的迭代器数量
+</span><span style="color:#75715e"></span>} dict;
+</code></pre></div>
+<h2 id="字典类型函数dicttype">字典类型函数dictType</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> dictType {
+    <span style="color:#75715e">// 计算哈希值的函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> (<span style="color:#f92672">*</span>hashFunction)(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key);
+    <span style="color:#75715e">// 复制键的函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>(<span style="color:#f92672">*</span>keyDup)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privdata, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key);
+    <span style="color:#75715e">// 复制值的函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>(<span style="color:#f92672">*</span>valDup)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privdata, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>obj);
+    <span style="color:#75715e">// 比较键的函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> (<span style="color:#f92672">*</span>keyCompare)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privdata, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key1, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key2);
+    <span style="color:#75715e">// 销毁键的函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span>keyDestructor)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privdata, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key);
+    <span style="color:#75715e">// 销毁值的函数
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span>valDestructor)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privdata, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>obj);
+} dictType;
+</code></pre></div>
+<p>看完这四个结构的源码之后，脑海中应该有字典的一个模糊结构了。下面用一张图来帮助大家弄清楚Redis字典的结构。</p>
+
+<p><img src="/Users/zhangcheng/Documents/aaa/dict.png" alt="Redis字典结构" /></p>
+
+<h1 id="哈希算法">哈希算法</h1>
+
+<p>当往字典中添加键值对时，需要根据键的大小计算出哈希值和索引值，然后再根据索引值，将包含新键值对的哈希表节点放到哈希表数组的指定索引上面。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 计算哈希值
+</span><span style="color:#75715e"></span>h <span style="color:#f92672">=</span> dictHashKey(d, key);
+<span style="color:#75715e">// 调用哈希算法计算哈希值
+</span><span style="color:#75715e"></span><span style="color:#75715e">#define dictHashKey(d, key) (d)-&gt;type-&gt;hashFunction(key)
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>Redis提供了三种计算哈希值的函数，其分别是：
++ Thomas Wang&rsquo;s 32 bit Mix函数，对一个整数进行哈希，该方法在dictIntHashFunction中实现
++ 使用MurmurHash2哈希算法对字符串进行哈希，该方法在dictGenHashFunction中实现
++ 使用基于djb哈希的一种简单的哈希算法，该方法在dictGenCaseHashFunction中实现。</p>
+
+<blockquote>
+<p>以上三种哈希算法本博客不做过多解释，具体可以参考源码。</p>
+</blockquote>
+
+<p>计算出哈希值之后，需要计算其索引。Redis采用下列算式来计算索引值。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 举例：h为5，哈希表的大小初始化为4，sizemask则为size-1，
+</span><span style="color:#75715e">//      于是h&amp;sizemask = 2，
+</span><span style="color:#75715e">//      所以该键值对就存放在索引为2的位置
+</span><span style="color:#75715e"></span>idx <span style="color:#f92672">=</span> h <span style="color:#f92672">&amp;</span> d<span style="color:#f92672">-&gt;</span>ht[table].sizemask;
+</code></pre></div>
+<h1 id="rehash算法">rehash算法</h1>
+
+<p>rehash是Redis字典实现的一个重要操作。dict采用链地址法来处理哈希冲突，那么随着数据存放量的增加，必然会造成冲突链表越来越长，最终会导致字典的查找效率显著下降。这种情况下，就需要对字典进行扩容。另外，当字典中键值对过少时，就需要对字典进行收缩来节省空间，这些扩容和收缩的过程就采用rehash来实现。</p>
+
+<p>通常情况下，字典的键值对数据都存放在ht[0]里面，如果此时需要对字典进行rehash，会进行如下步骤：</p>
+
+<ul>
+<li>为ht[1]哈希表分配空间，空间的大小取决于要执行的操作和字典中键值对的个数</li>
+<li>将保存在ht[0]中的键值对重新计算哈希值和索引，然后存放到ht[1]中。</li>
+<li>当ht[0]中的数据全部迁移到ht[1]之后，将ht[1]设为ht[0]，并为ht[1]新创建一个空白哈希表，为下一次rehash做准备。</li>
+</ul>
+
+<p>rehash算法的源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 执行N步渐进式的rehash操作，如果仍存在旧表中的数据迁移到新表，则返回1，反之返回0
+</span><span style="color:#75715e">// 每一步操作移动一个索引值下的键值对到新表
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">dictRehash</span>(dict <span style="color:#f92672">*</span>d, <span style="color:#66d9ef">int</span> n) {
+    <span style="color:#66d9ef">int</span> empty_visits <span style="color:#f92672">=</span> n<span style="color:#f92672">*</span><span style="color:#ae81ff">10</span>; <span style="color:#75715e">// 最大允许访问的空桶值，也就是该索引下没有键值对
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>dictIsRehashing(d)) <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#66d9ef">while</span>(n<span style="color:#f92672">--</span> <span style="color:#f92672">&amp;&amp;</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].used <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+        dictEntry <span style="color:#f92672">*</span>de, <span style="color:#f92672">*</span>nextde;
+
+        <span style="color:#75715e">// rehashidx不能大于哈希表的大小
+</span><span style="color:#75715e"></span>        assert(d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].size <span style="color:#f92672">&gt;</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span>)d<span style="color:#f92672">-&gt;</span>rehashidx);
+        <span style="color:#66d9ef">while</span>(d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].table[d<span style="color:#f92672">-&gt;</span>rehashidx] <span style="color:#f92672">==</span> NULL) {
+            d<span style="color:#f92672">-&gt;</span>rehashidx<span style="color:#f92672">++</span>;
+            <span style="color:#66d9ef">if</span> (<span style="color:#f92672">--</span>empty_visits <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+        }
+        <span style="color:#75715e">// 获取需要rehash的索引值下的链表
+</span><span style="color:#75715e"></span>        de <span style="color:#f92672">=</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].table[d<span style="color:#f92672">-&gt;</span>rehashidx];
+        <span style="color:#75715e">// 将该索引下的键值对全部转移到新表
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span>(de) {
+            <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> h;
+
+            nextde <span style="color:#f92672">=</span> de<span style="color:#f92672">-&gt;</span>next;
+            <span style="color:#75715e">// 计算该键值对在新表中的索引值
+</span><span style="color:#75715e"></span>            h <span style="color:#f92672">=</span> dictHashKey(d, de<span style="color:#f92672">-&gt;</span>key) <span style="color:#f92672">&amp;</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>].sizemask;
+            de<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>].table[h];
+            d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>].table[h] <span style="color:#f92672">=</span> de;
+            d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].used<span style="color:#f92672">--</span>;
+            d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>].used<span style="color:#f92672">++</span>;
+            de <span style="color:#f92672">=</span> nextde;
+        }
+        d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].table[d<span style="color:#f92672">-&gt;</span>rehashidx] <span style="color:#f92672">=</span> NULL;
+        d<span style="color:#f92672">-&gt;</span>rehashidx<span style="color:#f92672">++</span>;
+    }
+
+    <span style="color:#75715e">// 键值是否整个表都迁移完成
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].used <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#75715e">// 清除ht[0]
+</span><span style="color:#75715e"></span>        zfree(d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].table);
+        <span style="color:#75715e">// 将ht[1]转移到ht[0]
+</span><span style="color:#75715e"></span>        d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>];
+        <span style="color:#75715e">// 重置ht[1]为空哈希表
+</span><span style="color:#75715e"></span>        _dictReset(<span style="color:#f92672">&amp;</span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>]);
+        <span style="color:#75715e">// 完成rehash，-1代表没有进行rehash操作
+</span><span style="color:#75715e"></span>        d<span style="color:#f92672">-&gt;</span>rehashidx <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+    }
+
+    <span style="color:#75715e">// 如果没有完成则返回1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+}
+</code></pre></div>
+<p>Redis中rehash的操作不是一次完成，而是渐进式完成，每次只移动若干个索引下的键值对链表到新表（在ht[0]中采用rehashidx参数来记录当前需要rehash的索引值）。为此，Redis提供了两种渐进式的操作来进行rehash。</p>
+
+<p>一种是按按索引值，每次只移动一个索引值下的键值对数据到新哈希表里。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 在执行查询和更新操作时，如果符合rehash条件就会触发一次rehash操作，每次执行一步
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">_dictRehashStep</span>(dict <span style="color:#f92672">*</span>d) {
+    <span style="color:#66d9ef">if</span> (d<span style="color:#f92672">-&gt;</span>iterators <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) dictRehash(d,<span style="color:#ae81ff">1</span>);
+}
+</code></pre></div>
+<p>另一种是按照时间，每次执行一段固定的时间。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 获取当前的时间戳（一毫秒为单位）
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">timeInMilliseconds</span>(<span style="color:#66d9ef">void</span>) {
+    <span style="color:#66d9ef">struct</span> timeval tv;
+
+    gettimeofday(<span style="color:#f92672">&amp;</span>tv,NULL);
+    <span style="color:#66d9ef">return</span> (((<span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span>)tv.tv_sec)<span style="color:#f92672">*</span><span style="color:#ae81ff">1000</span>)<span style="color:#f92672">+</span>(tv.tv_usec<span style="color:#f92672">/</span><span style="color:#ae81ff">1000</span>);
+}
+<span style="color:#75715e">// rehash操作每次执行ms时间就退出
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">dictRehashMilliseconds</span>(dict <span style="color:#f92672">*</span>d, <span style="color:#66d9ef">int</span> ms) {
+    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> start <span style="color:#f92672">=</span> timeInMilliseconds();
+    <span style="color:#66d9ef">int</span> rehashes <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+    <span style="color:#66d9ef">while</span>(dictRehash(d,<span style="color:#ae81ff">100</span>)) {  <span style="color:#75715e">// 每次执行100步
+</span><span style="color:#75715e"></span>        rehashes <span style="color:#f92672">+=</span> <span style="color:#ae81ff">100</span>;
+        <span style="color:#66d9ef">if</span> (timeInMilliseconds()<span style="color:#f92672">-</span>start <span style="color:#f92672">&gt;</span> ms) <span style="color:#66d9ef">break</span>; <span style="color:#75715e">// 如果时间超过ms就退出
+</span><span style="color:#75715e"></span>    }
+    <span style="color:#66d9ef">return</span> rehashes;
+}
+</code></pre></div>
+<p>分析到这里，可能最想弄清楚的就是什么时候需要rehash，Redis定义了一个负载因子dict_force_resize_ratio，该因子的初始值为5，如果满足一下条件，则需要进行rehash操作。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 哈希表中键值对的数量与哈希表的大小的比大于负载因子
+</span><span style="color:#75715e"></span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].used<span style="color:#f92672">/</span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].size <span style="color:#f92672">&gt;</span> dict_force_resize_ratio
+</code></pre></div>
+<p>到此，Redis的整个rehash操作基本上理清楚了。</p>
+
+<h1 id="dict基本操作">dict基本操作</h1>
+
+<h2 id="dict创建">dict创建</h2>
+
+<p>Redis调用dictCreate来创建一个空字典</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dict <span style="color:#f92672">*</span><span style="color:#a6e22e">dictCreate</span>(dictType <span style="color:#f92672">*</span>type,
+        <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privDataPtr)
+{
+    dict <span style="color:#f92672">*</span>d <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>d));
+    <span style="color:#75715e">// 字典初始化
+</span><span style="color:#75715e"></span>    _dictInit(d,type,privDataPtr);
+    <span style="color:#66d9ef">return</span> d;
+}
+
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">_dictInit</span>(dict <span style="color:#f92672">*</span>d, dictType <span style="color:#f92672">*</span>type,
+        <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>privDataPtr)
+{
+    _dictReset(<span style="color:#f92672">&amp;</span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>]);
+    _dictReset(<span style="color:#f92672">&amp;</span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>]);
+    d<span style="color:#f92672">-&gt;</span>type <span style="color:#f92672">=</span> type; <span style="color:#75715e">// 设定字典类型
+</span><span style="color:#75715e"></span>    d<span style="color:#f92672">-&gt;</span>privdata <span style="color:#f92672">=</span> privDataPtr;
+    d<span style="color:#f92672">-&gt;</span>rehashidx <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>; <span style="color:#75715e">// 初始化为-1，未进行rehash操作
+</span><span style="color:#75715e"></span>    d<span style="color:#f92672">-&gt;</span>iterators <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">// 正在使用的迭代器数量
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> DICT_OK;
+}
+</code></pre></div>
+<h2 id="添加键值对">添加键值对</h2>
+
+<p>向字典中添加键值对时需要考虑如下情况：</p>
+
+<ul>
+<li>如果此时没有进行rehash操作，直接计算出索引添加到ht[0]中</li>
+<li>如果此刻正在进行rehash操作，则根据ht[1]的参数计算出索引值，添加到ht[1]中</li>
+</ul>
+
+<p>添加键值对的功能由dictAdd函数来实现，其源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">dictAdd</span>(dict <span style="color:#f92672">*</span>d, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>val)
+{
+    <span style="color:#75715e">// 往字典中添加一个只有key的键值对
+</span><span style="color:#75715e"></span>    dictEntry <span style="color:#f92672">*</span>entry <span style="color:#f92672">=</span> dictAddRaw(d,key);
+
+    <span style="color:#75715e">// 如果添加失败，则返回错误
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>entry) <span style="color:#66d9ef">return</span> DICT_ERR;
+    <span style="color:#75715e">// 为添加的只有key键值对设定值
+</span><span style="color:#75715e"></span>    dictSetVal(d, entry, val);
+    <span style="color:#66d9ef">return</span> DICT_OK;
+}
+<span style="color:#75715e">// 添加只有key的键值对，如果成功则返回该键值对，反之则返回空
+</span><span style="color:#75715e"></span>dictEntry <span style="color:#f92672">*</span><span style="color:#a6e22e">dictAddRaw</span>(dict <span style="color:#f92672">*</span>d, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key)
+{
+    <span style="color:#66d9ef">int</span> index;
+    dictEntry <span style="color:#f92672">*</span>entry;
+    dictht <span style="color:#f92672">*</span>ht;
+
+    <span style="color:#75715e">// 如果正在进行rehash操作，则先执行rehash操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictIsRehashing(d)) _dictRehashStep(d);
+
+    <span style="color:#75715e">// 获取新键值对的索引值，如果key存在则返回-1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> ((index <span style="color:#f92672">=</span> _dictKeyIndex(d, key)) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+        <span style="color:#66d9ef">return</span> NULL;
+
+    <span style="color:#75715e">// 如果正在进行rehash则添加到ht[1]，反之则添加到ht[0]
+</span><span style="color:#75715e"></span>    ht <span style="color:#f92672">=</span> dictIsRehashing(d) <span style="color:#f92672">?</span> <span style="color:#f92672">&amp;</span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">:</span> <span style="color:#f92672">&amp;</span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>];
+    <span style="color:#75715e">// 申请内存，存储新键值对
+</span><span style="color:#75715e"></span>    entry <span style="color:#f92672">=</span> zmalloc(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>entry));
+    <span style="color:#75715e">// 使用开链法来处理哈希冲突
+</span><span style="color:#75715e"></span>    entry<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> ht<span style="color:#f92672">-&gt;</span>table[index];
+    ht<span style="color:#f92672">-&gt;</span>table[index] <span style="color:#f92672">=</span> entry;
+    ht<span style="color:#f92672">-&gt;</span>used<span style="color:#f92672">++</span>;
+
+    <span style="color:#75715e">// 设定键的大小
+</span><span style="color:#75715e"></span>    dictSetKey(d, entry, key);
+    <span style="color:#66d9ef">return</span> entry;
+}
+</code></pre></div>
+<p>上述添加方式在，在存在该key的时候，直接返回NULL，Redis还提供了另一种添加键值对的函数，它在处理存在相同key的情况时，直接用新键值对来替换旧键值对。其实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">dictReplace</span>(dict <span style="color:#f92672">*</span>d, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key, <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>val)
+{
+    dictEntry <span style="color:#f92672">*</span>entry, auxentry;
+
+    <span style="color:#75715e">// 直接调用dictAdd函数，如果添加成功就表示没有存在相同的key
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictAdd(d, key, val) <span style="color:#f92672">==</span> DICT_OK)
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+    <span style="color:#75715e">// 如果存在相同的key，则先获取该键值对
+</span><span style="color:#75715e"></span>    entry <span style="color:#f92672">=</span> dictFind(d, key);
+    <span style="color:#75715e">// 然后用新的value来替换旧value
+</span><span style="color:#75715e"></span>    auxentry <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>entry;
+    dictSetVal(d, entry, val);
+    dictFreeVal(d, <span style="color:#f92672">&amp;</span>auxentry);
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div>
+<h2 id="查找键值对">查找键值对</h2>
+
+<p>根据键值对的键大小在字典中查找对应的键值对。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dictEntry <span style="color:#f92672">*</span><span style="color:#a6e22e">dictFind</span>(dict <span style="color:#f92672">*</span>d, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key)
+{
+    dictEntry <span style="color:#f92672">*</span>he;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> h, idx, table;
+    <span style="color:#75715e">// 字典为空，返回NULL
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].used <span style="color:#f92672">+</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>].used <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span> NULL; 
+    <span style="color:#75715e">// 如果正在进行rehash，则执行rehash操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictIsRehashing(d)) _dictRehashStep(d);
+    <span style="color:#75715e">// 计算哈希值
+</span><span style="color:#75715e"></span>    h <span style="color:#f92672">=</span> dictHashKey(d, key);
+    <span style="color:#75715e">// 在两个表中查找对应的键值对
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (table <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; table <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">1</span>; table<span style="color:#f92672">++</span>) {
+        <span style="color:#75715e">// 根据掩码来计算索引值
+</span><span style="color:#75715e"></span>        idx <span style="color:#f92672">=</span> h <span style="color:#f92672">&amp;</span> d<span style="color:#f92672">-&gt;</span>ht[table].sizemask;
+        <span style="color:#75715e">// 得到该索引值下的存放的键值对链表
+</span><span style="color:#75715e"></span>        he <span style="color:#f92672">=</span> d<span style="color:#f92672">-&gt;</span>ht[table].table[idx];
+        <span style="color:#66d9ef">while</span>(he) {
+            <span style="color:#75715e">// 如果找到该key直接返回
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (key<span style="color:#f92672">==</span>he<span style="color:#f92672">-&gt;</span>key <span style="color:#f92672">||</span> dictCompareKeys(d, key, he<span style="color:#f92672">-&gt;</span>key))
+                <span style="color:#66d9ef">return</span> he;
+            <span style="color:#75715e">// 找下一个
+</span><span style="color:#75715e"></span>            he <span style="color:#f92672">=</span> he<span style="color:#f92672">-&gt;</span>next;
+        }
+        <span style="color:#75715e">// 如果没有进行rehash，则直接返回
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>dictIsRehashing(d)) <span style="color:#66d9ef">return</span> NULL;
+    }
+    <span style="color:#66d9ef">return</span> NULL;
+}
+</code></pre></div>
+<p>Redis还定义了dictFetchValue函数，用来返回给定键的值，底层实现还是调用dictFind函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">dictFetchValue</span>(dict <span style="color:#f92672">*</span>d, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key) {
+    dictEntry <span style="color:#f92672">*</span>he;
+    <span style="color:#75715e">// 获取该键值对
+</span><span style="color:#75715e"></span>    he <span style="color:#f92672">=</span> dictFind(d,key);
+    <span style="color:#75715e">// 返回该key对应的value
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> he <span style="color:#f92672">?</span> dictGetVal(he) <span style="color:#f92672">:</span> NULL;
+}
+</code></pre></div>
+<p>此外，对于字典的查找，Redis还定义了一个函数，用于从字典中随机返回一个键值对。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dictEntry <span style="color:#f92672">*</span><span style="color:#a6e22e">dictGetRandomKey</span>(dict <span style="color:#f92672">*</span>d)
+{
+    dictEntry <span style="color:#f92672">*</span>he, <span style="color:#f92672">*</span>orighe;
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> h;
+    <span style="color:#66d9ef">int</span> listlen, listele;
+    <span style="color:#75715e">// 哈希表为空，直接返回NULL
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictSize(d) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span> NULL;
+    <span style="color:#75715e">// 如果正在进行rehash，则执行一次rehash操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictIsRehashing(d)) _dictRehashStep(d);
+    <span style="color:#75715e">// 随机返回一个键的具体操作是：先随机选取一个索引值，然后在该索引值
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 对应的键值对链表中随机选取一个键值对返回
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictIsRehashing(d)) {
+        <span style="color:#66d9ef">do</span> {
+            <span style="color:#75715e">// 如果正在进行rehash，则需要考虑两个哈希表中的数据
+</span><span style="color:#75715e"></span>            h <span style="color:#f92672">=</span> d<span style="color:#f92672">-&gt;</span>rehashidx <span style="color:#f92672">+</span> (random() <span style="color:#f92672">%</span> (d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].size <span style="color:#f92672">+</span>
+                                            d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>].size <span style="color:#f92672">-</span>
+                                            d<span style="color:#f92672">-&gt;</span>rehashidx));
+            he <span style="color:#f92672">=</span> (h <span style="color:#f92672">&gt;=</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].size) <span style="color:#f92672">?</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>].table[h <span style="color:#f92672">-</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].size] <span style="color:#f92672">:</span>
+                                      d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].table[h];
+        } <span style="color:#66d9ef">while</span>(he <span style="color:#f92672">==</span> NULL);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#66d9ef">do</span> {
+            h <span style="color:#f92672">=</span> random() <span style="color:#f92672">&amp;</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].sizemask;
+            he <span style="color:#f92672">=</span> d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].table[h];
+        } <span style="color:#66d9ef">while</span>(he <span style="color:#f92672">==</span> NULL);
+    }
+
+    <span style="color:#75715e">// 到这里，就随机选取了一个非空的键值对链表
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 然后随机从这个拥有相同索引值的链表中随机选取一个键值对
+</span><span style="color:#75715e"></span>    listlen <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    orighe <span style="color:#f92672">=</span> he;
+    <span style="color:#66d9ef">while</span>(he) {
+        he <span style="color:#f92672">=</span> he<span style="color:#f92672">-&gt;</span>next;
+        listlen<span style="color:#f92672">++</span>;
+    }
+    listele <span style="color:#f92672">=</span> random() <span style="color:#f92672">%</span> listlen;
+    he <span style="color:#f92672">=</span> orighe;
+    <span style="color:#66d9ef">while</span>(listele<span style="color:#f92672">--</span>) he <span style="color:#f92672">=</span> he<span style="color:#f92672">-&gt;</span>next;
+    <span style="color:#66d9ef">return</span> he;
+}
+</code></pre></div>
+<h2 id="删除键值对">删除键值对</h2>
+
+<p>dictDelete函数用于从字典中删除给定键所对应的键值对，其有两种形式：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除该键值对，并释放键和值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">dictDelete</span>(dict <span style="color:#f92672">*</span>ht, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key) {
+    <span style="color:#66d9ef">return</span> dictGenericDelete(ht,key,<span style="color:#ae81ff">0</span>);
+}
+<span style="color:#75715e">// 删除该键值对，不释放键和值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">dictDeleteNoFree</span>(dict <span style="color:#f92672">*</span>ht, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key) {
+    <span style="color:#66d9ef">return</span> dictGenericDelete(ht,key,<span style="color:#ae81ff">1</span>);
+}
+</code></pre></div>
+<p>这两个函数的底层实现均由dictGenericDelete函数来实现：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 查找并删除指定键对应的键值对
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">dictGenericDelete</span>(dict <span style="color:#f92672">*</span>d, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>key, <span style="color:#66d9ef">int</span> nofree)
+{
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> h, idx;
+    dictEntry <span style="color:#f92672">*</span>he, <span style="color:#f92672">*</span>prevHe;
+    <span style="color:#66d9ef">int</span> table;
+    <span style="color:#75715e">// 字典为空
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>].size <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">return</span> DICT_ERR; 
+    <span style="color:#75715e">// 如果正在进行rehash，则出发一次rehash操作
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (dictIsRehashing(d)) _dictRehashStep(d);
+    <span style="color:#75715e">// 计算哈希值
+</span><span style="color:#75715e"></span>    h <span style="color:#f92672">=</span> dictHashKey(d, key);
+
+    <span style="color:#66d9ef">for</span> (table <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; table <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">1</span>; table<span style="color:#f92672">++</span>) {
+        <span style="color:#75715e">// 计算索引值
+</span><span style="color:#75715e"></span>        idx <span style="color:#f92672">=</span> h <span style="color:#f92672">&amp;</span> d<span style="color:#f92672">-&gt;</span>ht[table].sizemask;
+        he <span style="color:#f92672">=</span> d<span style="color:#f92672">-&gt;</span>ht[table].table[idx];
+        prevHe <span style="color:#f92672">=</span> NULL;
+        <span style="color:#75715e">// 执行在链表中删除某个节点的操作
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">while</span>(he) {
+            <span style="color:#66d9ef">if</span> (key<span style="color:#f92672">==</span>he<span style="color:#f92672">-&gt;</span>key <span style="color:#f92672">||</span> dictCompareKeys(d, key, he<span style="color:#f92672">-&gt;</span>key)) {
+                <span style="color:#75715e">/* Unlink the element from the list */</span>
+                <span style="color:#66d9ef">if</span> (prevHe)
+                    prevHe<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> he<span style="color:#f92672">-&gt;</span>next;
+                <span style="color:#66d9ef">else</span>
+                    d<span style="color:#f92672">-&gt;</span>ht[table].table[idx] <span style="color:#f92672">=</span> he<span style="color:#f92672">-&gt;</span>next;
+                <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>nofree) {
+                    <span style="color:#75715e">// 释放键和值
+</span><span style="color:#75715e"></span>                    dictFreeKey(d, he);
+                    dictFreeVal(d, he);
+                }
+                zfree(he);
+                d<span style="color:#f92672">-&gt;</span>ht[table].used<span style="color:#f92672">--</span>;
+                <span style="color:#66d9ef">return</span> DICT_OK;
+            }
+            prevHe <span style="color:#f92672">=</span> he;
+            he <span style="color:#f92672">=</span> he<span style="color:#f92672">-&gt;</span>next;
+        }
+        <span style="color:#75715e">// 如果没有进行rehash操作，则没必要对ht[1]进行查找
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>dictIsRehashing(d)) <span style="color:#66d9ef">break</span>;
+    }
+    <span style="color:#66d9ef">return</span> DICT_ERR; <span style="color:#75715e">/* not found */</span>
+}
+</code></pre></div>
+<h2 id="字典删除">字典删除</h2>
+
+<p>dictRelease函数用于删除和释放整个字典结构。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">dictRelease</span>(dict <span style="color:#f92672">*</span>d)
+{
+    _dictClear(d,<span style="color:#f92672">&amp;</span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">0</span>],NULL); <span style="color:#75715e">// 清除哈希表ht[0]
+</span><span style="color:#75715e"></span>    _dictClear(d,<span style="color:#f92672">&amp;</span>d<span style="color:#f92672">-&gt;</span>ht[<span style="color:#ae81ff">1</span>],NULL); <span style="color:#75715e">// 清除哈希表ht[1]
+</span><span style="color:#75715e"></span>    zfree(d); <span style="color:#75715e">// 释放字典
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p>其中，释放哈希表的操作由_dictClear底层函数实现。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">_dictClear</span>(dict <span style="color:#f92672">*</span>d, dictht <span style="color:#f92672">*</span>ht, <span style="color:#66d9ef">void</span>(callback)(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>)) {
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">long</span> i;
+
+    <span style="color:#75715e">// 清除和释放所有元素
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> ht<span style="color:#f92672">-&gt;</span>size <span style="color:#f92672">&amp;&amp;</span> ht<span style="color:#f92672">-&gt;</span>used <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">++</span>) {
+        dictEntry <span style="color:#f92672">*</span>he, <span style="color:#f92672">*</span>nextHe;
+
+        <span style="color:#66d9ef">if</span> (callback <span style="color:#f92672">&amp;&amp;</span> (i <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">65535</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) callback(d<span style="color:#f92672">-&gt;</span>privdata);
+
+        <span style="color:#66d9ef">if</span> ((he <span style="color:#f92672">=</span> ht<span style="color:#f92672">-&gt;</span>table[i]) <span style="color:#f92672">==</span> NULL) <span style="color:#66d9ef">continue</span>;
+        <span style="color:#66d9ef">while</span>(he) {
+            nextHe <span style="color:#f92672">=</span> he<span style="color:#f92672">-&gt;</span>next;
+            dictFreeKey(d, he); <span style="color:#75715e">// 释放键
+</span><span style="color:#75715e"></span>            dictFreeVal(d, he); <span style="color:#75715e">// 释放值
+</span><span style="color:#75715e"></span>            zfree(he); <span style="color:#75715e">// 释放键值对结构
+</span><span style="color:#75715e"></span>            ht<span style="color:#f92672">-&gt;</span>used<span style="color:#f92672">--</span>;
+            he <span style="color:#f92672">=</span> nextHe;
+        }
+    }
+    <span style="color:#75715e">// 释放哈希表
+</span><span style="color:#75715e"></span>    zfree(ht<span style="color:#f92672">-&gt;</span>table);
+    <span style="color:#75715e">// 重置哈希表
+</span><span style="color:#75715e"></span>    _dictReset(ht);
+    <span style="color:#66d9ef">return</span> DICT_OK; <span style="color:#75715e">/* never fails */</span>
+}
+</code></pre></div>
+<h1 id="dict小结">dict小结</h1>
+
+<p>Redis字典结构采用哈希表作为底层实现，每个字典包括两个哈希表，一个用来平常使用，另一个在rehash的时候使用。Redis提供了三种哈希算法，对整数，字符串等类型的键都能较好的处理。Redis的哈希表采用了链地址法来解决哈希冲突。最有特点的是，Redis在对字典进行扩容和收缩时，需要对哈希表中的所有键值对rehash到新哈希表里面，这个rehash操作不是一次性完成的，而是采用渐进式完成，这一措施使得rehash过程不会影响Redis对字典进行增删查改操作的效率。</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/redis/" rel="tag">Redis</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/sourcecode/" rel="tag">SourceCode</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcesdlist/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">Redis源码剖析--双端链表sdlist</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/theannotatedredissourcezskiplist/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">Redis源码剖析--跳跃表zskiplist</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>
