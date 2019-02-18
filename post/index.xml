@@ -127,96 +127,6 @@
     </item>
     
     <item>
-      <title>带你深入理解STL之Set和Map</title>
-      <link>https://zcheng.ren/2016/09/09/stlsetandmap/</link>
-      <pubDate>Fri, 09 Sep 2016 15:47:53 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2016/09/09/stlsetandmap/</guid>
-      <description>&lt;p&gt;在上一篇博客中，讲到了STL中关于红黑树的实现，理解起来比较复杂，正所谓前人种树，后人乘凉，RBTree把树都种好了，接下来就该set和map这类关联式容器来“乘凉”了。&lt;/p&gt;
-
-&lt;p&gt;STL的set和map都是基于红黑树实现的，和stack和queue都是基于deque一样，它们仅仅是调用了RBTree提供的接口函数，然后进行外层封装即可。本篇博客理解起来比较轻松，set和map的源代码也不多，大家可以慢慢“品味”。另外，还会介绍multiset和multimap这两个容器，并给出它们的区别和应用等。还等什么呢？走吧，带你理解理解set和map吧！&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>带你深入理解STL之RBTree</title>
-      <link>https://zcheng.ren/2016/09/02/stlrbtree/</link>
-      <pubDate>Fri, 02 Sep 2016 20:47:53 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2016/09/02/stlrbtree/</guid>
-      <description>&lt;p&gt;最近一直忙于校招的笔试，STL的深入理解系列也耽搁了好几天，再加上！红黑树真的是超级超级难理解，超级超级复杂，参考了好多博客上的大神的理解才稍微明白一点，勉强入个门，下面请以一个菜鸟的角度跟着我一起学习STL的红黑树吧。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>带你深入理解STL之Stack和Queue</title>
-      <link>https://zcheng.ren/2016/08/26/stlstackandqueue/</link>
-      <pubDate>Fri, 26 Aug 2016 20:47:53 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2016/08/26/stlstackandqueue/</guid>
-      <description>&lt;p&gt;上一篇博客，&lt;a href=&#34;http://zcheng.ren/2016/08/26/STLDeque/&#34;&gt;带你深入理解STL之Deque容器&lt;/a&gt;中详细介绍了deque容器的源码实现方式。结合前面介绍的两个容器vector和list，在使用的过程中，我们确实要知道在什么情况下需要选择恰当的容器来满足需求和提升效率。一般选择的准则有如下几条：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;如果需要随机访问一个容器，vector比list要好&lt;/li&gt;
-&lt;li&gt;如果需要经常插入和删除操作的话，list比vector要好&lt;/li&gt;
-&lt;li&gt;如果既要随机存取，又要关心两端数据的插入和删除，则选择deque&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;好了，复习完前面的知识后，开始介绍今天的两个容器stack和queue。由于stack和queue都是基于deque来实现的，所以相应的代码会比较简单，也是比较轻松易实现的，下面一起去看看吧。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>带你深入理解STL之Deque容器</title>
-      <link>https://zcheng.ren/2016/08/26/stldeque/</link>
-      <pubDate>Fri, 26 Aug 2016 11:34:53 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2016/08/26/stldeque/</guid>
-      <description>&lt;p&gt;在介绍STL的deque的容器之前，我们先来总结一下vector和list的优缺点。vector在内存中是分配一段连续的内存空间进行存储，其迭代器采用原生指针即可，因此其支持随机访问和存储，支持下标操作符，节省空间。但是其在分配的内存不够的情况下，需要对容器整体进行重新分配、拷贝和释放等操作，而且在vector中间插入或删除元素效率很低。&lt;/p&gt;
-
-&lt;p&gt;而list是以节点形式来存放数据，使用的是非连续的内存空间来存放数据，因此，在其内部插入和删除元素的时间复杂度都是O(1),但是其不支持随机访问和存取，不支持下标，而且比vector占用的内存要多。&lt;/p&gt;
-
-&lt;p&gt;综合上述的优缺点，我们貌似需要一个支持随机访问和存取，支持下标访问，而且插入和删除的效率高的容器。于是，STL的deque诞生了，下面就跟着我一起去看看deque的设计和源码实现吧！&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>带你深入理解STL之List容器</title>
-      <link>https://zcheng.ren/2016/08/24/stllist/</link>
-      <pubDate>Wed, 24 Aug 2016 17:07:53 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2016/08/24/stllist/</guid>
-      <description>&lt;p&gt;&lt;a href=&#34;http://zcheng.ren/2016/08/24/STLVector/&#34;&gt;上一篇博客&lt;/a&gt;中介绍的vector和数组类似，它拥有一段连续的内存空间，并且起始地址不变，很好的支持了随机存取，但由于是连续空间，所以在中间进行插入、删除等操作时都造成了内存块的拷贝和移动，另外在内存空间不足时还需要重新申请一块大内存来进行内存的拷贝。为了克服这些缺陷，STL定义了另一种容器List，它对于数据插入和删除的时间复杂度均为O(1)，而且再内存方面不用频繁的拷贝转移。下面，就一起来看看List的源码实现吧！&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>带你深入理解STL之Vector容器</title>
-      <link>https://zcheng.ren/2016/08/23/stlvector/</link>
-      <pubDate>Tue, 23 Aug 2016 17:46:53 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2016/08/23/stlvector/</guid>
-      <description>&lt;p&gt;C++内置了数组的类型，在使用数组的时候，必须指定数组的长度，一旦配置了就不能改变了，通常我们的做法是：尽量配置一个大的空间，以免不够用，这样做的缺点是比较浪费空间，预估空间不当会引起很多不便。&lt;/p&gt;
-
-&lt;p&gt;STL实现了一个Vector容器，该容器就是来改善数组的缺点。vector是一个动态空间，随着元素的加入，它的内部机制会自行扩充以容纳新元素。因此，vector的运用对于内存的合理利用与运用的灵活性有很大的帮助，再也不必因为害怕空间不足而一开始就配置一个大容量数组了，vector是用多少就分配多少。&lt;/p&gt;
-
-&lt;p&gt;要想实现动态分配数组，Vector内部就需要对空间控制做到有效率的掌控，这些机制要如何运作才能高效地实现动态分配呢？本篇博客就从源代码的角度带你领略一下Vector容器内部的构造艺术。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>带你深入理解STL之迭代器和Traits技法</title>
-      <link>https://zcheng.ren/2016/08/22/stliterator/</link>
-      <pubDate>Mon, 22 Aug 2016 16:18:53 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2016/08/22/stliterator/</guid>
-      <description>&lt;p&gt;在开始讲迭代器之前，先列举几个例子，由浅入深的来理解一下为什么要设计迭代器。&lt;/p&gt;
-
-&lt;p&gt;针对下面两个函数，我们来谈谈这种设计的缺陷所在：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;遍历int数组和单链表listNode时，需要设计两份不一样的sum求和函数，对于STL这样含有大量容器的代码库，针对每一种容器都设计sum的话，过于冗杂&lt;/li&gt;
-&lt;li&gt;在sum函数中暴露了太多设计细节，如ListNode的节点值类型int，和指向下一个节点的指针next&lt;/li&gt;
-&lt;li&gt;对于int数组来说，还必须知道数组的大小，以免越界访问&lt;/li&gt;
-&lt;li&gt;算法的设计过多的依赖容器，容器的改动会造成大量算法函数的随之改动&lt;/li&gt;
-&lt;/ul&gt;</description>
-    </item>
-    
-    <item>
       <title>ubuntu16.04主题美化和软件推荐</title>
       <link>https://zcheng.ren/2016/08/21/ubuntusoftware/</link>
       <pubDate>Sun, 21 Aug 2016 13:20:19 +0800</pubDate>
@@ -224,15 +134,6 @@
       <guid>https://zcheng.ren/2016/08/21/ubuntusoftware/</guid>
       <description>&lt;p&gt;前几天把ubuntu从15.10更新到了16.10，在网上看到有很多直接更新出问题的，正好赶上换SSD，于是采用全新安装，之前用ubuntu的时候装软件最让人头疼了，这回又得头疼一次了！！
 索性把他记录下来，既能方便以后重装，又能与大家分享一下！&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>带你深入理解STL之空间配置器(思维导图&#43;源码)</title>
-      <link>https://zcheng.ren/2016/08/16/stlallocater/</link>
-      <pubDate>Tue, 16 Aug 2016 19:46:53 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2016/08/16/stlallocater/</guid>
-      <description>&lt;p&gt;前不久把STL细看了一遍，由于看得太“认真”，忘了做笔记，归纳和总结这步漏掉了。于是为了加深印象，打算重看一遍，并记录下来里面的一些实现细节。方便以后能较好的复习它。&lt;/p&gt;</description>
     </item>
     
     <item>

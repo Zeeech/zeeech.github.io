@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>带你深入理解STL之List容器</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="带你深入理解STL之List容器" />
+<meta property="og:description" content="上一篇博客中介绍的vector和数组类似，它拥有一段连续的内存空间，并且起始地址不变，很好的支持了随机存取，但由于是连续空间，所以在中间进行插入、删除等操作时都造成了内存块的拷贝和移动，另外在内存空间不足时还需要重新申请一块大内存来进行内存的拷贝。为了克服这些缺陷，STL定义了另一种容器List，它对于数据插入和删除的时间复杂度均为O(1)，而且再内存方面不用频繁的拷贝转移。下面，就一起来看看List的源码实现吧！" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/stllist/" /><meta property="article:published_time" content="2016-08-24T17:07:53&#43;08:00"/>
+<meta property="article:modified_time" content="2016-08-24T17:07:53&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="带你深入理解STL之List容器"/>
+<meta name="twitter:description" content="上一篇博客中介绍的vector和数组类似，它拥有一段连续的内存空间，并且起始地址不变，很好的支持了随机存取，但由于是连续空间，所以在中间进行插入、删除等操作时都造成了内存块的拷贝和移动，另外在内存空间不足时还需要重新申请一块大内存来进行内存的拷贝。为了克服这些缺陷，STL定义了另一种容器List，它对于数据插入和删除的时间复杂度均为O(1)，而且再内存方面不用频繁的拷贝转移。下面，就一起来看看List的源码实现吧！"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">带你深入理解STL之List容器</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-08-24T17:07:53">August 24, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb" rel="category">源码阅读</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#list概述">List概述</a></li>
+<li><a href="#list的节点">List的节点</a></li>
+<li><a href="#list的迭代器">List的迭代器</a></li>
+<li><a href="#list的数据结构">List的数据结构</a></li>
+<li><a href="#list构造函数">List构造函数</a></li>
+<li><a href="#list的其他操作函数">List的其他操作函数</a>
+<ul>
+<li><a href="#get-node">get_node</a></li>
+<li><a href="#put-node">put_node</a></li>
+<li><a href="#create-node">create_node</a></li>
+<li><a href="#destory-node">destory_node</a></li>
+<li><a href="#insert">insert</a></li>
+<li><a href="#push-back">push_back</a></li>
+<li><a href="#push-front">push_front</a></li>
+<li><a href="#earse">earse</a></li>
+<li><a href="#pop-front">pop_front</a></li>
+<li><a href="#pop-back">pop_back</a></li>
+<li><a href="#clear">clear</a></li>
+<li><a href="#remove">remove</a></li>
+<li><a href="#transfer">transfer</a></li>
+<li><a href="#splice">splice</a></li>
+<li><a href="#merge">merge</a></li>
+<li><a href="#reverse">reverse</a></li>
+<li><a href="#sort">sort</a></li>
+</ul></li>
+<li><a href="#后记">后记</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p><a href="http://zcheng.ren/2016/08/24/STLVector/">上一篇博客</a>中介绍的vector和数组类似，它拥有一段连续的内存空间，并且起始地址不变，很好的支持了随机存取，但由于是连续空间，所以在中间进行插入、删除等操作时都造成了内存块的拷贝和移动，另外在内存空间不足时还需要重新申请一块大内存来进行内存的拷贝。为了克服这些缺陷，STL定义了另一种容器List，它对于数据插入和删除的时间复杂度均为O(1)，而且再内存方面不用频繁的拷贝转移。下面，就一起来看看List的源码实现吧！</p>
+
+<h1 id="list概述">List概述</h1>
+
+<p>List和Vector都是STL的序列式容器，唯一不同的地方就在于：Vector是一段连续的内存空间，List则是一段不连续的内存空间，相比于Vector来说，List在每次插入和删除的时候，只需要配置或释放一个元素空间，对于任何位置的插入和删除操作，List永远能做到常数时间。但是，List由于不连续的内存空间，导致不支持随机寻址，所以尺有所长寸有所短，在程序中选择使用那种容器还要视元素的构造复杂度和存取行为而定。</p>
+
+<h1 id="list的节点">List的节点</h1>
+
+<p>List的节点结构如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> __list_node
+{
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> void_pointer; 
+  void_pointer next;	<span style="color:#75715e">//型别为void*，也可以设为__list_node&lt;T&gt;*
+</span><span style="color:#75715e"></span>  void_pointer prev;
+  T data;
+};
+</code></pre></div>
+<p>从节点结构可以看出，List就是一个双向链表，其结构如下图所示：</p>
+
+<p><center><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkfthawhhj30ri07874t.jpg" alt="STLListNode" /></center></p>
+
+<h1 id="list的迭代器">List的迭代器</h1>
+
+<p>在Vector中，由于是连续的存储空间，支持随机存取，所以其迭代器可以直接用普通指针代替。但是，在List中行不通。List必须有能力指向List的节点，并有能力进行正确的递增、递减、取值和成员存取等操作。</p>
+
+<p>List是一个双向链表，迭代器必须具备前移、后退的能力，所以List的迭代器是一个Bidirectional Iterator！在Vector中如果进行插入和删除操作后迭代器会失效，List有一个重要的性质就是插入和接合操作都不会造成原有的List迭代器失效。而且，再删除一个节点时，也仅有指向被删除元素的那个迭代器失效，其他迭代器不受任何影响。下面来看看List迭代器的源码。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Ref</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Ptr</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">struct</span> __list_iterator
+{
+  <span style="color:#66d9ef">typedef</span> __list_iterator<span style="color:#f92672">&lt;</span>T, T<span style="color:#f92672">&amp;</span>, T<span style="color:#f92672">*&gt;</span>             iterator;   <span style="color:#75715e">// 支持Iterator_traits
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> __list_iterator<span style="color:#f92672">&lt;</span>T, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">*&gt;</span> const_iterator;
+  <span style="color:#66d9ef">typedef</span> __list_iterator<span style="color:#f92672">&lt;</span>T, Ref, Ptr<span style="color:#f92672">&gt;</span>           self;
+
+	<span style="color:#75715e">// 以下为支持Iterator_traits而定义的一些类型
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> bidirectional_iterator_tag iterator_category;	<span style="color:#75715e">//List的迭代器类型为双向迭代器
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> T value_type;                                
+  <span style="color:#66d9ef">typedef</span> Ptr pointer;    
+  <span style="color:#66d9ef">typedef</span> Ref reference;                                
+  <span style="color:#66d9ef">typedef</span> size_t size_type;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t difference_type;
+
+  <span style="color:#66d9ef">typedef</span> __list_node<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;*</span> link_type;                     
+
+  <span style="color:#75715e">// 这个是迭代器实际管理的资源指针
+</span><span style="color:#75715e"></span>  link_type node;
+
+  <span style="color:#75715e">// 迭代器构造函数
+</span><span style="color:#75715e"></span>  __list_iterator(link_type x) <span style="color:#f92672">:</span> node(x) {}
+  __list_iterator() {}
+  __list_iterator(<span style="color:#66d9ef">const</span> iterator<span style="color:#f92672">&amp;</span> x) <span style="color:#f92672">:</span> node(x.node) {}
+
+  <span style="color:#75715e">// 在STL算法中需要迭代器提供支持
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> self<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> node <span style="color:#f92672">==</span> x.node; }
+  <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">!=</span>(<span style="color:#66d9ef">const</span> self<span style="color:#f92672">&amp;</span> x) <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> node <span style="color:#f92672">!=</span> x.node; }
+
+  <span style="color:#75715e">// 重载operator *, 返回实际维护的数据
+</span><span style="color:#75715e"></span>  reference <span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> (<span style="color:#f92672">*</span>node).data; }
+
+  <span style="color:#75715e">// 成员调用操作符
+</span><span style="color:#75715e"></span>  pointer <span style="color:#66d9ef">operator</span><span style="color:#f92672">-&gt;</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span>(<span style="color:#66d9ef">operator</span><span style="color:#f92672">*</span>()); }
+
+  <span style="color:#75715e">// 前缀自加
+</span><span style="color:#75715e"></span>  self<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">++</span>()
+  {
+    node <span style="color:#f92672">=</span> (link_type)((<span style="color:#f92672">*</span>node).next);
+    <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
+  }
+
+  <span style="color:#75715e">// 后缀自加, 需要先产生自身的一个副本, 然会再对自身操作, 最后返回副本
+</span><span style="color:#75715e"></span>  self <span style="color:#66d9ef">operator</span><span style="color:#f92672">++</span>(<span style="color:#66d9ef">int</span>)
+  {
+    self tmp <span style="color:#f92672">=</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
+    <span style="color:#f92672">++*</span><span style="color:#66d9ef">this</span>;
+    <span style="color:#66d9ef">return</span> tmp;
+  }
+
+  self<span style="color:#f92672">&amp;</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">--</span>()
+  {
+    node <span style="color:#f92672">=</span> (link_type)((<span style="color:#f92672">*</span>node).prev);
+    <span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
+  }
+
+  self <span style="color:#66d9ef">operator</span><span style="color:#f92672">--</span>(<span style="color:#66d9ef">int</span>)
+  {
+    self tmp <span style="color:#f92672">=</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>;
+    <span style="color:#f92672">--*</span><span style="color:#66d9ef">this</span>;
+    <span style="color:#66d9ef">return</span> tmp;
+  }
+}
+</code></pre></div>
+<p>List的迭代器实现了==,!=,++,&ndash;,取值和成员调用等操作，由于是存放在不连续的内存空间，所以并不支持vector那样的p+n的操作。</p>
+
+<h1 id="list的数据结构">List的数据结构</h1>
+
+<p>List的数据结构个List的节点数据结构是分开定义的，SGI的List不仅是一个双向链表，而且还是一个环状双向链表，所以它只需要一个指针，就能完整表现一个链表。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">list</span>
+{
+<span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> void_pointer;
+  <span style="color:#66d9ef">typedef</span> __list_node<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> list_node;
+
+  <span style="color:#75715e">// 这个提供STL标准的allocator接口
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> simple_alloc<span style="color:#f92672">&lt;</span>list_node, Alloc<span style="color:#f92672">&gt;</span> list_node_allocator;
+
+  <span style="color:#75715e">// 链表的头结点，并不存放数据
+</span><span style="color:#75715e"></span>  link_type node;
+
+  <span style="color:#75715e">//....以下还有一堆List的操作函数
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p><center><img src="https://ww2.sinaimg.cn/large/006tNc79gw1fbkftit4nmj30jw0g7ab2.jpg" alt="STLList" />)</center></p>
+
+<h1 id="list构造函数">List构造函数</h1>
+
+<p>List提供了一个空构造函数，如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">list() { empty_initialize(); }
+
+<span style="color:#75715e">// 用于空链表的建立
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> empty_initialize()
+{
+  node <span style="color:#f92672">=</span> get_node();
+  node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> node;  <span style="color:#75715e">// 前置节点指向自己
+</span><span style="color:#75715e"></span>  node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node;  <span style="color:#75715e">// 后置节点指向自己
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p>另外，List还提供了带参的构造函数，支持如下初始化操作：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">List<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> myList(<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">1</span>); <span style="color:#75715e">// 初始化5个1的链表，{1,1,1,1,1}
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>其构造函数源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 带参构造函数
+</span><span style="color:#75715e"></span>list(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value) { fill_initialize(n, value); }
+
+<span style="color:#75715e">// 创建值为value共n个结点的链表
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> fill_initialize(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value)
+{
+  empty_initialize();  <span style="color:#75715e">// 先创建一个空链表
+</span><span style="color:#75715e"></span>  insert(begin(), n, value); <span style="color:#75715e">// 插入n个值为value的节点
+</span><span style="color:#75715e"></span>}
+
+<span style="color:#75715e">// 在指定位置插入n个值为x的节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> insert(iterator pos, <span style="color:#66d9ef">int</span> n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  insert(pos, (size_type)n, x);
+}
+
+<span style="color:#75715e">// 在position前插入n个值为x的元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>insert(iterator position, size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  <span style="color:#66d9ef">for</span> ( ; n <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>; <span style="color:#f92672">--</span>n)
+    insert(position, x);
+}
+
+<span style="color:#75715e">// 好吧，到这里才是真正的插入操作
+</span><span style="color:#75715e">// 很简单的双向链表插入操作
+</span><span style="color:#75715e"></span>iterator insert(iterator position, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  link_type tmp <span style="color:#f92672">=</span> create_node(x);
+  tmp<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> position.node;
+  tmp<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> position.node<span style="color:#f92672">-&gt;</span>prev;
+  (link_type(position.node<span style="color:#f92672">-&gt;</span>prev))<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> tmp;
+  position.node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> tmp;
+  <span style="color:#66d9ef">return</span> tmp;
+}
+</code></pre></div>
+<p>STL的List提供了很多种构造函数，此处我列举了其中一个，以此为例。</p>
+
+<h1 id="list的其他操作函数">List的其他操作函数</h1>
+
+<h2 id="get-node">get_node</h2>
+
+<p>此函数用来配置一个节点。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 配置一个节点并返回
+</span><span style="color:#75715e"></span>link_type <span style="color:#a6e22e">get_node</span>() { 
+	<span style="color:#66d9ef">return</span> list_node_allocator<span style="color:#f92672">::</span>allocate(); 
+}
+</code></pre></div>
+<h2 id="put-node">put_node</h2>
+
+<p>此函数用来释放一个节点。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 释放指定结点, 不进行析构, 析构交给全局的destroy,
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">put_node</span>(link_type p) {
+	list_node_allocator<span style="color:#f92672">::</span>deallocate(p); 
+}
+</code></pre></div>
+<h2 id="create-node">create_node</h2>
+
+<p>此函数用来配置并构造一个节点，并初始化其值</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 配置一个节点，并初始化其值为x
+</span><span style="color:#75715e"></span>link_type <span style="color:#a6e22e">create_node</span>(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  link_type p <span style="color:#f92672">=</span> get_node();
+  construct(<span style="color:#f92672">&amp;</span>p<span style="color:#f92672">-&gt;</span>data, x);	<span style="color:#75715e">//全局函数
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">return</span> p;
+}
+</code></pre></div>
+<h2 id="destory-node">destory_node</h2>
+
+<p>此函数用来析构一个节点。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 析构结点元素, 并释放内存
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">destroy_node</span>(link_type p)
+{
+	destroy(<span style="color:#f92672">&amp;</span>p<span style="color:#f92672">-&gt;</span>data);	<span style="color:#75715e">//全局函数
+</span><span style="color:#75715e"></span>	put_node(p);
+}
+</code></pre></div>
+<h2 id="insert">insert</h2>
+
+<p>此函数用来在制定位置插入一个节点(上面提到过这个函数，这里重复一下，List的主要插入工作都交给这个函数)，该函数是一个重载函数，其有多种形式。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 好吧，到这里才是真正的插入操作
+</span><span style="color:#75715e">// 很简单的双向链表插入操作
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">insert</span>(iterator position, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  link_type tmp <span style="color:#f92672">=</span> create_node(x);
+  tmp<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> position.node;
+  tmp<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> position.node<span style="color:#f92672">-&gt;</span>prev;
+  (link_type(position.node<span style="color:#f92672">-&gt;</span>prev))<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> tmp;
+  position.node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> tmp;
+  <span style="color:#66d9ef">return</span> tmp;
+}
+<span style="color:#75715e">// 其还有如下多种形式的重载函数
+</span><span style="color:#75715e">// 在[first,last]区间内插入元素
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">InputIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>insert(iterator position,
+                            InputIterator first, InputIterator last)
+{
+  <span style="color:#66d9ef">for</span> ( ; first <span style="color:#f92672">!=</span> last; <span style="color:#f92672">++</span>first)
+    insert(position, <span style="color:#f92672">*</span>first);
+}
+<span style="color:#75715e">// 在position位置插入元素，元素调用该型别默认构造函数
+</span><span style="color:#75715e"></span>iterator insert(iterator position) { <span style="color:#66d9ef">return</span> insert(position, T()); }
+</code></pre></div>
+<h2 id="push-back">push_back</h2>
+
+<p>在尾部插入元素，有了上面的insert函数之后，push_back就比较容易实现了。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 在链表最后插入结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">push_back</span>(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x) { insert(end(), x); }
+</code></pre></div>
+<h2 id="push-front">push_front</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 在链表前端插入结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">push_front</span>(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x) { insert(begin(), x); }
+</code></pre></div>
+<h2 id="earse">earse</h2>
+
+<p>移除迭代器所指的元素</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 擦除指定结点
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">erase</span>(iterator position)
+{
+	<span style="color:#75715e">// 双向链表移除节点的操作
+</span><span style="color:#75715e"></span>	link_type next_node <span style="color:#f92672">=</span> link_type(position.node<span style="color:#f92672">-&gt;</span>next);
+	link_type prev_node <span style="color:#f92672">=</span> link_type(position.node<span style="color:#f92672">-&gt;</span>prev);
+	prev_node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> next_node;
+	next_node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> prev_node;
+	destroy_node(position.node);
+	<span style="color:#66d9ef">return</span> iterator(next_node);
+}
+
+<span style="color:#75715e">// 上述函数还有一个重载版本，移除区间内所有的节点
+</span><span style="color:#75715e">// 擦除[first, last)间的结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>iterator list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>erase(iterator first, iterator last)
+{
+	<span style="color:#66d9ef">while</span> (first <span style="color:#f92672">!=</span> last) erase(first<span style="color:#f92672">++</span>);
+	<span style="color:#66d9ef">return</span> last;
+}
+</code></pre></div>
+<h2 id="pop-front">pop_front</h2>
+
+<p>移除头节点元素，有了上述的erase函数，就很方便的实现了。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除链表第一个结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pop_front</span>() { erase(begin()); }
+</code></pre></div>
+<h2 id="pop-back">pop_back</h2>
+
+<p>移除链表中最后一个元素</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 删除链表最后一个结点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pop_back</span>()
+{
+	iterator tmp <span style="color:#f92672">=</span> end();
+	erase(<span style="color:#f92672">--</span>tmp);
+}
+</code></pre></div>
+<h2 id="clear">clear</h2>
+
+<p>清除链表中的所有节点，也就是一个一个的清除</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 销毁所有结点, 将链表置空
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>clear()
+{
+  link_type cur <span style="color:#f92672">=</span> (link_type) node<span style="color:#f92672">-&gt;</span>next;
+  <span style="color:#66d9ef">while</span> (cur <span style="color:#f92672">!=</span> node) {	<span style="color:#75715e">//遍历每一个节点
+</span><span style="color:#75715e"></span>    link_type tmp <span style="color:#f92672">=</span> cur;
+    cur <span style="color:#f92672">=</span> (link_type) cur<span style="color:#f92672">-&gt;</span>next;
+    destroy_node(tmp);
+  }
+  node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> node;<span style="color:#75715e">// 移除后注意要保持链表是一个循环链表
+</span><span style="color:#75715e"></span>  node<span style="color:#f92672">-&gt;</span>prev <span style="color:#f92672">=</span> node;
+}
+</code></pre></div>
+<h2 id="remove">remove</h2>
+
+<p>将链表中值为value的节点移除</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 移除特定值的所有结点
+</span><span style="color:#75715e">// 时间复杂度O(n)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>remove(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value)
+{
+	iterator first <span style="color:#f92672">=</span> begin();
+	iterator last <span style="color:#f92672">=</span> end();
+	<span style="color:#66d9ef">while</span> (first <span style="color:#f92672">!=</span> last) {	<span style="color:#75715e">//保证链表非空
+</span><span style="color:#75715e"></span>		iterator next <span style="color:#f92672">=</span> first;
+		<span style="color:#f92672">++</span>next;
+		<span style="color:#66d9ef">if</span> (<span style="color:#f92672">*</span>first <span style="color:#f92672">==</span> value) erase(first);	<span style="color:#75715e">//擦除该节点
+</span><span style="color:#75715e"></span>		first <span style="color:#f92672">=</span> next;
+	}
+}
+</code></pre></div>
+<h2 id="transfer">transfer</h2>
+
+<p>将某段连续范围内的元素迁移到指定位置。（非公开接口）</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">transfer</span>(iterator position, iterator first, iterator last)
+{
+	<span style="color:#66d9ef">if</span> (position <span style="color:#f92672">!=</span> last)
+	{
+		(<span style="color:#f92672">*</span>(link_type((<span style="color:#f92672">*</span>last.node).prev))).next <span style="color:#f92672">=</span> position.node;
+		(<span style="color:#f92672">*</span>(link_type((<span style="color:#f92672">*</span>first.node).prev))).next <span style="color:#f92672">=</span> last.node;
+		(<span style="color:#f92672">*</span>(link_type((<span style="color:#f92672">*</span>position.node).prev))).next <span style="color:#f92672">=</span> first.node;
+		link_type tmp <span style="color:#f92672">=</span> link_type((<span style="color:#f92672">*</span>position.node).prev);
+		(<span style="color:#f92672">*</span>position.node).prev <span style="color:#f92672">=</span> (<span style="color:#f92672">*</span>last.node).prev;
+		(<span style="color:#f92672">*</span>last.node).prev <span style="color:#f92672">=</span> (<span style="color:#f92672">*</span>first.node).prev;
+		(<span style="color:#f92672">*</span>first.node).prev <span style="color:#f92672">=</span> tmp;
+	}
+}
+</code></pre></div>
+<p>这里借用侯捷先生的《STL源码剖析》中的一幅图来说明这个过程。</p>
+
+<p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkftghh04j30eq0exwfs.jpg" alt="STLTransfer" /></center></p>
+
+<h2 id="splice">splice</h2>
+
+<p>List提供的接合函数是Splice，上述transfer是非公开的函数。splice函数有如下几个版本:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 将链表x移动到position之前
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">splice</span>(iterator position, list<span style="color:#f92672">&amp;</span> x)
+{
+	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>x.empty())
+		transfer(position, x.begin(), x.end());	<span style="color:#75715e">//仅仅调用了transfer函数
+</span><span style="color:#75715e"></span>}
+
+<span style="color:#75715e">// 将链表中i指向的内容移动到position之前
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">splice</span>(iterator position, list<span style="color:#f92672">&amp;</span>, iterator i)
+{
+	iterator j <span style="color:#f92672">=</span> i;
+	<span style="color:#f92672">++</span>j;
+	<span style="color:#66d9ef">if</span> (position <span style="color:#f92672">==</span> i <span style="color:#f92672">||</span> position <span style="color:#f92672">==</span> j) <span style="color:#66d9ef">return</span>;
+	transfer(position, i, j);
+}
+
+<span style="color:#75715e">// 将[first, last}元素移动到position之前
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">splice</span>(iterator position, list<span style="color:#f92672">&amp;</span>, iterator first, iterator last)
+{
+	<span style="color:#66d9ef">if</span> (first <span style="color:#f92672">!=</span> last)
+		transfer(position, first, last);
+}
+</code></pre></div>
+<h2 id="merge">merge</h2>
+
+<p>此函数用来合并两个链表，这里两个链表必须是已拍好序的。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 假设当前容器和x都已序, 保证两容器合并后仍然有序
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>merge(list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;&amp;</span> x)
+{
+  iterator first1 <span style="color:#f92672">=</span> begin();
+  iterator last1 <span style="color:#f92672">=</span> end();
+  iterator first2 <span style="color:#f92672">=</span> x.begin();
+  iterator last2 <span style="color:#f92672">=</span> x.end();
+  <span style="color:#66d9ef">while</span> (first1 <span style="color:#f92672">!=</span> last1 <span style="color:#f92672">&amp;&amp;</span> first2 <span style="color:#f92672">!=</span> last2)
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">*</span>first2 <span style="color:#f92672">&lt;</span> <span style="color:#f92672">*</span>first1) {
+      iterator next <span style="color:#f92672">=</span> first2;
+      transfer(first1, first2, <span style="color:#f92672">++</span>next);	<span style="color:#75715e">//将first2节点迁移到first1之后
+</span><span style="color:#75715e"></span>      first2 <span style="color:#f92672">=</span> next;
+    }
+    <span style="color:#66d9ef">else</span>
+      <span style="color:#f92672">++</span>first1;
+  <span style="color:#66d9ef">if</span> (first2 <span style="color:#f92672">!=</span> last2) transfer(last1, first2, last2);	<span style="color:#75715e">//如果first2还有剩余的，直接接合再链表1尾部
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<h2 id="reverse">reverse</h2>
+
+<p>此函数用来反转链表，其具体实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 将链表倒置
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>reverse()
+{
+  <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">==</span> node <span style="color:#f92672">||</span> link_type(node<span style="color:#f92672">-&gt;</span>next)<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">==</span> node) <span style="color:#66d9ef">return</span>;
+  iterator first <span style="color:#f92672">=</span> begin();
+  <span style="color:#f92672">++</span>first;
+  <span style="color:#66d9ef">while</span> (first <span style="color:#f92672">!=</span> end()) {
+    iterator old <span style="color:#f92672">=</span> first;	<span style="color:#75715e">// 取出一个节点
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">++</span>first;
+    transfer(begin(), old, first);	<span style="color:#75715e">// 插入到begin()之后
+</span><span style="color:#75715e"></span>  }
+}
+</code></pre></div>
+<h2 id="sort">sort</h2>
+
+<p>此函数对链表进行升序排序，具体实现如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 按照升序排序
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>sort()
+{
+  <span style="color:#66d9ef">if</span> (node<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">==</span> node <span style="color:#f92672">||</span> link_type(node<span style="color:#f92672">-&gt;</span>next)<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">==</span> node) <span style="color:#66d9ef">return</span>;
+  list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;</span> carry;
+  list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;</span> counter[<span style="color:#ae81ff">64</span>];
+  <span style="color:#66d9ef">int</span> fill <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+  <span style="color:#66d9ef">while</span> (<span style="color:#f92672">!</span>empty()) {
+  	<span style="color:#75715e">// 从链表中取出一个节点
+</span><span style="color:#75715e"></span>    carry.splice(carry.begin(), <span style="color:#f92672">*</span><span style="color:#66d9ef">this</span>, begin());
+    <span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    <span style="color:#75715e">// 把carry中的新元素和counter中的结果逐一进行归并
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span> (i <span style="color:#f92672">&lt;</span> fill <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>counter[i].empty()) {
+      counter[i].merge(carry);
+      carry.swap(counter[i<span style="color:#f92672">++</span>]);
+    }
+    <span style="color:#75715e">// 把归并后的结果存放在counter[i]中
+</span><span style="color:#75715e"></span>    carry.swap(counter[i]);
+    <span style="color:#75715e">// 已经达到2*fill，fill自增1
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (i <span style="color:#f92672">==</span> fill) <span style="color:#f92672">++</span>fill;
+  }
+  <span style="color:#75715e">// 将counter中的所有元素进行归并
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&lt;</span> fill; <span style="color:#f92672">++</span>i) counter[i].merge(counter[i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]);
+  <span style="color:#75715e">// 将counter链表和本链表进行交换
+</span><span style="color:#75715e"></span>  swap(counter[fill <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]);
+}
+
+<span style="color:#75715e">// 交换本链表和链表x
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> swap(list<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;&amp;</span> x) { 
+	swap(node, x.node); 
+}
+</code></pre></div>
+<p>这里可以举个例子来说明一下这个过程：(以链表5,3,6,4,7,9,1,2,8)</p>
+
+<p>carry每次从数组中取一个数，然后归并到counter数组中，该算法最多只能排序2的64次方个数。</p>
+
+<p><img src="/Users/zhangcheng/Documents/aaa/STLSort (2).png" alt="STLSort (https://ww3.sinaimg.cn/large/006tNc79gw1fbkftijhkcj30n30jjace.jpg)" /></p>
+
+<p>《STL源码剖析》中写到此处是快速排序，其实我觉得应该是归并排序。</p>
+
+<h1 id="后记">后记</h1>
+
+<p>list链表中提供了很多操作函数，看完源码感觉自己重新复习了一遍数据结构里的常用链表操作，同时也掌握了STL链表的常用函数。受益匪浅！！另外，sort不知道是侯捷先生的笔误还是什么，怎么看都不像是快速排序啊。最后，大家有什么疑惑可以再下方留言。</p>
+
+<p>参考：</p>
+
+<ul>
+<li>侯捷先生的《STL的源码剖析》</li>
+<li><a href="http://www.cnblogs.com/lfsblack/archive/2012/11/10/2764334.html">C++ STL源码剖析</a></li>
+</ul>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/c&#43;&#43;/" rel="tag">C&#43;&#43;</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/stl/" rel="tag">STL</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/stlvector/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">带你深入理解STL之Vector容器</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/stldeque/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">带你深入理解STL之Deque容器</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

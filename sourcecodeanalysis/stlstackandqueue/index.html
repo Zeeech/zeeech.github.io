@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>带你深入理解STL之Stack和Queue</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="带你深入理解STL之Stack和Queue" />
+<meta property="og:description" content="上一篇博客，带你深入理解STL之Deque容器中详细介绍了deque容器的源码实现方式。结合前面介绍的两个容器vector和list，在使用的过程中，我们确实要知道在什么情况下需要选择恰当的容器来满足需求和提升效率。一般选择的准则有如下几条：
+
+
+如果需要随机访问一个容器，vector比list要好
+如果需要经常插入和删除操作的话，list比vector要好
+如果既要随机存取，又要关心两端数据的插入和删除，则选择deque
+
+
+好了，复习完前面的知识后，开始介绍今天的两个容器stack和queue。由于stack和queue都是基于deque来实现的，所以相应的代码会比较简单，也是比较轻松易实现的，下面一起去看看吧。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/stlstackandqueue/" /><meta property="article:published_time" content="2016-08-26T20:47:53&#43;08:00"/>
+<meta property="article:modified_time" content="2016-08-26T20:47:53&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="带你深入理解STL之Stack和Queue"/>
+<meta name="twitter:description" content="上一篇博客，带你深入理解STL之Deque容器中详细介绍了deque容器的源码实现方式。结合前面介绍的两个容器vector和list，在使用的过程中，我们确实要知道在什么情况下需要选择恰当的容器来满足需求和提升效率。一般选择的准则有如下几条：
+
+
+如果需要随机访问一个容器，vector比list要好
+如果需要经常插入和删除操作的话，list比vector要好
+如果既要随机存取，又要关心两端数据的插入和删除，则选择deque
+
+
+好了，复习完前面的知识后，开始介绍今天的两个容器stack和queue。由于stack和queue都是基于deque来实现的，所以相应的代码会比较简单，也是比较轻松易实现的，下面一起去看看吧。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">带你深入理解STL之Stack和Queue</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-08-26T20:47:53">August 26, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb" rel="category">源码阅读</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#stack">stack</a></li>
+<li><a href="#queue">queue</a></li>
+<li><a href="#后记">后记</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>上一篇博客，<a href="http://zcheng.ren/2016/08/26/STLDeque/">带你深入理解STL之Deque容器</a>中详细介绍了deque容器的源码实现方式。结合前面介绍的两个容器vector和list，在使用的过程中，我们确实要知道在什么情况下需要选择恰当的容器来满足需求和提升效率。一般选择的准则有如下几条：</p>
+
+<ul>
+<li>如果需要随机访问一个容器，vector比list要好</li>
+<li>如果需要经常插入和删除操作的话，list比vector要好</li>
+<li>如果既要随机存取，又要关心两端数据的插入和删除，则选择deque</li>
+</ul>
+
+<p>好了，复习完前面的知识后，开始介绍今天的两个容器stack和queue。由于stack和queue都是基于deque来实现的，所以相应的代码会比较简单，也是比较轻松易实现的，下面一起去看看吧。</p>
+
+<h1 id="stack">stack</h1>
+
+<p>如果把deque比作一个管道，两头都可进可出的话，stack就是一个桶！只能一头进一头出，而且，压在下面的东西你看不到，你要是想看，只能把上面的东西拿出来再去看。</p>
+
+<p>stack是一种先进后出的数据结构，允许新增元素、移除元素和取得最顶端的元素，除了最顶端，没有任何其他方法可以存取stack中的元素，也就是说stack没有遍历行为，因此，stack是没有迭代器的！！！！！</p>
+
+<p>以deque为底层容器来实现stack这种数据结构，简直不能再简单，基本的操作函数都已经定义好了，deque可以为它完成所有工作。与其说stack是一种容器，倒不如说它是一种配接器，一种容器适配器。</p>
+
+<p>下面我们就来看看stack的源码，真的没骗你，超级简单。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span> <span style="color:#f92672">=</span> deque<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>  <span style="color:#75715e">// 以deque作为缺省底层容器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">stack</span>
+{
+	<span style="color:#75715e">// #define __STL_NULL_TMPL_ARGS &lt;&gt;
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&amp;</span>);
+  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&amp;</span>, <span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&amp;</span>);
+
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>value_type value_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>size_type size_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>reference reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>const_reference const_reference;
+
+<span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+  Sequence c;   <span style="color:#75715e">// 底层容器，stack全靠它来实现
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// 以下函数直接调用底层容器的接口即可实现
+</span><span style="color:#75715e"></span>
+  <span style="color:#75715e">// 判断stack是否为空
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">bool</span> empty() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.empty(); }	
+
+  <span style="color:#75715e">// stack中元素个数
+</span><span style="color:#75715e"></span>  size_type size() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.size(); }
+
+  <span style="color:#75715e">// 返回栈顶元素, 注意这里返回的是引用!!!
+</span><span style="color:#75715e"></span>  reference top() { <span style="color:#66d9ef">return</span> c.back(); }
+  const_reference top() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.back(); }
+
+  <span style="color:#75715e">// 在栈顶追加新元素
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> push(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x) { c.push_back(x); }
+
+  <span style="color:#75715e">// 移除栈顶元素, 注意不返回元素的引用,
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 很多初学者随机用此容器时经常误认为pop()操作同时会返回栈顶元素的引用
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">void</span> pop() { c.pop_back(); }
+};
+
+<span style="color:#75715e">// 判断两个stack是否相等, 就要测试其内部维护容器是否相等
+</span><span style="color:#75715e">// x.c == y.c会调用容器重载的operator ==
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> x, <span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> y)
+{
+  <span style="color:#66d9ef">return</span> x.c <span style="color:#f92672">==</span> y.c;
+}
+
+<span style="color:#75715e">// 比较两个迭代器的大小，即比较底层容器的大小
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span>(<span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> x, <span style="color:#66d9ef">const</span> stack<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> y)
+{
+  <span style="color:#66d9ef">return</span> x.c <span style="color:#f92672">&lt;</span> y.c;
+}
+</code></pre></div>
+<p>你没有看错，stack的源码就只有上面几句话，全是调用底层容器的接口。下面再来看看它的同胞queue，同样很简单。</p>
+
+<h1 id="queue">queue</h1>
+
+<p>queue是一种先进先出的数据结构，上面说道，dequeu是个双向可进可出的管道，stack是一个桶，queue就是一个单向的水管，只能一端进，一端出。</p>
+
+<p>queue允许新增元素、移除元素、从最底端插入元素，从最顶端取得元素，但是，从了最底端插入，最顶端取出之外，没有任何其他方法可以存取queue里面的元素，queue和stack一样，不允许有遍历行为，因此，queue也没有迭代器！！！！</p>
+
+<p>queue和stack一样，也是一种容器适配器，只需要调用底层容器的接口就能实现。下面来看看它的源码吧。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span> <span style="color:#f92672">=</span> deque<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">queue</span>
+{
+  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&amp;</span> x, <span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&amp;</span> y);
+  <span style="color:#66d9ef">friend</span> <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span> __STL_NULL_TMPL_ARGS (<span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&amp;</span> x, <span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&amp;</span> y);
+
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#75715e">// 由于queue仅支持对队头和队尾的操作, 所以不定义STL要求的
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// pointer, iterator, difference_type
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>value_type value_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>size_type size_type;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>reference reference;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> Sequence<span style="color:#f92672">::</span>const_reference const_reference;
+
+<span style="color:#66d9ef">protected</span><span style="color:#f92672">:</span>
+  Sequence c;   <span style="color:#75715e">// 底层容器
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// 以下操作和stack一样
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">bool</span> empty() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.empty(); }
+  size_type size() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.size(); }
+  reference front() { <span style="color:#66d9ef">return</span> c.front(); }
+  const_reference front() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.front(); }
+  reference back() { <span style="color:#66d9ef">return</span> c.back(); }
+  const_reference back() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> c.back(); }
+  <span style="color:#66d9ef">void</span> push(<span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> x) { c.push_back(x); }
+  <span style="color:#66d9ef">void</span> pop() { c.pop_front(); }
+};
+
+<span style="color:#75715e">// 重载==操作符，比较底层容器即可
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">==</span>(<span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> x, <span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> y)
+{
+  <span style="color:#66d9ef">return</span> x.c <span style="color:#f92672">==</span> y.c;
+}
+<span style="color:#75715e">// 同上
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Sequence</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span>(<span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> x, <span style="color:#66d9ef">const</span> queue<span style="color:#f92672">&lt;</span>T, Sequence<span style="color:#f92672">&gt;&amp;</span> y)
+{
+  <span style="color:#66d9ef">return</span> x.c <span style="color:#f92672">&lt;</span> y.c;
+}
+</code></pre></div>
+<h1 id="后记">后记</h1>
+
+<p>这篇博客的两个”容器“比较容易理解，因为底层都已经学过了，只需要调用接口即可。最后再啰嗦两句，stack是一个先进后出的容器，queue是一个先进先出的容器，在使用过程中，需要根据你的需求来选择。我在刷leetcode的时候，碰到遍历二叉树的问题，基本上前、中后序遍历的非递归实现中，都会用到stack，而树的层序遍历中，会采用queue，具体的做法可以参考我的这片博文，<a href="http://zcheng.ren/2016/08/01/%E3%80%90%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%92%8C%E7%AE%97%E6%B3%95%E3%80%91%E5%85%A8%E9%9D%A2%E5%89%96%E6%9E%90%E6%A0%91%E7%9A%84%E5%90%84%E7%B1%BB%E9%81%8D%E5%8E%86%E6%96%B9%E6%B3%95/">全面剖析树的各类遍历方法</a>,相信看完你会对stack和queue的使用有进一步的理解！</p>
+
+<p>参考：</p>
+
+<ul>
+<li>侯捷先生的《STL的源码剖析》</li>
+<li><a href="http://www.cnblogs.com/lfsblack/archive/2012/11/10/2764334.html">C++ STL源码剖析</a></li>
+</ul>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/c&#43;&#43;/" rel="tag">C&#43;&#43;</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/stl/" rel="tag">STL</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/stldeque/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">带你深入理解STL之Deque容器</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/stlrbtree/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">带你深入理解STL之RBTree</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>

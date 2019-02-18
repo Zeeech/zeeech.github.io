@@ -13,10 +13,10 @@
     
     <item>
       <title>带你深入理解STL之迭代器和Traits技法</title>
-      <link>https://zcheng.ren/2016/08/22/stliterator/</link>
+      <link>https://zcheng.ren/sourcecodeanalysis/stliterator/</link>
       <pubDate>Mon, 22 Aug 2016 16:18:53 +0800</pubDate>
       
-      <guid>https://zcheng.ren/2016/08/22/stliterator/</guid>
+      <guid>https://zcheng.ren/sourcecodeanalysis/stliterator/</guid>
       <description>&lt;p&gt;在开始讲迭代器之前，先列举几个例子，由浅入深的来理解一下为什么要设计迭代器。&lt;/p&gt;
 
 &lt;p&gt;针对下面两个函数，我们来谈谈这种设计的缺陷所在：&lt;/p&gt;

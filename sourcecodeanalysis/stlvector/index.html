@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html class="no-js" lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>带你深入理解STL之Vector容器</title>
+	<script>(function(d,e){d[e]=d[e].replace("no-js","js");})(document.documentElement,"className");</script>
+	<meta name="description" content="">
+	<meta name="generator" content="Hugo 0.53" />
+	<meta property="og:title" content="带你深入理解STL之Vector容器" />
+<meta property="og:description" content="C&#43;&#43;内置了数组的类型，在使用数组的时候，必须指定数组的长度，一旦配置了就不能改变了，通常我们的做法是：尽量配置一个大的空间，以免不够用，这样做的缺点是比较浪费空间，预估空间不当会引起很多不便。
+
+STL实现了一个Vector容器，该容器就是来改善数组的缺点。vector是一个动态空间，随着元素的加入，它的内部机制会自行扩充以容纳新元素。因此，vector的运用对于内存的合理利用与运用的灵活性有很大的帮助，再也不必因为害怕空间不足而一开始就配置一个大容量数组了，vector是用多少就分配多少。
+
+要想实现动态分配数组，Vector内部就需要对空间控制做到有效率的掌控，这些机制要如何运作才能高效地实现动态分配呢？本篇博客就从源代码的角度带你领略一下Vector容器内部的构造艺术。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://zcheng.ren/sourcecodeanalysis/stlvector/" /><meta property="article:published_time" content="2016-08-23T17:46:53&#43;08:00"/>
+<meta property="article:modified_time" content="2016-08-23T17:46:53&#43;08:00"/>
+
+	<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="带你深入理解STL之Vector容器"/>
+<meta name="twitter:description" content="C&#43;&#43;内置了数组的类型，在使用数组的时候，必须指定数组的长度，一旦配置了就不能改变了，通常我们的做法是：尽量配置一个大的空间，以免不够用，这样做的缺点是比较浪费空间，预估空间不当会引起很多不便。
+
+STL实现了一个Vector容器，该容器就是来改善数组的缺点。vector是一个动态空间，随着元素的加入，它的内部机制会自行扩充以容纳新元素。因此，vector的运用对于内存的合理利用与运用的灵活性有很大的帮助，再也不必因为害怕空间不足而一开始就配置一个大容量数组了，vector是用多少就分配多少。
+
+要想实现动态分配数组，Vector内部就需要对空间控制做到有效率的掌控，这些机制要如何运作才能高效地实现动态分配呢？本篇博客就从源代码的角度带你领略一下Vector容器内部的构造艺术。"/>
+
+	<link rel="dns-prefetch" href="//fonts.googleapis.com">
+	<link rel="dns-prefetch" href="//fonts.gstatic.com">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700">
+	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/custom.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+		
+</head>
+<body class="body">
+	<div class="container container--outer">
+		
+
+<script>
+	hljs.initHighlightingOnLoad();
+</script>
+
+<header class="header">
+	<div class="container">
+		<div class="logo">
+			<a class="logo__link" href="/" title="Zeech&#39;s Tech Blog" rel="home">
+				<div class="logo__title">Zeech&#39;s Tech Blog</div>
+				<div class="logo__tagline">Vimer|后端开发|博客er|机器学习freshman</div>
+			</a>
+		</div>
+		
+<nav class="menu">
+	<button class="menu__btn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+		<span class="menu__btn-title" tabindex="-1">Menu</span>
+	</button>
+	<ul class="menu__list">
+		<li class="menu__item">
+			<a class="menu__link" href="/">博客首页</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/sourcecodeanalysis/">源码阅读</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/machinelearning/">ML&amp;CV</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/about/">关于我</a>
+		</li>
+		<li class="menu__item">
+			<a class="menu__link" href="/index.xml">RSS订阅</a>
+		</li>
+	</ul>
+</nav>
+
+	</div>
+</header>
+		<div class="wrapper flex">
+			<div class="primary">
+			
+<main class="main" role="main">
+	<article class="post">
+		<header class="post__header">
+			<h1 class="post__title">带你深入理解STL之Vector容器</h1>
+			<div class="post__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-08-23T17:46:53">August 23, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb" rel="category">源码阅读</a></span>
+</div>
+</div>
+		</header>
+<div class="post__toc toc">
+	<div class="toc__title">Page content</div>
+	<div class="toc__menu">
+		<nav id="TableOfContents">
+<ul>
+<li><a href="#vector概述">Vector概述</a></li>
+<li><a href="#vector的数据结构">Vector的数据结构</a></li>
+<li><a href="#vector的迭代器">Vector的迭代器</a></li>
+<li><a href="#vector的构造函数">vector的构造函数</a>
+<ul>
+<li><a href="#默认构造函数">默认构造函数</a></li>
+<li><a href="#带参构造函数">带参构造函数</a></li>
+</ul></li>
+<li><a href="#vector的元素操作函数">vector的元素操作函数</a>
+<ul>
+<li><a href="#push-back">push_back()</a></li>
+<li><a href="#pop-back-函数">pop_back()函数</a></li>
+<li><a href="#erase-函数">erase()函数</a></li>
+<li><a href="#insert-函数">insert()函数</a></li>
+</ul></li>
+<li><a href="#后记">后记</a></li>
+</ul>
+</nav>
+	</div>
+</div>
+<div class="content post__content clearfix">
+			<p>C++内置了数组的类型，在使用数组的时候，必须指定数组的长度，一旦配置了就不能改变了，通常我们的做法是：尽量配置一个大的空间，以免不够用，这样做的缺点是比较浪费空间，预估空间不当会引起很多不便。</p>
+
+<p>STL实现了一个Vector容器，该容器就是来改善数组的缺点。vector是一个动态空间，随着元素的加入，它的内部机制会自行扩充以容纳新元素。因此，vector的运用对于内存的合理利用与运用的灵活性有很大的帮助，再也不必因为害怕空间不足而一开始就配置一个大容量数组了，vector是用多少就分配多少。</p>
+
+<p>要想实现动态分配数组，Vector内部就需要对空间控制做到有效率的掌控，这些机制要如何运作才能高效地实现动态分配呢？本篇博客就从源代码的角度带你领略一下Vector容器内部的构造艺术。</p>
+
+<h1 id="vector概述">Vector概述</h1>
+
+<p>大家知道，初始化一个数组的时候，需要给数组分配一块内存，数组中的数据都是按序存放的。vector也是如此，再初始化的时候给vector容器分配一块内存，用来存放容器中的数据，一旦分配的内存不足以存放新加入的数据时，就需要扩充空间。STLVector的做法是：重新开辟一段新的空间，将原空间的数据迁移过去，然后新加入的数据存放在新空间之后并释放掉原有空间。</p>
+
+<p>在这个过程中，配置新空间-&gt;数据移动-&gt;释放旧空间会带来一定的时间成本，所以必须尽可能高效的实现，STL的Vector设计中对这一部分做了相当大的优化，使得时间成本尽可能的小。下面就一起去看看这些优秀的设计吧↓。</p>
+
+<h1 id="vector的数据结构">Vector的数据结构</h1>
+
+<p>我们从最简单的开始，Vector的数据结构相当简单，由于需要判断内存是否够用，所以要用到三个指针，分别指向头，目前使用空间的尾，目前可用空间的尾。其源代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span><span style="color:#75715e">//alloc是STL的空间配置器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">vector</span>
+{
+	<span style="color:#75715e">// 这里提供STL标准的allocator接口
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> simple_alloc<span style="color:#f92672">&lt;</span>value_type, Alloc<span style="color:#f92672">&gt;</span> data_allocator;
+
+  iterator start;               <span style="color:#75715e">// 内存空间起始点
+</span><span style="color:#75715e"></span>  iterator finish;              <span style="color:#75715e">// 当前使用的内存空间结束点
+</span><span style="color:#75715e"></span>  iterator end_of_storage;      <span style="color:#75715e">// 实际分配内存空间的结束点
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<p>每当初始化一个vector的时候，先分配一段内存，称为目前可用空间，大小为end_of_storage - start + 1，当往vector里面加入数据的时候，finish就往后移，代表目前已使用的空间，这样做的好处是，不用频繁的扩充空间和转移数据，使得时间成本下降。</p>
+
+<p>在上述代码中，我们看到vector采用了STL标准的空间配置其接口，关于空间配置器的知识在<a href="http://zcheng.ren/2016/08/17/STLAllocater/">带你深入理解STL之空间配置器(思维导图+源码)</a>一文中有讲解，如有疑惑，可以跳转复习一下再来！</p>
+
+<p>vector提供了如下函数来支持获取其数据结构中的相关参数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//获取指向vector首元素的迭代器
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">begin</span>() { <span style="color:#66d9ef">return</span> start; }
+
+<span style="color:#75715e">//获取指向vector尾元素的迭代器
+</span><span style="color:#75715e"></span>iterator <span style="color:#a6e22e">end</span>() { <span style="color:#66d9ef">return</span> finish; }
+
+<span style="color:#75715e">// 返回当前对象个数，即已使用空间的大小
+</span><span style="color:#75715e"></span>size_type <span style="color:#a6e22e">size</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> size_type(end() <span style="color:#f92672">-</span> begin()); }
+
+<span style="color:#75715e">// 返回重新分配内存前最多能存储的对象个数，即目前可用空间的大小
+</span><span style="color:#75715e"></span>size_type <span style="color:#a6e22e">capacity</span>() <span style="color:#66d9ef">const</span> { <span style="color:#66d9ef">return</span> size_type(end_of_storage <span style="color:#f92672">-</span> begin()); }
+</code></pre></div>
+<h1 id="vector的迭代器">Vector的迭代器</h1>
+
+<p>既然是STL的容器，必须要满足迭代器的相关要求，如对迭代器有疑惑的，参考<a href="http://zcheng.ren/2016/08/23/STLIterator/">带你深入理解STL之迭代器和Traits技法
+</a>。</p>
+
+<p>vector维护的是一段连续的内存空间，所以不论容器中元素的型别为何，普通指针都可以作为vector的迭代器而满足所有必要的条件。vector支持随机存取，所以vector提供的是Random Access Iterator。</p>
+
+<p>下面来看看vector关于迭代器的源码：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span> <span style="color:#f92672">=</span> alloc<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">vector</span>
+{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+	<span style="color:#75715e">// vector内部是连续内存空间，所以迭代器采用原生指针即可
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> value_type<span style="color:#f92672">*</span> iterator;  								
+
+  <span style="color:#75715e">//以下为满足Traits功能定义的内嵌型别
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">typedef</span> T value_type;
+  <span style="color:#66d9ef">typedef</span> value_type<span style="color:#f92672">*</span> pointer;                  
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">*</span> const_pointer;
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">*</span> const_iterator;
+  <span style="color:#66d9ef">typedef</span> value_type<span style="color:#f92672">&amp;</span> reference;                
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">const</span> value_type<span style="color:#f92672">&amp;</span> const_reference;
+  <span style="color:#66d9ef">typedef</span> ptrdiff_t difference_type;  
+
+  <span style="color:#66d9ef">typedef</span> size_t size_type;         
+}
+</code></pre></div>
+<h1 id="vector的构造函数">vector的构造函数</h1>
+
+<h2 id="默认构造函数">默认构造函数</h2>
+
+<p>在使用vector的时候，我们通常会有如下定义：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;vector&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> vec;
+</code></pre></div>
+<p>在上述定义中，调用了vector的默认构造函数，其默认不分配内存空间，如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// vector的默认构造函数默认不分配内存空间
+</span><span style="color:#75715e"></span>vector() <span style="color:#f92672">:</span> start(<span style="color:#ae81ff">0</span>), finish(<span style="color:#ae81ff">0</span>), end_of_storage(<span style="color:#ae81ff">0</span>) {}
+</code></pre></div>
+<h2 id="带参构造函数">带参构造函数</h2>
+
+<p>通常，vector的初始化可以指定元素个数和初始化类型。如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> vec(<span style="color:#ae81ff">10</span>,<span style="color:#ae81ff">1</span>); <span style="color:#75715e">// 将vec初始化为10个1
+</span><span style="color:#75715e"></span></code></pre></div>
+<p>vector提供下面的构造函数以支持上述初始化操作：</p>
+
+<p><center><img src="https://ww1.sinaimg.cn/large/006tNc79gw1fbkg2cxastj30iu0dg0u0.jpg" alt="带参构造函数" /></center></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 构造函数，允许指定vector的元素个数和初值
+</span><span style="color:#75715e"></span>vector(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value) { fill_initialize(n, value); }
+vector(<span style="color:#66d9ef">int</span> n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value) { fill_initialize(n, value); }
+vector(<span style="color:#66d9ef">long</span> n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value) { fill_initialize(n, value); }
+
+<span style="color:#75715e">// 需要对象提供默认构造函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">explicit</span> vector(size_type n) { fill_initialize(n, T()); }
+
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 填充并予以初始化
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">void</span> fill_initialize(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value)
+{
+  start <span style="color:#f92672">=</span> allocate_and_fill(n, value);
+  finish <span style="color:#f92672">=</span> start <span style="color:#f92672">+</span> n;                         <span style="color:#75715e">// 设置当前使用内存空间的结束点
+</span><span style="color:#75715e"></span>
+  <span style="color:#75715e">//这里不过多的分配内存
+</span><span style="color:#75715e"></span>  end_of_storage <span style="color:#f92672">=</span> finish;
+}
+
+<span style="color:#75715e">/**
+</span><span style="color:#75715e"> * 配置一块大小为n的内存空间，并予以填充
+</span><span style="color:#75715e"> */</span>
+iterator allocate_and_fill(size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+	<span style="color:#75715e">// 调用STL的空间配置器配置一块大小为n的内存空间
+</span><span style="color:#75715e"></span>  iterator result <span style="color:#f92672">=</span> data_allocator<span style="color:#f92672">::</span>allocate(n); 
+
+  <span style="color:#75715e">// 调用底层函数uninitialized_fill_n予以填充
+</span><span style="color:#75715e"></span>  uninitialized_fill_n(result, n, x);
+  <span style="color:#66d9ef">return</span> result;
+}
+</code></pre></div>
+<p>这里面调用了uninitialized_fill_n函数，这个函数是STL的内存基本处理函数，存放在stl_uninitialized.h中，下面来看看它的源码：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// 如果copy construction和operator =等效, 并且destructor is trivial
+</span><span style="color:#75715e">// 那么就可以使用本函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Size</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> ForwardIterator
+__uninitialized_fill_n_aux(ForwardIterator first, Size n,
+                           <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x, __true_type)
+{
+  <span style="color:#66d9ef">return</span> fill_n(first, n, x);
+}
+<span style="color:#75715e">// 不是POD类型使用以下函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Size</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+ForwardIterator
+__uninitialized_fill_n_aux(ForwardIterator first, Size n,
+                           <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x, __false_type)
+{
+  ForwardIterator cur <span style="color:#f92672">=</span> first;
+  <span style="color:#66d9ef">for</span> ( ; n <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>; <span style="color:#f92672">--</span>n, <span style="color:#f92672">++</span>cur)
+    construct(<span style="color:#f92672">&amp;*</span>cur, x);
+  <span style="color:#66d9ef">return</span> cur;
+}
+<span style="color:#75715e">// 利用type_traits来判断是否是POD类型
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Size</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T1</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> ForwardIterator __uninitialized_fill_n(ForwardIterator first, Size n,
+    <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x, T1<span style="color:#f92672">*</span>)
+{
+  <span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">typename</span> __type_traits<span style="color:#f92672">&lt;</span>T1<span style="color:#f92672">&gt;::</span>is_POD_type is_POD;
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">__uninitialized_fill_n_aux</span>(first, n, x, is_POD());
+
+}
+<span style="color:#75715e">// 利用Iterator_traits来萃取出其值类型
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Size</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">inline</span> ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n,
+    <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  <span style="color:#66d9ef">return</span> __uninitialized_fill_n(first, n, x, value_type(first));
+}
+</code></pre></div>
+<h1 id="vector的元素操作函数">vector的元素操作函数</h1>
+
+<h2 id="push-back">push_back()</h2>
+
+<p>push_back()函数将新元素插入于vector的尾部，该函数再完成这一操作的时候，先检查是否还有备用空间，如果有直接再备用空间上构造函数；如果没有就扩充空间，通过重新配置一块大空间，移动数据，释放原空间的操作来完成push_back操作。其源代码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">// 向容器尾追加一个元素, 可能导致内存重新分配
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">//                          push_back(const T&amp; x)
+</span><span style="color:#75715e">//                                   |
+</span><span style="color:#75715e">//                                   |---------------- 容量已满?
+</span><span style="color:#75715e">//                                   |
+</span><span style="color:#75715e">//               ----------------------------
+</span><span style="color:#75715e">//           No  |                          |  Yes
+</span><span style="color:#75715e">//               |                          |
+</span><span style="color:#75715e">//               ↓                          ↓
+</span><span style="color:#75715e">//      construct(finish, x);       insert_aux(end(), x);
+</span><span style="color:#75715e">//      ++finish;                           |
+</span><span style="color:#75715e">//                                          |------ 内存不足, 重新分配
+</span><span style="color:#75715e">//                                          |       大小为原来的2倍
+</span><span style="color:#75715e">//      new_finish = data_allocator::allocate(len);       &lt;stl_alloc.h&gt;
+</span><span style="color:#75715e">//      uninitialized_copy(start, position, new_start);   &lt;stl_uninitialized.h&gt;
+</span><span style="color:#75715e">//      construct(new_finish, x);                         &lt;stl_construct.h&gt;
+</span><span style="color:#75715e">//      ++new_finish;
+</span><span style="color:#75715e">//      uninitialized_copy(position, finish, new_finish); &lt;stl_uninitialized.h&gt;
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">push_back</span>(<span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  <span style="color:#75715e">// 内存满足条件则直接追加元素, 否则需要重新分配内存空间
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (finish <span style="color:#f92672">!=</span> end_of_storage) {
+    construct(finish, x);
+    <span style="color:#f92672">++</span>finish;
+  }
+  <span style="color:#66d9ef">else</span>
+    insert_aux(end(), x);
+}
+
+<span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">// 提供插入操作
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">//                 insert_aux(iterator position, const T&amp; x)
+</span><span style="color:#75715e">//                                   |
+</span><span style="color:#75715e">//                                   |---------------- 容量是否足够?
+</span><span style="color:#75715e">//                                   ↓
+</span><span style="color:#75715e">//              -----------------------------------------
+</span><span style="color:#75715e">//        Yes   |                                       | No
+</span><span style="color:#75715e">//              |                                       |
+</span><span style="color:#75715e">//              ↓                                       |
+</span><span style="color:#75715e">// 从opsition开始, 整体向后移动一个位置                     |
+</span><span style="color:#75715e">// construct(finish, *(finish - 1));                    |
+</span><span style="color:#75715e">// ++finish;                                            |
+</span><span style="color:#75715e">// T x_copy = x;                                        |
+</span><span style="color:#75715e">// copy_backward(position, finish - 2, finish - 1);     |
+</span><span style="color:#75715e">// *position = x_copy;                                  |
+</span><span style="color:#75715e">//                                                      ↓
+</span><span style="color:#75715e">//                            data_allocator::allocate(len);
+</span><span style="color:#75715e">//                            uninitialized_copy(start, position, new_start);
+</span><span style="color:#75715e">//                            construct(new_finish, x);
+</span><span style="color:#75715e">//                            ++new_finish;
+</span><span style="color:#75715e">//                            uninitialized_copy(position, finish, new_finish);
+</span><span style="color:#75715e">//                            destroy(begin(), end());
+</span><span style="color:#75715e">//                            deallocate();
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> vector<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>insert_aux(iterator position, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  <span style="color:#66d9ef">if</span> (finish <span style="color:#f92672">!=</span> end_of_storage) {       <span style="color:#75715e">// 还有剩余内存
+</span><span style="color:#75715e"></span>    construct(finish, <span style="color:#f92672">*</span>(finish <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>));
+    <span style="color:#f92672">++</span>finish;
+    T x_copy <span style="color:#f92672">=</span> x;
+    copy_backward(position, finish <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>, finish <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>);
+    <span style="color:#f92672">*</span>position <span style="color:#f92672">=</span> x_copy;
+  }
+  <span style="color:#66d9ef">else</span> {        
+    <span style="color:#75715e">// 内存不足, 需要重新分配
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> size_type old_size <span style="color:#f92672">=</span> size();
+    <span style="color:#75715e">//配置原则：如果原大小为0，就配置1个元素大小
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//        如果原大小不为0，就配置原大小的两倍
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//				前半段用来放置原数据，后半段用来放置新数据
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> size_type len <span style="color:#f92672">=</span> old_size <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">?</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> old_size : <span style="color:#ae81ff">1</span>;
+    iterator new_start <span style="color:#f92672">=</span> data_allocator<span style="color:#f92672">::</span>allocate(len);
+    iterator new_finish <span style="color:#f92672">=</span> new_start;
+    <span style="color:#75715e">// 将内存重新配置
+</span><span style="color:#75715e"></span>    __STL_TRY {
+    	<span style="color:#75715e">// 将原vector的内容拷贝到新vector
+</span><span style="color:#75715e"></span>      new_finish <span style="color:#f92672">=</span> uninitialized_copy(start, position, new_start);
+      <span style="color:#75715e">// 构造新元素并赋值为x
+</span><span style="color:#75715e"></span>      construct(new_finish, x);
+      <span style="color:#75715e">// 调整finish的位置
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">++</span>new_finish;
+      <span style="color:#75715e">// 将安插点的原内容也拷贝过来
+</span><span style="color:#75715e"></span>      new_finish <span style="color:#f92672">=</span> uninitialized_copy(position, finish, new_finish);
+    }
+		<span style="color:#75715e">// 分配失败则抛出异常
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">catch</span> (...) {
+      destroy(new_start, new_finish);
+      data_allocator<span style="color:#f92672">::</span>deallocate(new_start, len);
+      <span style="color:#66d9ef">throw</span>;
+    }
+    <span style="color:#75715e">// 析构原容器中的对象
+</span><span style="color:#75715e"></span>    destroy(begin(), end());
+    <span style="color:#75715e">// 释放原容器分配的内存
+</span><span style="color:#75715e"></span>    deallocate();
+    <span style="color:#75715e">// 调整内存指针状态
+</span><span style="color:#75715e"></span>    start <span style="color:#f92672">=</span> new_start;
+    finish <span style="color:#f92672">=</span> new_finish;
+    end_of_storage <span style="color:#f92672">=</span> new_start <span style="color:#f92672">+</span> len;
+  }
+}
+</code></pre></div>
+<h2 id="pop-back-函数">pop_back()函数</h2>
+
+<p>pop_back函数弹出当前尾端元素。其源代码比较简单，如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">pop_back</span>()
+{
+	<span style="color:#75715e">//调整finish
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">--</span>finish;
+  <span style="color:#75715e">//释放调弹出的元素
+</span><span style="color:#75715e"></span>  destroy(finish);
+}
+</code></pre></div>
+<h2 id="erase-函数">erase()函数</h2>
+
+<p>erase函数支持两个版本：</p>
+
+<ul>
+<li>清除某个位置上的元素</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">iterator <span style="color:#a6e22e">erase</span>(iterator position)
+{
+  <span style="color:#66d9ef">if</span> (position <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">!=</span> end())
+    copy(position <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, finish, position); <span style="color:#75715e">//将[position+1,finish]移到[position,finish]
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">--</span>finish;
+  destroy(finish);
+  <span style="color:#66d9ef">return</span> position;<span style="color:#75715e">//返回删除点的迭代器
+</span><span style="color:#75715e"></span>}
+</code></pre></div>
+<ul>
+<li>清除某个区间上的所有函数</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">iterator <span style="color:#a6e22e">erase</span>(iterator first, iterator last)
+{
+  iterator i <span style="color:#f92672">=</span> copy(last, finish, first);<span style="color:#75715e">//关于copy函数的源码分析在以后的博文中会提到
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// 析构掉需要析构的元素
+</span><span style="color:#75715e"></span>  destroy(i, finish);
+  finish <span style="color:#f92672">=</span> finish <span style="color:#f92672">-</span> (last <span style="color:#f92672">-</span> first);
+  <span style="color:#66d9ef">return</span> first;
+}
+</code></pre></div>
+<p>这里放上两张《STL源码剖析》中的图，便于理解这一过程：</p>
+
+<p><center><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkg2eirlej30fz0c7dgm.jpg" alt="erase函数" /></center></p>
+
+<p>有上述erase函数，可以衍生出一个函数，用来清除迭代器中所有的元素</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">clear</span>() { erase(begin(), end()); }
+</code></pre></div>
+<h2 id="insert-函数">insert()函数</h2>
+
+<p>insert函数实现的功能是：从position开始，插入n个元素，元素的初值均为x。其源码如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">// 在指定位置插入n个元素
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e">//             insert(iterator position, size_type n, const T&amp; x)
+</span><span style="color:#75715e">//                                   |
+</span><span style="color:#75715e">//                                   |---------------- 插入元素个数是否为0?
+</span><span style="color:#75715e">//                                   ↓
+</span><span style="color:#75715e">//              -----------------------------------------
+</span><span style="color:#75715e">//        No    |                                       | Yes
+</span><span style="color:#75715e">//              |                                       |
+</span><span style="color:#75715e">//              |                                       ↓
+</span><span style="color:#75715e">//              |                                    return;
+</span><span style="color:#75715e">//              |----------- 内存是否足够?
+</span><span style="color:#75715e">//              |
+</span><span style="color:#75715e">//      -------------------------------------------------
+</span><span style="color:#75715e">//  Yes |                                               | No
+</span><span style="color:#75715e">//      |                                               |
+</span><span style="color:#75715e">//      |------ (finish - position) &gt; n?                |
+</span><span style="color:#75715e">//      |       分别调整指针                              |
+</span><span style="color:#75715e">//      ↓                                               |
+</span><span style="color:#75715e">//    ----------------------------                      |
+</span><span style="color:#75715e">// No |                          | Yes                  |
+</span><span style="color:#75715e">//    |                          |                      |
+</span><span style="color:#75715e">//    ↓                          ↓                      |
+</span><span style="color:#75715e">// 插入操作, 调整指针           插入操作, 调整指针           |
+</span><span style="color:#75715e">//                                                      ↓
+</span><span style="color:#75715e">//            data_allocator::allocate(len);
+</span><span style="color:#75715e">//            new_finish = uninitialized_copy(start, position, new_start);
+</span><span style="color:#75715e">//            new_finish = uninitialized_fill_n(new_finish, n, x);
+</span><span style="color:#75715e">//            new_finish = uninitialized_copy(position, finish, new_finish);
+</span><span style="color:#75715e">//            destroy(start, finish);
+</span><span style="color:#75715e">//            deallocate();
+</span><span style="color:#75715e">////////////////////////////////////////////////////////////////////////////////
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">class</span><span style="color:#960050;background-color:#1e0010"> </span><span style="color:#a6e22e">Alloc</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> vector<span style="color:#f92672">&lt;</span>T, Alloc<span style="color:#f92672">&gt;::</span>insert(iterator position, size_type n, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> x)
+{
+  <span style="color:#75715e">// 如果n为0则不进行任何操作
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>) {
+    <span style="color:#66d9ef">if</span> (size_type(end_of_storage <span style="color:#f92672">-</span> finish) <span style="color:#f92672">&gt;=</span> n) {      <span style="color:#75715e">// 剩下的内存够分配
+</span><span style="color:#75715e"></span>      T x_copy <span style="color:#f92672">=</span> x;
+      <span style="color:#66d9ef">const</span> size_type elems_after <span style="color:#f92672">=</span> finish <span style="color:#f92672">-</span> position; <span style="color:#75715e">// 计算插入点之后的现有元素个数
+</span><span style="color:#75715e"></span>      iterator old_finish <span style="color:#f92672">=</span> finish;
+      <span style="color:#66d9ef">if</span> (elems_after <span style="color:#f92672">&gt;</span> n) {  <span style="color:#75715e">// 插入点之后的现有元素个数大于新增元素个数，见下图1
+</span><span style="color:#75715e"></span>      	<span style="color:#75715e">// 先复制尾部n个元素到尾部
+</span><span style="color:#75715e"></span>        uninitialized_copy(finish <span style="color:#f92672">-</span> n, finish, finish);
+        finish <span style="color:#f92672">+=</span> n; <span style="color:#75715e">// 调整新的finish
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// 从后往前复制剩余的旧元素
+</span><span style="color:#75715e"></span>        copy_backward(position, old_finish <span style="color:#f92672">-</span> n, old_finish);
+        <span style="color:#75715e">// 从position开始填充新元素
+</span><span style="color:#75715e"></span>        fill(position, position <span style="color:#f92672">+</span> n, x_copy);
+      }
+      <span style="color:#66d9ef">else</span> {
+      	<span style="color:#75715e">// 插入点之后的现有元素个数小于新增元素个数，见下图2
+</span><span style="color:#75715e"></span>      	<span style="color:#75715e">// 先在尾部填充n - elems_after个新增元素
+</span><span style="color:#75715e"></span>        uninitialized_fill_n(finish, n <span style="color:#f92672">-</span> elems_after, x_copy);
+        <span style="color:#75715e">// 调整新的finish
+</span><span style="color:#75715e"></span>        finish <span style="color:#f92672">+=</span> n <span style="color:#f92672">-</span> elems_after;
+        <span style="color:#75715e">// 复制[position,old_finish]区间的数到新的finish之后
+</span><span style="color:#75715e"></span>        uninitialized_copy(position, old_finish, finish);
+        <span style="color:#75715e">// 调整finish
+</span><span style="color:#75715e"></span>        finish <span style="color:#f92672">+=</span> elems_after;
+        <span style="color:#75715e">// 从position开始填充新增元素
+</span><span style="color:#75715e"></span>        fill(position, old_finish, x_copy);
+      }
+    }
+    <span style="color:#66d9ef">else</span> {      <span style="color:#75715e">// 剩下的内存不够分配, 需要重新分配
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">const</span> size_type old_size <span style="color:#f92672">=</span> size();
+      <span style="color:#66d9ef">const</span> size_type len <span style="color:#f92672">=</span> old_size <span style="color:#f92672">+</span> max(old_size, n);
+      iterator new_start <span style="color:#f92672">=</span> data_allocator<span style="color:#f92672">::</span>allocate(len);
+      iterator new_finish <span style="color:#f92672">=</span> new_start;
+      __STL_TRY {
+      	<span style="color:#75715e">// 将旧的vector中插入点之前的元素复制到新空间，见下图3
+</span><span style="color:#75715e"></span>        new_finish <span style="color:#f92672">=</span> uninitialized_copy(start, position, new_start);
+        <span style="color:#75715e">// 将新增元素复制到新空间
+</span><span style="color:#75715e"></span>        new_finish <span style="color:#f92672">=</span> uninitialized_fill_n(new_finish, n, x);
+        <span style="color:#75715e">// 将插入点之后的元素复制到新空间
+</span><span style="color:#75715e"></span>        new_finish <span style="color:#f92672">=</span> uninitialized_copy(position, finish, new_finish);
+      }
+      <span style="color:#66d9ef">catch</span> (...) {
+        destroy(new_start, new_finish);
+        data_allocator<span style="color:#f92672">::</span>deallocate(new_start, len);
+        <span style="color:#66d9ef">throw</span>;
+      }
+      <span style="color:#75715e">// 清除并释放原有vector
+</span><span style="color:#75715e"></span>      destroy(start, finish);
+      deallocate();
+      <span style="color:#75715e">// 调整新的start和finish
+</span><span style="color:#75715e"></span>      start <span style="color:#f92672">=</span> new_start;
+      finish <span style="color:#f92672">=</span> new_finish;
+      end_of_storage <span style="color:#f92672">=</span> new_start <span style="color:#f92672">+</span> len;
+    }
+  }
+}
+</code></pre></div>
+<p>上述操作可以使插入操作达到最高的效率。配合以下图解更容易理解：</p>
+
+<ul>
+<li><p>插入点之后的现有元素个数大于新增元素个数的情况
+<center><img src="https://ww4.sinaimg.cn/large/006tNc79gw1fbkg2dn6tcj30dw0fgabf.jpg" alt="第一种情况" /></center></p></li>
+
+<li><p>插入点之后的现有元素个数小于新增元素个数的情况
+<center><img src="/Users/zhangcheng/Documents/aaa/Selection_014.png" alt="第二种情况" /></center></p></li>
+
+<li><p>剩下的内存不够分配，重新配置的情况
+<center><img src="/Users/zhangcheng/Documents/aaa/Selection_015.png" alt="第三种情况" /></center></p></li>
+</ul>
+
+<h1 id="后记">后记</h1>
+
+<p>STL的Vector容器到此就介绍完毕了。其中对改善效率作了不少优化，很多设计点都值得学习！若有疑惑可以在博文下方留言，我看到会及时帮大家解答！</p>
+
+<p>参考：
++ <a href="http://www.cnblogs.com/lfsblack/archive/2012/11/10/2764334.html">C++ STL源码剖析</a>
++ <a href="http://www.kancloud.cn/digest/stl-sources/177265">STL源码剖析——迭代器</a>
++ 侯捷先生的《STL源码剖析》 华中科技大学出版社</p>
+		</div>
+		
+<div class="post__tags tags clearfix">
+	<svg class="icon icon-tag" width="16" height="16" viewBox="0 0 32 32"><path d="M32 19c0 1-1 2-1 2L21 31s-1 1-2 1-2-1-2-1L2 16c-1-1-1.4-2-1.4-2S0 12.5 0 11V3C0 1.5.8.8.8.8S1.5 0 3 0h8c1.5 0 3 .6 3 .6S15 1 16 2l15 15s1 1 1 2zM7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+	<ul class="tags__list">
+		<li class="tags__item"><a class="tags__link btn" href="/tags/c&#43;&#43;/" rel="tag">C&#43;&#43;</a></li>
+		<li class="tags__item"><a class="tags__link btn" href="/tags/stl/" rel="tag">STL</a></li>
+	</ul>
+</div>
+	</article>
+</main>
+
+<div class="authorbox clearfix">
+	<figure class="authorbox__avatar">
+		<img alt="Zeech avatar" src="/img/avatar.jpg" class="avatar" height="90" width="90">
+	</figure>
+	<div class="authorbox__header">
+		<span class="authorbox__name">About Zeech</span>
+	</div>
+	<div class="authorbox__description">
+		Nothing to say
+	</div>
+</div>
+
+<nav class="post-nav flex">
+	<div class="post-nav__item post-nav__item--prev">
+		<a class="post-nav__link" href="/sourcecodeanalysis/stliterator/" rel="prev"><span class="post-nav__caption">«&thinsp;Previous</span><p class="post-nav__post-title">带你深入理解STL之迭代器和Traits技法</p></a>
+	</div>
+	<div class="post-nav__item post-nav__item--next">
+		<a class="post-nav__link" href="/sourcecodeanalysis/stllist/" rel="next"><span class="post-nav__caption">Next&thinsp;»</span><p class="post-nav__post-title">带你深入理解STL之List容器</p></a>
+	</div>
+</nav>
+
+<section class="comments">
+	<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "Zeecoder" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</section>
+
+
+			</div>
+			<aside class="sidebar"><div class="widget-search widget">
+	<form class="widget-search__form" role="search" method="get" action="https://google.com/search">
+		<label>
+			<input class="widget-search__field" type="search" placeholder="SEARCH..." value="" name="q" aria-label="SEARCH...">
+		</label>
+		<input class="widget-search__submit" type="submit" value="Search">
+		<input type="hidden" name="sitesearch" value="https://zcheng.ren" />
+	</form>
+</div>
+<div class="widget-recent widget">
+	<h4 class="widget__title">Recent Posts</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
+			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-categories widget">
+	<h4 class="widget__title">Categories</h4>
+	<div class="widget__content">
+		<ul class="widget__list">
+			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%94%9f%e6%b4%bb%e6%80%9d%e8%80%83">生活思考</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e7%bc%96%e7%a8%8b%e6%8a%80%e6%9c%af">编程技术</a></li>
+			<li class="widget__item"><a class="widget__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0">读书笔记</a></li>
+		</ul>
+	</div>
+</div>
+<div class="widget-taglist widget">
+	<h4 class="widget__title">Tags</h4>
+	<div class="widget__content">
+		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/machinelearning" title="Machinelearning">Machinelearning</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/nginx" title="Nginx">Nginx</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/python" title="Python">Python</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/redis" title="Redis">Redis</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/sourcecode" title="Sourcecode">Sourcecode</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/spacevim" title="Spacevim">Spacevim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/stl" title="Stl">Stl</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/themes" title="Themes">Themes</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/unix%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b" title="Unix网络编程">Unix网络编程</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/vim" title="Vim">Vim</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e5%b9%b4%e5%ba%a6%e6%80%bb%e7%bb%93" title="年度总结">年度总结</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e6%95%b0%e6%8d%ae%e7%bb%93%e6%9e%84" title="数据结构">数据结构</a>
+		<a class="widget-taglist__link widget__link btn" href="/tags/%e7%ae%97%e6%b3%95" title="算法">算法</a>
+	</div>
+</div>
+<div class="widget-social widget">
+	<h4 class="widget-social__title widget__title">Social</h4>
+	<div class="widget-social__content widget__content">
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Facebook" rel="noopener noreferrer" href="https://facebook.com/zhang.cheng.50746" target="_blank">
+				<svg class="widget-social__link-icon icon-facebook" viewBox="0 0 352 352" width="24" height="24" fill="#fff"><path d="m0 32v288c0 17.5 14.5 32 32 32h288c17.5 0 32-14.5 32-32v-288c0-17.5-14.5-32-32-32h-288c-17.5 0-32 14.5-32 32zm320 0v288h-83v-108h41.5l6-48h-47.5v-31c0-14 3.5-23.5 23.5-23.5h26v-43.5c-4.4-.6-19.8-1.5-37.5-1.5-36.9 0-62 22.2-62 63.5v36h-42v48h42v108h-155v-288z"/></svg>
+				<span>Facebook</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Twitter" rel="noopener noreferrer" href="https://twitter.com/Zeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-twitter" viewBox="0 0 384 312" width="24" height="24" fill="#fff"><path d="m384 36.9c-14.1 6.3-29.3 10.5-45.2 12.4 16.3-9.7 28.8-25.2 34.6-43.6-15.2 9-32.1 15.6-50 19.1-14.4-15.2-34.9-24.8-57.5-24.8-43.5 0-78.8 35.3-78.8 78.8 0 6.2.7 12.2 2 17.9-65.5-3.3-123.5-34.6-162.4-82.3-6.7 11.6-10.6 25.2-10.6 39.6 0 27.3 13.9 51.4 35 65.6-12.9-.4-25.1-4-35.7-9.9v1c0 38.2 27.2 70 63.2 77.2-6.6 1.8-13.6 2.8-20.8 2.8-5.1 0-10-.5-14.8-1.4 10 31.3 39.1 54.1 73.6 54.7-27 21.1-60.9 33.7-97.8 33.7-6.4 0-12.6-.4-18.8-1.1 34.9 22.4 76.3 35.4 120.8 35.4 144.9 0 224.1-120 224.1-224.1 0-3.4-.1-6.8-.2-10.2 15.4-11.1 28.7-25 39.3-40.8z"/></svg>
+				<span>Twitter</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Telegram" rel="noopener noreferrer" href="https://t.me/Zeeeech" target="_blank">
+				<svg class="widget-social__link-icon icon-telegram" viewBox="0 0 132 110" width="24" height="24"><path fill="#ddd" d="M50 103c-4 0-3-1-5-5L34 60l88-52"/><path fill="#aaa" d="M50 103c3 0 4-1 6-3l16-16-20-12"/><path fill="#fff" d="M52 72l48 36c6 3 10 2 11-5l20-93c2-8-3-11-8-9L7 45c-8 4-8 8-1 10l29 9 69-43c3-2 6-1 4 1"/></svg>
+				<span>Telegram</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="GitHub" rel="noopener noreferrer" href="https://github.com/Zeecoders" target="_blank">
+				<svg class="widget-social__link-icon icon-github" viewBox="0 0 384 374" width="24" height="24" fill="#fff"><path d="m192 0c-106.1 0-192 85.8-192 191.7 0 84.7 55 156.6 131.3 181.9 9.6 1.8 13.1-4.2 13.1-9.2 0-4.6-.2-16.6-.3-32.6-53.4 11.6-64.7-25.7-64.7-25.7-8.7-22.1-21.3-28-21.3-28-17.4-11.9 1.3-11.6 1.3-11.6 19.3 1.4 29.4 19.8 29.4 19.8 17.1 29.3 44.9 20.8 55.9 15.9 1.7-12.4 6.7-20.8 12.2-25.6-42.6-4.8-87.5-21.3-87.5-94.8 0-20.9 7.5-38 19.8-51.4-2-4.9-8.6-24.3 1.9-50.7 0 0 16.1-5.2 52.8 19.7 15.3-4.2 31.7-6.4 48.1-6.5 16.3.1 32.7 2.2 48.1 6.5 36.7-24.8 52.8-19.7 52.8-19.7 10.5 26.4 3.9 45.9 1.9 50.7 12.3 13.4 19.7 30.5 19.7 51.4 0 73.7-44.9 89.9-87.7 94.6 6.9 5.9 13 17.6 13 35.5 0 25.6-.2 46.3-.2 52.6 0 5.1 3.5 11.1 13.2 9.2 76.2-25.5 131.2-97.3 131.2-182 0-105.9-86-191.7-192-191.7z"/></svg>
+				<span>GitHub</span>
+			</a>
+		</div>
+		<div class="widget-social__item widget__item">
+			<a class="widget-social__link widget__link btn" title="Email" href="mailto:zcheng1004@163.com">
+				<svg class="widget-social__link-icon icon-mail" viewBox="0 0 416 288" width="24" height="24" fill="#fff"><path d="m0 16v256 16h16 384 16v-16-256-16h-16-384-16zm347 16-139 92.5-139-92.5zm-148 125.5 9 5.5 9-5.5 167-111.5v210h-352v-210z"/></svg>
+				<span>zcheng1004@163.com</span>
+			</a>
+		</div>
+	</div>
+</div>
+</aside>
+		</div>
+		<footer class="footer">
+	<div class="container footer__container flex">
+		
+		<div class="footer__copyright">
+			&copy; 2019 @zeech.
+			<span class="footer__copyright-credits">Generated with <a href="https://gohugo.io/" rel="nofollow noopener" target="_blank">Hugo</a> and <a href="https://github.com/Vimux/Mainroad/" rel="nofollow noopener" target="_blank">Mainroad</a> theme.</span>
+		</div>
+	</div>
+</footer>
+	</div>
+<script async defer src="/js/menu.js"></script>
+<script type="text/x-mathjax-config">
+	MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [['$','$'], ['\\(','\\)']],
+          processEscapes: true,
+          processEnvironments: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+          TeX: { equationNumbers: { autoNumber: "AMS" },
+               extensions: ["AMSmath.js", "AMSsymbols.js"] }
+        }
+      });
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+ async></script>
+
+</body>
+</html>
