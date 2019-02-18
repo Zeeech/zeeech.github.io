@@ -41,10 +41,10 @@
     
     <item>
       <title>python-opencv图像灰度化处理</title>
-      <link>https://zcheng.ren/imageprocess/vscodeopencvpython/</link>
+      <link>https://zcheng.ren/machinelearning/vscodeopencvpython/</link>
       <pubDate>Thu, 14 Feb 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://zcheng.ren/imageprocess/vscodeopencvpython/</guid>
+      <guid>https://zcheng.ren/machinelearning/vscodeopencvpython/</guid>
       <description>&lt;p&gt;读研期间一直在做opencv c++方向的开发工作，由于工作之后对python情有独钟，故打算用python重学一遍opencv，从最基础的开始。&lt;/p&gt;</description>
     </item>
     
