@@ -21,15 +21,6 @@
     </item>
     
     <item>
-      <title>三分钟学会cocoapods</title>
-      <link>https://zcheng.ren/2018/07/30/learncocoapods/</link>
-      <pubDate>Mon, 30 Jul 2018 18:06:46 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2018/07/30/learncocoapods/</guid>
-      <description>&lt;p&gt;最近要接手项目的ios sdk，于是，抽时间学习一个cocoapods，用来管理Xcode项目的依赖的工具。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
       <title>Nginx快速上手</title>
       <link>https://zcheng.ren/2018/01/29/nginxsourcequickstart/</link>
       <pubDate>Mon, 29 Jan 2018 14:19:10 +0800</pubDate>

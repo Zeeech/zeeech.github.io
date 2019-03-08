@@ -12,7 +12,7 @@
 <meta property="og:description" content="Zeech&#39;s Personal blog about everything" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://zcheng.ren/" />
-<meta property="og:updated_time" content="2016-12-25T11:24:49&#43;08:00"/>
+<meta property="og:updated_time" content="2016-12-24T11:01:31&#43;08:00"/>
 
 	<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Zeech&#39;s Tech Blog"/>
@@ -73,28 +73,6 @@
 			<div class="primary">
 			
 <main class="main list" role="main"><article class="list__item post">
-	<header class="list__header">
-		<h3 class="list__title post__title ">
-			<a href="/sourcecodeanalysis/theannotatedredissourcedb/" rel="bookmark">
-			Redis源码剖析--数据库db
-			</a>
-		</h3>
-		<div class="list__meta meta">
-<div class="meta__item-datetime meta__item">
-	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
-	<time class="meta__text" datetime="2016-12-25T11:24:49">December 25, 2016</time>
-</div>
-
-<div class="meta__item-categories meta__item">
-	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
-	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
-</div>
-</div>
-	</header>
-	<div class="content list__excerpt post__content clearfix">
-		<p>按照<a href="http://zcheng.ren/2016/11/25/TheAnnotatedRedisSource1/">Redis源码剖析&ndash;源码结构解析</a>一文中给自己规定的六个阶段来学习Redis。目前前三个阶段的学习以及完成了，这些都是和系统的耦合性比较小的部分，所以看起来也比较轻松。从这篇博客开始，就进入到第四阶段的源码剖析了。Redis的各个功能的实现将会顺着我们的逐步深入而变得清晰明了，如果读者跟着我的步伐一起学习，到了这一刻，想必也是兴奋的。废话也不多说了，前面所有的数据结构都是为后面的功能实现做铺垫。那么今天，就来啃掉数据库实现这块硬骨头。</p>
-	</div>
-</article><article class="list__item post">
 	<header class="list__header">
 		<h3 class="list__title post__title ">
 			<a href="/sourcecodeanalysis/theannotatedredissourcezset/" rel="bookmark">
@@ -520,6 +498,28 @@
 
 <p>STL的set和map都是基于红黑树实现的，和stack和queue都是基于deque一样，它们仅仅是调用了RBTree提供的接口函数，然后进行外层封装即可。本篇博客理解起来比较轻松，set和map的源代码也不多，大家可以慢慢“品味”。另外，还会介绍multiset和multimap这两个容器，并给出它们的区别和应用等。还等什么呢？走吧，带你理解理解set和map吧！</p>
 	</div>
+</article><article class="list__item post">
+	<header class="list__header">
+		<h3 class="list__title post__title ">
+			<a href="/sourcecodeanalysis/stlrbtree/" rel="bookmark">
+			带你深入理解STL之RBTree
+			</a>
+		</h3>
+		<div class="list__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-09-02T20:47:53">September 02, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb" rel="category">源码阅读</a></span>
+</div>
+</div>
+	</header>
+	<div class="content list__excerpt post__content clearfix">
+		<p>最近一直忙于校招的笔试，STL的深入理解系列也耽搁了好几天，再加上！红黑树真的是超级超级难理解，超级超级复杂，参考了好多博客上的大神的理解才稍微明白一点，勉强入个门，下面请以一个菜鸟的角度跟着我一起学习STL的红黑树吧。</p>
+	</div>
 </article>
 </main>
 
@@ -575,11 +575,9 @@
 		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
-		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
-		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>

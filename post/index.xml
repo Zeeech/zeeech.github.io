@@ -39,15 +39,6 @@
     </item>
     
     <item>
-      <title>三分钟学会cocoapods</title>
-      <link>https://zcheng.ren/2018/07/30/learncocoapods/</link>
-      <pubDate>Mon, 30 Jul 2018 18:06:46 +0800</pubDate>
-      
-      <guid>https://zcheng.ren/2018/07/30/learncocoapods/</guid>
-      <description>&lt;p&gt;最近要接手项目的ios sdk，于是，抽时间学习一个cocoapods，用来管理Xcode项目的依赖的工具。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
       <title>SpaceVim Tutorial On Mac</title>
       <link>https://zcheng.ren/2018/07/27/spacevimtutorial/</link>
       <pubDate>Fri, 27 Jul 2018 22:42:05 +0800</pubDate>

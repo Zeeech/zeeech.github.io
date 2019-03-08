@@ -12,7 +12,7 @@
 <meta property="og:description" content="Zeech&#39;s Personal blog about everything" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://zcheng.ren/" />
-<meta property="og:updated_time" content="2016-09-02T20:47:53&#43;08:00"/>
+<meta property="og:updated_time" content="2016-08-26T20:47:53&#43;08:00"/>
 
 	<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Zeech&#39;s Tech Blog"/>
@@ -73,28 +73,6 @@
 			<div class="primary">
 			
 <main class="main list" role="main"><article class="list__item post">
-	<header class="list__header">
-		<h3 class="list__title post__title ">
-			<a href="/sourcecodeanalysis/stlrbtree/" rel="bookmark">
-			带你深入理解STL之RBTree
-			</a>
-		</h3>
-		<div class="list__meta meta">
-<div class="meta__item-datetime meta__item">
-	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
-	<time class="meta__text" datetime="2016-09-02T20:47:53">September 02, 2016</time>
-</div>
-
-<div class="meta__item-categories meta__item">
-	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
-	<span class="meta__text"><a class="meta__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb" rel="category">源码阅读</a></span>
-</div>
-</div>
-	</header>
-	<div class="content list__excerpt post__content clearfix">
-		<p>最近一直忙于校招的笔试，STL的深入理解系列也耽搁了好几天，再加上！红黑树真的是超级超级难理解，超级超级复杂，参考了好多博客上的大神的理解才稍微明白一点，勉强入个门，下面请以一个菜鸟的角度跟着我一起学习STL的红黑树吧。</p>
-	</div>
-</article><article class="list__item post">
 	<header class="list__header">
 		<h3 class="list__title post__title ">
 			<a href="/sourcecodeanalysis/stlstackandqueue/" rel="bookmark">
@@ -626,6 +604,37 @@
 <li>fork函数，完成并行服务器的编写</li>
 </ul>
 	</div>
+</article><article class="list__item post">
+	<header class="list__header">
+		<h3 class="list__title post__title ">
+			<a href="/2016/07/06/unixnetworkprogrammingpart2/" rel="bookmark">
+			UNIX网络编程之三：基本套接字编程
+			</a>
+		</h3>
+		<div class="list__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-07-06T16:30:59">July 06, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
+</div>
+</div>
+	</header>
+	<div class="content list__excerpt post__content clearfix">
+		<blockquote>
+<p>unp第三章主要介绍了基本套接字编程函数。主要有：socket(),bind(),connect(),accept(),listen()等。
+本博文也直接进入正题，对这几个函数进行剖析和讲解。</p>
+</blockquote>
+
+<h1 id="一-基本套接字函数"><strong>一、基本套接字函数</strong></h1>
+
+<p>在《计算机网络》和《TCP/IP详解》中，我们经常讨论TCP/IP的工作流程，连接建立的三次握手和连接断开的四次挥手等，那么这些如何体现在程序中呢？我们如何来运用这些理论知识于实践之中呢？下面我们来看看套接字编程中客户和服务器进程之间的一些典型事件的时间表。</p>
+
+<p>如图，服务器首先启动，稍后客户进程启动，它通过connect()函数试图连接服务器，这个阶段完成三次握手，然后read()和write()完成客户和服务器之间的数据传输，之后客户进程调用close()来请求断开连接，服务器收到后读取EOF，接着关闭连接，这时完成四次挥手的过程。下面就图中的每个函数，细细剖析他们的用途。</p>
+	</div>
 </article>
 </main>
 
@@ -681,11 +690,9 @@
 		<a class="widget-taglist__link widget__link btn" href="/tags/blog" title="Blog">Blog</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
-		<a class="widget-taglist__link widget__link btn" href="/tags/cocoapads" title="Cocoapads">Cocoapads</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
-		<a class="widget-taglist__link widget__link btn" href="/tags/ios" title="Ios">Ios</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/mac" title="Mac">Mac</a>
