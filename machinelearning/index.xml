@@ -6,19 +6,10 @@
     <description>Recent content in MachineLearnings on Zeech&#39;s Tech Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <lastBuildDate>Thu, 14 Feb 2019 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 20 Jan 2019 09:26:47 +0800</lastBuildDate>
     
 	<atom:link href="https://zcheng.ren/machinelearning/index.xml" rel="self" type="application/rss+xml" />
     
-    
-    <item>
-      <title>python-opencv图像灰度化处理</title>
-      <link>https://zcheng.ren/machinelearning/vscodeopencvpython/</link>
-      <pubDate>Thu, 14 Feb 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://zcheng.ren/machinelearning/vscodeopencvpython/</guid>
-      <description>&lt;p&gt;读研期间一直在做opencv c++方向的开发工作，由于工作之后对python情有独钟，故打算用python重学一遍opencv，从最基础的开始。&lt;/p&gt;</description>
-    </item>
     
     <item>
       <title>机器学习学习笔记--逻辑回归</title>

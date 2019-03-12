@@ -12,7 +12,7 @@
 <meta property="og:description" content="Zeech&#39;s Personal blog about everything" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://zcheng.ren/" />
-<meta property="og:updated_time" content="2016-07-03T20:41:59&#43;08:00"/>
+<meta property="og:updated_time" content="2016-07-01T17:28:59&#43;08:00"/>
 
 	<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Zeech&#39;s Tech Blog"/>
@@ -73,39 +73,6 @@
 			<div class="primary">
 			
 <main class="main list" role="main"><article class="list__item post">
-	<header class="list__header">
-		<h3 class="list__title post__title ">
-			<a href="/2016/07/03/unixnetworkprogrammingpart3/" rel="bookmark">
-			UNIX网络编程之二：套接字编程简介
-			</a>
-		</h3>
-		<div class="list__meta meta">
-<div class="meta__item-datetime meta__item">
-	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
-	<time class="meta__text" datetime="2016-07-03T20:41:59">July 03, 2016</time>
-</div>
-
-<div class="meta__item-categories meta__item">
-	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
-	<span class="meta__text"><a class="meta__link" href="/categories/%e8%af%bb%e4%b9%a6%e7%ac%94%e8%ae%b0" rel="category">读书笔记</a></span>
-</div>
-</div>
-	</header>
-	<div class="content list__excerpt post__content clearfix">
-		<blockquote>
-<p><strong>unp第二章</strong>主要将了TCP和UDP的简介，这些在《TCP/IP详解》和《计算机网络》等书中有很多细致的讲解，可以参考本人的这篇博客<a href="http://blog.csdn.net/terence1212/article/details/51567833">【计算机网络 第五版】阅读笔记之五：运输层</a>，这篇博客就不再赘述。</p>
-
-<p>本篇博客主要记录套接字编程API，从一些基本的API来一步一步了解套接字网络编程。</p>
-</blockquote>
-
-<h1 id="一-套接字地址结构">一、套接字地址结构</h1>
-
-<p>大多数的套接字函数都以一个指向套接字地址结构的指针作为参数。每个协议簇都定义了自己的套接字地址结构。
-套接字地址结构均以sockaddr_开头，并以对应每个协议簇的唯一后缀结尾。</p>
-
-<h2 id="ipv4套接字地址结构">ipv4套接字地址结构</h2>
-	</div>
-</article><article class="list__item post">
 	<header class="list__header">
 		<h3 class="list__title post__title ">
 			<a href="/2016/07/01/unixnetworkprogrammingpart1/" rel="bookmark">
@@ -180,9 +147,9 @@ make
 		<ul class="widget__list">
 			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
 			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
-			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
 			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
 			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
 		</ul>
 	</div>
 </div>
@@ -193,7 +160,6 @@ make
 			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
-			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
@@ -210,7 +176,6 @@ make
 		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
-		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>

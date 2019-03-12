@@ -12,7 +12,7 @@
 <meta property="og:description" content="Zeech&#39;s Personal blog about everything" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://zcheng.ren/" />
-<meta property="og:updated_time" content="2016-12-24T11:01:31&#43;08:00"/>
+<meta property="og:updated_time" content="2016-12-23T20:13:14&#43;08:00"/>
 
 	<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Zeech&#39;s Tech Blog"/>
@@ -73,28 +73,6 @@
 			<div class="primary">
 			
 <main class="main list" role="main"><article class="list__item post">
-	<header class="list__header">
-		<h3 class="list__title post__title ">
-			<a href="/sourcecodeanalysis/theannotatedredissourcezset/" rel="bookmark">
-			Redis源码剖析--有序集合t_zset
-			</a>
-		</h3>
-		<div class="list__meta meta">
-<div class="meta__item-datetime meta__item">
-	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
-	<time class="meta__text" datetime="2016-12-24T11:01:31">December 24, 2016</time>
-</div>
-
-<div class="meta__item-categories meta__item">
-	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
-	<span class="meta__text"><a class="meta__link" href="/categories/redis" rel="category">redis</a></span>
-</div>
-</div>
-	</header>
-	<div class="content list__excerpt post__content clearfix">
-		<p>今天来剖析一个比较有意思的数据类型—— 有序集合zset，说实话，它的源码真的是多，而且繁琐，不过，其中的一部分在<a href="http://zcheng.ren/2016/12/06/TheAnnotatedRedisSourceZskiplist/">Redis源码剖析&ndash;跳跃表zskiplist</a>中分析过了。有序集合到底是什么呢？有序集合里面存放的元素都自带一个分值，根据这个分值来对元素进行排序，从而使其成为一个有序的集合。接下来，枯燥的Read Code时间到了。</p>
-	</div>
-</article><article class="list__item post">
 	<header class="list__header">
 		<h3 class="list__title post__title ">
 			<a href="/2016/12/23/macinstallredisandpythonredis/" rel="bookmark">
@@ -520,6 +498,36 @@
 	<div class="content list__excerpt post__content clearfix">
 		<p>最近一直忙于校招的笔试，STL的深入理解系列也耽搁了好几天，再加上！红黑树真的是超级超级难理解，超级超级复杂，参考了好多博客上的大神的理解才稍微明白一点，勉强入个门，下面请以一个菜鸟的角度跟着我一起学习STL的红黑树吧。</p>
 	</div>
+</article><article class="list__item post">
+	<header class="list__header">
+		<h3 class="list__title post__title ">
+			<a href="/sourcecodeanalysis/stlstackandqueue/" rel="bookmark">
+			带你深入理解STL之Stack和Queue
+			</a>
+		</h3>
+		<div class="list__meta meta">
+<div class="meta__item-datetime meta__item">
+	<svg class="meta__icon icon icon-time" width="16" height="14" viewBox="0 0 30 28"><path d="M15 0C7 0 1 6 1 14s6 14 14 14 14-6 14-14S23 0 15 0zm0 25C9 25 4 20 4 14S9 3 15 3s11 5 11 11-5 11-11 11zm1-18h-2v8.4l6.8 4.4L22 18l-6-3.8V7z"/></svg>
+	<time class="meta__text" datetime="2016-08-26T20:47:53">August 26, 2016</time>
+</div>
+
+<div class="meta__item-categories meta__item">
+	<svg class="meta__icon icon icon-category" width="16" height="16" viewBox="0 0 16 16"><path d="m7 2l1 2h8v11h-16v-13z"/></svg>
+	<span class="meta__text"><a class="meta__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb" rel="category">源码阅读</a></span>
+</div>
+</div>
+	</header>
+	<div class="content list__excerpt post__content clearfix">
+		<p>上一篇博客，<a href="http://zcheng.ren/2016/08/26/STLDeque/">带你深入理解STL之Deque容器</a>中详细介绍了deque容器的源码实现方式。结合前面介绍的两个容器vector和list，在使用的过程中，我们确实要知道在什么情况下需要选择恰当的容器来满足需求和提升效率。一般选择的准则有如下几条：</p>
+
+<ul>
+<li>如果需要随机访问一个容器，vector比list要好</li>
+<li>如果需要经常插入和删除操作的话，list比vector要好</li>
+<li>如果既要随机存取，又要关心两端数据的插入和删除，则选择deque</li>
+</ul>
+
+<p>好了，复习完前面的知识后，开始介绍今天的两个容器stack和queue。由于stack和queue都是基于deque来实现的，所以相应的代码会比较简单，也是比较轻松易实现的，下面一起去看看吧。</p>
+	</div>
 </article>
 </main>
 
@@ -546,9 +554,9 @@
 		<ul class="widget__list">
 			<li class="widget__item"><a class="widget__link" href="/2019/02/18/libevent1/">Libevent初识</a></li>
 			<li class="widget__item"><a class="widget__link" href="/2019/02/16/handlequicksort/">手撕快速排序算法</a></li>
-			<li class="widget__item"><a class="widget__link" href="/machinelearning/vscodeopencvpython/">python-opencv图像灰度化处理</a></li>
 			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglogisticregression/">机器学习学习笔记--逻辑回归</a></li>
 			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearninglinearregression/">机器学习学习笔记--线性回归</a></li>
+			<li class="widget__item"><a class="widget__link" href="/machinelearning/machinelearningintro/">机器学习学习笔记--简介</a></li>
 		</ul>
 	</div>
 </div>
@@ -559,7 +567,6 @@
 			<li class="widget__item"><a class="widget__link" href="/categories/interview">Interview</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/libevent">Libevent</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/redis">Redis</a></li>
-			<li class="widget__item"><a class="widget__link" href="/categories/%e5%9b%be%e5%83%8f%e5%a4%84%e7%90%86">图像处理</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/%e5%bc%80%e5%8f%91%e5%b7%a5%e5%85%b7">开发工具</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/%e6%9c%ba%e5%99%a8%e5%ad%a6%e4%b9%a0">机器学习</a></li>
 			<li class="widget__item"><a class="widget__link" href="/categories/%e6%ba%90%e7%a0%81%e9%98%85%e8%af%bb">源码阅读</a></li>
@@ -576,7 +583,6 @@
 		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;" title="C&#43;&#43;">C&#43;&#43;</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/c&#43;&#43;%e7%9f%a5%e8%af%86" title="C&#43;&#43;知识">C&#43;&#43;知识</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/go" title="Go">Go</a>
-		<a class="widget-taglist__link widget__link btn" href="/tags/imageprocess" title="Imageprocess">Imageprocess</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/interview" title="Interview">Interview</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/libevent" title="Libevent">Libevent</a>
 		<a class="widget-taglist__link widget__link btn" href="/tags/linux" title="Linux">Linux</a>
